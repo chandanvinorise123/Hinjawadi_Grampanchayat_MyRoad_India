@@ -1,19 +1,27 @@
 const express = require("express");
+
 const cors = require("cors");
-// const connectDB = require("./config/db");
-// const routes = require("./routes/routes");
+
+const dotenv = require("dotenv");
+
+const connectDB = require("./config/db.js");
+
+//const routes = require("./routes/routes");
 
 const app = express();
 
-// // Middleware
-// app.use(cors());
-// app.use(express.json());
+dotenv.config();
 
-// // Database Connection
-// connectDB();
+// Middleware
+app.use(cors());
 
-// // Routes
-// app.use("/api", routes);
+app.use(express.json());
+
+// Database Connection
+connectDB();
+
+// Routes
+//app.use("/api", routes);
 
 // Default Route
 app.get("/", (req, res) => {
