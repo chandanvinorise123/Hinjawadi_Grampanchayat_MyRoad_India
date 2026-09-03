@@ -83,108 +83,149 @@
 /* =========================================================
    HERO CONTENT
    ========================================================= */
+       
+       
+       .hero-content {
 
-.hero-content {
   position: relative;
+
   z-index: 2;
+
   max-width: 640px;
 
-  /* Move hero content upward */
-  transform: translateY(-45px);
+  /* Move all hero content upward */
+
+  transform: translateY(-180px);
+
 }
 
 .hero-badge {
+
   display: inline-flex;
+
   align-items: center;
+
   gap: 8px;
 
   background: rgba(255, 255, 255, 0.08);
+
   border: 1px solid rgba(255, 255, 255, 0.18);
 
   color: #ffd9a8;
+
   font-size: 12.5px;
+
   font-weight: 700;
+
   letter-spacing: 0.6px;
 
   padding: 7px 14px;
+
   border-radius: 999px;
 
   text-transform: uppercase;
-  margin-bottom: 420px;
+
+  margin-bottom: 20px;
+
 }
 
 .live-dot {
+
   width: 7px;
+
   height: 7px;
+
   border-radius: 50%;
 
   background: #3ddc63;
 
   box-shadow: 0 0 0 3px rgba(61, 220, 99, 0.25);
-  
+
 }
 
 
 /* =========================================================
+
    HERO HEADING
+
    ========================================================= */
 
 .hero-content h1 {
+
   color: var(--white);
 
   font-size: clamp(2.2rem, 1.6rem + 3vw, 3.4rem);
 
   line-height: 1.08;
+
   letter-spacing: -1px;
 
-  margin-top: -420px;
+  margin-bottom: 20px;
+
 }
 
 .hero-content h1 span {
+
   color: var(--saffron);
+
   display: block;
- 
+
+  margin-top: 8px;
+
 }
 
 
 /* =========================================================
+
    HERO DESCRIPTION
+
    ========================================================= */
 
 .hero-description {
+
   color: #c3d0e6;
 
   font-size: 17px;
 
   max-width: 480px;
 
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+
 }
 
 
 /* =========================================================
+
    HERO BUTTONS
+
    ========================================================= */
 
 .hero-buttons {
+
   display: flex;
+
   gap: 14px;
 
   margin-bottom: 36px;
 
   flex-wrap: wrap;
+
 }
 
 .primary-btn,
+
 .secondary-btn {
+
   display: inline-flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 8px;
 
   font-weight: 700;
+
   font-size: 14.5px;
 
   border-radius: var(--radius-sm);
@@ -196,51 +237,67 @@
   cursor: pointer;
 
   white-space: nowrap;
+
 }
 
 
 /* Primary button */
 
 .primary-btn {
+
   background: var(--saffron);
+
   color: #3a1e00;
+
 }
 
 .primary-btn:hover {
+
   background: var(--saffron-dark);
+
 }
 
 
 /* Secondary button */
 
 .secondary-btn {
+
   background: transparent;
 
   color: var(--white);
 
   border: 1.5px solid rgba(255, 255, 255, 0.4);
+
 }
 
 .secondary-btn:hover {
+
   background: rgba(255, 255, 255, 0.1);
 
   border-color: #fff;
+
 }
 
 
+
 /* =========================================================
+
    HERO TRUST / STATISTICS
+
    ========================================================= */
 
 .hero-trust {
+
   display: flex;
 
   gap: 28px;
 
   flex-wrap: wrap;
+
 }
 
 .hero-trust b {
+
   display: block;
 
   font-family: "JetBrains Mono", monospace;
@@ -248,13 +305,17 @@
   font-size: 21px;
 
   color: var(--white);
+
 }
 
 .hero-trust span {
+
   color: #93a3bf;
 
   font-size: 12.5px;
+
 }
+
 
 
 /* =========================================================

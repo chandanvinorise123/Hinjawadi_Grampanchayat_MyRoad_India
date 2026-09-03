@@ -127,6 +127,8 @@ const Home = () => {
 
         <div className="hero-scrim"></div>
 
+
+
         <div className="hero-content">
           <div className="hero-badge">
             <span className="live-dot"></span>
@@ -136,6 +138,9 @@ const Home = () => {
           <h1>
             Report Road &amp; Public <span>Infrastructure Issues</span>
           </h1>
+
+
+
 
           <p className="hero-description">
             Photograph the problem, share your location, and get a complaint
@@ -167,6 +172,12 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+
+
+
+
+
 
         {/* Slider dots (hero background) */}
         {heroImages.length > 1 && (
