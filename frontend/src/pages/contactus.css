@@ -1,0 +1,180 @@
+/* ============================================================
+   MYROAD INDIA — CONTACT US PAGE STYLES
+   Uses the same design tokens/fonts as services.css. Fully fluid —
+   no per-breakpoint overrides needed for the grids.
+   ============================================================ */
+
+.contact-page {
+  --navy-950: #081b34;
+  --navy-900: #0b2447;
+  --navy-800: #123464;
+  --navy-700: #1b4586;
+  --saffron: #ff9933;
+  --saffron-dark: #e07f1f;
+  --green: #128807;
+  --white: #ffffff;
+  --surface: #f4f6f9;
+  --surface-2: #eef1f6;
+  --line: #e2e6ee;
+  --ink: #161b26;
+  --ink-soft: #4b5567;
+  --ink-faint: #8a93a6;
+  --red: #d13438;
+  --orange: #e8720c;
+  --amber: #e0a800;
+  --resolved: #1f8a3d;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  font-family: "Inter", sans-serif;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+.contact-page h1,
+.contact-page h2,
+.contact-page h3,
+.contact-page h4 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  color: var(--navy-900);
+  font-weight: 800;
+}
+
+.contact-page section {
+  padding: clamp(2.5rem, 2rem + 3vw, 5rem) clamp(1.25rem, 1rem + 2vw, 3rem);
+}
+.contact-page .surface { background: var(--surface); }
+
+.section-heading { max-width: 640px; margin-bottom: clamp(1.5rem, 1rem + 2vw, 2.5rem); }
+.section-heading.center { margin-inline: auto; text-align: center; }
+
+.eyebrow {
+  font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--saffron-dark); margin-bottom: 10px;
+}
+.eyebrow.center { text-align: center; }
+.eyebrow-light { color: #ffd9a8; }
+
+/* ================= PAGE HERO ================= */
+.page-hero {
+  position: relative;
+  background: linear-gradient(150deg, var(--navy-900), var(--navy-800));
+  color: #fff;
+  overflow: hidden;
+  padding: clamp(3rem, 3vw, 4.5rem) clamp(1.25rem, 3vw, 3rem);
+}
+.hero-glow {
+  position: absolute; width: 520px; height: 520px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,153,51,.18), transparent 70%);
+  top: -220px; right: -140px;
+}
+.page-hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 16px; }
+.breadcrumb b { color: var(--saffron); }
+.page-hero h1 { color: #fff; font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-bottom: 14px; }
+.hero-lead { color: #c3d0e6; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem); max-width: 560px; }
+
+/* ================= CONTACT INFORMATION ================= */
+.contact-info-grid {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.contact-info-card {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: 24px;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.contact-info-card:hover {
+  box-shadow: 0 16px 32px -18px rgba(11,36,71,0.28);
+  transform: translateY(-3px);
+}
+.contact-info-icon {
+  font-size: 22px; width: 46px; height: 46px; flex-shrink: 0;
+  background: var(--surface-2); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.contact-info-card h4 { font-size: 15.5px; margin-bottom: 6px; }
+.contact-info-card p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+
+/* ================= CITIZEN SUPPORT ================= */
+.support-grid {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.support-card {
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: 26px;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.support-card:hover {
+  box-shadow: 0 16px 32px -18px rgba(11,36,71,0.28);
+  transform: translateY(-3px);
+}
+.support-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.support-number {
+  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
+  color: var(--ink-faint); background: var(--surface-2); padding: 4px 10px; border-radius: 999px;
+}
+.support-icon { font-size: 24px; }
+.support-card h4 { font-size: 16px; margin-bottom: 8px; }
+.support-card p { font-size: 13.5px; color: var(--ink-soft); }
+
+/* ================= CONTACT FORM ================= */
+.form-shell {
+  max-width: 680px; margin: 0 auto;
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 2vw, 2.5rem);
+}
+.contact-form { display: flex; flex-direction: column; gap: 18px; }
+.form-row {
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.form-field { display: flex; flex-direction: column; gap: 8px; }
+.form-field label { font-size: 13px; font-weight: 700; color: var(--navy-900); }
+.form-field input,
+.form-field textarea {
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 12px 14px; resize: vertical; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none; border-color: var(--navy-700);
+  box-shadow: 0 0 0 3px rgba(27,69,134,0.12);
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: var(--ink-faint); }
+
+/* ================= RESPONSE CARD ================= */
+.response-card { text-align: center; padding: clamp(1rem, 2vw, 1.5rem) 0.5rem; }
+.response-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--resolved); color: #fff; font-size: 24px; font-weight: 700;
+  margin-bottom: 18px;
+}
+.response-card h3 { font-size: 20px; margin-bottom: 10px; }
+.response-card p { font-size: 14px; color: var(--ink-soft); max-width: 420px; margin: 0 auto 22px; }
+.secondary-btn {
+  background: var(--surface-2); color: var(--navy-900); font-weight: 700; font-size: 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 11px 22px; cursor: pointer;
+  font-family: inherit; transition: background 0.15s;
+}
+.secondary-btn:hover { background: var(--surface); }
+
+/* ================= BUTTONS ================= */
+.primary-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--saffron); color: #3a1e00; font-weight: 700; font-size: 14.5px;
+  border: none; border-radius: var(--radius-sm); padding: 13px 24px; cursor: pointer; white-space: nowrap;
+  align-self: flex-start;
+}
+.primary-btn:hover { background: var(--saffron-dark); }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 780px) {
+  .form-row { grid-template-columns: 1fr; }
+  .primary-btn { width: 100%; }
+}

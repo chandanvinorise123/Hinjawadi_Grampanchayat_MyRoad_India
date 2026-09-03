@@ -1,0 +1,213 @@
+/* ============================================================
+   MYROAD INDIA — LOGIN / SIGN UP PAGE STYLES
+   Uses the same design tokens/fonts as services.css. Fully fluid —
+   no per-breakpoint overrides needed for the grids.
+   ============================================================ */
+
+.login-page {
+  --navy-950: #081b34;
+  --navy-900: #0b2447;
+  --navy-800: #123464;
+  --navy-700: #1b4586;
+  --saffron: #ff9933;
+  --saffron-dark: #e07f1f;
+  --green: #128807;
+  --white: #ffffff;
+  --surface: #f4f6f9;
+  --surface-2: #eef1f6;
+  --line: #e2e6ee;
+  --ink: #161b26;
+  --ink-soft: #4b5567;
+  --ink-faint: #8a93a6;
+  --red: #d13438;
+  --orange: #e8720c;
+  --amber: #e0a800;
+  --resolved: #1f8a3d;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  font-family: "Inter", sans-serif;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+.login-page h1,
+.login-page h2,
+.login-page h3,
+.login-page h4 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  color: var(--navy-900);
+  font-weight: 800;
+}
+
+.login-page section {
+  padding: clamp(2.5rem, 2rem + 3vw, 5rem) clamp(1.25rem, 1rem + 2vw, 3rem);
+}
+.login-page .surface { background: var(--surface); }
+
+.section-heading { max-width: 640px; margin-bottom: clamp(1.5rem, 1rem + 2vw, 2.5rem); }
+.section-heading.center { margin-inline: auto; text-align: center; }
+
+.eyebrow {
+  font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--saffron-dark); margin-bottom: 10px;
+}
+.eyebrow.center { text-align: center; }
+.eyebrow-light { color: #ffd9a8; }
+
+/* ================= PAGE HERO ================= */
+.page-hero {
+  position: relative;
+  background: linear-gradient(150deg, var(--navy-900), var(--navy-800));
+  color: #fff;
+  overflow: hidden;
+  padding: clamp(3rem, 3vw, 4.5rem) clamp(1.25rem, 3vw, 3rem);
+}
+.hero-glow {
+  position: absolute; width: 520px; height: 520px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,153,51,.18), transparent 70%);
+  top: -220px; right: -140px;
+}
+.page-hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 16px; }
+.breadcrumb b { color: var(--saffron); }
+.page-hero h1 { color: #fff; font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-bottom: 14px; }
+.hero-lead { color: #c3d0e6; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem); max-width: 560px; }
+
+/* ================= AUTH CARD ================= */
+.auth-shell {
+  max-width: 480px; margin: 0 auto;
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: clamp(1.75rem, 3vw, 2.5rem);
+}
+.auth-tabs {
+  display: flex; background: var(--surface-2); border-radius: 999px; padding: 4px; margin-bottom: 26px;
+}
+.auth-tab {
+  flex: 1; text-align: center; background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 13.5px; font-weight: 700; color: var(--ink-soft); padding: 10px 14px; border-radius: 999px;
+  transition: background 0.18s, color 0.18s;
+}
+.auth-tab.active { background: var(--white); color: var(--navy-900); box-shadow: 0 6px 14px -8px rgba(11,36,71,0.3); }
+
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+.form-row {
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.form-field { display: flex; flex-direction: column; gap: 8px; }
+.form-field label { font-size: 13px; font-weight: 700; color: var(--navy-900); }
+.form-field input,
+.form-field select {
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 12px 14px; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-field select {
+  appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%),
+    linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.form-field input:focus,
+.form-field select:focus {
+  outline: none; border-color: var(--navy-700);
+  box-shadow: 0 0 0 3px rgba(27,69,134,0.12);
+}
+.form-field input::placeholder { color: var(--ink-faint); }
+
+.auth-switch { text-align: center; font-size: 13.5px; color: var(--ink-soft); margin-top: 4px; }
+.link-btn {
+  background: none; border: none; color: var(--navy-700); font-weight: 700; font-size: 13.5px;
+  cursor: pointer; font-family: inherit; padding: 0; text-decoration: underline;
+}
+
+.error-banner {
+  background: #fdecea; border: 1px solid var(--red); color: var(--red);
+  border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; font-weight: 600;
+}
+
+/* ================= STATUS CARD ================= */
+.status-card { text-align: center; padding: clamp(0.5rem, 2vw, 1rem) 0.25rem; }
+.status-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--resolved); color: #fff; font-size: 24px; font-weight: 700;
+  margin-bottom: 18px;
+}
+.status-card h3 { font-size: 19px; margin-bottom: 10px; }
+.status-card p { font-size: 14px; color: var(--ink-soft); max-width: 360px; margin: 0 auto 22px; }
+.secondary-btn {
+  background: var(--surface-2); color: var(--navy-900); font-weight: 700; font-size: 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 11px 22px; cursor: pointer;
+  font-family: inherit; transition: background 0.15s;
+}
+.secondary-btn:hover { background: var(--surface); }
+
+/* ================= BUTTONS ================= */
+.primary-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--saffron); color: #3a1e00; font-weight: 700; font-size: 14.5px;
+  border: none; border-radius: var(--radius-sm); padding: 13px 24px; cursor: pointer; white-space: nowrap;
+  font-family: inherit;
+}
+.primary-btn:hover { background: var(--saffron-dark); }
+
+/* ================= AUTH FLOW ================= */
+.flow-track {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: clamp(10px, 2vw, 24px);
+  margin-bottom: clamp(2rem, 3vw, 2.75rem);
+}
+.flow-step { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 100px; }
+.flow-dot {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--navy-900); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 15px;
+}
+.flow-step span { font-size: 13.5px; font-weight: 700; color: var(--navy-900); }
+.flow-arrow { font-size: 22px; color: var(--saffron-dark); font-weight: 700; }
+
+.branch-row {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  max-width: 640px; margin: 0 auto clamp(2rem, 3vw, 2.75rem);
+}
+.branch-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+.branch-icon {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;
+}
+.branch-card.fail .branch-icon { background: var(--red); }
+.branch-card.success .branch-icon { background: var(--resolved); }
+.branch-card h4 { font-size: 14.5px; margin-bottom: 4px; }
+.branch-card p { font-size: 13px; color: var(--ink-soft); }
+
+.role-grid {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  max-width: 720px; margin: 0 auto;
+}
+.role-card {
+  text-align: center; background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: 20px 14px;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.role-card:hover { box-shadow: 0 16px 32px -18px rgba(11,36,71,0.28); transform: translateY(-3px); }
+.role-icon { font-size: 26px; display: block; margin-bottom: 10px; }
+.role-card h4 { font-size: 14.5px; margin-bottom: 4px; }
+.role-card p { font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 780px) {
+  .form-row { grid-template-columns: 1fr; }
+  .flow-arrow { transform: rotate(90deg); }
+  .flow-track { flex-direction: column; }
+}

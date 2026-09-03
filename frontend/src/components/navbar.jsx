@@ -59,57 +59,29 @@ const Navbar = () => {
 
         <NavLink  to="/services" className={({ isActive }) =>  isActive ? 'active' : '' }  >  Services </NavLink>
             
+        <NavLink to="/issues-category" className={({ isActive }) => isActive ? 'active' : ''} > Issues Category </NavLink>
              
-             
+        <NavLink to="/aboutus" className={({ isActive }) => isActive ? 'active' : '' } >   About Us </NavLink>
+
+        <NavLink to="/contactus"  className={({ isActive }) =>    isActive ? 'active' : ''   } >Contact Us </NavLink>
+              
+        <NavLink to="/Dashboard" className={({ isActive }) => isActive ? 'active' : '' }> Dashboard </NavLink>
+        
+        <NavLink to="/HelpFaq" className={({ isActive }) => isActive ? 'active' : ''}  > Help / FAQ </NavLink>
+
+        <NavLink to="/Login" className={({ isActive }) => isActive ? 'active' : ''} > Login </NavLink>
+
+        <NavLink to="/ReportIssue" className={({ isActive }) => isActive ? 'active' : ''} > Report an Issue </NavLink>
+            
+        </nav>    
+              
+                
+              
+              
             
            
 
-            <NavLink
-              to="/issues-category"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              Issues Category
-            </NavLink>
-
-            <NavLink
-              to="/about"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              About Us
-            </NavLink>
-
-            <NavLink
-              to="/contact"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              Contact Us
-            </NavLink>
-
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              Dashboard
-            </NavLink>
-
-            <NavLink
-              to="/help"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              Help / FAQ
-            </NavLink>
-
-          </nav>
+        
 
           {/* Header Actions */}
           <div className="header-actions">

@@ -7,12 +7,14 @@ import Footer from "./components/footer";
 import Home from "./pages/home";
 import Services from "./pages/services";
 
-//import IssuesCategory from "./pages/IssuesCategory";
-// import About from "./pages/About";
-// import Contact from "./pages/Contact";
-// import Dashboard from "./pages/Dashboard";
-// import Help from "./pages/Help";
+import IssuesCategory from "./pages/issuecategory";
+import AboutUs from "./pages/aboutus";
+import ContactUs from "./pages/contactus";
+import Dashboard from "./pages/dashboard";
 
+import HelpFaq from "./pages/helpfaq";
+import Login from "./pages/login";  
+import ReportIssue from "./pages/report";
 function App() {
   return (
     <BrowserRouter>
@@ -21,13 +23,17 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/issues-category" element={<IssuesCategory />} />
+        <Route path="/AboutUs" element={<AboutUs/>} />
+        <Route path="/ContactUs" element={<ContactUs />} />
+        <Route path="/Dashboard" element={<Dashboard/>} />
+        <Route path="/HelpFaq" element={<HelpFaq />} />
+        <Route path="/Login" element={<Login />} />
+        <Route path="/ReportIssue" element={<ReportIssue />} />
+      
 
-        {/* <Route path="/issues-category" element={<IssuesCategory />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/help" element={<Help />} /> */}
 
+        
 
 
       </Routes>
