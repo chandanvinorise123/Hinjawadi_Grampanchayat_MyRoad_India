@@ -10,7 +10,7 @@ import heroImage5 from "../assets/r5.jpg";
 
 
 // ---- TV preview video (replace with your real demo clip) ----
-import tvDemoVideo from "../assets/video.mp4";
+import tvDemoVideo from "../assets/myRoadvideo.mp4";
 
 // ---- Gallery images (reuse hero images or add separate ones) ----
 import gallery1 from "../assets/r1.jpg";
@@ -19,7 +19,7 @@ import gallery3 from "../assets/r3.jpg";
 import gallery4 from "../assets/r4.png";
 
 
-const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4 , heroImage5];
+const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
 
 const quickActions = [
   { icon: "📍", title: "Report an Issue", desc: "Submit a photo, location & description" },
@@ -103,6 +103,8 @@ const Home = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      video.muted = false;   // 🔊 Turn audio ON
+      video.volume = 0.2;    // 🔉 20% volume
       video.play();
       setTvPlaying(true);
     } else {
@@ -110,6 +112,12 @@ const Home = () => {
       setTvPlaying(false);
     }
   };
+
+
+
+
+
+
 
   return (
     <main className="home-page">
@@ -194,6 +202,9 @@ const Home = () => {
           </div>
         )}
 
+
+
+
         {/* TV preview panel with actual video + play/pause */}
         <div className="tv-unit">
           <div className={`tv-frame ${!tvPlaying ? "tv-paused" : ""}`}>
@@ -205,9 +216,16 @@ const Home = () => {
             </div>
 
             <div className="tv-screen">
+
+
               <video ref={videoRef} autoPlay muted loop playsInline>
                 <source src={tvDemoVideo} type="video/mp4" />
               </video>
+
+
+
+
+
 
               <div className="tv-overlay-top">
                 <span className="dot"></span> Reporting a Pothole
@@ -237,6 +255,17 @@ const Home = () => {
           <div className="tv-stand-base"></div>
         </div>
       </section>
+
+
+
+
+
+
+
+
+
+
+
 
       {/* ================= QUICK ACTIONS ================= */}
       <section className="quick-actions-section">

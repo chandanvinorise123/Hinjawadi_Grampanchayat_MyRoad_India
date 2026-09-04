@@ -2,9 +2,10 @@
 import React from 'react';
 import './navbar.css';
 import logo from '../assets/logo.jpeg';
-import { NavLink } from 'react-router-dom';
-
+import { NavLink, useNavigate } from 'react-router-dom';
 const Navbar = () => {
+   const navigate = useNavigate();
+
   return (
     <>
       {/* Top Bar */}
@@ -69,9 +70,15 @@ const Navbar = () => {
         
         <NavLink to="/HelpFaq" className={({ isActive }) => isActive ? 'active' : ''}  > Help / FAQ </NavLink>
 
+
+{/* 
         <NavLink to="/Login" className={({ isActive }) => isActive ? 'active' : ''} > Login </NavLink>
 
         <NavLink to="/ReportIssue" className={({ isActive }) => isActive ? 'active' : ''} > Report an Issue </NavLink>
+ */}
+
+
+
             
         </nav>    
               
@@ -114,13 +121,23 @@ const Navbar = () => {
               </svg>
             </button>
 
-            <button className="btn btn-login">
-              Login
-            </button>
 
-            <button className="btn btn-primary">
+            <button  className="btn btn-login"  onClick={() => navigate('/Login')} >
+              
+                         Login
+                          </button>
+
+ 
+ 
+
+          <button  className="btn btn-primary"  onClick={() => navigate('/ReportIssue')} >
               Report an Issue
-            </button>
+              </button>
+
+
+
+
+
 
           </div>
         </div>
