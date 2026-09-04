@@ -15,6 +15,7 @@ import Dashboard from "./pages/dashboard";
 import HelpFaq from "./pages/helpfaq";
 import Login from "./pages/login";  
 import ReportIssue from "./pages/report";
+import CitizenDashboard from "./dashboard/citizendashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -30,6 +31,7 @@ function App() {
         <Route path="/HelpFaq" element={<HelpFaq />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/ReportIssue" element={<ReportIssue />} />
+        <Route path="/CitizenDashboard" element={<CitizenDashboard />} />
       
 
 

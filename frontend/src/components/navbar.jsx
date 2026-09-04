@@ -70,6 +70,8 @@ const Navbar = () => {
         
         <NavLink to="/HelpFaq" className={({ isActive }) => isActive ? 'active' : ''}  > Help / FAQ </NavLink>
 
+        <NavLink to="/CitizenDashboard" className={({ isActive }) => isActive ? 'active' : ''}  > Citizen Dashboard </NavLink>
+
 
 {/* 
         <NavLink to="/Login" className={({ isActive }) => isActive ? 'active' : ''} > Login </NavLink>
