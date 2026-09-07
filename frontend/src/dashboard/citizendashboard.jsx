@@ -11,8 +11,6 @@ const lifecycleStages = [
   "Complaint Closed",
 ];
 
-// Deterministic color per category so free-text categories still get a
-// consistent pin color on the Issues Map.
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
   let hash = 0;
@@ -59,6 +57,8 @@ const notifications = [
   { text: "Complaint MRI-773820 has been registered", time: "3 days ago" },
 ];
 
+const stageTone = ["amber", "amber", "orange", "orange", "orange", "amber", "green"];
+
 const CitizenDashboard = () => {
   const [profile] = useState({
     name: "Citizen User",
@@ -94,7 +94,6 @@ const CitizenDashboard = () => {
     { label: "Closed", value: complaints.filter((c) => c.stage === 6).length, icon: "✅", tone: "green" },
   ];
 
-  // Group complaints by location for the Issues Map.
   const mapGroups = complaints.reduce((groups, c) => {
     const key = c.location || "Location pending";
     if (!groups[key]) groups[key] = [];
@@ -155,371 +154,439 @@ const CitizenDashboard = () => {
     }
   };
 
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+
+  const initials = profile.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <main className="citizen-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
-        <div className="page-hero-inner">
-          <div className="breadcrumb">
-            Home / <b>Citizen Dashboard</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Welcome Back</p>
-          <h1>Your MyRoad India dashboard</h1>
-          <p className="hero-lead">
-            View your profile, track complaints, and report new issues from
-            one place.
-          </p>
-        </div>
-      </section>
-
-      {/* ================= PROFILE + OVERVIEW ================= */}
-      <section className="section">
-        <div className="top-grid">
-          {/* Citizen Profile Information */}
-          <div className="profile-card">
-            <p className="eyebrow">Citizen Profile Information</p>
-            <div className="profile-row">
-              <span className="profile-avatar">🧑</span>
-              <div>
-                <h3>{profile.name}</h3>
-                <p>{profile.mobile}</p>
-              </div>
-            </div>
-            <div className="profile-details">
-              <div>
-                <span className="profile-label">Ward</span>
-                <span className="profile-value">{profile.ward}</span>
-              </div>
-              <div>
-                <span className="profile-label">Member Since</span>
-                <span className="profile-value">{profile.memberSince}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dashboard Overview */}
-          <div className="overview-card">
-            <p className="eyebrow">Dashboard Overview</p>
-            <div className="stats-grid">
-              {overviewStats.map((stat, i) => (
-                <div className={`stat-card tone-${stat.tone}`} key={i}>
-                  <span className="stat-icon">{stat.icon}</span>
-                  <div>
-                    <span className="stat-value">{stat.value}</span>
-                    <span className="stat-label">{stat.label}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+    <div className="cd-shell">
+      {/* ============ SIDEBAR ============ */}
+      <aside className="cd-sidebar">
+        <div className="cd-sb-brand">
+          <div className="cd-sb-logo">MI</div>
+          <div>
+            <b>MyRoad India</b>
+            <span>Citizen Portal</span>
           </div>
         </div>
-      </section>
 
-      {/* ================= CITIZEN FUNCTIONS ================= */}
-      <section className="section surface">
-        <div className="section-heading">
-          <p className="eyebrow">Citizen Functions</p>
-          <h2>What would you like to do?</h2>
+        <div className="cd-sb-label">Overview</div>
+        <nav className="cd-sb-nav">
+          <button type="button" className="cd-sb-link active" onClick={() => scrollTo("cd-top")}>
+            📊 Dashboard
+          </button>
+          <button type="button" className="cd-sb-link" onClick={() => scrollTo("cd-profile")}>
+            👤 My Profile
+          </button>
+        </nav>
+
+        <div className="cd-sb-label">Citizen Functions</div>
+        <nav className="cd-sb-nav">
+          <button type="button" className="cd-sb-link" onClick={() => setShowNewForm(true)}>
+            📍 Report an Issue
+          </button>
+          <button type="button" className="cd-sb-link" onClick={() => scrollTo("my-activity")}>
+            🔍 Track Complaint
+          </button>
+          <button
+            type="button"
+            className="cd-sb-link"
+            onClick={() => {
+              setShowMapView(true);
+              scrollTo("map-section");
+            }}
+          >
+            🗺️ Issues Map
+          </button>
+          <button type="button" className="cd-sb-link" onClick={() => scrollTo("my-activity")}>
+            📋 My Complaints
+            <span className="cd-sb-badge">{complaints.length}</span>
+          </button>
+        </nav>
+
+        <div className="cd-sb-label">Activity</div>
+        <nav className="cd-sb-nav">
+          <button type="button" className="cd-sb-link" onClick={() => scrollTo("notif-panel")}>
+            🔔 Notifications
+            <span className="cd-sb-badge">{notifications.length}</span>
+          </button>
+          <button type="button" className="cd-sb-link" onClick={() => scrollTo("my-activity")}>
+            🕘 Recent Activity
+          </button>
+        </nav>
+
+        <div className="cd-sb-footer">
+          <div className="cd-sb-user">
+            <div className="cd-sb-avatar">{initials}</div>
+            <div className="cd-sb-user-info">
+              <b>{profile.name}</b>
+              <span>{profile.mobile}</span>
+            </div>
+          </div>
+          <div className="cd-sb-ward">
+            {profile.ward} · Member since {profile.memberSince}
+          </div>
         </div>
+      </aside>
 
-        <div className="functions-grid">
-          <div className="function-card">
-            <span className="function-icon">📝</span>
-            <h4>Report Issue</h4>
-            <p>Select category, add description, upload photo & capture GPS.</p>
-            <button className="primary-btn" type="button" onClick={() => setShowNewForm(true)}>
-              Report New Issue <span>→</span>
+      {/* ============ MAIN AREA ============ */}
+      <div className="cd-main" id="cd-top">
+        {/* TOPBAR */}
+        <div className="cd-topbar">
+          <div className="cd-search">
+            🔍 <input type="text" placeholder="Search your complaints..." />
+          </div>
+          <div className="cd-tb-actions">
+            <button type="button" className="cd-icon-btn" aria-label="Notifications" onClick={() => scrollTo("notif-panel")}>
+              🔔<span className="cd-tb-dot"></span>
             </button>
-          </div>
-          <div className="function-card">
-            <span className="function-icon">🔍</span>
-            <h4>Track Complaint</h4>
-            <p>View complaint number, current status, and full status history.</p>
-            <button
-              className="secondary-btn"
-              type="button"
-              onClick={() =>
-                document.getElementById("my-activity")?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              View My Complaints
+            <button className="cd-btn-primary" type="button" onClick={() => setShowNewForm(true)}>
+              + Report an Issue
             </button>
-          </div>
-          <div className="function-card">
-            <span className="function-icon">🗺️</span>
-            <h4>View Issues Map</h4>
-            <p>See reported issue locations and their map positions.</p>
-            <button className="secondary-btn" type="button" onClick={() => setShowMapView((v) => !v)}>
-              {showMapView ? "Hide Map View" : "Open Map View"}
-            </button>
+            <div className="cd-tb-user" id="cd-profile">
+              <div className="cd-tb-avatar">{initials}</div>
+              <div>
+                <b>{profile.name}</b>
+                <span>Citizen Account</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Quick create form (CREATE) */}
-        {showNewForm && (
-          <form className="new-complaint-form" onSubmit={handleCreateComplaint}>
-            <h4>Register a New Issue</h4>
-            <div className="form-row">
-              <div className="form-field">
-                <label htmlFor="new-category">Category</label>
-                <input
-                  id="new-category"
-                  type="text"
-                  placeholder="e.g. Road Issues"
-                  value={newComplaint.category}
-                  onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="new-issue">Specific Issue</label>
-                <input
-                  id="new-issue"
-                  type="text"
-                  placeholder="e.g. Road Potholes"
-                  value={newComplaint.issue}
-                  onChange={(e) => setNewComplaint({ ...newComplaint, issue: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-field">
-                <label htmlFor="new-location">Location</label>
-                <input
-                  id="new-location"
-                  type="text"
-                  placeholder="Street, landmark or ward"
-                  value={newComplaint.location}
-                  onChange={(e) => setNewComplaint({ ...newComplaint, location: e.target.value })}
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="new-gps">Capture GPS</label>
-                <div className="gps-row">
-                  <input id="new-gps" type="text" placeholder="Not captured yet" value={newComplaint.gps} readOnly />
-                  <button className="secondary-btn small" type="button" onClick={captureGps}>
-                    {gpsBusy ? "Locating…" : "📍 Capture"}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="form-field">
-              <label htmlFor="new-description">Description</label>
-              <textarea
-                id="new-description"
-                rows="3"
-                placeholder="Describe the issue"
-                value={newComplaint.description}
-                onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })}
-                required
-              ></textarea>
-            </div>
-            <div className="form-field">
-              <label htmlFor="new-photo">Upload Photo</label>
-              <label className="photo-upload">
-                {newComplaint.photo ? `📷 ${newComplaint.photo}` : "📷 Click to attach a photo"}
-                <input
-                  id="new-photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setNewComplaint({ ...newComplaint, photo: e.target.files?.[0]?.name || "" })}
-                />
-              </label>
-            </div>
-            <div className="form-actions">
-              <button className="secondary-btn" type="button" onClick={() => setShowNewForm(false)}>
-                Cancel
-              </button>
-              <button className="primary-btn" type="submit">
-                Submit Complaint <span>→</span>
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Issues Map (READ — grouped by location) */}
-        {showMapView && (
-          <div className="map-view">
-            <h4>Reported Issues Near {profile.ward}</h4>
-            <div className="map-grid">
-              {Object.entries(mapGroups).map(([location, items]) => (
-                <div className="map-ward-card" key={location}>
-                  <p className="map-ward-name">{location}</p>
-                  <div className="map-pins">
-                    {items.map((c) => (
-                      <span
-                        className="map-pin"
-                        key={c.id}
-                        style={{ background: colorForCategory(c.category) }}
-                        title={`${c.complaintNumber} — ${c.category}`}
-                      >
-                        📍
-                      </span>
-                    ))}
-                  </div>
-                  <span className="map-ward-count">
-                    {items.length} issue{items.length !== 1 ? "s" : ""} reported
-                  </span>
-                </div>
-              ))}
+        {/* CONTENT */}
+        <div className="cd-content">
+          <div className="cd-title-row">
+            <div>
+              <h1>Welcome back, {profile.name.split(" ")[0]}</h1>
+              <p>
+                {profile.ward} · Member since {profile.memberSince}
+              </p>
             </div>
           </div>
-        )}
-      </section>
 
-      {/* ================= MY ACTIVITY ================= */}
-      <section className="section" id="my-activity">
-        <div className="section-heading">
-          <p className="eyebrow">My Activity</p>
-          <h2>Reported issues & complaint history</h2>
-        </div>
-
-        <div className="activity-layout">
-          {/* Complaints list (READ / UPDATE / DELETE) */}
-          <div className="complaints-list">
-            {complaints.map((complaint) => (
-              <div
-                className={`complaint-card ${selectedId === complaint.id ? "active" : ""}`}
-                key={complaint.id}
-                onClick={() => setSelectedId(complaint.id)}
-              >
-                <div className="complaint-top">
-                  <span className="complaint-number">{complaint.complaintNumber}</span>
-                  <span className={`complaint-stage stage-${complaint.stage}`}>
-                    {lifecycleStages[complaint.stage]}
-                  </span>
-                </div>
-                <h4>{complaint.issue}</h4>
-                <p className="complaint-location">📍 {complaint.location || "Location pending"}</p>
-
-                {editingId === complaint.id ? (
-                  <div className="edit-block" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="text"
-                      className="edit-location-input"
-                      value={editLocation}
-                      onChange={(e) => setEditLocation(e.target.value)}
-                      placeholder="Location"
-                    />
-                    <textarea
-                      rows="3"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                    ></textarea>
-                    <div className="edit-actions">
-                      <button
-                        className="secondary-btn"
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="primary-btn small"
-                        type="button"
-                        onClick={() => saveEdit(complaint.id)}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p>{complaint.description}</p>
-                )}
-
-                <div className="complaint-footer">
-                  <span className="complaint-date">{complaint.date}</span>
-                  <div className="complaint-actions" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="icon-btn"
-                      type="button"
-                      onClick={() => startEdit(complaint)}
-                      title="Update"
-                    >
-                      ✏️
-                    </button>
-                    {complaint.stage === 0 && (
-                      <button
-                        className="icon-btn danger"
-                        type="button"
-                        onClick={() => setConfirmDeleteId(complaint.id)}
-                        title="Delete"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {confirmDeleteId === complaint.id && (
-                  <div className="delete-confirm" onClick={(e) => e.stopPropagation()}>
-                    <span>Delete this complaint?</span>
-                    <div>
-                      <button
-                        className="secondary-btn small"
-                        type="button"
-                        onClick={() => setConfirmDeleteId(null)}
-                      >
-                        No
-                      </button>
-                      <button
-                        className="danger-btn small"
-                        type="button"
-                        onClick={() => handleDelete(complaint.id)}
-                      >
-                        Yes, Delete
-                      </button>
-                    </div>
-                  </div>
-                )}
+          {/* STAT CARDS — Dashboard Overview */}
+          <div className="cd-stats-row">
+            {overviewStats.map((stat, i) => (
+              <div className={`cd-stat-card tone-${stat.tone}`} key={i}>
+                <div className="cd-stat-ic">{stat.icon}</div>
+                <div className="cd-stat-num">{stat.value}</div>
+                <div className="cd-stat-label">{stat.label}</div>
               </div>
             ))}
           </div>
 
-          {/* Lifecycle + Notifications */}
-          <div className="activity-side">
-            <div className="lifecycle-card">
-              <p className="eyebrow">Complaint Lifecycle</p>
-              <h4>{selectedComplaint.complaintNumber}</h4>
-              <p className="lifecycle-location">📍 {selectedComplaint.location || "Location pending"}</p>
-              <div className="lifecycle-track-vertical">
-                {lifecycleStages.map((stage, i) => (
-                  <div
-                    className={`lifecycle-step-v ${
-                      i < selectedComplaint.stage
-                        ? "done"
-                        : i === selectedComplaint.stage
-                        ? "now"
-                        : "pend"
-                    }`}
-                    key={i}
-                  >
-                    <span className="lifecycle-dot-v"></span>
-                    <span>{stage}</span>
+          {/* TWO COLUMN: TABLE + LIFECYCLE/NOTIFICATIONS */}
+          <div className="cd-dash-grid" id="my-activity">
+            {/* LEFT: My Reported Issues (READ / UPDATE / DELETE) */}
+            <div className="cd-panel">
+              <div className="cd-panel-head">
+                <h3>My Reported Issues</h3>
+                <span className="cd-panel-link">{complaints.length} total</span>
+              </div>
+
+              <div className="cd-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Complaint</th>
+                      <th>Category</th>
+                      <th>Location</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {complaints.map((c) => (
+                      <React.Fragment key={c.id}>
+                        <tr
+                          className={selectedId === c.id ? "cd-row-active" : ""}
+                          onClick={() => setSelectedId(c.id)}
+                        >
+                          <td className="cd-mono">{c.complaintNumber}</td>
+                          <td>
+                            <div className="cd-cat">
+                              <span className="cd-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
+                              {c.issue}
+                            </div>
+                          </td>
+                          <td>{c.location || "Location pending"}</td>
+                          <td>
+                            <span className={`cd-badge cd-badge-${stageTone[c.stage]}`}>
+                              {lifecycleStages[c.stage]}
+                            </span>
+                          </td>
+                          <td className="cd-mono">{c.date}</td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <div className="cd-row-actions">
+                              <button className="cd-icon-btn small" type="button" onClick={() => startEdit(c)} title="Update">
+                                ✏️
+                              </button>
+                              {c.stage === 0 && (
+                                <button
+                                  className="cd-icon-btn small danger"
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(c.id)}
+                                  title="Delete"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+
+                        {editingId === c.id && (
+                          <tr className="cd-edit-row">
+                            <td colSpan={6}>
+                              <div className="cd-edit-block">
+                                <input
+                                  type="text"
+                                  value={editLocation}
+                                  onChange={(e) => setEditLocation(e.target.value)}
+                                  placeholder="Location"
+                                />
+                                <textarea rows="2" value={editText} onChange={(e) => setEditText(e.target.value)}></textarea>
+                                <div className="cd-edit-actions">
+                                  <button className="cd-btn-outline" type="button" onClick={() => setEditingId(null)}>
+                                    Cancel
+                                  </button>
+                                  <button className="cd-btn-primary small" type="button" onClick={() => saveEdit(c.id)}>
+                                    Save
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+
+                        {confirmDeleteId === c.id && (
+                          <tr className="cd-edit-row">
+                            <td colSpan={6}>
+                              <div className="cd-delete-confirm">
+                                <span>Delete this complaint?</span>
+                                <div>
+                                  <button className="cd-btn-outline small" type="button" onClick={() => setConfirmDeleteId(null)}>
+                                    No
+                                  </button>
+                                  <button className="cd-btn-danger small" type="button" onClick={() => handleDelete(c.id)}>
+                                    Yes, Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* RIGHT: Lifecycle + Notifications */}
+            <div className="cd-side-col">
+              <div className="cd-panel">
+                <div className="cd-panel-head">
+                  <h3>Complaint Lifecycle</h3>
+                  <span className="cd-mono cd-faint">{selectedComplaint.complaintNumber}</span>
+                </div>
+                <p className="cd-lifecycle-location">📍 {selectedComplaint.location || "Location pending"}</p>
+                <div className="cd-lifecycle">
+                  {lifecycleStages.map((stage, i) => (
+                    <div className="cd-lc-item" key={i}>
+                      <div
+                        className={`cd-lc-dot ${
+                          i < selectedComplaint.stage ? "done" : i === selectedComplaint.stage ? "now" : "pend"
+                        }`}
+                      ></div>
+                      <div className="cd-lc-body">
+                        <b>{stage}</b>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="cd-panel" id="notif-panel">
+                <div className="cd-panel-head">
+                  <h3>Notifications</h3>
+                  <span className="cd-panel-link">Mark all read</span>
+                </div>
+                <div className="cd-notif-list">
+                  {notifications.map((note, i) => (
+                    <div className="cd-notif-item" key={i}>
+                      <span className="cd-notif-dot"></span>
+                      <div>
+                        <b>{note.text}</b>
+                        <span>{note.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* NEW COMPLAINT FORM (CREATE) */}
+          {showNewForm && (
+            <div className="cd-panel cd-form-panel">
+              <div className="cd-panel-head">
+                <h3>Register a New Issue</h3>
+              </div>
+              <form className="cd-new-form" onSubmit={handleCreateComplaint}>
+                <div className="cd-form-row">
+                  <div className="cd-field">
+                    <label htmlFor="new-category">Category</label>
+                    <input
+                      id="new-category"
+                      type="text"
+                      placeholder="e.g. Road Issues"
+                      value={newComplaint.category}
+                      onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="cd-field">
+                    <label htmlFor="new-issue">Specific Issue</label>
+                    <input
+                      id="new-issue"
+                      type="text"
+                      placeholder="e.g. Road Potholes"
+                      value={newComplaint.issue}
+                      onChange={(e) => setNewComplaint({ ...newComplaint, issue: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="cd-form-row">
+                  <div className="cd-field">
+                    <label htmlFor="new-location">Location</label>
+                    <input
+                      id="new-location"
+                      type="text"
+                      placeholder="Street, landmark or ward"
+                      value={newComplaint.location}
+                      onChange={(e) => setNewComplaint({ ...newComplaint, location: e.target.value })}
+                    />
+                  </div>
+                  <div className="cd-field">
+                    <label htmlFor="new-gps">Capture GPS</label>
+                    <div className="cd-gps-row">
+                      <input id="new-gps" type="text" placeholder="Not captured yet" value={newComplaint.gps} readOnly />
+                      <button className="cd-btn-outline small" type="button" onClick={captureGps}>
+                        {gpsBusy ? "Locating…" : "📍 Capture"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="cd-field">
+                  <label htmlFor="new-description">Description</label>
+                  <textarea
+                    id="new-description"
+                    rows="3"
+                    placeholder="Describe the issue"
+                    value={newComplaint.description}
+                    onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })}
+                    required
+                  ></textarea>
+                </div>
+                <div className="cd-field">
+                  <label htmlFor="new-photo">Upload Photo</label>
+                  <label className="cd-photo-upload">
+                    {newComplaint.photo ? `📷 ${newComplaint.photo}` : "📷 Click to attach a photo"}
+                    <input
+                      id="new-photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setNewComplaint({ ...newComplaint, photo: e.target.files?.[0]?.name || "" })}
+                    />
+                  </label>
+                </div>
+                <div className="cd-form-actions">
+                  <button className="cd-btn-outline" type="button" onClick={() => setShowNewForm(false)}>
+                    Cancel
+                  </button>
+                  <button className="cd-btn-primary" type="submit">
+                    Submit Complaint →
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* ISSUES MAP (READ — grouped by location) */}
+          {showMapView && (
+            <div className="cd-panel cd-form-panel" id="map-section">
+              <div className="cd-panel-head">
+                <h3>Reported Issues Near {profile.ward}</h3>
+                <span className="cd-panel-link" onClick={() => setShowMapView(false)} style={{ cursor: "pointer" }}>
+                  Hide Map View
+                </span>
+              </div>
+              <div className="cd-map-grid">
+                {Object.entries(mapGroups).map(([location, items]) => (
+                  <div className="cd-map-ward-card" key={location}>
+                    <p className="cd-map-ward-name">{location}</p>
+                    <div className="cd-map-pins">
+                      {items.map((c) => (
+                        <span
+                          className="cd-map-pin"
+                          key={c.id}
+                          style={{ background: colorForCategory(c.category) }}
+                          title={`${c.complaintNumber} — ${c.category}`}
+                        >
+                          📍
+                        </span>
+                      ))}
+                    </div>
+                    <span className="cd-map-ward-count">
+                      {items.length} issue{items.length !== 1 ? "s" : ""} reported
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
+          )}
 
-            <div className="notifications-card">
-              <p className="eyebrow">Notifications</p>
-              <ul className="notification-list">
-                {notifications.map((note, i) => (
-                  <li key={i}>
-                    <span className="notification-dot"></span>
-                    <div>
-                      <p>{note.text}</p>
-                      <span className="notification-time">{note.time}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {/* QUICK ACTIONS */}
+          <div className="cd-quick-row">
+            <button className="cd-quick-card" type="button" onClick={() => setShowNewForm(true)}>
+              <div className="cd-quick-ic navy">📍</div>
+              <div>
+                <h5>Report a New Issue</h5>
+                <p>Photo, location & description</p>
+              </div>
+            </button>
+            <button className="cd-quick-card" type="button" onClick={() => scrollTo("my-activity")}>
+              <div className="cd-quick-ic saffron">🔍</div>
+              <div>
+                <h5>Track a Complaint</h5>
+                <p>Check status by complaint ID</p>
+              </div>
+            </button>
+            <button
+              className="cd-quick-card"
+              type="button"
+              onClick={() => {
+                setShowMapView(true);
+                scrollTo("map-section");
+              }}
+            >
+              <div className="cd-quick-ic green">🗺️</div>
+              <div>
+                <h5>View Issues Map</h5>
+                <p>See reports near your ward</p>
+              </div>
+            </button>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 };
 
