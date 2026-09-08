@@ -3,15 +3,23 @@ const router = express.Router();
 
 const User = require("../models/user");
 
+const allowedRoles = ["citizen", "staff", "verifier", "admin"];
+
 router.post("/signup", async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const role = "citizen";
+        const { name, email, password, role } = req.body;
 
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !role) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
+            });
+        }
+
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role selected"
             });
         }
 

@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import "./dashboard.css";
 import CitizenDashboard from "../dashboard/citizendashboard";
+import StaffDashboard from "../dashboard/staffdashboard";
+import AdminDashboard from "../dashboard/admindashboard";
+import VerifierDashboard from "../dashboard/verifierdashboard";
 
 const roles = [
   { value: "admin", label: "Admin" },
@@ -243,9 +246,21 @@ const Dashboard = () => {
     );
   }
 
-  // Citizens get their own dedicated dashboard component.
+  // Each role gets its own dedicated dashboard component.
   if (activeRole === "citizen") {
     return <CitizenDashboard />;
+  }
+
+  if (activeRole === "staff") {
+    return <StaffDashboard />;
+  }
+
+  if (activeRole === "admin") {
+    return <AdminDashboard />;
+  }
+
+  if (activeRole === "verifier") {
+    return <VerifierDashboard />;
   }
 
   return (
