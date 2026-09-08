@@ -10,6 +10,10 @@ const roles = [
 
 const authFlowSteps = ["Enter Credentials", "Authentication", "Check Role", "Dashboard"];
 
+// Base URL for your backend API. Update this to match your server
+// (e.g. an Express server connected to MongoDB).
+const API_BASE_URL = "http://localhost:3200/api/auth";
+
 const Login = () => {
   const [activeTab, setActiveTab] = useState("login");
 
@@ -19,6 +23,8 @@ const Login = () => {
     password: "",
   });
   const [loginStatus, setLoginStatus] = useState(null); // null | "success" | "failed"
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const [signupData, setSignupData] = useState({
     role: "citizen",
@@ -28,11 +34,15 @@ const Login = () => {
     confirmPassword: "",
   });
   const [signupStatus, setSignupStatus] = useState(null); // null | "success" | "failed"
+  const [signupError, setSignupError] = useState("");
+  const [signupLoading, setSignupLoading] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setLoginStatus(null);
     setSignupStatus(null);
+    setLoginError("");
+    setSignupError("");
   };
 
   const handleLoginChange = (e) => {
@@ -43,26 +53,70 @@ const Login = () => {
     setSignupData({ ...signupData, [e.target.name]: e.target.value });
   };
 
-  const handleLoginSubmit = (e) => {
+  // Calls your backend, which should authenticate against MongoDB
+  // and return { success: true, ... } or { success: false, message: "..." }.
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (loginData.identifier.trim() && loginData.password.trim().length >= 4) {
-      setLoginStatus("success");
-    } else {
+    setLoginError("");
+    setLoginLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setLoginStatus("success");
+      } else {
+        setLoginError(data.message || "Incorrect username or password. Please try again.");
+        setLoginStatus("failed");
+      }
+    } catch (err) {
+      setLoginError("Unable to reach the server. Please try again.");
       setLoginStatus("failed");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  const handleSignupSubmit = (e) => {
+  // Calls your backend, which should create a new user document in MongoDB
+  // and return { success: true, ... } or { success: false, message: "..." }.
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    if (
-      signupData.name.trim() &&
-      signupData.email.trim() &&
-      signupData.password.trim().length >= 4 &&
-      signupData.password === signupData.confirmPassword
-    ) {
-      setSignupStatus("success");
-    } else {
+    setSignupError("");
+
+    if (signupData.password !== signupData.confirmPassword) {
+      setSignupError("Passwords do not match.");
       setSignupStatus("failed");
+      return;
+    }
+
+    setSignupLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signupData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSignupStatus("success");
+      } else {
+        setSignupError(data.message || "Something went wrong. Please check your details and try again.");
+        setSignupStatus("failed");
+      }
+    } catch (err) {
+      setSignupError("Unable to reach the server. Please try again.");
+      setSignupStatus("failed");
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -130,7 +184,7 @@ const Login = () => {
                 <form className="auth-form" onSubmit={handleLoginSubmit}>
                   {loginStatus === "failed" && (
                     <div className="error-banner">
-                      Incorrect username or password. Please try again.
+                      {loginError || "Incorrect username or password. Please try again."}
                     </div>
                   )}
 
@@ -176,8 +230,8 @@ const Login = () => {
                     />
                   </div>
 
-                  <button className="primary-btn" type="submit">
-                    Log In <span>→</span>
+                  <button className="primary-btn" type="submit" disabled={loginLoading}>
+                    {loginLoading ? "Logging in..." : <>Log In <span>→</span></>}
                   </button>
 
                   <p className="auth-switch">
@@ -221,8 +275,7 @@ const Login = () => {
                 <form className="auth-form" onSubmit={handleSignupSubmit}>
                   {signupStatus === "failed" && (
                     <div className="error-banner">
-                      Please fill all fields correctly — passwords must match
-                      and be at least 4 characters.
+                      {signupError || "Please fill all fields correctly — passwords must match and be at least 4 characters."}
                     </div>
                   )}
 
@@ -295,8 +348,8 @@ const Login = () => {
                     </div>
                   </div>
 
-                  <button className="primary-btn" type="submit">
-                    Create Account <span>→</span>
+                  <button className="primary-btn" type="submit" disabled={signupLoading}>
+                    {signupLoading ? "Creating account..." : <>Create Account <span>→</span></>}
                   </button>
 
                   <p className="auth-switch">

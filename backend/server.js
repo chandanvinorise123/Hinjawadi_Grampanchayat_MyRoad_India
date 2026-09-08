@@ -1,27 +1,22 @@
-const express = require("express");
-
-const cors = require("cors");
-
 const dotenv = require("dotenv");
+dotenv.config();
 
+const express = require("express");
+const cors = require("cors");
 const connectDB = require("./config/db.js");
-
-//const routes = require("./routes/routes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-dotenv.config();
-
 // Middleware
 app.use(cors());
-
 app.use(express.json());
 
 // Database Connection
 connectDB();
 
 // Routes
-//app.use("/api", routes);
+app.use("/api/auth", authRoutes);
 
 // Default Route
 app.get("/", (req, res) => {
@@ -29,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 // Server Start
-app.listen(3200, () => {
-    console.log("server running on port 3200");
+const PORT = process.env.PORT || 3200;
+app.listen(PORT, () => {
+    console.log(`server running on port ${PORT}`);
 });
