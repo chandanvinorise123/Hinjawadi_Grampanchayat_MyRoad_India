@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./dashboard.css";
+import CitizenDashboard from "./dashboard/citizendashboard";
 
 const roles = [
   { value: "admin", label: "Admin" },
@@ -101,23 +102,61 @@ const roleCopy = {
   },
 };
 
+// Base URL for your backend API. Update this to match your server
+// (e.g. an Express server connected to MongoDB).
+const API_BASE_URL = "http://localhost:3200/api/auth";
+
 const Dashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [credentials, setCredentials] = useState({
-    username: "",
+    identifier: "",
     password: "",
     role: "citizen",
   });
   const [activeRole, setActiveRole] = useState("citizen");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = (e) => {
+  // Calls your backend, which authenticates against MongoDB
+  // and returns { success: true, user: { role, name, email, ... } }
+  // or { success: false, message: "..." }.
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setActiveRole(credentials.role);
-    setIsAuthenticated(true);
+    setLoginError("");
+    setLoginLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Trust the role returned by the backend, not the dropdown value,
+        // since the server is the source of truth for who this user is.
+        setActiveRole(data.user.role);
+        setIsAuthenticated(true);
+      } else {
+        setLoginError(data.message || "Incorrect username or password. Please try again.");
+      }
+    } catch (err) {
+      setLoginError("Unable to reach the server. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCredentials({ identifier: "", password: "", role: "citizen" });
+    setLoginError("");
   };
 
   const copy = roleCopy[activeRole];
@@ -150,6 +189,9 @@ const Dashboard = () => {
               <p className="eyebrow">Login / Authentication</p>
               <h2>Sign in to continue</h2>
             </div>
+
+            {loginError && <div className="error-banner">{loginError}</div>}
+
             <form className="login-form" onSubmit={handleLogin}>
               <div className="form-field">
                 <label htmlFor="role">Login As</label>
@@ -168,13 +210,13 @@ const Dashboard = () => {
                 </select>
               </div>
               <div className="form-field">
-                <label htmlFor="username">Username</label>
+                <label htmlFor="identifier">Username / Email</label>
                 <input
-                  id="username"
-                  name="username"
+                  id="identifier"
+                  name="identifier"
                   type="text"
-                  placeholder="Enter your username"
-                  value={credentials.username}
+                  placeholder="Enter your registered email"
+                  value={credentials.identifier}
                   onChange={handleChange}
                   required
                 />
@@ -191,14 +233,19 @@ const Dashboard = () => {
                   required
                 />
               </div>
-              <button className="primary-btn" type="submit">
-                Log In <span>→</span>
+              <button className="primary-btn" type="submit" disabled={loginLoading}>
+                {loginLoading ? "Logging in..." : <>Log In <span>→</span></>}
               </button>
             </form>
           </div>
         </section>
       </main>
     );
+  }
+
+  // Citizens get their own dedicated dashboard component.
+  if (activeRole === "citizen") {
+    return <CitizenDashboard />;
   }
 
   return (
@@ -219,7 +266,7 @@ const Dashboard = () => {
         <button
           className="logout-btn"
           type="button"
-          onClick={() => setIsAuthenticated(false)}
+          onClick={handleLogout}
         >
           Log Out
         </button>
