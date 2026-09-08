@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./dashboard.css";
-import CitizenDashboard from "./dashboard/citizendashboard";
+import CitizenDashboard from "../dashboard/citizendashboard";
 
 const roles = [
   { value: "admin", label: "Admin" },
