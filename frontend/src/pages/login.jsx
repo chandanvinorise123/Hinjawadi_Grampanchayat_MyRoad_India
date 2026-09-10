@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./login.css";
+import { useNavigate } from "react-router-dom";
 
 const roles = [
   { value: "citizen", label: "Citizen", icon: "🧑" },
@@ -15,6 +16,8 @@ const authFlowSteps = ["Enter Credentials", "Authentication", "Check Role", "Das
 const API_BASE_URL = "http://localhost:3200/api/auth";
 
 const Login = () => {
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState("login");
 
   const [loginData, setLoginData] = useState({
@@ -71,6 +74,18 @@ const Login = () => {
 
       if (response.ok && data.success) {
         setLoginStatus("success");
+
+        // Save the logged-in user so Navbar (and other pages) can read it
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // Let Navbar know immediately that auth state changed
+        window.dispatchEvent(new Event("authChange"));
+
+        // Give the user a moment to see the "Authenticated" message,
+        // then redirect to Home
+        setTimeout(() => {
+          navigate("/");
+        }, 1200);
       } else {
         setLoginError(data.message || "Incorrect username or password. Please try again.");
         setLoginStatus("failed");
