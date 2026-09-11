@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./home.css";
 
 // ---- Hero background slider images (replace with your real assets) ----
@@ -77,6 +78,8 @@ const teamMembers = [
 ];
 
 const Home = () => {
+  const { t } = useTranslation();
+  
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tvPlaying, setTvPlaying] = useState(true);
   const videoRef = useRef(null);

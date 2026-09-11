@@ -1,0 +1,727 @@
+{
+  "topbar": {
+    "govService": "Government Digital Service · Gram Panchayat Portal",
+    "screenReader": "Screen Reader Access"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "issuesCategory": "Issues Category",
+    "aboutUs": "About Us",
+    "contactUs": "Contact Us",
+    "dashboard": "Dashboard",
+    "helpFaq": "Help / FAQ",
+    "login": "Login",
+    "reportIssue": "Report an Issue"
+  },
+  "footer": {
+    "description": "A digital public-service platform for reporting, tracking and resolving road & infrastructure issues within the Gram Panchayat.",
+    "badge": "Digital Public Service Platform",
+    "citizenServicesHeading": "Citizen Services",
+    "citizenServices": [
+      { "label": "Report an Issue" },
+      { "label": "Track Complaint" },
+      { "label": "Issues Map" },
+      { "label": "Road Safety" }
+    ],
+    "platformHeading": "Platform",
+    "platformLinks": [
+      { "label": "About" },
+      { "label": "How It Works" },
+      { "label": "FAQ" },
+      { "label": "Contact" }
+    ],
+    "legalHeading": "Legal",
+    "legalLinks": [
+      { "label": "Privacy Policy" },
+      { "label": "Accessibility" },
+      { "label": "Terms of Use" }
+    ],
+    "accessHeading": "Access",
+    "accessLinks": [
+      { "label": "System Login" },
+      { "label": "Staff Portal" },
+      { "label": "Admin Dashboard" }
+    ],
+    "copyright": "© 2026 MyRoad India · Gram Panchayat Digital Services",
+    "tagline": "Built for transparency, accountability & better roads."
+  },
+  "home": {
+    "badge": "Live Civic Reporting Network — Gram Panchayat",
+    "title1": "Report Road &",
+    "title2": "Public Infrastructure Issues",
+    "description": "Photograph the problem, share your location, and get a complaint number in seconds. Track every step — from verification to repair — until it's resolved.",
+    "reportBtn": "Report an Issue",
+    "trackBtn": "Track Complaint",
+    "issuesReported": "Issues reported",
+    "resolutionRate": "Resolution rate",
+    "avgTime": "Avg. resolution time",
+    "tvLive": "Live Preview",
+    "tvBrand": "MYROAD · DEMO",
+    "tvReporting": "Reporting a Pothole",
+    "tvComplaintId": "#MRI-2026-08341",
+    "tvStatus": "Under Repair",
+
+    "quickActionsLabel": "Citizen Services",
+    "quickActionsTitle": "What would you like to do?",
+    "quickActions": [
+      { "icon": "📍", "title": "Report an Issue", "desc": "Submit a photo, location & description" },
+      { "icon": "🔍", "title": "Track Complaint", "desc": "Check status with your complaint ID" },
+      { "icon": "🗺️", "title": "Issues on Map", "desc": "View reported issues near you" },
+      { "icon": "📷", "title": "Scan QR Code", "desc": "Report from a roadside QR sign" },
+      { "icon": "⚠️", "title": "Road Safety", "desc": "Guidelines & alerts for citizens" }
+    ],
+
+    "statsLabel": "Real-time · Updated every 5 minutes",
+    "statsTitle": "Live civic complaint statistics",
+    "liveStats": [
+      { "value": "17,438", "label": "Total Reported Issues", "trend": "+4.2%", "color": "blue" },
+      { "value": "1,742", "label": "Under Verification", "trend": "-1.1%", "color": "amber" },
+      { "value": "2,317", "label": "Action Required", "trend": "+2.6%", "color": "orange" },
+      { "value": "1,987", "label": "Under Repair", "trend": "+6.8%", "color": "saffron" },
+      { "value": "15,932", "label": "Resolved", "trend": "+9.3%", "color": "green" }
+    ],
+
+    "categoriesLabel": "Browse by Category",
+    "categoriesTitle": "What do you want to report?",
+    "viewIssues": "View Issues →",
+    "issuesSuffix": "issues",
+    "categories": [
+      { "icon": "🛣️", "title": "Road Issues", "desc": "Potholes, cracked surfaces, damaged shoulders.", "count": "4,812" },
+      { "icon": "🌊", "title": "Sewerage & Drainage", "desc": "Blocked drains, overflowing sewers.", "count": "2,145" },
+      { "icon": "💧", "title": "Drinking Water", "desc": "Pipeline leakage, contaminated supply.", "count": "1,760" },
+      { "icon": "💡", "title": "Streetlights", "desc": "Non-functional or flickering lights.", "count": "3,398" },
+      { "icon": "⚠️", "title": "Road Safety", "desc": "Missing signage, hazardous junctions.", "count": "1,204" },
+      { "icon": "🌉", "title": "Bridges & Culverts", "desc": "Structural damage, erosion.", "count": "419" }
+    ],
+
+    "stepsLabel": "Process",
+    "stepsTitle": "How it works",
+    "steps": [
+      { "num": "01", "title": "Report Issue", "desc": "Describe the problem with photos" },
+      { "num": "02", "title": "Capture Location", "desc": "GPS pinpoints the exact spot" },
+      { "num": "03", "title": "Verification", "desc": "Panchayat staff review the report" },
+      { "num": "04", "title": "Staff Assignment", "desc": "A field officer is assigned" },
+      { "num": "05", "title": "Repair & Evidence", "desc": "Work done, before/after logged" },
+      { "num": "06", "title": "Resolution & Closure", "desc": "Citizen confirms, complaint closes" }
+    ],
+
+    "trackTitle": "Track your complaint",
+    "trackDesc": "Enter your complaint number to see real-time progress.",
+    "trackPlaceholder": "Enter Complaint Number, e.g. MRI-2026-08341",
+    "trackStatusBtn": "Track Status",
+    "trackOnTrack": "On Track",
+    "timeline": [
+      { "label": "Complaint Registered", "time": "18 Aug, 10:42 AM", "state": "done" },
+      { "label": "Verified", "time": "18 Aug, 3:10 PM", "state": "done" },
+      { "label": "Assigned to Staff", "time": "19 Aug, 9:05 AM", "state": "done" },
+      { "label": "Repair Work in Progress", "time": "21 Aug, 11:20 AM", "state": "now" },
+      { "label": "Resolution Verified", "time": "Pending", "state": "pend" },
+      { "label": "Closed", "time": "Pending", "state": "pend" }
+    ],
+
+    "galleryLabel": "Infrastructure in Focus",
+    "galleryTitle": "Road Infrastructure Gallery",
+    "gallerySub": "A look at the national and regional road networks that connect our villages and cities.",
+    "gallery": [
+      { "caption": "National Highway Interchange" },
+      { "caption": "Expressway Flyover" },
+      { "caption": "Urban Cloverleaf Junction" },
+      { "caption": "Green Corridor Overpass" }
+    ],
+
+    "trustLabel": "Why MyRoad India",
+    "trustTitle": "Built for public trust",
+    "trustItems": [
+      { "icon": "👥", "title": "Citizen Participation", "desc": "Every resident can report and follow up." },
+      { "icon": "🔍", "title": "Transparent Tracking", "desc": "Full visibility from registration to closure." },
+      { "icon": "📍", "title": "GPS-Based Reporting", "desc": "Exact location tagging for field teams." },
+      { "icon": "📷", "title": "Digital Evidence", "desc": "Before/after photos verify every repair." },
+      { "icon": "✅", "title": "Accountable Resolution", "desc": "Named staff and timelines for closures." },
+      { "icon": "📊", "title": "Data-Driven Planning", "desc": "Ward-level analytics guide planning." }
+    ],
+
+    "teamLabel": "Local Governance",
+    "teamTitle": "Gram Panchayat Team",
+    "teamMembers": [
+      { "name": "Full Name", "role": "Sarpanch · Village Head" },
+      { "name": "Full Name", "role": "Gram Sevak · Secretary" }
+    ]
+  },
+  "services": {
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Services",
+    "eyebrow": "Citizen Service Hub",
+    "heroTitle": "Six core services, one connected system",
+    "heroLead": "From reporting an issue to seeing it resolved — every step of the MyRoad India platform runs through these six services.",
+
+    "coreServicesEyebrow": "Core Services",
+    "coreServicesTitle": "Everything the platform does, organized into 6 services",
+    "viewDetails": "View details →",
+    "viewingDetails": "Viewing details ↓",
+
+    "coreServices": [
+      {
+        "num": "01",
+        "icon": "📝",
+        "title": "Report & Register Issues",
+        "summary": "Report road and public infrastructure issues via website, mobile, or QR code.",
+        "features": [
+          "Select issue category",
+          "Add issue description",
+          "Upload photographs",
+          "Capture GPS location",
+          "Generate complaint number",
+          "QR-code-based registration",
+          "Mobile-based registration"
+        ]
+      },
+      {
+        "num": "02",
+        "icon": "🔍",
+        "title": "Complaint Tracking Service",
+        "summary": "Track any complaint end-to-end using its complaint number.",
+        "features": [
+          "Track using complaint number",
+          "View complaint status",
+          "View complaint history",
+          "View all registered complaints",
+          "Receive status update notifications",
+          "Follow complete complaint lifecycle"
+        ]
+      },
+      {
+        "num": "03",
+        "icon": "🗺️",
+        "title": "Location & Map Service",
+        "summary": "Every issue is pinned precisely — with priority-coded map markers.",
+        "features": [
+          "Automatic GPS location capture",
+          "Latitude & longitude recording",
+          "Exact issue location on map",
+          "View reported issues on map",
+          "Category/location-based identification",
+          "Criticality-based map indicators"
+        ]
+      },
+      {
+        "num": "04",
+        "icon": "🧰",
+        "title": "Field Staff Service",
+        "summary": "Tools for field officers to inspect, act on, and close assigned complaints.",
+        "features": [
+          "View assigned complaints",
+          "View complaint location",
+          "Conduct physical inspection",
+          "Upload site photographs",
+          "Record action taken",
+          "Update work status & remarks",
+          "Maintain before/after repair records"
+        ]
+      },
+      {
+        "num": "05",
+        "icon": "🛡️",
+        "title": "Admin & Complaint Management",
+        "summary": "Centralized oversight of every complaint, staff member, and category.",
+        "features": [
+          "Centralized administrative dashboard",
+          "View total, new & pending complaints",
+          "Verify complaints",
+          "Assign complaints to staff",
+          "Set complaint priority",
+          "Monitor progress by category/location",
+          "Manage complete complaint lifecycle"
+        ]
+      },
+      {
+        "num": "06",
+        "icon": "📊",
+        "title": "Reports, Notifications & Analytics",
+        "summary": "Stay informed at every step, and analyze trends across the system.",
+        "features": [
+          "Registration & verification notifications",
+          "Assignment & action-started alerts",
+          "Work-completed & resolution alerts",
+          "Daily, weekly & monthly reports",
+          "Category-wise & area-wise reports",
+          "Priority-wise & action-taken reports",
+          "Infrastructure issue analytics"
+        ]
+      }
+    ],
+
+    "detailEyebrow": "Service Detail",
+
+    "lifecycleEyebrow": "Complaint Lifecycle",
+    "lifecycleTitle": "Every complaint follows the same transparent path",
+    "lifecycleSteps": [
+      { "label": "Registered", "state": "done" },
+      { "label": "Verified", "state": "done" },
+      { "label": "Assigned", "state": "done" },
+      { "label": "Action", "state": "now" },
+      { "label": "Completed", "state": "pend" },
+      { "label": "Closed", "state": "pend" }
+    ],
+
+    "legendEyebrow": "Location & Map Service",
+    "legendTitle": "Priority-coded map markers",
+    "legendLead": "Every issue on the public map is color-coded by urgency, so citizens and staff can see what needs attention first.",
+    "priorityLegend": [
+      { "color": "red", "label": "Critical / Urgent" },
+      { "color": "orange", "label": "Action Required" },
+      { "color": "amber", "label": "Inspection Required" },
+      { "color": "green", "label": "Resolved" }
+    ],
+
+    "ctaTitle": "Ready to report an issue?",
+    "ctaDesc": "It takes less than two minutes — photo, location, and a few details.",
+    "ctaBtn": "Report an Issue"
+  },
+  "issueCategory": {
+    "breadcrumbHome": "Home",
+    "breadcrumbServices": "Services",
+    "breadcrumbCurrent": "Issue Category",
+    "eyebrow": "Report an Issue",
+    "heroTitle": "Select a category to report your issue",
+    "heroLead": "Choose the category that best matches the problem, then pick the specific issue to see guidance before you submit your report.",
+
+    "step1": "Step 1",
+    "step1Title": "Select the main issue category",
+    "viewSubIssues": "View sub-issues →",
+    "viewingSubIssues": "Viewing sub-issues ↓",
+
+    "categories": [
+      {
+        "num": "01",
+        "icon": "🛣️",
+        "title": "Road Issues",
+        "summary": "Potholes, cracks, and other problems affecting road surfaces.",
+        "issues": [
+          "Road Potholes", "Damaged Road", "Road Cracks", "Damaged Surface",
+          "Damaged Road Edges", "Waterlogging", "Uneven Surface", "Road Obstruction",
+          "Traffic Obstruction", "Accident-Prone Area", "Other Road Issue"
+        ]
+      },
+      {
+        "num": "02",
+        "icon": "🚰",
+        "title": "Sewerage & Drain Issues",
+        "summary": "Blocked drains, sewage overflow, and related infrastructure faults.",
+        "issues": [
+          "Sewerage Choked", "Broken Sewerage", "Improper Water Flow", "Sewage Overflow",
+          "Rainwater Waterlogging", "Drainage Issues", "Damaged Covers", "Damaged Culvert",
+          "Leaking Pipeline", "Cleaning Required", "Bad Odour / Mosquito",
+          "New Drain Required", "Broken Manhole"
+        ]
+      },
+      {
+        "num": "03",
+        "icon": "💧",
+        "title": "Drinking Water Issues",
+        "summary": "Supply, quality, and pipeline issues affecting drinking water access.",
+        "issues": [
+          "Pipeline Leakage", "New Pipeline", "Low Water Pressure", "Irregular Supply",
+          "Water Disruption", "Contaminated Water", "Bad Odour", "Broken Pipeline",
+          "No Tap Water", "Supply Timing", "Insufficient Supply",
+          "New Water Connection", "Damaged Public Tap", "Water Quality Testing"
+        ]
+      },
+      {
+        "num": "04",
+        "icon": "💡",
+        "title": "Streetlight Issues",
+        "summary": "Non-functional or damaged streetlights and related electrical faults.",
+        "issues": [
+          "Light Not Working", "Damaged Pole", "Broken Light",
+          "Missing Streetlight", "Electrical Issue", "Other Streetlight Issue"
+        ]
+      },
+      {
+        "num": "05",
+        "icon": "🚧",
+        "title": "Road Safety Issues",
+        "summary": "Signage, markings, and safety hazards along roads.",
+        "issues": [
+          "Damaged Signboards", "Missing Signboards", "Speed Breaker Issues",
+          "Road Marking Issues", "Pedestrian Signage", "Safety Barrier Issues",
+          "Dangerous Turn / Curve", "Accident-Prone Area", "Other Safety Issue"
+        ]
+      },
+      {
+        "num": "06",
+        "icon": "🌉",
+        "title": "Bridge & Culvert Issues",
+        "summary": "Structural and drainage issues affecting bridges and culverts.",
+        "issues": [
+          "Bridge Damage", "Culvert Damage", "Damaged Railing", "Water Flow Issues",
+          "Drainage Issues", "Obstruction Around Bridge/Culvert", "Other Bridge Issue"
+        ]
+      }
+    ],
+
+    "step2": "Step 2",
+    "step2Title": "Select a specific issue in {{category}}",
+
+    "step3": "Step 3",
+    "step3Title": "Issue information",
+    "issueNameLabel": "Issue Name",
+    "issueDescLabel": "Issue Description",
+    "issueDescText": "Provide a short description of the \"{{issue}}\" problem — what you observed, its extent, and how long it has persisted.",
+    "guidanceLabel": "Related Guidance",
+    "guidance": [
+      "Add clear photographs from more than one angle",
+      "Capture GPS location at the exact site",
+      "Mention nearby landmarks for easier identification"
+    ],
+
+    "ctaTitle": "Ready to report \"{{issue}}\"?",
+    "ctaDesc": "Confirm the category and issue, then continue to submit your report.",
+    "ctaBtn": "Continue to Report"
+  },
+   "aboutUs": {
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "About Us",
+    "eyebrow": "About MyRoad India",
+    "heroTitle": "A digital road & public infrastructure platform",
+    "heroLead": "MyRoad India connects citizens, panchayats, and field staff on one transparent system — turning every reported issue into a tracked, resolved outcome.",
+
+    "whoWeAreEyebrow": "Who We Are",
+    "introTitle": "About MyRoad India",
+    "introLead": "A digital platform built to give citizens a direct voice in the condition of their roads and public infrastructure — connecting reports to real, monitored action.",
+
+    "foundationEyebrow": "Our Foundation",
+    "foundationTitle": "Why the platform exists, and what it delivers",
+    "pillars": [
+      {
+        "num": "01",
+        "icon": "🎯",
+        "title": "Purpose",
+        "items": ["Citizen participation", "Identify issues", "Improve infrastructure", "Better planning"]
+      },
+      {
+        "num": "02",
+        "icon": "⚙️",
+        "title": "What We Do",
+        "items": ["Complaint Registration", "Location Mapping", "Staff Assignment", "Work Monitoring", "Resolution Tracking"]
+      },
+      {
+        "num": "03",
+        "icon": "✅",
+        "title": "Key Benefits",
+        "items": ["Transparency", "Faster Response", "Digital Records", "Better Monitoring", "Data & Analytics"]
+      }
+    ],
+
+    "howItWorksEyebrow": "How It Works",
+    "howItWorksTitle": "From citizen report to resolved issue",
+    "flowSteps": ["Citizen", "Panchayat", "Staff", "Resolution"],
+
+    "outcomeTitle": "Better road & public infrastructure",
+    "outcomeDesc": "Every complaint, every inspection, every resolution — building towards infrastructure the community can rely on.",
+    "ctaBtn": "Report an Issue"
+  },
+  "helpFaq": {
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Help / FAQ",
+    "eyebrow": "Help Center",
+    "heroTitle": "Frequently asked questions",
+    "heroLead": "Answers to common questions about reporting issues, tracking complaints, and using the MyRoad India mobile app.",
+
+    "faqEyebrow": "Frequently Asked Questions",
+    "faqTitle": "Browse by topic",
+
+    "faqCategories": [
+      {
+        "icon": "📝",
+        "title": "Report Issue Questions",
+        "questions": [
+          { "q": "How do I report a road or infrastructure issue?", "a": "Open the Report Issue section, select a category and specific issue, add a description and photographs, then submit — your location is captured automatically." },
+          { "q": "Can I report an issue without creating an account?", "a": "You can register a complaint using the QR-code or mobile-based registration flow; a complaint number is generated for you to track it afterward." },
+          { "q": "What details should I include in my report?", "a": "Include a clear description, at least one photograph, and make sure your device location is enabled so the issue is pinned accurately on the map." },
+          { "q": "Can I report more than one issue at a time?", "a": "Yes, each issue should be submitted as a separate report so it gets its own complaint number and can be tracked individually." }
+        ]
+      },
+      {
+        "icon": "🔍",
+        "title": "Track Complaint Questions",
+        "questions": [
+          { "q": "How do I track the status of my complaint?", "a": "Use your complaint number in the Track Complaint section to view its current status, history, and complete lifecycle." },
+          { "q": "What do the different complaint statuses mean?", "a": "Complaints move through Registered, Verified, Assigned, Action, Completed, and Closed — each stage reflects where your complaint is in the resolution process." },
+          { "q": "Will I be notified when my complaint status changes?", "a": "Yes, you'll receive notifications at registration, verification, assignment, and when the work is completed or resolved." },
+          { "q": "Where can I see all my registered complaints?", "a": "All complaints you've submitted are listed together in the tracking section, along with their current status and location." }
+        ]
+      },
+      {
+        "icon": "📱",
+        "title": "Mobile App Questions",
+        "questions": [
+          { "q": "Is MyRoad India available as a mobile app?", "a": "Yes, issues can be reported and tracked directly through the mobile-based registration flow in addition to the website." },
+          { "q": "Can I scan a QR code to report an issue?", "a": "Yes, QR-code-based registration lets you report an issue quickly by scanning a code at the location of the problem." },
+          { "q": "Does the app work without an internet connection?", "a": "An active connection is needed to submit a report and capture your GPS location and photographs accurately." },
+          { "q": "Can field staff use the same app to update complaints?", "a": "Field staff use the same platform to view assigned complaints, upload site photographs, and update work status and remarks." }
+        ]
+      }
+    ],
+
+    "guidanceEyebrow": "Citizen Guidance",
+    "guidanceTitle": "Quick reference for using the platform",
+    "citizenGuidance": [
+      { "num": "01", "icon": "📝", "title": "How to Report Issue", "summary": "Select a category, add a description and photos, then submit your report." },
+      { "num": "02", "icon": "📊", "title": "Complaint Status", "summary": "Follow your complaint through Registered, Verified, Assigned, Action, and Closed." },
+      { "num": "03", "icon": "📍", "title": "Location / Photo", "summary": "Enable GPS and attach clear photographs so your issue is pinned accurately." },
+      { "num": "04", "icon": "🔢", "title": "Complaint Number", "summary": "Save your complaint number to track status and history at any time." }
+    ],
+
+    "stillNeedHelp": "Still need help?",
+    "stillNeedHelpDesc": "Reach out to our support team for anything not covered here.",
+    "contactBtn": "Contact Us"
+  },
+  "contactUs": {
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Contact Us",
+    "eyebrow": "Get in Touch",
+    "heroTitle": "We're here to help you",
+    "heroLead": "Reach out to the Gram Panchayat and MyRoad India team for queries, project information, or assistance with a complaint.",
+
+    "contactInfoEyebrow": "Contact Information",
+    "contactInfoTitle": "Reach the right office for your query",
+    "contactDetails": [
+      { "icon": "🏛️", "label": "Gram Panchayat", "value": "Office of the Gram Panchayat, Local Administration" },
+      { "icon": "🛣️", "label": "MyRoad India", "value": "Digital Road & Public Infrastructure Platform" },
+      { "icon": "📞", "label": "Contact Details", "value": "Phone, email & office hours for citizen assistance" }
+    ],
+
+    "supportEyebrow": "Citizen Support",
+    "supportTitle": "What can we help you with?",
+    "supportOptions": [
+      { "num": "01", "icon": "💬", "title": "General Queries", "summary": "Questions about the platform, services, or how the system works." },
+      { "num": "02", "icon": "📋", "title": "Project Information", "summary": "Details on ongoing infrastructure projects and their status." },
+      { "num": "03", "icon": "🛠️", "title": "Complaint Assistance", "summary": "Help with reporting, tracking, or resolving a registered complaint." }
+    ],
+
+    "formEyebrow": "Contact / Support Request",
+    "formTitle": "Send us your message",
+
+    "responseTitle": "Response / Help",
+    "responseMessage": "Thank you for reaching out. Your request has been received — our team will get back to you shortly.",
+    "sendAnotherBtn": "Send another message",
+
+    "nameLabel": "Full Name",
+    "namePlaceholder": "Enter your name",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "What is this regarding?",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Describe your query or request in detail",
+    "submitBtn": "Submit Request"
+  },
+    "dashboard": {
+    "roles": [
+      { "value": "admin", "label": "Admin" },
+      { "value": "staff", "label": "Staff" },
+      { "value": "verifier", "label": "Verifier" },
+      { "value": "citizen", "label": "Citizen" }
+    ],
+
+    "roleStatsLabels": {
+      "admin": ["Total Complaints", "New Complaints", "Pending", "Under Verification", "Under Action", "Resolved", "Critical"],
+      "staff": ["Assigned to Me", "Under Action", "Resolved by Me", "Critical"],
+      "verifier": ["Pending Verification", "Verified Today", "Sent Back", "Escalated"],
+      "citizen": ["My Complaints", "Pending", "In Progress", "Resolved"]
+    },
+
+    "issueCategoryLabels": ["Road Issues", "Sewerage Issues", "Water Issues", "Streetlight Issues", "Safety Issues", "Bridge/Culvert Issues"],
+    "areaLabels": ["Ward 1 — North Zone", "Ward 2 — Market Road", "Ward 3 — Riverside", "Ward 4 — Highway Belt", "Ward 5 — South Zone"],
+
+    "lifecycleSteps": [
+      { "label": "Registered", "state": "done" },
+      { "label": "Verified", "state": "done" },
+      { "label": "Assigned", "state": "done" },
+      { "label": "Action", "state": "now" },
+      { "label": "Work Completed", "state": "pend" },
+      { "label": "Verified", "state": "pend" },
+      { "label": "Closed", "state": "pend" }
+    ],
+
+    "reportCards": [
+      { "icon": "📅", "title": "Daily / Weekly / Monthly Reports", "summary": "Scheduled snapshots of complaint activity across all wards." },
+      { "icon": "📌", "title": "Pending / Resolved", "summary": "Live split of open versus closed complaints for quick review." },
+      { "icon": "🗂️", "title": "Category-wise Reports", "summary": "Breakdown of complaints by issue category over time." },
+      { "icon": "📍", "title": "Area-wise Reports", "summary": "Complaint volume and resolution rate by location." },
+      { "icon": "🚦", "title": "Priority-wise Reports", "summary": "Critical, urgent, and routine complaints tracked separately." },
+      { "icon": "🛠️", "title": "Action / Work Progress", "summary": "Field staff activity and status of ongoing repair work." }
+    ],
+
+    "roleCopy": {
+      "admin": { "eyebrow": "Dashboard Overview", "heading": "Complaint management & analytics", "lead": "A real-time view of every complaint, category, and area across the MyRoad India platform.", "statsHeading": "Overview at a glance" },
+      "staff": { "eyebrow": "Staff Dashboard", "heading": "Your assigned complaints", "lead": "Track complaints assigned to you, update work status, and monitor resolution progress.", "statsHeading": "Your work at a glance" },
+      "verifier": { "eyebrow": "Verifier Dashboard", "heading": "Complaint verification queue", "lead": "Review newly registered complaints, verify details, and route them for assignment.", "statsHeading": "Verification at a glance" },
+      "citizen": { "eyebrow": "Citizen Dashboard", "heading": "Your reported complaints", "lead": "Track the status of every issue you've reported, from registration to resolution.", "statsHeading": "Your complaints at a glance" }
+    },
+
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Dashboard",
+    "loginEyebrow": "Login",
+    "loginTitle": "MyRoad India Dashboard",
+    "loginLead": "Sign in with your credentials to view complaints, analytics, and reports relevant to your role.",
+    "loginFormEyebrow": "Login / Authentication",
+    "loginFormTitle": "Sign in to continue",
+    "loginAsLabel": "Login As",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password",
+    "logInBtn": "Log In",
+    "logOutBtn": "Log Out",
+
+    "complaintManagementEyebrow": "Complaint Management",
+    "categoryAnalyticsEyebrow": "Issue Category Analytics",
+    "categoryAnalyticsTitle": "Complaints by category",
+    "areaAnalyticsEyebrow": "Area / Location Analytics",
+    "areaAnalyticsTitle": "Area-wise complaints",
+    "mapNote": "📍 Complaints also plotted on the live map view",
+
+    "statusMonitoringEyebrow": "Complaint Status Monitoring",
+    "statusMonitoringTitle": "Full lifecycle, tracked end-to-end",
+
+    "reportsEyebrow": "Reports & Analytics",
+    "reportsTitle": "Generate and review reports"
+  },
+   "login": {
+    "roles": [
+      { "value": "citizen", "label": "Citizen", "icon": "🧑" },
+      { "value": "staff", "label": "Staff", "icon": "🧰" },
+      { "value": "verifier", "label": "Verifier", "icon": "🔍" },
+      { "value": "admin", "label": "Admin", "icon": "🛡️" }
+    ],
+    "authFlowSteps": ["Enter Credentials", "Authentication", "Check Role", "Dashboard"],
+    "stats": [
+      { "value": "17,438", "label": "Issues Reported" },
+      { "value": "91.4%", "label": "Resolution Rate" },
+      { "value": "4.2 days", "label": "Avg. Resolve Time" }
+    ],
+
+    "heroHeadline": "Join thousands of citizens making their ward's roads safer — one report at a time.",
+
+    "loginTab": "Login",
+    "signupTab": "Sign Up",
+
+    "loginSuccessTitle": "Authenticated as {{role}}",
+    "loginSuccessDesc": "Login successful. Redirecting you to the {{role}} Dashboard...",
+    "backToLoginBtn": "Back to Login",
+
+    "welcomeBack": "Welcome back",
+    "loginSubtitle": "Log in to report and track road infrastructure issues.",
+    "loginErrorMessage": "Incorrect username or password. Please try again.",
+
+    "loginAsLabel": "Login As",
+    "identifierLabel": "Username / Email",
+    "identifierPlaceholder": "Enter your username or email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "showBtn": "Show",
+    "hideBtn": "Hide",
+    "logInBtn": "Log In",
+
+    "noAccountText": "Don't have an account?",
+    "signUpHereBtn": "Sign up here",
+
+    "signupSuccessTitle": "Account created as {{role}}",
+    "signupSuccessDesc": "Your account has been registered. You can now log in to access your {{role}} Dashboard.",
+    "goToLoginBtn": "Go to Login",
+
+    "createAccountTitle": "Create your account",
+    "signupSubtitle": "Register to report and track road infrastructure issues.",
+    "signupErrorMessage": "Please fill all fields correctly — passwords must match and be at least 4 characters.",
+
+    "registerAsLabel": "Register As",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "you@example.com",
+    "createPasswordPlaceholder": "Create a password",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter your password",
+
+    "termsAgree": "I agree to the",
+    "termsOfUse": "Terms of Use",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+
+    "createAccountBtn": "Create Account",
+    "alreadyHaveAccountText": "Already have an account?",
+    "logInHereBtn": "Log in here",
+
+    "howLoginWorksEyebrow": "How Login Works",
+    "howLoginWorksTitle": "From credentials to your dashboard",
+
+    "failedTitle": "Failed",
+    "failedDesc": "Incorrect credentials show an error message to try again.",
+    "successTitle": "Success",
+    "successDesc": "Your role is checked and you're sent to the right dashboard.",
+    "dashboardLabel": "Dashboard"
+  },
+  "report": {
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Report an Issue",
+    "eyebrow": "Citizen Reporting",
+    "heroTitle": "Report an issue in a few simple steps",
+    "heroLead": "Select a category, describe the problem, mark its location, and attach a photo — we'll take it from there.",
+
+    "stepLabels": ["Select Category", "Description", "Location", "Photograph", "Review", "Submit"],
+
+    "categories": [
+      { "title": "Road Issues", "icon": "🛣️", "issues": ["Road Potholes", "Damaged Road", "Road Cracks", "Waterlogging", "Other Road Issue"] },
+      { "title": "Sewerage & Drain Issues", "icon": "🚰", "issues": ["Sewerage Choked", "Broken Sewerage", "Sewage Overflow", "Broken Manhole"] },
+      { "title": "Drinking Water Issues", "icon": "💧", "issues": ["Pipeline Leakage", "Low Water Pressure", "Contaminated Water", "No Tap Water"] },
+      { "title": "Streetlight Issues", "icon": "💡", "issues": ["Light Not Working", "Damaged Pole", "Broken Light", "Missing Streetlight"] },
+      { "title": "Road Safety Issues", "icon": "🚧", "issues": ["Damaged Signboards", "Speed Breaker Issues", "Dangerous Turn / Curve"] },
+      { "title": "Bridge & Culvert Issues", "icon": "🌉", "issues": ["Bridge Damage", "Culvert Damage", "Damaged Railing"] }
+    ],
+
+    "step1Title": "Select Category",
+    "selectIssueSubheading": "Select Specific Issue",
+
+    "step2Title": "Enter Description",
+    "descriptionLabel": "Describe the issue",
+    "descriptionPlaceholder": "What is the problem, how severe is it, and how long has it persisted?",
+
+    "step3Title": "Capture Location",
+    "locationNote": "Use GPS for accuracy, or enter the location manually.",
+    "captureGpsBtn": "📍 Capture GPS Location",
+    "locationLoading": "Fetching your current location...",
+    "locationCaptured": "Location captured: {{lat}}, {{lng}}",
+    "locationError": "Couldn't fetch GPS location — please enter the address manually below.",
+    "addressLabel": "Address / Landmark (Manual Entry)",
+    "addressPlaceholder": "e.g. Near Gram Panchayat Office, Main Road",
+
+    "step4Title": "Upload Photograph / Media",
+    "uploadText": "Click to upload photos",
+
+    "step5Title": "Review Complaint",
+    "reviewCategoryLabel": "Category",
+    "reviewIssueLabel": "Specific Issue",
+    "reviewDescLabel": "Description",
+    "reviewDescEmpty": "No description provided",
+    "reviewLocationLabel": "Location",
+    "reviewLocationEmpty": "Not provided",
+    "reviewPhotosLabel": "Photographs",
+    "reviewPhotosCount": "{{count}} photo(s) attached",
+    "reviewPhotosEmpty": "None attached",
+
+    "step6Title": "Submit Complaint",
+    "step6Note": "Everything looks good? Submit your complaint to generate a complaint number you can use to track it.",
+    "submitBtn": "Submit Complaint",
+
+    "backBtn": "← Back",
+    "continueBtn": "Continue",
+
+    "complaintNumberLabel": "Complaint Number",
+    "resultNote": "Your complaint has been registered successfully. Save this number to track its status anytime.",
+    "trackComplaintBtn": "Track Complaint",
+    "reportAnotherBtn": "Report Another Issue"
+  }
+  
+}

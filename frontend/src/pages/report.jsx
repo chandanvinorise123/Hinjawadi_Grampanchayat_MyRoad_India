@@ -4,76 +4,61 @@ import "./report.css";
 const categories = [
   {
     title: "Road Issues",
-    icon: "🛣️",
     issues: ["Road Potholes", "Damaged Road", "Road Cracks", "Waterlogging", "Other Road Issue"],
   },
   {
     title: "Sewerage & Drain Issues",
-    icon: "🚰",
     issues: ["Sewerage Choked", "Broken Sewerage", "Sewage Overflow", "Broken Manhole"],
   },
   {
     title: "Drinking Water Issues",
-    icon: "💧",
     issues: ["Pipeline Leakage", "Low Water Pressure", "Contaminated Water", "No Tap Water"],
   },
   {
     title: "Streetlight Issues",
-    icon: "💡",
     issues: ["Light Not Working", "Damaged Pole", "Broken Light", "Missing Streetlight"],
   },
   {
     title: "Road Safety Issues",
-    icon: "🚧",
     issues: ["Damaged Signboards", "Speed Breaker Issues", "Dangerous Turn / Curve"],
   },
   {
     title: "Bridge & Culvert Issues",
-    icon: "🌉",
     issues: ["Bridge Damage", "Culvert Damage", "Damaged Railing"],
   },
 ];
 
-const stepLabels = [
-  "Select Category",
-  "Description",
-  "Location",
-  "Photograph",
-  "Review",
-  "Submit",
-];
-
 const ReportIssue = () => {
-  const [currentStep, setCurrentStep] = useState(0);
   const [complaintNumber, setComplaintNumber] = useState(null);
 
-  const [selectedCategory, setSelectedCategory] = useState(0);
-  const [selectedIssue, setSelectedIssue] = useState(0);
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState({ lat: "", lng: "", address: "" });
+  const [fullName, setFullName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+
+  const [locationMode, setLocationMode] = useState("url"); // "url" | "live"
+  const [locationUrl, setLocationUrl] = useState("");
+  const [liveLocation, setLiveLocation] = useState({ lat: "", lng: "" });
   const [locationStatus, setLocationStatus] = useState("idle"); // idle | loading | captured | error
+
+  const [issueType, setIssueType] = useState("");
+  const [description, setDescription] = useState("");
   const [photos, setPhotos] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const goNext = () => setCurrentStep((s) => Math.min(s + 1, stepLabels.length - 1));
-  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
-
-  const handleCategorySelect = (i) => {
-    setSelectedCategory(i);
-    setSelectedIssue(0);
-  };
-
-  const handleCaptureGPS = () => {
+  const handleUseLiveLocation = () => {
+    setLocationMode("live");
     setLocationStatus("loading");
+
     if (!navigator.geolocation) {
       setLocationStatus("error");
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
+        setLiveLocation({
           lat: position.coords.latitude.toFixed(5),
           lng: position.coords.longitude.toFixed(5),
-          address: location.address,
         });
         setLocationStatus("captured");
       },
@@ -81,39 +66,44 @@ const ReportIssue = () => {
     );
   };
 
-  const handleAddressChange = (e) => {
-    setLocation({ ...location, address: e.target.value });
-  };
-
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files || []);
-    const newPhotos = files.map((file) => ({
+  const addPhotos = (files) => {
+    const fileList = Array.from(files || []);
+    const newPhotos = fileList.map((file) => ({
       name: file.name,
       url: URL.createObjectURL(file),
     }));
-    setPhotos([...photos, ...newPhotos]);
+    setPhotos((prev) => [...prev, ...newPhotos]);
+  };
+
+  const handlePhotoUpload = (e) => addPhotos(e.target.files);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    addPhotos(e.dataTransfer.files);
   };
 
   const removePhoto = (index) => {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-  const handleSubmitComplaint = () => {
+  const handleSubmitReport = (e) => {
+    e.preventDefault();
     const number = `MRI-${Math.floor(100000 + Math.random() * 900000)}`;
     setComplaintNumber(number);
-    setCurrentStep(stepLabels.length);
   };
 
-  const currentCategory = categories[selectedCategory];
-
   const resetForm = () => {
-    setCurrentStep(0);
     setComplaintNumber(null);
-    setSelectedCategory(0);
-    setSelectedIssue(0);
-    setDescription("");
-    setLocation({ lat: "", lng: "", address: "" });
+    setFullName("");
+    setMobile("");
+    setEmail("");
+    setLocationMode("url");
+    setLocationUrl("");
+    setLiveLocation({ lat: "", lng: "" });
     setLocationStatus("idle");
+    setIssueType("");
+    setDescription("");
     setPhotos([]);
   };
 
@@ -129,228 +119,210 @@ const ReportIssue = () => {
           <p className="eyebrow eyebrow-light">Citizen Reporting</p>
           <h1>Report an issue in a few simple steps</h1>
           <p className="hero-lead">
-            Select a category, describe the problem, mark its location, and
-            attach a photo — we'll take it from there.
+            Fill in your details, describe the problem, mark its location,
+            and attach a photo — we'll take it from there.
           </p>
         </div>
       </section>
 
-      {/* ================= STEP PROGRESS ================= */}
-      {complaintNumber === null && (
-        <section className="section">
-          <div className="step-track">
-            {stepLabels.map((label, i) => (
-              <div
-                className={`step-item ${
-                  i < currentStep ? "done" : i === currentStep ? "now" : "pend"
-                }`}
-                key={i}
-              >
-                <div className="step-dot">{i < currentStep ? "✓" : i + 1}</div>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
+      <section className="section">
+        {complaintNumber === null ? (
+          <div className="report-shell">
+            <div className="report-shell-header">
+              <h2>Report a Road Safety Issue</h2>
+              <p className="step-note">Your report helps keep roads safe. All info is confidential.</p>
+            </div>
 
-          {/* ---------------- STEP CONTENT ---------------- */}
-          <div className="wizard-shell">
-            {/* STEP 1: SELECT CATEGORY */}
-            {currentStep === 0 && (
-              <div className="step-panel">
-                <h3>Select Category</h3>
-                <div className="category-grid">
-                  {categories.map((cat, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`category-tile ${selectedCategory === i ? "active" : ""}`}
-                      onClick={() => handleCategorySelect(i)}
-                    >
-                      <span className="category-tile-icon">{cat.icon}</span>
-                      {cat.title}
-                    </button>
-                  ))}
-                </div>
+            <form className="report-grid" onSubmit={handleSubmitReport}>
+              {/* ---------------- LEFT COLUMN ---------------- */}
 
-                <h4 className="sub-heading">Select Specific Issue</h4>
-                <div className="issue-chip-grid">
-                  {currentCategory.issues.map((issue, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`issue-chip ${selectedIssue === i ? "active" : ""}`}
-                      onClick={() => setSelectedIssue(i)}
-                    >
-                      {issue}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* STEP 2: DESCRIPTION */}
-            {currentStep === 1 && (
-              <div className="step-panel">
-                <h3>Enter Description</h3>
+              
+              <div className="report-col">
                 <div className="form-field">
-                  <label htmlFor="description">Describe the issue</label>
+                  <label htmlFor="fullName">Full Name</label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter Your Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="mobile">Enter Mobile Number</label>
+                  <div className="input-with-icon">
+                    <input
+                      id="mobile"
+                      type="tel"
+                      placeholder="10-digit Mobile Number"
+                      maxLength={10}
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
+                      required
+                    />
+                    <span className="field-icon">📱</span>
+                  </div>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="email">Email Address</label>
+                  <div className="input-with-icon">
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="Enter Email Address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <span className="field-icon">✉️</span>
+                  </div>
+                </div>
+
+                {/* Location mode toggle */}
+                <div className="segmented-toggle">
+                  <button
+                    type="button"
+                    className={locationMode === "url" ? "active" : ""}
+                    onClick={() => setLocationMode("url")}
+                  >
+                    Enter Location url
+                  </button>
+                  <button
+                    type="button"
+                    className={locationMode === "live" ? "active" : ""}
+                    onClick={handleUseLiveLocation}
+                  >
+                    Use Live Location
+                  </button>
+                </div>
+
+                {locationMode === "url" ? (
+                  <div className="form-field">
+                    <label htmlFor="locationUrl">Location (Enter url)</label>
+                    <input
+                      id="locationUrl"
+                      type="text"
+                      placeholder="Enter location url manually"
+                      value={locationUrl}
+                      onChange={(e) => setLocationUrl(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="form-field">
+                    <label>Live Location</label>
+                    {locationStatus === "loading" && (
+                      <p className="location-status">Fetching your current location...</p>
+                    )}
+                    {locationStatus === "captured" && (
+                      <p className="location-status success">
+                        Location captured: {liveLocation.lat}, {liveLocation.lng}
+                      </p>
+                    )}
+                    {locationStatus === "error" && (
+                      <p className="location-status error">
+                        Couldn't fetch GPS location. Try again or switch to URL entry.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="form-field">
+                  <label htmlFor="issueType">Issue Type</label>
+                  <select
+                    id="issueType"
+                    value={issueType}
+                    onChange={(e) => setIssueType(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>Select Issue Type</option>
+                    {categories.map((cat) => (
+                      <optgroup key={cat.title} label={cat.title}>
+                        {cat.issues.map((issue) => (
+                          <option key={issue} value={issue}>{issue}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="description">Description</label>
                   <textarea
                     id="description"
-                    rows="6"
-                    placeholder="What is the problem, how severe is it, and how long has it persisted?"
+                    rows="4"
+                    placeholder="Tell us more about the issue..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   ></textarea>
                 </div>
               </div>
-            )}
 
-            {/* STEP 3: LOCATION */}
-            {currentStep === 2 && (
-              <div className="step-panel">
-                <h3>Capture Location</h3>
-                <p className="step-note">Use GPS for accuracy, or enter the location manually.</p>
 
-                <button className="secondary-btn" type="button" onClick={handleCaptureGPS}>
-                  📍 Capture GPS Location
-                </button>
 
-                {locationStatus === "loading" && (
-                  <p className="location-status">Fetching your current location...</p>
-                )}
-                {locationStatus === "captured" && (
-                  <p className="location-status success">
-                    Location captured: {location.lat}, {location.lng}
-                  </p>
-                )}
-                {locationStatus === "error" && (
-                  <p className="location-status error">
-                    Couldn't fetch GPS location — please enter the address manually below.
-                  </p>
-                )}
 
-                <div className="form-field">
-                  <label htmlFor="address">Address / Landmark (Manual Entry)</label>
-                  <input
-                    id="address"
-                    type="text"
-                    placeholder="e.g. Near Gram Panchayat Office, Main Road"
-                    value={location.address}
-                    onChange={handleAddressChange}
-                  />
+
+
+
+
+
+
+              {/* ---------------- RIGHT COLUMN: UPLOAD ---------------- */}
+              <div className="report-col">
+                <div className="form-field upload-field">
+                  <label>Upload Image</label>
+                  <label
+                    className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      hidden
+                    />
+                    <span className="upload-icon">📷</span>
+                    <span className="upload-text">
+                      Click to upload or drag and drop
+                      <br />
+                      PNG, JPG, GIF up to 10MB
+                    </span>
+                  </label>
+
+                  {photos.length > 0 && (
+                    <div className="photo-grid">
+                      {photos.map((photo, i) => (
+                        <div className="photo-thumb" key={i}>
+                          <img src={photo.url} alt={photo.name} />
+                          <button
+                            type="button"
+                            className="photo-remove"
+                            onClick={() => removePhoto(i)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* STEP 4: PHOTOGRAPH */}
-            {currentStep === 3 && (
-              <div className="step-panel">
-                <h3>Upload Photograph / Media</h3>
-                <label className="upload-dropzone">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    hidden
-                  />
-                  <span className="upload-icon">📷</span>
-                  <span>Click to upload photos</span>
-                </label>
-
-                {photos.length > 0 && (
-                  <div className="photo-grid">
-                    {photos.map((photo, i) => (
-                      <div className="photo-thumb" key={i}>
-                        <img src={photo.url} alt={photo.name} />
-                        <button
-                          type="button"
-                          className="photo-remove"
-                          onClick={() => removePhoto(i)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STEP 5: REVIEW */}
-            {currentStep === 4 && (
-              <div className="step-panel">
-                <h3>Review Complaint</h3>
-                <div className="review-grid">
-                  <div className="review-item">
-                    <span className="review-label">Category</span>
-                    <span className="review-value">{currentCategory.title}</span>
-                  </div>
-                  <div className="review-item">
-                    <span className="review-label">Specific Issue</span>
-                    <span className="review-value">{currentCategory.issues[selectedIssue]}</span>
-                  </div>
-                  <div className="review-item full">
-                    <span className="review-label">Description</span>
-                    <span className="review-value">
-                      {description || "No description provided"}
-                    </span>
-                  </div>
-                  <div className="review-item">
-                    <span className="review-label">Location</span>
-                    <span className="review-value">
-                      {locationStatus === "captured"
-                        ? `${location.lat}, ${location.lng}`
-                        : location.address || "Not provided"}
-                    </span>
-                  </div>
-                  <div className="review-item">
-                    <span className="review-label">Photographs</span>
-                    <span className="review-value">
-                      {photos.length > 0 ? `${photos.length} photo(s) attached` : "None attached"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 6: SUBMIT */}
-            {currentStep === 5 && (
-              <div className="step-panel center">
-                <h3>Submit Complaint</h3>
-                <p className="step-note">
-                  Everything looks good? Submit your complaint to generate a
-                  complaint number you can use to track it.
-                </p>
-                <button className="primary-btn" type="button" onClick={handleSubmitComplaint}>
-                  Submit Complaint <span>→</span>
+              {/* ---------------- SUBMIT ---------------- */}
+              <div className="report-submit-row">
+                <button className="primary-btn" type="submit">
+                  Submit Report <span>→</span>
                 </button>
               </div>
-            )}
-
-            {/* NAVIGATION */}
-            {currentStep < 5 && (
-              <div className="wizard-nav">
-                <button
-                  className="secondary-btn"
-                  type="button"
-                  onClick={goBack}
-                  disabled={currentStep === 0}
-                >
-                  ← Back
-                </button>
-                <button className="primary-btn" type="button" onClick={goNext}>
-                  Continue <span>→</span>
-                </button>
-              </div>
-            )}
+            </form>
           </div>
-        </section>
-      )}
-
-      {/* ================= COMPLAINT NUMBER / TRACK ================= */}
-      {complaintNumber !== null && (
-        <section className="section">
+        ) : (
           <div className="result-shell">
             <span className="result-icon">✓</span>
             <p className="eyebrow center">Complaint Number</p>
@@ -368,8 +340,8 @@ const ReportIssue = () => {
               </button>
             </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </main>
   );
 };
