@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./services.css";
 import bannerImage from "../assets/banner.png";
 
-/* ================= REALISTIC LINE ICONS (no emoji) ================= */
+/* ================= LINE ICONS (no emoji, consistent stroke weight) ================= */
 const Icon = {
   Report: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -46,12 +46,6 @@ const Icon = {
   Shield: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
-    </svg>
-  ),
-  Layers: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 3l9 5-9 5-9-5 9-5z" />
-      <path d="M3 13l9 5 9-5" />
     </svg>
   ),
   Alert: () => (
@@ -174,45 +168,30 @@ const priorityLegend = [
   { color: "green", label: "Resolved", icon: Icon.Check },
 ];
 
-/* card accent cycles through these 6 tones, matching each service in order */
-const accentTones = ["blue", "green", "purple", "orange", "teal", "pink"];
-
 const Services = () => {
+  
   const [activeService, setActiveService] = useState(0);
 
   return (
-
-
-
-
     <main className="services-page">
-
-
-
-
-
-
-
-
-
-
-
-
-
-      {/* ================= PAGE HERO (medium banner, real photo) ================= */}
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
       <section
         className="page-hero"
         id="home"
         style={{ backgroundImage: `url(${bannerImage})` }}
       >
-
+        <div className="hero-scrim"></div>
+        <div className="page-hero-inner">
+          <div className="hero-cta-row">
+            <button className="primary-btn" type="button">
+              Report an Issue <Icon.Arrow />
+            </button>
+            {/* <a href="#services" className="secondary-btn">
+              Browse Services
+            </a> */}
+          </div>
+        </div>
       </section>
-
-
-
-
-
-      
 
       {/* ================= SERVICES GRID ================= */}
       <section className="section" id="services">
@@ -224,7 +203,6 @@ const Services = () => {
         <div className="services-grid">
           {coreServices.map((service, i) => {
             const ServiceIcon = service.icon;
-            const tone = accentTones[i % accentTones.length];
             return (
               <button
                 key={i}
@@ -233,7 +211,7 @@ const Services = () => {
                 onClick={() => setActiveService(i)}
               >
                 <div className="service-top">
-                  <span className={`service-icon-badge tone-${tone}`}>
+                  <span className="service-icon-badge">
                     <ServiceIcon />
                   </span>
                   <span className="service-number">{service.num}</span>
@@ -241,10 +219,10 @@ const Services = () => {
                 <h4>{service.title}</h4>
                 <p>{service.summary}</p>
                 <div className="service-card-bottom">
-                  <span className={`service-link tone-text-${tone}`}>
+                  <span className="service-link">
                     {activeService === i ? "Viewing details" : "View details"}
                   </span>
-                  <span className={`service-arrow tone-${tone}`}>
+                  <span className="service-arrow">
                     <Icon.Arrow />
                   </span>
                 </div>
@@ -278,7 +256,7 @@ const Services = () => {
         </div>
       </section>
 
-      {/* ================= COMPLAINT LIFECYCLE (numbered process) ================= */}
+      {/* ================= COMPLAINT LIFECYCLE ================= */}
       <section className="section" id="lifecycle">
         <div className="section-heading center">
           <p className="eyebrow center">Complaint Lifecycle</p>
@@ -298,7 +276,7 @@ const Services = () => {
         </div>
       </section>
 
-      {/* ================= MAP PRIORITY LEGEND (icon feature row) ================= */}
+      {/* ================= MAP PRIORITY LEGEND ================= */}
       <section className="section surface" id="map">
         <div className="legend-shell">
           <div>
@@ -328,7 +306,6 @@ const Services = () => {
 
       {/* ================= CTA ================= */}
       <section className="section cta-section" id="contact">
-        <div className="cta-overlay"></div>
         <div className="cta-shell">
           <div>
             <h3>Ready to report an issue?</h3>
