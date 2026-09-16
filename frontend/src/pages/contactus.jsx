@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./contactus.css";
+import bannerImage from "../assets/banner.png";
 
 const contactDetails = [
   {
@@ -60,20 +61,30 @@ const ContactUs = () => {
 
   return (
     <main className="contact-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      <section
+        className="page-hero"
+        id="home"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          <div className="breadcrumb">
-            Home / <b>Contact Us</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Get in Touch</p>
-          <h1>We're here to help you</h1>
-          <p className="hero-lead">
-            Reach out to the Gram Panchayat and MyRoad India team for
-            queries, project information, or assistance with a complaint.
-          </p>
+          <div className="hero-cta-row">
+               <button className="primary-btn" type="button">
+                 Report an Issue <span>→</span>
+               </button>
+             {/* <div className="breadcrumb">
+               Home / <b>Contact Us</b>
+             </div>
+             <p className="eyebrow eyebrow-light">Get in Touch</p>
+             <h1>We're here to help you</h1>
+             <p className="hero-lead">
+               Reach out to the Gram Panchayat and MyRoad India team for
+               queries, project information, or assistance with a complaint.
+             </p> */}
+            </div>
         </div>
+
       </section>
 
       {/* ================= CONTACT INFORMATION ================= */}

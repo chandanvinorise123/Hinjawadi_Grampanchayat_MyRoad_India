@@ -1,5 +1,6 @@
 import React from "react";
 import "./blog.css";
+import bannerImage from "../assets/banner.png";
 
 import blogImage1 from "../assets/r5.jpg";
 import blogImage2 from "../assets/r6.jpg";
@@ -63,11 +64,19 @@ const videos = [
 const Blog = () => {
   return (
     <main className="blog-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      <section
+        className="page-hero"
+        id="home"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          <div className="breadcrumb">
+          <div className="hero-cta-row">
+            <button className="primary-btn" type="button">
+              Report an Issue <span>→</span>
+            </button>
+          {/* <div className="breadcrumb">
             Home / <b>Blog</b>
           </div>
           <p className="eyebrow eyebrow-light">MyRoad India Blog</p>
@@ -75,7 +84,8 @@ const Blog = () => {
           <p className="hero-lead">
             Stories, guidance, and ideas on how better roads get built —
             one report, one repair, and one community at a time.
-          </p>
+          </p> */}
+        </div>
         </div>
       </section>
 
