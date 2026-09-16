@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./helpfaq.css";
+import bannerImage from "../assets/hf.png";
 
 const faqCategories = [
   {
@@ -112,11 +113,14 @@ const HelpFaq = () => {
 
   return (
     <main className="help-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      <section
+        className="page-hero"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          <div className="breadcrumb">
+          {/* <div className="breadcrumb">
             Home / <b>Help / FAQ</b>
           </div>
           <p className="eyebrow eyebrow-light">Help Center</p>
@@ -124,7 +128,7 @@ const HelpFaq = () => {
           <p className="hero-lead">
             Answers to common questions about reporting issues, tracking
             complaints, and using the MyRoad India mobile app.
-          </p>
+          </p> */}
         </div>
       </section>
 

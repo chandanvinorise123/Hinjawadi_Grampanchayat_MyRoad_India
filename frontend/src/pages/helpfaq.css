@@ -55,24 +55,36 @@
 .eyebrow.center { text-align: center; }
 .eyebrow-light { color: #ffd9a8; }
 
-/* ================= PAGE HERO ================= */
-.page-hero {
+/* ================= PAGE HERO — banner as full-cover background ================= */
+.help-page .page-hero {
   position: relative;
-  background: linear-gradient(150deg, var(--navy-900), var(--navy-800));
-  color: #fff;
   overflow: hidden;
-  padding: clamp(3rem, 3vw, 4.5rem) clamp(1.25rem, 3vw, 3rem);
+  color: #fff;
+
+  background-color: var(--navy-900);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+
+  min-height: clamp(260px, 34vw, 460px);
+  display: flex;
+  align-items: flex-end;
+  padding: clamp(1.5rem, 2.5vw, 2.25rem);
 }
-.hero-glow {
-  position: absolute; width: 520px; height: 520px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,153,51,.18), transparent 70%);
-  top: -220px; right: -140px;
+
+.help-page .hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(6,15,35,0) 40%, rgba(6,15,35,.55) 75%, rgba(6,15,35,.85) 100%);
 }
-.page-hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
-.breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 16px; }
-.breadcrumb b { color: var(--saffron); }
-.page-hero h1 { color: #fff; font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-bottom: 14px; }
-.hero-lead { color: #c3d0e6; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem); max-width: 560px; }
+
+.help-page .page-hero-inner { position: relative; z-index: 1; max-width: 720px; width: 100%; }
+.help-page .breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 14px; }
+.help-page .breadcrumb b { color: var(--saffron); }
+.help-page .page-hero h1 { color: #fff; font-size: clamp(1.6rem, 1.3rem + 1.6vw, 2.3rem); margin-bottom: 12px; }
+.help-page .hero-lead { color: #d7e0f0; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.02rem); line-height: 1.55; max-width: 520px; margin-bottom: 22px; }
+.help-page .hero-lead-dark { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; max-width: 420px; margin-top: 12px; }
+
+.help-page .hero-cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
 
 /* ================= FAQ TABS ================= */
 .faq-tabs {

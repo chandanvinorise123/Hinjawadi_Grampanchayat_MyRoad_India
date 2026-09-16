@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./issuecategory.css";
+import bannerImage from "../assets/ic.png";
 
 const issueCategories = [
   {
@@ -127,10 +128,13 @@ const IssueCategory = () => {
   return (
     <main className="issue-category-page">
       {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      <section
+        className="page-hero"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          <div className="breadcrumb">
+          {/* <div className="breadcrumb">
             Home / Services / <b>Issue Category</b>
           </div>
           <p className="eyebrow eyebrow-light">Report an Issue</p>
@@ -138,7 +142,7 @@ const IssueCategory = () => {
           <p className="hero-lead">
             Choose the category that best matches the problem, then pick the
             specific issue to see guidance before you submit your report.
-          </p>
+          </p> */}
         </div>
       </section>
 
