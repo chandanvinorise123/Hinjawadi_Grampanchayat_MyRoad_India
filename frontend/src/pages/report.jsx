@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./report.css";
+import bannerImage from "../assets/banner.png";
 
 const categories = [
   {
@@ -109,11 +110,15 @@ const ReportIssue = () => {
 
   return (
     <main className="report-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      <section
+        className="page-hero"
+        id="home"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          <div className="breadcrumb">
+          {/* <div className="breadcrumb">
             Home / <b>Report an Issue</b>
           </div>
           <p className="eyebrow eyebrow-light">Citizen Reporting</p>
@@ -121,7 +126,7 @@ const ReportIssue = () => {
           <p className="hero-lead">
             Fill in your details, describe the problem, mark its location,
             and attach a photo — we'll take it from there.
-          </p>
+          </p> */}
         </div>
       </section>
 
@@ -135,9 +140,6 @@ const ReportIssue = () => {
 
             <form className="report-grid" onSubmit={handleSubmitReport}>
               {/* ---------------- LEFT COLUMN ---------------- */}
-
-
-              
               <div className="report-col">
                 <div className="form-field">
                   <label htmlFor="fullName">Full Name</label>
@@ -260,15 +262,6 @@ const ReportIssue = () => {
                   ></textarea>
                 </div>
               </div>
-
-
-
-
-
-
-
-
-
 
               {/* ---------------- RIGHT COLUMN: UPLOAD ---------------- */}
               <div className="report-col">
