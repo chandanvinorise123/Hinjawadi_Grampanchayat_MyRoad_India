@@ -94,7 +94,7 @@
   color: #ffd9a8;
 }
 
-/* ================= PAGE HERO ================= */
+/* ================= PAGE HERO — banner as full-cover background ================= */
 
 .about-page .page-hero {
   position: relative;
@@ -114,10 +114,10 @@
   background-size: cover;
 
   /*
-    Controlled banner height.
-    This prevents the extremely large banner height.
+    Matches services.css: uncapped max so the banner can scale
+    up on larger screens instead of being capped at a fixed height.
   */
-  min-height: clamp(260px, 34vw, 430px);
+  min-height: clamp(260px, 34vw, 3800px);
 
   display: flex;
   align-items: flex-end;
@@ -213,6 +213,7 @@
   border-radius: var(--radius-sm);
 
   padding: 13px 22px;
+  margin-left: 400px;
 
   cursor: pointer;
   white-space: nowrap;

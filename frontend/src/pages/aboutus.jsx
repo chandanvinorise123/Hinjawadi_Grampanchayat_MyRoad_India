@@ -1,7 +1,7 @@
 
 import React from "react";
 import "./aboutus.css";
-import bannerImage from "../assets/aboutus.jpeg";
+import bannerImage from "../assets/au.png";
 
 const missionPoints = [
   "Every complaint is logged with a photo, location, and timestamp — nothing gets lost in a register.",
@@ -85,9 +85,9 @@ const AboutUs = () => {
               Report an Issue <span>→</span>
             </button>
 
-            <a href="#mission" className="secondary-btn">
+            {/* <a href="#mission" className="secondary-btn">
               Our Mission
-            </a>
+            </a> */}
           </div>
 
         </div>
