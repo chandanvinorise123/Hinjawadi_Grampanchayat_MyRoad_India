@@ -1,6 +1,6 @@
 import React from "react";
 import "./blog.css";
-import bannerImage from "../assets/banner.png";
+import bannerImage from "../assets/bl.png";
 
 import blogImage1 from "../assets/r5.jpg";
 import blogImage2 from "../assets/r6.jpg";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./report.css";
-import bannerImage from "../assets/banner.png";
+import bannerImage from "../assets/ri.png";
 
 const categories = [
   {
