@@ -205,7 +205,7 @@ const Signup = () => {
               </div>
 
               {/* ================= MOBILE ================= */}
-              <div className="input-group">
+              {/* <div className="input-group">
                 <input
                   type="tel"
                   name="mobile"
@@ -214,10 +214,10 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                 />
-              </div>
+              </div> */}
 
               {/* ================= LOCATION ================= */}
-              <div className="input-group">
+              {/* <div className="input-group">
                 <input
                   type="text"
                   name="location"
@@ -226,7 +226,7 @@ const Signup = () => {
                   onChange={handleChange}
                   required
                 />
-              </div>
+              </div> */}
 
               {/* ================= CREATE ACCOUNT ================= */}
               <button

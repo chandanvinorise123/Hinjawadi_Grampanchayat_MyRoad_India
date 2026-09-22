@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./contactus.css";
-import bannerImage from "../assets/banner.png";
+import bannerImage from "../assets/cu.png";
 
 const contactDetails = [
   {

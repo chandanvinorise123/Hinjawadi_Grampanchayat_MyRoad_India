@@ -61,8 +61,8 @@
   display: flex;
   flex-direction: row;
 
-  width: 100%;
-  max-width: 1100px;
+  width: 60%;
+  max-width: 1050px;
 
   height: 650px;
 
@@ -74,7 +74,7 @@
 
   box-shadow: 0 20px 50px rgba(11, 36, 71, 0.14);
 
-  margin: 0;
+  margin-top: -50px;
   padding: 0;
 }
 
@@ -85,7 +85,7 @@
    ============================================================ */
 
 .login-banner {
-  width: 50%;
+  width: 100%;
   height: 100%;
 
   flex: 0 0 50%;
@@ -135,7 +135,7 @@
    ============================================================ */
 
 .login-section {
-  width: 50%;
+  width: 150%;
   height: 100%;
 
   flex: 0 0 50%;
@@ -147,7 +147,7 @@
 
   background: #ffffff;
 
-  margin: 0;
+  margin-top: -70px;
   padding: 40px 55px;
 
   overflow-y: auto;
