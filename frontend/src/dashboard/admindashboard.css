@@ -202,15 +202,91 @@
 .ad-update-row { display: flex; gap: 20px; flex-wrap: wrap; padding: 4px 22px 22px; }
 
 /* Forms */
-.ad-new-form { padding: 4px 22px 20px; }
-.ad-form-row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 4px; }
-.ad-field { margin-bottom: 16px; }
-.ad-field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-.ad-field input, .ad-field select {
-  width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; font-family: inherit;
-  background: #fff; color: var(--ink);
+/* ✅ Vertical Form Layout */
+.ad-new-form-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 16px 0;
+  border: 1px solid #e0e0e0;
 }
-.ad-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+
+.ad-vertical-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ad-vertical-field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.ad-vertical-field input,
+.ad-vertical-field select {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.ad-vertical-field input:focus,
+.ad-vertical-field select:focus {
+  outline: none;
+  border-color: #2e6cb0;
+  box-shadow: 0 0 0 2px rgba(46, 108, 176, 0.1);
+}
+
+.ad-password-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ad-password-row input {
+  flex: 1;
+}
+
+.ad-field-hint {
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Message Banner */
+.ad-message-banner {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.ad-message-banner.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.ad-message-banner.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Loading State */
+.ad-loading {
+  text-align: center;
+  padding: 30px;
+  color: #888;
+  font-style: italic;
+}
 
 /* Staff / verifier assignment */
 .ad-assign-grid { display: grid; gap: 18px; padding: 20px 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

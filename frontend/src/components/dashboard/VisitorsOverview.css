@@ -1,0 +1,126 @@
+/* ===== Visitors Overview Section ===== */
+.visitors-overview {
+  margin-top: 30px;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.visitors-overview-header {
+  margin-bottom: 24px;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 16px;
+}
+
+.visitors-overview-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0b2447;
+  letter-spacing: 0.3px;
+}
+
+.visitors-overview-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ===== Stats Grid ===== */
+.visitor-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ===== Stat Card ===== */
+.visitor-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.visitor-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(11, 36, 71, 0.10);
+  border-color: #0b2447;
+}
+
+/* ===== Icon Circle ===== */
+.visitor-stat-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+/* ===== Content ===== */
+.visitor-stat-content h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.visitor-stat-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #0b2447;
+  line-height: 1.2;
+}
+
+.visitor-stat-content p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* ===== Loading State ===== */
+.visitors-loading {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ===== Responsive: Tablet ===== */
+@media (max-width: 992px) {
+  .visitor-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ===== Responsive: Mobile ===== */
+@media (max-width: 600px) {
+  .visitors-overview {
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .visitor-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .visitor-stat-value {
+    font-size: 26px;
+  }
+
+  .visitors-overview-header h2 {
+    font-size: 18px;
+  }
+}

@@ -24,6 +24,13 @@ const userSchema = new mongoose.Schema(
             trim: true
         },
 
+        // Added — the frontend (AdminDashboard) sends and displays this,
+        // but it wasn't in the schema so Mongoose silently dropped it on save.
+        contact: {
+            type: String,
+            trim: true
+        },
+
         password: {
             type: String,
             required: true

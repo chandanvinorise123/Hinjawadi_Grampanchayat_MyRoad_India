@@ -5,12 +5,11 @@ import logo from '../assets/logo.jpeg';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
 
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -22,7 +21,7 @@ const Navbar = () => {
   };
 
   // Current language label: EN / HI / MR
-  const currentLangLabel = (i18n.language || 'en')
+  const currentLangLabel = String(i18n.language || 'en')
     .split('-')[0]
     .toUpperCase();
 
@@ -56,6 +55,21 @@ const Navbar = () => {
       window.removeEventListener('storage', loadUser);
     };
   }, [location.pathname]);
+
+  // Maps a logged-in user's role to the route of THEIR dashboard only
+  const roleDashboardPath = (role) => {
+    switch (String(role || '').toLowerCase()) {
+      case 'admin':
+        return '/admindashboard';
+      case 'staff':
+        return '/staffdashboard';
+      case 'verifier':
+        return '/verifierdashboard';
+      case 'citizen':
+      default:
+        return '/citizendashboard';
+    }
+  };
 
   // Navigate and close profile menu
   const goTo = (path) => {
@@ -203,14 +217,30 @@ const Navbar = () => {
               Blog
             </NavLink>
 
-            <NavLink
-              to="/Dashboard"
-              className={({ isActive }) =>
-                isActive ? 'active' : ''
-              }
-            >
-              Dashboard
-            </NavLink>
+            {/* Dashboard only appears once a user is logged in */}
+                                {/* Dashboard - goes to gateway page */}
+                   {user && (
+                       <NavLink
+                   to="/dashboard"
+                   className={({ isActive }) =>
+                      isActive ? 'active' : ''
+                             }
+                             >
+                         Dashboard
+                           </NavLink>
+                          )}
+
+            
+            {/* {user && (
+              <NavLink
+                to={roleDashboardPath(user.role)}
+                className={({ isActive }) =>
+                  isActive ? 'active' : ''
+                }
+              >
+                Dashboard
+              </NavLink>
+            )} */}
 
             <NavLink
               to="/HelpFaq"
@@ -345,7 +375,7 @@ const Navbar = () => {
 
                       <div className="profile-avatar">
                         {user?.name
-                          ? user.name.charAt(0).toUpperCase()
+                          ? String(user.name).charAt(0).toUpperCase()
                           : 'U'}
                       </div>
 
@@ -365,24 +395,18 @@ const Navbar = () => {
 
                     <div className="profile-menu-divider"></div>
 
-                    {/* Admin Dashboard */}
-                    {user?.role?.toLowerCase() === 'admin' && (
-                      <button
-                        onClick={() =>
-                          goTo('/admindashboard')
-                        }
-                      >
-                        Admin Dashboard
-                      </button>
-                    )}
-
-                    {/* User Dashboard */}
+                    {/* Dashboard */}
                     <button
-                      onClick={() =>
-                        goTo('/Dashboard')
-                      }
+
+
+                       onClick={() => goTo("/dashboard")}
                     >
-                      User Dashboard
+                      {user?.role
+                        ? `${String(user.role).charAt(0).toUpperCase()}${String(user.role).slice(1)} Dashboard`
+                        : 'Dashboard'}
+
+
+
                     </button>
 
                     {/* Edit Profile */}
@@ -435,4 +459,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
