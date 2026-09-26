@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./citizendashboard.css";
+// import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 
 const lifecycleStages = [
   "Complaint Registered",
@@ -60,11 +62,16 @@ const notifications = [
 const stageTone = ["amber", "amber", "orange", "orange", "orange", "amber", "green"];
 
 const CitizenDashboard = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Logged-in user saved by the Login page (and updated by the Profile page)
+  const stored = JSON.parse(localStorage.getItem("user") || "{}");
   const [profile] = useState({
-    name: "Citizen User",
-    mobile: "+91 98765 43210",
+    name: stored.name || "Citizen User",
+    mobile: stored.mobile ? `+91 ${stored.mobile}` : "+91 98765 43210",
     memberSince: "March 2026",
-    ward: "Ward 3 — Riverside",
+    ward: stored.location || "Ward 3 — Riverside",
   });
 
   const [complaints, setComplaints] = useState(seedComplaints);
@@ -156,6 +163,18 @@ const CitizenDashboard = () => {
 
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
+  // Sidebar links on the Profile page send us here with instructions
+  // (open the form / map, or scroll to a section)
+  useEffect(() => {
+    const s = location.state;
+    if (!s) return;
+    if (s.openForm) setShowNewForm(true);
+    if (s.openMap) setShowMapView(true);
+    if (s.scrollTo) setTimeout(() => scrollTo(s.scrollTo), 50);
+    navigate(location.pathname, { replace: true, state: null }); // don't re-run on refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
   const initials = profile.name
     .split(" ")
     .map((w) => w[0])
@@ -180,14 +199,14 @@ const CitizenDashboard = () => {
           <button type="button" className="cd-sb-link active" onClick={() => scrollTo("cd-top")}>
             📊 Dashboard
           </button>
-          <button type="button" className="cd-sb-link" onClick={() => scrollTo("cd-profile")}>
+          <button type="button" className="cd-sb-link" onClick={() => navigate("/profile")}>
             👤 My Profile
           </button>
         </nav>
 
         <div className="cd-sb-label">Citizen Functions</div>
         <nav className="cd-sb-nav">
-          <button type="button" className="cd-sb-link" onClick={() => setShowNewForm(true)}>
+          <button type="button" className="cd-sb-link" onClick={() => navigate("/ReportIssue")}>
             📍 Report an Issue
           </button>
           <button type="button" className="cd-sb-link" onClick={() => scrollTo("my-activity")}>
@@ -245,10 +264,10 @@ const CitizenDashboard = () => {
             <button type="button" className="cd-icon-btn" aria-label="Notifications" onClick={() => scrollTo("notif-panel")}>
               🔔<span className="cd-tb-dot"></span>
             </button>
-            <button className="cd-btn-primary" type="button" onClick={() => setShowNewForm(true)}>
+            <button className="cd-btn-primary" type="button" onClick={() => navigate("/ReportIssue")}>
               + Report an Issue
             </button>
-            <div className="cd-tb-user" id="cd-profile">
+            <div className="cd-tb-user" onClick={() => navigate("/profile")} style={{ cursor: "pointer" }}>
               <div className="cd-tb-avatar">{initials}</div>
               <div>
                 <b>{profile.name}</b>
@@ -279,6 +298,9 @@ const CitizenDashboard = () => {
               </div>
             ))}
           </div>
+
+          {/* VISITORS OVERVIEW (reusable component) */}
+          {/* <VisitorsOverview /> */}
 
           {/* TWO COLUMN: TABLE + LIFECYCLE/NOTIFICATIONS */}
           <div className="cd-dash-grid" id="my-activity">

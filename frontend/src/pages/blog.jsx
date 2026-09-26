@@ -76,7 +76,7 @@ const Blog = () => {
             <button className="primary-btn" type="button">
               Report an Issue <span>→</span>
             </button>
-          {/* <div className="breadcrumb">
+            {/* <div className="breadcrumb">
             Home / <b>Blog</b>
           </div>
           <p className="eyebrow eyebrow-light">MyRoad India Blog</p>
@@ -85,7 +85,7 @@ const Blog = () => {
             Stories, guidance, and ideas on how better roads get built —
             one report, one repair, and one community at a time.
           </p> */}
-        </div>
+          </div>
         </div>
       </section>
 

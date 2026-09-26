@@ -5,14 +5,36 @@ const User = require("../models/user");
 
 const allowedRoles = ["citizen", "staff", "verifier", "admin"];
 
+// Indian mobile number: 10 digits, starting with 6-9
+const MOBILE_REGEX = /^[6-9]\d{9}$/;
+
+// Fields sent back to the client for profile routes (never the password)
+const publicUser = (u) => ({
+    id: u._id,
+    role: u.role,
+    name: u.name,
+    email: u.email,
+    mobile: u.mobile,
+    location: u.location,
+    createdAt: u.createdAt
+});
+
 router.post("/signup", async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
+        const mobile = String(req.body.mobile || "").trim();
 
-        if (!name || !email || !password || !role) {
+        if (!name || !email || !mobile || !password || !role) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
+            });
+        }
+
+        if (!MOBILE_REGEX.test(mobile)) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter a valid 10-digit mobile number"
             });
         }
 
@@ -23,12 +45,17 @@ router.post("/signup", async (req, res) => {
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({
+            $or: [{ email }, { mobile }]
+        });
 
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "Email already registered"
+                message:
+                    existingUser.email === email
+                        ? "Email already registered"
+                        : "Mobile number already registered"
             });
         }
 
@@ -36,6 +63,7 @@ router.post("/signup", async (req, res) => {
             role,
             name,
             email,
+            mobile,
             password
         });
 
@@ -48,7 +76,8 @@ router.post("/signup", async (req, res) => {
                 id: newUser._id,
                 role: newUser.role,
                 name: newUser.name,
-                email: newUser.email
+                email: newUser.email,
+                mobile: newUser.mobile
             }
         });
 
@@ -70,19 +99,20 @@ router.post("/login", async (req, res) => {
         if (!identifier || !password || !role) {
             return res.status(400).json({
                 success: false,
-                message: "Username/email, password and role are required"
+                message: "Email or mobile number, password and role are required"
             });
         }
 
+        // identifier can be an email address or a mobile number
         const user = await User.findOne({
-            email: identifier,
+            $or: [{ email: identifier }, { mobile: identifier }],
             role: role
         });
 
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email, password or role"
+                message: "Invalid email/mobile, password or role"
             });
         }
 
@@ -91,7 +121,7 @@ router.post("/login", async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email, password or role"
+                message: "Invalid email/mobile, password or role"
             });
         }
 
@@ -102,7 +132,8 @@ router.post("/login", async (req, res) => {
                 id: user._id,
                 role: user.role,
                 name: user.name,
-                email: user.email
+                email: user.email,
+                mobile: user.mobile
             }
         });
 
@@ -135,5 +166,144 @@ router.get("/users", async (req, res) => {
         });
     }
 });
+
+ 
+// GET /api/auth/users/:id  ->  get one user's profile
+router.get("/users/:id", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select("-password");
+ 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+ 
+        res.status(200).json({ success: true, user: publicUser(user) });
+ 
+    } catch (error) {
+        console.error("Get profile error:", error);
+ 
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+});
+ 
+ 
+// PUT /api/auth/users/:id  ->  update name, mobile and location
+router.put("/users/:id", async (req, res) => {
+    try {
+        const name = String(req.body.name || "").trim();
+        const mobile = String(req.body.mobile || "").trim();
+        const location = String(req.body.location || "").trim();
+ 
+        if (!name || !mobile) {
+            return res.status(400).json({
+                success: false,
+                message: "Name and mobile number are required"
+            });
+        }
+ 
+        if (!MOBILE_REGEX.test(mobile)) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter a valid 10-digit mobile number"
+            });
+        }
+ 
+        const duplicate = await User.findOne({
+            mobile,
+            _id: { $ne: req.params.id }
+        });
+ 
+        if (duplicate) {
+            return res.status(409).json({
+                success: false,
+                message: "Mobile number already registered"
+            });
+        }
+ 
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { name, mobile, location },
+            { new: true, runValidators: true }
+        );
+ 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+ 
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: publicUser(user)
+        });
+ 
+    } catch (error) {
+        console.error("Update profile error:", error);
+ 
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+});
+ 
+ 
+// DELETE /api/auth/users/:id  ->  delete the account (body: { "password": "..." })
+router.delete("/users/:id", async (req, res) => {
+    try {
+        const { password } = req.body;
+ 
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: "Password is required to delete your account"
+            });
+        }
+ 
+        const user = await User.findById(req.params.id);
+ 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+ 
+        const isMatch = await user.comparePassword(password);
+ 
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Incorrect password"
+            });
+        }
+ 
+        await User.findByIdAndDelete(user._id);
+ 
+        res.status(200).json({
+            success: true,
+            message: "Account deleted successfully"
+        });
+ 
+    } catch (error) {
+        console.error("Delete profile error:", error);
+ 
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+});
+ 
+module.exports = router;
+ 
 
 module.exports = router;

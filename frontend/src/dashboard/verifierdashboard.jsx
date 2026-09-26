@@ -172,12 +172,12 @@ const VerifierDashboard = () => {
       items.map((c) =>
         c.id === id
           ? {
-              ...c,
-              status: "rejected",
-              queue: "Re-verification",
-              remarks: remarksDraft,
-              log: addLog(c.log, "Rejected — sent back for further action"),
-            }
+            ...c,
+            status: "rejected",
+            queue: "Re-verification",
+            remarks: remarksDraft,
+            log: addLog(c.log, "Rejected — sent back for further action"),
+          }
           : c
       )
     );
@@ -398,15 +398,14 @@ const VerifierDashboard = () => {
                     return (
                       <div className="vd-lc-item" key={i}>
                         <div
-                          className={`vd-lc-dot ${
-                            selected.status === "rejected" && i === 1
+                          className={`vd-lc-dot ${selected.status === "rejected" && i === 1
                               ? "reject"
                               : i < currentIndex
-                              ? "done"
-                              : i === currentIndex
-                              ? "now"
-                              : "pend"
-                          }`}
+                                ? "done"
+                                : i === currentIndex
+                                  ? "now"
+                                  : "pend"
+                            }`}
                         ></div>
                         <div className="vd-lc-body">
                           <b>{stage}</b>

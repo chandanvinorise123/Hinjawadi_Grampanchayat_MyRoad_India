@@ -24,6 +24,14 @@ const userSchema = new mongoose.Schema(
             trim: true
         },
 
+        mobile: {
+            type: String,
+            unique: true,
+            sparse: true,   // lets existing users without a mobile coexist
+            trim: true,
+            match: [/^[6-9]\d{9}$/, "Invalid mobile number"]
+        },
+
         password: {
             type: String,
             required: true

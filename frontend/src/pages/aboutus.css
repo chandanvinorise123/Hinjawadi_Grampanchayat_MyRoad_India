@@ -117,7 +117,7 @@
     Matches services.css: uncapped max so the banner can scale
     up on larger screens instead of being capped at a fixed height.
   */
-  min-height: clamp(260px, 34vw, 3800px);
+  min-height: clamp(600px, 34vw, 3800px);
 
   display: flex;
   align-items: flex-end;

@@ -1,11 +1,93 @@
 import React, { useState } from "react";
 import "./dashboard.css";
+import bannerImage from "../assets/db.png";
 import CitizenDashboard from "../dashboard/citizendashboard";
 import StaffDashboard from "../dashboard/staffdashboard";
 import AdminDashboard from "../dashboard/admindashboard";
 import VerifierDashboard from "../dashboard/verifierdashboard";
-
-
+/* ================= LINE ICONS (no emoji, consistent stroke weight) ================= */
+const Icon = {
+  Clipboard: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="6" y="4" width="12" height="16" rx="2" />
+      <path d="M9 4V3a1 1 0 011-1h4a1 1 0 011 1v1M9 10h6M9 14h6" />
+    </svg>
+  ),
+  New: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  ),
+  Search: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
+  ),
+  Wrench: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.3 2.3-2-2z" />
+    </svg>
+  ),
+  Check: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  Alert: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3l10 18H2z" />
+      <path d="M12 10v4M12 17h.01" />
+    </svg>
+  ),
+  Inbox: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M3 12h4l2 3h6l2-3h4" />
+      <path d="M5 5h14l2 7v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7z" />
+    </svg>
+  ),
+  Undo: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 14l-4-4 4-4" />
+      <path d="M5 10h9a5 5 0 010 10h-1" />
+    </svg>
+  ),
+  Calendar: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 10h18" />
+    </svg>
+  ),
+  Layers: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3l9 5-9 5-9-5 9-5z" />
+      <path d="M3 13l9 5 9-5" />
+    </svg>
+  ),
+  MapPin: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </svg>
+  ),
+  TrafficLight: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="8" y="2" width="8" height="16" rx="3" />
+      <path d="M12 22v-2M9 6h.01M12 10h.01M15 6h.01" />
+    </svg>
+  ),
+  Arrow: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  ),
+};
 const roles = [
   { value: "admin", label: "Admin" },
   { value: "staff", label: "Staff" },
@@ -15,31 +97,31 @@ const roles = [
 
 const roleStats = {
   admin: [
-    { label: "Total Complaints", value: 1284, icon: "📋", tone: "navy" },
-    { label: "New Complaints", value: 96, icon: "🆕", tone: "blue" },
-    { label: "Pending", value: 214, icon: "⏳", tone: "amber" },
-    { label: "Under Verification", value: 58, icon: "🔍", tone: "amber" },
-    { label: "Under Action", value: 132, icon: "🧰", tone: "orange" },
-    { label: "Resolved", value: 742, icon: "✅", tone: "green" },
-    { label: "Critical", value: 42, icon: "🚨", tone: "red" },
+    { label: "Total Complaints", value: 1284, icon: Icon.Clipboard, tone: "navy" },
+    { label: "New Complaints", value: 96, icon: Icon.New, tone: "blue" },
+    { label: "Pending", value: 214, icon: Icon.Clock, tone: "amber" },
+    { label: "Under Verification", value: 58, icon: Icon.Search, tone: "amber" },
+    { label: "Under Action", value: 132, icon: Icon.Wrench, tone: "orange" },
+    { label: "Resolved", value: 742, icon: Icon.Check, tone: "green" },
+    { label: "Critical", value: 42, icon: Icon.Alert, tone: "red" },
   ],
   staff: [
-    { label: "Assigned to Me", value: 24, icon: "📥", tone: "navy" },
-    { label: "Under Action", value: 9, icon: "🧰", tone: "orange" },
-    { label: "Resolved by Me", value: 63, icon: "✅", tone: "green" },
-    { label: "Critical", value: 3, icon: "🚨", tone: "red" },
+    { label: "Assigned to Me", value: 24, icon: Icon.Inbox, tone: "navy" },
+    { label: "Under Action", value: 9, icon: Icon.Wrench, tone: "orange" },
+    { label: "Resolved by Me", value: 63, icon: Icon.Check, tone: "green" },
+    { label: "Critical", value: 3, icon: Icon.Alert, tone: "red" },
   ],
   verifier: [
-    { label: "Pending Verification", value: 41, icon: "🔍", tone: "amber" },
-    { label: "Verified Today", value: 17, icon: "✅", tone: "green" },
-    { label: "Sent Back", value: 6, icon: "↩️", tone: "orange" },
-    { label: "Escalated", value: 2, icon: "🚨", tone: "red" },
+    { label: "Pending Verification", value: 41, icon: Icon.Search, tone: "amber" },
+    { label: "Verified Today", value: 17, icon: Icon.Check, tone: "green" },
+    { label: "Sent Back", value: 6, icon: Icon.Undo, tone: "orange" },
+    { label: "Escalated", value: 2, icon: Icon.Alert, tone: "red" },
   ],
   citizen: [
-    { label: "My Complaints", value: 5, icon: "📋", tone: "navy" },
-    { label: "Pending", value: 2, icon: "⏳", tone: "amber" },
-    { label: "In Progress", value: 1, icon: "🧰", tone: "orange" },
-    { label: "Resolved", value: 2, icon: "✅", tone: "green" },
+    { label: "My Complaints", value: 5, icon: Icon.Clipboard, tone: "navy" },
+    { label: "Pending", value: 2, icon: Icon.Clock, tone: "amber" },
+    { label: "In Progress", value: 1, icon: Icon.Wrench, tone: "orange" },
+    { label: "Resolved", value: 2, icon: Icon.Check, tone: "green" },
   ],
 };
 
@@ -71,12 +153,12 @@ const lifecycleSteps = [
 ];
 
 const reportCards = [
-  { icon: "📅", title: "Daily / Weekly / Monthly Reports", summary: "Scheduled snapshots of complaint activity across all wards." },
-  { icon: "📌", title: "Pending / Resolved", summary: "Live split of open versus closed complaints for quick review." },
-  { icon: "🗂️", title: "Category-wise Reports", summary: "Breakdown of complaints by issue category over time." },
-  { icon: "📍", title: "Area-wise Reports", summary: "Complaint volume and resolution rate by location." },
-  { icon: "🚦", title: "Priority-wise Reports", summary: "Critical, urgent, and routine complaints tracked separately." },
-  { icon: "🛠️", title: "Action / Work Progress", summary: "Field staff activity and status of ongoing repair work." },
+  { icon: Icon.Calendar, title: "Daily / Weekly / Monthly Reports", summary: "Scheduled snapshots of complaint activity across all wards." },
+  { icon: Icon.Clipboard, title: "Pending / Resolved", summary: "Live split of open versus closed complaints for quick review." },
+  { icon: Icon.Layers, title: "Category-wise Reports", summary: "Breakdown of complaints by issue category over time." },
+  { icon: Icon.MapPin, title: "Area-wise Reports", summary: "Complaint volume and resolution rate by location." },
+  { icon: Icon.TrafficLight, title: "Priority-wise Reports", summary: "Critical, urgent, and routine complaints tracked separately." },
+  { icon: Icon.Wrench, title: "Action / Work Progress", summary: "Field staff activity and status of ongoing repair work." },
 ];
 
 const roleCopy = {
@@ -110,14 +192,25 @@ const roleCopy = {
 // (e.g. an Express server connected to MongoDB).
 const API_BASE_URL = "http://localhost:3200/api/auth";
 
+// Read the logged-in user saved by the Login page / this page
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+};
+
 const Dashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Start logged in if a user is already saved (keeps you signed in when
+  // you navigate to another page, such as My Profile, and come back)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!getStoredUser());
   const [credentials, setCredentials] = useState({
     identifier: "",
     password: "",
     role: "citizen",
   });
-  const [activeRole, setActiveRole] = useState("citizen");
+  const [activeRole, setActiveRole] = useState(() => getStoredUser()?.role || "citizen");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
 
@@ -143,6 +236,10 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Save the user so other pages (My Profile) and refreshes can use it
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.dispatchEvent(new Event("authChange"));
+
         // Trust the role returned by the backend, not the dropdown value,
         // since the server is the source of truth for who this user is.
         setActiveRole(data.user.role);
@@ -158,6 +255,8 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authChange"));
     setIsAuthenticated(false);
     setCredentials({ identifier: "", password: "", role: "citizen" });
     setLoginError("");
@@ -170,10 +269,13 @@ const Dashboard = () => {
   if (!isAuthenticated) {
     return (
       <main className="dashboard-page">
-        {/* ================= PAGE HERO ================= */}
-        <section className="page-hero">
-          <div className="hero-glow"></div>
-          <div className="page-hero-inner">
+        {/* ================= PAGE HERO — banner as full-cover background ================= */}
+        <section
+          className="page-hero"
+          style={{ backgroundImage: `url(${bannerImage})` }}
+        >
+          <div className="hero-scrim"></div>
+          {/* <div className="page-hero-inner">
             <div className="breadcrumb">
               Home / <b>Dashboard</b>
             </div>
@@ -183,7 +285,7 @@ const Dashboard = () => {
               Sign in with your credentials to view complaints, analytics,
               and reports relevant to your role.
             </p>
-          </div>
+          </div> */}
         </section>
 
         {/* ================= LOGIN / AUTHENTICATION ================= */}
@@ -238,7 +340,7 @@ const Dashboard = () => {
                 />
               </div>
               <button className="primary-btn" type="submit" disabled={loginLoading}>
-                {loginLoading ? "Logging in..." : <>Log In <span>→</span></>}
+                {loginLoading ? "Logging in..." : <>Log In <Icon.Arrow /></>}
               </button>
             </form>
           </div>
@@ -266,9 +368,12 @@ const Dashboard = () => {
 
   return (
     <main className="dashboard-page">
-      {/* ================= PAGE HERO ================= */}
-      <section className="page-hero">
-        <div className="hero-glow"></div>
+      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      <section
+        className="page-hero"
+        style={{ backgroundImage: `url(${bannerImage})` }}
+      >
+        <div className="hero-scrim"></div>
         <div className="page-hero-inner">
           <div className="breadcrumb">
             Home / <b>Dashboard</b>
@@ -296,15 +401,20 @@ const Dashboard = () => {
         </div>
 
         <div className="stats-grid">
-          {roleStats[activeRole].map((stat, i) => (
-            <div className={`stat-card tone-${stat.tone}`} key={i}>
-              <span className="stat-icon">{stat.icon}</span>
-              <div>
-                <span className="stat-value">{stat.value.toLocaleString()}</span>
-                <span className="stat-label">{stat.label}</span>
+          {roleStats[activeRole].map((stat, i) => {
+            const StatIcon = stat.icon;
+            return (
+              <div className={`stat-card tone-${stat.tone}`} key={i}>
+                <span className={`stat-icon-badge tone-${stat.tone}`}>
+                  <StatIcon />
+                </span>
+                <div>
+                  <span className="stat-value">{stat.value.toLocaleString()}</span>
+                  <span className="stat-label">{stat.label}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -354,7 +464,9 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-              <span className="map-note">📍 Complaints also plotted on the live map view</span>
+              <span className="map-note">
+                <Icon.MapPin /> Complaints also plotted on the live map view
+              </span>
             </div>
           </div>
         </section>
@@ -386,13 +498,18 @@ const Dashboard = () => {
           </div>
 
           <div className="reports-grid">
-            {reportCards.map((report, i) => (
-              <div className="report-card" key={i}>
-                <span className="report-icon">{report.icon}</span>
-                <h4>{report.title}</h4>
-                <p>{report.summary}</p>
-              </div>
-            ))}
+            {reportCards.map((report, i) => {
+              const ReportIcon = report.icon;
+              return (
+                <div className="report-card" key={i}>
+                  <span className="report-icon-badge">
+                    <ReportIcon />
+                  </span>
+                  <h4>{report.title}</h4>
+                  <p>{report.summary}</p>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

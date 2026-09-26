@@ -14,12 +14,17 @@ import Dashboard from "./pages/dashboard";
 
 import HelpFaq from "./pages/helpfaq";
 import Login from "./pages/login";  
+import Signup from "./pages/signup";
 import ReportIssue from "./pages/report";
 import Blog from "./pages/blog";  
 // import CitizenDashboard from "./dashboard/citizendashboard";
 // import StaffDashboard from "./dashboard/staffdashboard";
 // import VerifierDashboard from "./dashboard/verifierdashboard";
 // import AdminDashboard from "./dashboard/admindashboard";  
+
+import CitizenDashboard from "./dashboard/citizendashboard";
+import UserProfile from "./userprofiledashboard/userprofile";
+
 function App() {
   return (
     <BrowserRouter>
@@ -35,6 +40,7 @@ function App() {
         <Route path="/Dashboard" element={<Dashboard/>} />
         <Route path="/HelpFaq" element={<HelpFaq />} />
         <Route path="/Login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/ReportIssue" element={<ReportIssue />} />
         
         {/* <Route path="/CitizenDashboard" element={<CitizenDashboard />} />
@@ -43,6 +49,8 @@ function App() {
         <Route path="/admindashboard" element={<AdminDashboard />} />
        */}
 
+       <Route path="/dashboard" element={<CitizenDashboard />} />
+       <Route path="/profile" element={<UserProfile />} />
 
         
 

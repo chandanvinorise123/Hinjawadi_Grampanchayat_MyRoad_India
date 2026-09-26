@@ -5,6 +5,7 @@ import logo from '../assets/logo.jpeg';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,6 +83,11 @@ const Navbar = () => {
         <div className="topbar-inner">
 
           <span>
+            <img
+              src="https://flagcdn.com/w40/in.png"
+              alt="India"
+              className="flag-icon"
+            />
             Government Digital Service · Gram Panchayat Portal
           </span>
 
