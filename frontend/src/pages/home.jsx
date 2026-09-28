@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 import { useTranslation } from "react-i18next";
 import "./home.css";
 
@@ -115,6 +116,21 @@ const Home = () => {
       setTvPlaying(false);
     }
   };
+
+  // ✅ ADD THIS: Record a visit every time the home page mounts
+  useEffect(() => {
+    const recordVisit = async () => {
+      try {
+        await fetch("http://localhost:3200/api/stats/visit", { method: "POST" });
+      } catch (err) {
+        console.error("Failed to record visit", err);
+      }
+    };
+    recordVisit();
+  }, []);
+
+
+  
 
 
 

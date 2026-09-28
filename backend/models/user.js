@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
             trim: true,
             match: [/^[6-9]\d{9}$/, "Invalid mobile number"]
         },
+        // Added — the frontend (AdminDashboard) sends and displays this,
+        // but it wasn't in the schema so Mongoose silently dropped it on save.
+        contact: {
+            type: String,
+            trim: true
+        },
 
         password: {
             type: String,
