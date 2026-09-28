@@ -306,4 +306,3 @@ router.delete("/users/:id", async (req, res) => {
 module.exports = router;
  
 
-module.exports = router;

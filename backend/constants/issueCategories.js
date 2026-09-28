@@ -1,0 +1,81 @@
+const issueCategories = {
+  "Road Issues": [
+    "Road Potholes",
+    "Damaged Road",
+    "Road Cracks",
+    "Damaged Surface",
+    "Damaged Road Edges",
+    "Waterlogging",
+    "Uneven Surface",
+    "Road Obstruction",
+    "Traffic Obstruction",
+    "Accident-Prone Area",
+    "Other Road Issue",
+  ],
+
+  "Sewerage & Drain Issues": [
+    "Sewerage Choked",
+    "Broken Sewerage",
+    "Improper Water Flow",
+    "Sewage Overflow",
+    "Rainwater Waterlogging",
+    "Drainage Issues",
+    "Damaged Covers",
+    "Damaged Culvert",
+    "Leaking Pipeline",
+    "Cleaning Required",
+    "Bad Odour / Mosquito",
+    "New Drain Required",
+    "Broken Manhole",
+  ],
+
+  "Drinking Water Issues": [
+    "Pipeline Leakage",
+    "New Pipeline",
+    "Low Water Pressure",
+    "Irregular Supply",
+    "Water Disruption",
+    "Contaminated Water",
+    "Bad Odour",
+    "Broken Pipeline",
+    "No Tap Water",
+    "Supply Timing",
+    "Insufficient Supply",
+    "New Water Connection",
+    "Damaged Public Tap",
+    "Water Quality Testing",
+  ],
+
+  "Streetlight Issues": [
+    "Light Not Working",
+    "Damaged Pole",
+    "Broken Light",
+    "Missing Streetlight",
+    "Electrical Issue",
+    "Other Streetlight Issue",
+  ],
+
+  "Road Safety Issues": [
+    "Damaged Signboards",
+    "Missing Signboards",
+    "Speed Breaker Issues",
+    "Road Marking Issues",
+    "Pedestrian Signage",
+    "Safety Barrier Issues",
+    "Dangerous Turn / Curve",
+    "Accident-Prone Area",
+    "Other Safety Issue",
+  ],
+
+  "Bridge & Culvert Issues": [
+    "Bridge Damage",
+    "Culvert Damage",
+    "Damaged Railing",
+    "Water Flow Issues",
+    "Drainage Issues",
+    "Obstruction Around Bridge/Culvert",
+    "Other Bridge Issue",
+  ],
+};
+
+module.exports = issueCategories;

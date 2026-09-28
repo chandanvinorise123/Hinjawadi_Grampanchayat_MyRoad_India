@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./issuecategory.css";
 import bannerImage from "../assets/ic.png";
 
@@ -7,7 +8,8 @@ const issueCategories = [
     num: "01",
     icon: "🛣️",
     title: "Road Issues",
-    summary: "Potholes, cracks, and other problems affecting road surfaces.",
+    summary:
+      "Potholes, cracks, and other problems affecting road surfaces.",
     issues: [
       "Road Potholes",
       "Damaged Road",
@@ -26,7 +28,8 @@ const issueCategories = [
     num: "02",
     icon: "🚰",
     title: "Sewerage & Drain Issues",
-    summary: "Blocked drains, sewage overflow, and related infrastructure faults.",
+    summary:
+      "Blocked drains, sewage overflow, and related infrastructure faults.",
     issues: [
       "Sewerage Choked",
       "Broken Sewerage",
@@ -47,7 +50,8 @@ const issueCategories = [
     num: "03",
     icon: "💧",
     title: "Drinking Water Issues",
-    summary: "Supply, quality, and pipeline issues affecting drinking water access.",
+    summary:
+      "Supply, quality, and pipeline issues affecting drinking water access.",
     issues: [
       "Pipeline Leakage",
       "New Pipeline",
@@ -69,7 +73,8 @@ const issueCategories = [
     num: "04",
     icon: "💡",
     title: "Streetlight Issues",
-    summary: "Non-functional or damaged streetlights and related electrical faults.",
+    summary:
+      "Non-functional or damaged streetlights and related electrical faults.",
     issues: [
       "Light Not Working",
       "Damaged Pole",
@@ -83,7 +88,8 @@ const issueCategories = [
     num: "05",
     icon: "🚧",
     title: "Road Safety Issues",
-    summary: "Signage, markings, and safety hazards along roads.",
+    summary:
+      "Signage, markings, and safety hazards along roads.",
     issues: [
       "Damaged Signboards",
       "Missing Signboards",
@@ -100,7 +106,8 @@ const issueCategories = [
     num: "06",
     icon: "🌉",
     title: "Bridge & Culvert Issues",
-    summary: "Structural and drainage issues affecting bridges and culverts.",
+    summary:
+      "Structural and drainage issues affecting bridges and culverts.",
     issues: [
       "Bridge Damage",
       "Culvert Damage",
@@ -114,6 +121,8 @@ const issueCategories = [
 ];
 
 const IssueCategory = () => {
+  const navigate = useNavigate();
+
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeIssue, setActiveIssue] = useState(0);
 
@@ -125,28 +134,30 @@ const IssueCategory = () => {
   const currentCategory = issueCategories[activeCategory];
   const currentIssue = currentCategory.issues[activeIssue];
 
+  const handleContinue = () => {
+    navigate("/report-issue", {
+      state: {
+        category: currentCategory.title,
+        issueType: currentIssue,
+      },
+    });
+  };
+
   return (
     <main className="issue-category-page">
-      {/* ================= PAGE HERO ================= */}
+      {/* PAGE HERO */}
       <section
         className="page-hero"
         style={{ backgroundImage: `url(${bannerImage})` }}
       >
-        <div className="hero-scrim"></div>
+        <div className="hero-scrim" />
+
         <div className="page-hero-inner">
-          {/* <div className="breadcrumb">
-            Home / Services / <b>Issue Category</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Report an Issue</p>
-          <h1>Select a category to report your issue</h1>
-          <p className="hero-lead">
-            Choose the category that best matches the problem, then pick the
-            specific issue to see guidance before you submit your report.
-          </p> */}
+          {/* Add hero content here if required */}
         </div>
       </section>
 
-      {/* ================= CATEGORY GRID ================= */}
+      {/* CATEGORY GRID */}
       <section className="section">
         <div className="section-heading">
           <p className="eyebrow">Step 1</p>
@@ -154,47 +165,68 @@ const IssueCategory = () => {
         </div>
 
         <div className="category-grid">
-          {issueCategories.map((category, i) => (
+          {issueCategories.map((category, index) => (
             <button
-              key={i}
+              key={category.num}
               type="button"
-              className={`category-card ${activeCategory === i ? "active" : ""}`}
-              onClick={() => handleCategorySelect(i)}
+              className={`category-card ${
+                activeCategory === index ? "active" : ""
+              }`}
+              onClick={() => handleCategorySelect(index)}
             >
               <div className="category-top">
-                <span className="category-number">{category.num}</span>
-                <span className="category-icon">{category.icon}</span>
+                <span className="category-number">
+                  {category.num}
+                </span>
+
+                <span className="category-icon">
+                  {category.icon}
+                </span>
               </div>
+
               <h4>{category.title}</h4>
               <p>{category.summary}</p>
+
               <span className="category-link">
-                {activeCategory === i ? "Viewing sub-issues ↓" : "View sub-issues →"}
+                {activeCategory === index
+                  ? "Viewing sub-issues ↓"
+                  : "View sub-issues →"}
               </span>
             </button>
           ))}
         </div>
       </section>
 
-      {/* ================= SUB-ISSUE SELECTION ================= */}
+      {/* SUB-ISSUE SELECTION */}
       <section className="section surface">
         <div className="detail-shell">
           <div className="detail-heading">
-            <span className="category-number lg">{currentCategory.num}</span>
+            <span className="category-number lg">
+              {currentCategory.num}
+            </span>
+
             <div>
               <p className="eyebrow">Step 2</p>
-              <h3>Select a specific issue in {currentCategory.title}</h3>
+              <h3>
+                Select a specific issue in {currentCategory.title}
+              </h3>
             </div>
           </div>
 
           <div className="issue-chip-grid">
-            {currentCategory.issues.map((issue, i) => (
+            {currentCategory.issues.map((issue, index) => (
               <button
-                key={i}
+                key={issue}
                 type="button"
-                className={`issue-chip ${activeIssue === i ? "active" : ""}`}
-                onClick={() => setActiveIssue(i)}
+                className={`issue-chip ${
+                  activeIssue === index ? "active" : ""
+                }`}
+                onClick={() => setActiveIssue(index)}
               >
-                <span className="check">{activeIssue === i ? "✓" : ""}</span>
+                <span className="check">
+                  {activeIssue === index ? "✓" : ""}
+                </span>
+
                 {issue}
               </button>
             ))}
@@ -202,7 +234,7 @@ const IssueCategory = () => {
         </div>
       </section>
 
-      {/* ================= ISSUE INFORMATION ================= */}
+      {/* ISSUE INFORMATION */}
       <section className="section">
         <div className="section-heading">
           <p className="eyebrow">Step 3</p>
@@ -211,35 +243,60 @@ const IssueCategory = () => {
 
         <div className="info-shell">
           <div className="info-card">
+            <span className="info-label">Issue Category</span>
+            <h3>{currentCategory.title}</h3>
+          </div>
+
+          <div className="info-card">
             <span className="info-label">Issue Name</span>
             <h3>{currentIssue}</h3>
           </div>
+
           <div className="info-card">
             <span className="info-label">Issue Description</span>
             <p>
-              Provide a short description of the “{currentIssue}” problem —
-              what you observed, its extent, and how long it has persisted.
+              Provide a short description of the "{currentIssue}"
+              problem — what you observed, its extent, and how long
+              it has persisted.
             </p>
           </div>
+
           <div className="info-card">
             <span className="info-label">Related Guidance</span>
+
             <ul className="guidance-list">
-              <li>Add clear photographs from more than one angle</li>
+              <li>
+                Add clear photographs from more than one angle
+              </li>
               <li>Capture GPS location at the exact site</li>
-              <li>Mention nearby landmarks for easier identification</li>
+              <li>
+                Mention nearby landmarks for easier identification
+              </li>
             </ul>
           </div>
         </div>
       </section>
 
-      {/* ================= CTA ================= */}
+      {/* CONTINUE TO REPORT */}
       <section className="section cta-section">
         <div className="cta-shell">
           <div>
-            <h3>Ready to report “{currentIssue}”?</h3>
-            <p>Confirm the category and issue, then continue to submit your report.</p>
+            <h3>Ready to report "{currentIssue}"?</h3>
+
+            <p>
+              Selected category: <strong>{currentCategory.title}</strong>
+            </p>
+
+            <p>
+              Confirm your selection and continue to submit your report.
+            </p>
           </div>
-          <button className="primary-btn" type="button">
+
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={handleContinue}
+          >
             Continue to Report <span>→</span>
           </button>
         </div>

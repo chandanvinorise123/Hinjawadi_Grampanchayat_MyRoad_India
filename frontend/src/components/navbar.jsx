@@ -419,13 +419,13 @@ const Navbar = () => {
                     </button>
 
                     {/* Settings */}
-                    <button
+                    {/* <button
                       onClick={() =>
                         goTo('/Settings')
                       }
                     >
                       Settings
-                    </button>
+                    </button> */}
 
                     {/* Help */}
                     <button
