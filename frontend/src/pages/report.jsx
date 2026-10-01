@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./report.css";
 import bannerImage from "../assets/banner.png";
+import PhotoDetection from "../components/PhotoDetection";
 
 const categories = [
   {
@@ -43,8 +44,10 @@ const ReportIssue = () => {
 
   const [issueType, setIssueType] = useState("");
   const [description, setDescription] = useState("");
-  const [photos, setPhotos] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
+
+  // ✅ NEW: State for verified photos and captured location
+  const [verifiedPhotosData, setVerifiedPhotosData] = useState([]);
+  const [capturedLocation, setCapturedLocation] = useState(null);
 
   const handleUseLiveLocation = () => {
     setLocationMode("live");
@@ -57,9 +60,16 @@ const ReportIssue = () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLiveLocation({
+        const loc = {
           lat: position.coords.latitude.toFixed(5),
           lng: position.coords.longitude.toFixed(5),
+        };
+        setLiveLocation(loc);
+        // Also update the capturedLocation state for final submission
+        setCapturedLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
         });
         setLocationStatus("captured");
       },
@@ -67,31 +77,56 @@ const ReportIssue = () => {
     );
   };
 
-  const addPhotos = (files) => {
-    const fileList = Array.from(files || []);
-    const newPhotos = fileList.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }));
-    setPhotos((prev) => [...prev, ...newPhotos]);
+  // ✅ NEW: Handle photo verification callbacks from PhotoDetection component
+  const handlePhotoVerified = (photoId, aiResult) => {
+    console.log("Photo verified:", photoId, aiResult);
   };
 
-  const handlePhotoUpload = (e) => addPhotos(e.target.files);
+  const handlePhotoRejected = (photoId, reason) => {
+    console.log("Photo rejected:", photoId, reason);
+    alert(`Photo rejected: ${reason}`);
+  };
 
-  const handleDrop = (e) => {
+  // ✅ UPDATED: Submit report using verified data and real backend API
+  const handleSubmitReport = async (e) => {
     e.preventDefault();
-    setIsDragging(false);
-    addPhotos(e.dataTransfer.files);
-  };
+    
+    // Check if we have verified photos
+    if (verifiedPhotosData.length === 0) {
+      alert("Please upload and verify at least one photo");
+      return;
+    }
 
-  const removePhoto = (index) => {
-    setPhotos(photos.filter((_, i) => i !== index));
-  };
+    // Prepare complaint data
+    const complaintData = {
+      fullName,
+      mobile,
+      email,
+      issueType,
+      description,
+      location: locationMode === "url" ? locationUrl : capturedLocation,
+      photos: verifiedPhotosData,
+      timestamp: new Date().toISOString(),
+    };
 
-  const handleSubmitReport = (e) => {
-    e.preventDefault();
-    const number = `MRI-${Math.floor(100000 + Math.random() * 900000)}`;
-    setComplaintNumber(number);
+    try {
+      // Send to backend
+      const response = await fetch("http://localhost:3200/api/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(complaintData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setComplaintNumber(data.complaintNumber || `MRI-${Math.floor(100000 + Math.random() * 900000)}`);
+      } else {
+        throw new Error("Failed to submit complaint");
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Failed to submit complaint. Please try again.");
+    }
   };
 
   const resetForm = () => {
@@ -102,10 +137,11 @@ const ReportIssue = () => {
     setLocationMode("url");
     setLocationUrl("");
     setLiveLocation({ lat: "", lng: "" });
+    setCapturedLocation(null); // ✅ Reset new state
     setLocationStatus("idle");
     setIssueType("");
     setDescription("");
-    setPhotos([]);
+    setVerifiedPhotosData([]); // ✅ Reset new state
   };
 
   return (
@@ -118,15 +154,7 @@ const ReportIssue = () => {
       >
         <div className="hero-scrim"></div>
         <div className="page-hero-inner">
-          {/* <div className="breadcrumb">
-            Home / <b>Report an Issue</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Citizen Reporting</p>
-          <h1>Report an issue in a few simple steps</h1>
-          <p className="hero-lead">
-            Fill in your details, describe the problem, mark its location,
-            and attach a photo — we'll take it from there.
-          </p> */}
+          {/* Hero content commented out as in original */}
         </div>
       </section>
 
@@ -191,7 +219,7 @@ const ReportIssue = () => {
                     className={locationMode === "url" ? "active" : ""}
                     onClick={() => setLocationMode("url")}
                   >
-                    Enter Location url
+                    Enter Location URL
                   </button>
                   <button
                     type="button"
@@ -204,11 +232,11 @@ const ReportIssue = () => {
 
                 {locationMode === "url" ? (
                   <div className="form-field">
-                    <label htmlFor="locationUrl">Location (Enter url)</label>
+                    <label htmlFor="locationUrl">Location (Enter URL)</label>
                     <input
                       id="locationUrl"
                       type="text"
-                      placeholder="Enter location url manually"
+                      placeholder="Enter location URL manually"
                       value={locationUrl}
                       onChange={(e) => setLocationUrl(e.target.value)}
                     />
@@ -263,48 +291,18 @@ const ReportIssue = () => {
                 </div>
               </div>
 
-              {/* ---------------- RIGHT COLUMN: UPLOAD ---------------- */}
+              {/* ---------------- RIGHT COLUMN: PHOTO DETECTION ---------------- */}
               <div className="report-col">
-                <div className="form-field upload-field">
-                  <label>Upload Image</label>
-                  <label
-                    className={`upload-dropzone ${isDragging ? "dragging" : ""}`}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      hidden
-                    />
-                    <span className="upload-icon">📷</span>
-                    <span className="upload-text">
-                      Click to upload or drag and drop
-                      <br />
-                      PNG, JPG, GIF up to 10MB
-                    </span>
-                  </label>
-
-                  {photos.length > 0 && (
-                    <div className="photo-grid">
-                      {photos.map((photo, i) => (
-                        <div className="photo-thumb" key={i}>
-                          <img src={photo.url} alt={photo.name} />
-                          <button
-                            type="button"
-                            className="photo-remove"
-                            onClick={() => removePhoto(i)}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <PhotoDetection
+                  onPhotoVerified={handlePhotoVerified}
+                  onPhotoRejected={handlePhotoRejected}
+                  existingPhotos={[]}
+                  maxPhotos={5}
+                  required={true}
+                  category={issueType}
+                  onPhotosUpdate={setVerifiedPhotosData}
+                  onLocationUpdate={setCapturedLocation}
+                />
               </div>
 
               {/* ---------------- SUBMIT ---------------- */}

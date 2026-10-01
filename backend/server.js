@@ -10,10 +10,12 @@ const userRoutes = require("./routes/userRoutes");
 const statRoutes = require("./routes/statRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminProfileRoutes = require("./routes/adminProfileRoutes");
+const photoRoutes = require("./routes/photoRoutes");
 
 // ==========================================
 // ADDITIONAL ROUTES
 // ==========================================
+
 
 // Complaint Routes
 const complaintRoutes = require("./routes/complaintRoutes");
@@ -40,6 +42,7 @@ app.use("/api/auth", authRoutes);
 
 // User Routes
 app.use("/api", userRoutes);
+
 
 // ==========================================
 // ADDITIONAL USER ROUTE PATH
@@ -93,6 +96,7 @@ app.use("/api/admin", adminProfileRoutes);
 // Activity
 // ==========================================
 app.use("/api/admin", adminManagementRoutes);
+app.use("/api/photos", photoRoutes);
 
 // ==========================================
 // DEFAULT ROUTE
