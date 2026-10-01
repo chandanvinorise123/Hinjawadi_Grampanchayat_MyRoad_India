@@ -1,0 +1,214 @@
+/* ================= SHELL & HEADER ================= */
+.swm-shell {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.swm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.swm-back-btn {
+  padding: 10px 18px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.swm-back-btn:hover { background: #f1f5f9; color: #0f172a; }
+.swm-header h2 { margin: 0; font-size: 1.6rem; color: #0f172a; }
+.swm-header p { margin: 4px 0 0 0; color: #64748b; font-size: 0.95rem; }
+
+.swm-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+.swm-message.success { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+.swm-message.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+/* ================= STATS ROW ================= */
+.swm-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.swm-stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.swm-stat-card h3 { margin: 0 0 8px 0; font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+.swm-stat-card p { margin: 0; font-size: 1.8rem; font-weight: 700; color: #0f172a; }
+
+.swm-stat-card.active p { color: #2563eb; }
+.swm-stat-card.pending p { color: #d97706; }
+.swm-stat-card.completed p { color: #16a34a; }
+
+/* ================= MAIN GRID ================= */
+.swm-main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
+
+.swm-panel {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.swm-panel-title {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+/* ================= LEFT PANEL: STAFF LIST ================= */
+.swm-staff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.swm-staff-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.swm-staff-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+.swm-staff-item.active { background: #eff6ff; border-color: #3b82f6; }
+.swm-staff-item.on-leave { opacity: 0.5; cursor: not-allowed; }
+
+.swm-staff-info { display: flex; align-items: center; gap: 12px; }
+.swm-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #475569;
+}
+
+.swm-staff-info strong { display: block; font-size: 0.95rem; color: #0f172a; }
+.swm-staff-info small { font-size: 0.8rem; color: #64748b; }
+
+.swm-staff-stats { display: flex; gap: 6px; }
+.swm-stat-badge {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; color: white;
+}
+.swm-stat-badge.assigned { background: #3b82f6; }
+.swm-stat-badge.pending { background: #f59e0b; }
+.swm-stat-badge.completed { background: #10b981; }
+
+/* ================= RIGHT PANEL: WORK DETAILS ================= */
+.swm-section { margin-bottom: 32px; }
+.swm-section:last-child { margin-bottom: 0; }
+
+.swm-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.swm-section-header h3 { margin: 0; font-size: 1.05rem; color: #0f172a; }
+.swm-count-badge {
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+.swm-count-badge.queue { background: #fff7ed; color: #c2410c; }
+
+.swm-table-wrap { overflow-x: auto; }
+.swm-table { width: 100%; border-collapse: collapse; }
+.swm-table th, .swm-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+.swm-table th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 0.85rem; text-transform: uppercase; }
+.swm-mono { font-family: monospace; font-size: 0.9rem; color: #475569; }
+.swm-subtext { color: #94a3b8; font-size: 0.8rem; }
+
+/* Badges */
+.swm-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+.swm-priority-red { background: #fee2e2; color: #991b1b; }
+.swm-priority-amber { background: #fef3c7; color: #92400e; }
+.swm-priority-green { background: #dcfce7; color: #166534; }
+.swm-status-navy { background: #dbeafe; color: #1e40af; }
+.swm-status-amber { background: #fef3c7; color: #92400e; }
+.swm-status-green { background: #dcfce7; color: #166534; }
+
+/* Select Dropdowns */
+.swm-select-sm {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.swm-select-sm:focus { border-color: #3b82f6; }
+
+/* Queue List */
+.swm-queue-list { display: flex; flex-direction: column; gap: 12px; }
+.swm-queue-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.swm-queue-info strong { display: block; font-size: 0.95rem; color: #0f172a; }
+.swm-queue-actions { display: flex; align-items: center; gap: 12px; }
+
+.swm-empty { text-align: center; padding: 30px; color: #94a3b8; font-style: italic; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1024px) {
+  .swm-main-grid { grid-template-columns: 1fr; }
+  .swm-stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .swm-stats-row { grid-template-columns: 1fr; }
+  .swm-queue-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .swm-queue-actions { width: 100%; justify-content: space-between; }
+}

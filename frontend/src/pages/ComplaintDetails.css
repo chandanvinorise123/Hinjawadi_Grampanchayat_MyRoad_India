@@ -1,0 +1,395 @@
+
+/* ================= SHELL & HEADER ================= */
+
+.cd-shell {
+  display: block;
+  width: 100%;
+  max-width: 1400px;
+  box-sizing: border-box;
+  padding: 32px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+/* Header stays above the complaint content */
+.cd-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 24px;
+  margin: 0 0 24px 0;
+}
+
+.cd-back-btn {
+  flex: 0 0 auto;
+  padding: 10px 18px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  margin-top: 0;
+}
+
+.cd-back-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.cd-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cd-header-info h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: #0f172a;
+  overflow-wrap: break-word;
+}
+
+.cd-header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ================= BADGES ================= */
+
+.cd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.cd-priority-critical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cd-priority-urgent {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cd-priority-normal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cd-status-navy {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.cd-status-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cd-status-orange {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.cd-status-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* ================= GRID LAYOUT ================= */
+
+.cd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  box-sizing: border-box;
+  gap: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+.cd-card {
+  min-width: 0;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.cd-card-full {
+  grid-column: 1 / -1;
+}
+
+.cd-card-title {
+  margin: 0 0 20px 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+/* ================= INFO GRID ================= */
+
+.cd-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.cd-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cd-info-item label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cd-info-item p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.cd-full-width {
+  grid-column: 1 / -1;
+}
+
+.cd-description {
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* ================= PHOTOGRAPHS ================= */
+
+.cd-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cd-photo-item {
+  min-width: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  aspect-ratio: 4 / 3;
+}
+
+.cd-photo-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.cd-photo-item img:hover {
+  transform: scale(1.05);
+}
+
+/* ================= MAP ================= */
+
+.cd-address {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.cd-map-container {
+  width: 100%;
+  height: 250px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+
+/* ================= BEFORE & AFTER ================= */
+
+.cd-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.cd-comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cd-comparison-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.cd-comparison-item img {
+  display: block;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+/* ================= TIMELINE (HISTORY) ================= */
+
+.cd-timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.cd-timeline::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.cd-timeline-item {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.cd-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.cd-timeline-dot {
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px #e2e8f0;
+  z-index: 1;
+}
+
+.cd-timeline-content {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.cd-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.cd-timeline-date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.cd-timeline-user {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.cd-timeline-remark {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1024px) {
+  .cd-shell {
+    padding: 24px;
+  }
+
+  .cd-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cd-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .cd-shell {
+    padding: 16px;
+  }
+
+  .cd-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .cd-header-info {
+    flex: 1 1 100%;
+  }
+
+  .cd-header-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .cd-info-grid,
+  .cd-photo-grid,
+  .cd-comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cd-card {
+    padding: 16px;
+  }
+
+  .cd-card-title {
+    font-size: 1rem;
+  }
+
+  .cd-timeline-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cd-map-container {
+    height: 220px;
+  }
+}

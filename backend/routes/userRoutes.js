@@ -3,92 +3,300 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 
-// GET all users (with optional role filtering)
+// ==========================================
+// GET ALL USERS
+// Optional role filtering
+// Example:
+// /api/users?role=staff
+// /api/users?role=staff,verifier
+// ==========================================
 router.get("/users", async (req, res) => {
   try {
     const { role } = req.query;
+
     let query = {};
-    
+
     if (role) {
       const rolesArray = role.split(",");
       query.role = { $in: rolesArray };
     }
 
     const users = await User.find(query, "-password");
-    res.json({ success: true, users });
+
+    res.json({
+      success: true,
+      users,
+    });
   } catch (err) {
     console.error("Fetch users error:", err);
-    res.status(500).json({ success: false, message: "Failed to fetch users" });
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+    });
   }
 });
 
-// POST - Register new user
+// ==========================================
+// ✅ ADDED: GET SINGLE USER BY ID
+// Used for fetching user details for the Profile Modal
+// ==========================================
+router.get("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      user,
+    });
+  } catch (err) {
+    console.error("Fetch single user error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch user",
+    });
+  }
+});
+
+// ==========================================
+// POST - REGISTER NEW USER
+// ==========================================
 router.post("/users", async (req, res) => {
   try {
-    const { name, role, contact, email, password } = req.body;
+    const {
+      name,
+      role,
+      contact,
+      email,
+      password,
+    } = req.body;
 
+    // Validate required fields
     if (!name || !role || !contact || !email || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required." });
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required.",
+      });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    // Check if email already exists
+    const existing = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
     if (existing) {
-      return res.status(409).json({ success: false, message: "A user with this email already exists." });
+      return res.status(409).json({
+        success: false,
+        message: "A user with this email already exists.",
+      });
     }
 
-    const newUser = new User({ name, role, contact, email, password });
+    // Create new user
+    // Password will automatically be hashed
+    // by the User model pre-save middleware.
+    const newUser = new User({
+      name,
+      role,
+      contact,
+      email,
+      password,
+    });
+
     await newUser.save();
 
+    // Remove password from response
     const safeUser = newUser.toObject();
     delete safeUser.password;
 
-    res.status(201).json({ success: true, user: safeUser });
+    res.status(201).json({
+      success: true,
+      user: safeUser,
+    });
   } catch (err) {
+    // Duplicate email
     if (err.code === 11000) {
-      return res.status(409).json({ success: false, message: "A user with this email already exists." });
+      return res.status(409).json({
+        success: false,
+        message: "A user with this email already exists.",
+      });
     }
+
     console.error("Create user error:", err);
-    res.status(500).json({ success: false, message: "Failed to create user" });
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create user",
+    });
   }
 });
 
-// PUT - Update user
+// ==========================================
+// PUT - UPDATE USER
+// ==========================================
 router.put("/users/:id", async (req, res) => {
   try {
-    const updates = { ...req.body };
+    const updates = {
+      ...req.body,
+    };
 
+    // If password is being updated,
+    // hash it manually because findByIdAndUpdate()
+    // does not trigger the save middleware.
     if (updates.password) {
       const salt = await bcrypt.genSalt(10);
-      updates.password = await bcrypt.hash(updates.password, salt);
+      updates.password = await bcrypt.hash(
+        updates.password,
+        salt
+      );
     }
 
-    const updated = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
+    // Keep email lowercase
+    if (updates.email) {
+      updates.email = updates.email.toLowerCase().trim();
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    res.json({ success: true, user: updated });
+    res.json({
+      success: true,
+      user: updated,
+    });
   } catch (err) {
+    // Duplicate email / staffId / verifierId
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Email, Staff ID, or Verifier ID already exists.",
+      });
+    }
+
     console.error("Update user error:", err);
-    res.status(500).json({ success: false, message: "Failed to update user" });
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user",
+    });
   }
 });
 
-// DELETE - Remove user
+// ==========================================
+// PUT - UPDATE DETAILED PROFILE
+// Staff / Verifier / Admin Profile
+// URL:
+// PUT /api/users/profile/:id
+// ==========================================
+router.put("/profile/:id", async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const updateData = {
+      ...req.body,
+    };
+
+    // Keep email lowercase if it is being updated
+    if (updateData.email) {
+      updateData.email = updateData.email
+        .toLowerCase()
+        .trim();
+    }
+
+    // If password is included in profile update,
+    // hash it manually.
+    if (updateData.password) {
+      const salt = await bcrypt.genSalt(10);
+
+      updateData.password = await bcrypt.hash(
+        updateData.password,
+        salt
+      );
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (err) {
+    // Duplicate email / staffId / verifierId
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Email, Staff ID, or Verifier ID already exists.",
+      });
+    }
+
+    console.error("Profile update error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+    });
+  }
+});
+
+// ==========================================
+// DELETE - REMOVE USER
+// ==========================================
 router.delete("/users/:id", async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const deleted = await User.findByIdAndDelete(
+      req.params.id
+    );
+
     if (!deleted) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
-    res.json({ success: true, message: "User removed" });
+
+    res.json({
+      success: true,
+      message: "User removed",
+    });
   } catch (err) {
     console.error("Delete user error:", err);
-    res.status(500).json({ success: false, message: "Failed to delete user" });
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete user",
+    });
   }
 });
 

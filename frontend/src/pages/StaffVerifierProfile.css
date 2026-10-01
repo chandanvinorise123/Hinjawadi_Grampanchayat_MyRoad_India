@@ -1,0 +1,353 @@
+/* ================= FULL PAGE LAYOUT ================= */
+.svp-full-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 32px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.svp-page-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+}
+
+.svp-full-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.2rem;
+  color: #64748b;
+}
+
+/* ================= HEADER ================= */
+.svp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.svp-header-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.svp-back-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.svp-back-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.svp-header-info h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #0f172a;
+}
+
+.svp-header-info p {
+  margin: 4px 0 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.svp-header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.svp-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.svp-status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.svp-status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ================= MESSAGES ================= */
+.svp-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.svp-message.success {
+  background: #d1fae5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.svp-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}
+
+/* ================= CONTENT SECTIONS ================= */
+.svp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.svp-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.svp-note {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+/* ================= GRID LAYOUTS ================= */
+.svp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.svp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.svp-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.svp-field label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.svp-field input,
+.svp-field select {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.svp-field input:focus,
+.svp-field select:focus {
+  outline: none;
+  border-color: #2e6cb0;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(46, 108, 176, 0.1);
+}
+
+.svp-field input:disabled,
+.svp-field select:disabled,
+.svp-readonly {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed;
+  border-color: #e2e8f0 !important;
+}
+
+/* ================= STATS GRID ================= */
+.svp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.svp-stat-card {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.svp-stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.svp-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.svp-stat-value.success { color: #16a34a; }
+.svp-stat-value.warning { color: #d97706; }
+
+/* ================= SECURITY GRID ================= */
+.svp-security-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.svp-password-row {
+  display: flex;
+  gap: 12px;
+}
+
+.svp-password-row input {
+  flex: 1;
+}
+
+/* ================= ROLE SELECTOR DROPDOWN ================= */
+.svp-role-select {
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.svp-role-select:hover {
+  border-color: #94a3b8;
+}
+
+.svp-role-select:focus {
+  border-color: #2e6cb0;
+  box-shadow: 0 0 0 3px rgba(46, 108, 176, 0.1);
+}
+
+/* ================= FOOTER ACTIONS ================= */
+.svp-footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.svp-footer-left,
+.svp-footer-right {
+  display: flex;
+  gap: 12px;
+}
+
+.svp-btn-primary {
+  background: #2e6cb0;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.svp-btn-primary:hover {
+  background: #1e4d82;
+}
+
+.svp-btn-outline {
+  background: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.svp-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.svp-btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.svp-btn-danger:hover {
+  background: #fecaca;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .svp-grid,
+  .svp-stats-grid,
+  .svp-security-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .svp-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .svp-header-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .svp-password-row {
+    flex-direction: column;
+  }
+
+  .svp-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+}

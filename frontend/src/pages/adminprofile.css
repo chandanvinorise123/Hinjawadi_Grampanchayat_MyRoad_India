@@ -1,0 +1,494 @@
+/* ================= ADMIN PROFILE SHELL ================= */
+.ap-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #1e293b;
+}
+
+.ap-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.ap-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2e6cb0;
+  border-radius: 50%;
+  animation: ap-spin 1s linear infinite;
+}
+
+@keyframes ap-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================= HEADER ================= */
+.ap-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.ap-back-btn {
+  padding: 10px 18px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.ap-back-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.ap-header-title h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #0f172a;
+}
+
+.ap-header-title p {
+  margin: 4px 0 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* ================= MESSAGE BANNER ================= */
+.ap-message-banner {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.ap-message-banner.success {
+  background: #d1fae5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.ap-message-banner.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}
+
+/* ================= HERO CARD ================= */
+.ap-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  background: linear-gradient(135deg, #2e6cb0 0%, #1d8a5c 100%);
+  border-radius: 16px;
+  color: white;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 20px rgba(46, 108, 176, 0.15);
+}
+
+.ap-hero-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ap-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ap-hero-info h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.ap-hero-role {
+  margin: 4px 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.ap-hero-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+.ap-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: ap-pulse 2s infinite;
+}
+
+@keyframes ap-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.ap-hero-org {
+  margin: 8px 0 0 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+/* ================= SECTIONS ================= */
+.ap-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ap-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ap-section-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.ap-section-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.ap-edit-btn {
+  padding: 8px 16px;
+  background: #2e6cb0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.ap-edit-btn:hover {
+  background: #1e4d82;
+}
+
+/* ================= FORM GRID ================= */
+.ap-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.ap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ap-field-full {
+  grid-column: 1 / -1;
+}
+
+.ap-field label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.ap-field input,
+.ap-field select,
+.ap-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.ap-field input:focus,
+.ap-field select:focus,
+.ap-field textarea:focus {
+  outline: none;
+  border-color: #2e6cb0;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(46, 108, 176, 0.1);
+}
+
+.ap-field input:disabled,
+.ap-field select:disabled,
+.ap-field textarea:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+/* ================= PHOTO UPLOAD ================= */
+.ap-photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ap-photo-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.ap-photo-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  border: 2px dashed #cbd5e1;
+}
+
+.ap-file-input {
+  flex: 1;
+}
+
+.ap-photo-upload small {
+  color: #64748b;
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ================= INFO GRID (Read Only) ================= */
+.ap-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ap-info-item {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.ap-info-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ap-info-value {
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.ap-role-badge {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.ap-status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+/* ================= PREFERENCES ================= */
+.ap-preferences-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.ap-pref-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ap-pref-item label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.ap-pref-item select {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 0.9rem;
+}
+
+/* ================= TOGGLE SWITCH ================= */
+.ap-toggle {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.ap-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ap-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 26px;
+}
+
+.ap-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.ap-toggle input:checked + .ap-toggle-slider {
+  background: #10b981;
+}
+
+.ap-toggle input:checked + .ap-toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.ap-toggle input:disabled + .ap-toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================= FORM ACTIONS ================= */
+.ap-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ap-btn-primary {
+  padding: 10px 20px;
+  background: #2e6cb0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.ap-btn-primary:hover {
+  background: #1e4d82;
+}
+
+.ap-btn-outline {
+  padding: 10px 20px;
+  background: white;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.ap-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .ap-form-grid,
+  .ap-info-grid,
+  .ap-preferences-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ap-hero-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .ap-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

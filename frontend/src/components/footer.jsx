@@ -82,7 +82,7 @@ const Footer = () => {
 
           {/* ---------- Content ---------- */}
           <div className="footer-content">
-            <h2 className="footer-title">MyRoad India</h2>
+            <h2 className="footer-title">My Road India</h2>
             <p className="footer-subtitle">
               Road Safety • GIS Mapping • Smart Road Management
             </p>
@@ -129,8 +129,8 @@ const Footer = () => {
                   <span className="contact-icon-badge">
                     <ContactIcon.Mail />
                   </span>
-                  <a href="mailto:info@myroadindia.com" className="contact-text">
-                    info@myroadindia.com
+                  <a href="mailto:contact@myroadindia.com" className="contact-text">
+                    contact@myroadindia.com
                   </a>
                 </div>
                 <div className="footer-contact-row">
@@ -155,8 +155,8 @@ const Footer = () => {
                   <span className="contact-icon-badge">
                     <ContactIcon.Phone />
                   </span>
-                  <a href="tel:+91-8956324316" className="contact-text">
-                    +91 8956324316
+                  <a href="tel:+91-9699318163" className="contact-text">
+                    +91 9699318163
                   </a>
                 </div>
                 <div className="footer-contact-row">
@@ -170,7 +170,11 @@ const Footer = () => {
           </div>
 
           {/* ---------- Navigation Columns ---------- */}
+
+
+
           <div className="footer-nav">
+            
             <div className="footer-nav-col">
               <h3 className="footer-nav-title">CITIZEN SERVICES</h3>
               <ul className="footer-nav-list">
@@ -189,7 +193,7 @@ const Footer = () => {
                 <li><a href="#faq" className="footer-nav-link">FAQ</a></li>
                 <li><a href="#contact" className="footer-nav-link">Contact</a></li>
               </ul>
-            </div>
+            </div> 
 
             <div className="footer-nav-col">
               <h3 className="footer-nav-title">LEGAL</h3>
@@ -208,7 +212,10 @@ const Footer = () => {
                 <li><a href="#admin" className="footer-nav-link">Admin Dashboard</a></li>
               </ul>
             </div>
-          </div>
+
+
+           </div>
+
         </div>
 
         {/* ---------- Bottom Bar ---------- */}
@@ -223,6 +230,7 @@ const Footer = () => {
             Clean Roads • Safe Lives • Greener Tomorrow
           </p>
         </div>
+
       </div>
     </footer>
   );
