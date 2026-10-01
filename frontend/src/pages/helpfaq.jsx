@@ -26,7 +26,7 @@ const faqCategories = [
     ],
   },
   {
-    icon: "🔍",
+    icon: "",
     title: "Track Complaint Questions",
     questions: [
       {
@@ -48,7 +48,7 @@ const faqCategories = [
     ],
   },
   {
-    icon: "📱",
+    icon: "",
     title: "Mobile App Questions",
     questions: [
       {
@@ -113,7 +113,8 @@ const HelpFaq = () => {
 
   return (
     <main className="help-page">
-      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      {/* ================= PAGE HERO ================= */}
+      {/* Added backgroundImage style and changed hero-glow to hero-scrim */}
       <section
         className="page-hero"
         style={{ backgroundImage: `url(${bannerImage})` }}
@@ -122,8 +123,8 @@ const HelpFaq = () => {
         <div className="page-hero-inner">
           {/* <div className="breadcrumb">
             Home / <b>Help / FAQ</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Help Center</p>
+          </div> */}
+          {/* <p className="eyebrow eyebrow-light">Help Center</p>
           <h1>Frequently asked questions</h1>
           <p className="hero-lead">
             Answers to common questions about reporting issues, tracking

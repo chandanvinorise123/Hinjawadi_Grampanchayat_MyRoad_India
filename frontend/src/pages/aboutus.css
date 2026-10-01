@@ -117,7 +117,7 @@
     Matches services.css: uncapped max so the banner can scale
     up on larger screens instead of being capped at a fixed height.
   */
-  min-height: clamp(600px, 34vw, 3800px);
+  min-height: clamp(500px, 34vw, 800px);
 
   display: flex;
   align-items: flex-end;
@@ -671,6 +671,446 @@
   flex-shrink: 0;
 }
 
+/* ================= HINJEWADI — FOCUS AREA ================= */
+
+.about-page .hj-lead {
+  max-width: 720px;
+
+  margin: 14px auto 0;
+
+  color: var(--ink-soft);
+
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* ---------- Overview: profile + key numbers ---------- */
+
+.about-page .hj-overview {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns: 1.1fr 1fr;
+
+  gap: 24px;
+
+  align-items: stretch;
+}
+
+.about-page .hj-profile {
+  background: var(--white);
+
+  border: 1px solid var(--line);
+
+  border-radius: var(--radius-md);
+
+  padding: 28px;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px rgba(16, 24, 40, 0.05);
+}
+
+.about-page .hj-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 17px;
+
+  margin: 0 0 8px;
+}
+
+.about-page .hj-card-title::before {
+  content: "";
+
+  width: 4px;
+  height: 18px;
+
+  border-radius: 2px;
+
+  background: var(--saffron);
+}
+
+.about-page .hj-profile-list {
+  margin: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.about-page .hj-profile-row {
+  display: grid;
+
+  grid-template-columns: 170px 1fr;
+
+  gap: 16px;
+
+  padding: 14px 0;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.about-page .hj-profile-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.about-page .hj-profile-row dt {
+  padding-top: 3px;
+
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+
+  color: var(--ink-faint);
+}
+
+.about-page .hj-profile-row dd {
+  margin: 0;
+
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+
+  color: var(--navy-900);
+}
+
+.about-page .hj-stats {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+
+  gap: 16px;
+}
+
+/* ---------- Shared number card ---------- */
+
+.about-page .hj-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  background: var(--white);
+
+  border: 1px solid var(--line);
+
+  border-radius: var(--radius-md);
+
+  padding: 22px;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px rgba(16, 24, 40, 0.05);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.about-page .hj-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #cbd5e1;
+
+  box-shadow: 0 16px 32px -18px rgba(11, 36, 71, 0.3);
+}
+
+.about-page .hj-icon {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #eaf0fb;
+
+  font-size: 21px;
+
+  margin-bottom: 16px;
+}
+
+.about-page .hj-value {
+  font-family: "Plus Jakarta Sans", sans-serif;
+
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 800;
+  line-height: 1.1;
+
+  color: var(--navy-900);
+
+  margin-bottom: 6px;
+}
+
+.about-page .hj-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+
+  color: var(--ink-soft);
+}
+
+.about-page .hj-tag-note {
+  margin-top: 10px;
+
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+
+  color: var(--ink-faint);
+
+  background: var(--surface-2);
+
+  padding: 3px 9px;
+
+  border-radius: 999px;
+}
+
+.about-page .hj-note {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 18px auto 0;
+
+  text-align: center;
+
+  font-size: 12px;
+  line-height: 1.5;
+
+  color: var(--ink-faint);
+}
+
+/* ---------- Infrastructure & road connections ---------- */
+
+.about-page .hj-amenities {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto 24px;
+
+  display: grid;
+
+  grid-template-columns: repeat(5, 1fr);
+
+  gap: 16px;
+}
+
+.about-page .hj-roads {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  background: var(--white);
+
+  border: 1px solid var(--line);
+
+  border-radius: var(--radius-md);
+
+  padding: 26px 28px;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px rgba(16, 24, 40, 0.05);
+}
+
+.about-page .hj-roads-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 18px;
+
+  margin-top: 16px;
+}
+
+.about-page .hj-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: var(--navy-900);
+
+  color: #ffffff;
+
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+
+  padding: 12px 20px;
+
+  border-radius: 999px;
+
+  box-shadow: 0 7px 16px rgba(11, 36, 71, 0.18);
+}
+
+.about-page .hj-hub-arrow {
+  color: var(--saffron-dark);
+
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.about-page .hj-road-chips {
+  list-style: none;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+.about-page .hj-road-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--line);
+
+  border-radius: 999px;
+
+  padding: 10px 16px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: var(--navy-900);
+}
+
+.about-page .hj-road-chip::before {
+  content: "";
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: var(--saffron);
+}
+
+/* ---------- Key points for Road India ---------- */
+
+.about-page .hj-points {
+  width: 100%;
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+}
+
+.about-page .hj-point {
+  background: var(--white);
+
+  border: 1px solid var(--line);
+
+  border-radius: var(--radius-md);
+
+  padding: 26px;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px rgba(16, 24, 40, 0.05);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.about-page .hj-point:hover {
+  transform: translateY(-4px);
+
+  border-color: #cbd5e1;
+
+  box-shadow: 0 16px 32px -18px rgba(11, 36, 71, 0.3);
+}
+
+.about-page .hj-point-num {
+  display: inline-block;
+
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+
+  color: var(--ink-faint);
+
+  background: var(--surface-2);
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  margin-bottom: 16px;
+}
+
+.about-page .hj-point h4 {
+  font-size: 17px;
+
+  margin: 0 0 12px;
+}
+
+.about-page .hj-point h4::after {
+  content: "";
+
+  display: block;
+
+  width: 28px;
+  height: 3px;
+
+  border-radius: 999px;
+
+  background: var(--saffron);
+
+  margin-top: 10px;
+}
+
+.about-page .hj-point p {
+  margin: 0;
+
+  font-size: 13.5px;
+  line-height: 1.65;
+
+  color: var(--ink-soft);
+}
+
+.about-page .hj-tags {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-top: 14px;
+}
+
+.about-page .hj-tag {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: var(--navy-900);
+
+  background: #eaf0fb;
+
+  padding: 5px 11px;
+
+  border-radius: 999px;
+}
+
 /* ================= CTA ================= */
 
 .about-page .cta-section {
@@ -721,6 +1161,20 @@
 }
 
 /* ================= RESPONSIVE ================= */
+
+@media (max-width: 1000px) {
+  .about-page .hj-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .hj-amenities {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .about-page .hj-points {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 @media (max-width: 900px) {
   .about-page .stats-shell {
@@ -793,6 +1247,41 @@
 
 /* ================= MOBILE ================= */
 
+@media (max-width: 640px) {
+  .about-page .hj-points {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .hj-amenities {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-page .hj-profile {
+    padding: 22px;
+  }
+
+  .about-page .hj-profile-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .about-page .hj-profile-row dt {
+    padding-top: 0;
+  }
+
+  .about-page .hj-point {
+    padding: 22px;
+  }
+
+  .about-page .hj-roads {
+    padding: 22px;
+  }
+
+  .about-page .hj-hub-arrow {
+    display: none;
+  }
+}
+
 @media (max-width: 560px) {
   .about-page section {
     padding: 2.5rem 1rem;
@@ -858,7 +1347,8 @@
   }
 
   .about-page .intro-lead,
-  .about-page .mission-lead {
+  .about-page .mission-lead,
+  .about-page .hj-lead {
     font-size: 13.5px;
   }
 
@@ -910,5 +1400,10 @@
   .about-page .primary-btn,
   .about-page .secondary-btn {
     width: auto;
+  }
+
+  .about-page .hj-stats,
+  .about-page .hj-amenities {
+    grid-template-columns: 1fr;
   }
 }

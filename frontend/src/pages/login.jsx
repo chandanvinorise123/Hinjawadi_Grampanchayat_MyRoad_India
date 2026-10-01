@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./login.css";
 import { useNavigate, Link } from "react-router-dom";
-import bannerImage from "../assets/login-banner.png";
+import bannerImage from "../assets/lg.png";
 
 const roles = [
   { value: "citizen", label: "Citizen" },

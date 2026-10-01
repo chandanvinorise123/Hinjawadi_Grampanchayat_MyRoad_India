@@ -1,72 +1,69 @@
 import React, { useState } from "react";
 import "./services.css";
-import bannerImage from "../assets/banner.png";
+import bannerImage from "../assets/se.png";
 
-/* ================= LINE ICONS (no emoji, consistent stroke weight) ================= */
-const Icon = {
-  Report: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M3 11v2a2 2 0 002 2h1l2 5h2l-1-5h6l5 3V6l-5 3H8L6 9H5a2 2 0 00-2 2z" />
-    </svg>
+// Refined line icons (deep burgundy via currentColor) — consistent 24px set
+const Svg = ({ children }) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {children}
+  </svg>
+);
+
+const icons = {
+  report: (
+    <Svg>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+      <path d="M12 7.5v5M9.5 10h5" />
+    </Svg>
   ),
-  Track: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="11" cy="11" r="7" />
-      <path d="M21 21l-4.3-4.3" />
-    </svg>
+  track: (
+    <Svg>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M20 20l-4.2-4.2" />
+    </Svg>
   ),
-  Map: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z" />
-      <circle cx="12" cy="10" r="2.4" />
-    </svg>
+  map: (
+    <Svg>
+      <path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z" />
+      <path d="M9 4v14M15 6v14" />
+    </Svg>
   ),
-  Field: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <rect x="3" y="9" width="18" height="11" rx="2" />
-      <path d="M8 9V6a4 4 0 018 0v3" />
-    </svg>
+  field: (
+    <Svg>
+      <rect x="3" y="8" width="18" height="12" rx="2" />
+      <path d="M9 8V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V8M3 13h18M10.5 13v2.5h3V13" />
+    </Svg>
   ),
-  Admin: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
-      <path d="M9.5 12l1.8 1.8L15 10" />
-    </svg>
+  admin: (
+    <Svg>
+      <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6L12 3z" />
+      <path d="M8.8 12.2l2.4 2.4 4.2-4.6" />
+    </Svg>
   ),
-  Analytics: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
-    </svg>
-  ),
-  Arrow: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  ),
-  Shield: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
-    </svg>
-  ),
-  Alert: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M12 3l10 18H2z" />
-      <path d="M12 10v4M12 17h.01" />
-    </svg>
-  ),
-  Check: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-      <path d="M5 13l4 4L19 7" />
-    </svg>
+  analytics: (
+    <Svg>
+      <path d="M3 20.5h18M6.5 20V11M12 20V4.5M17.5 20v-6.5" />
+    </Svg>
   ),
 };
 
 const coreServices = [
   {
     num: "01",
-    icon: Icon.Report,
+    icon: icons.report,
     title: "Report & Register Issues",
-    summary: "Report road and public infrastructure issues via website, mobile, or QR code.",
+    summary:
+      "Report road and public infrastructure issues through the online portal.",
     features: [
       "Select issue category",
       "Add issue description",
@@ -79,9 +76,10 @@ const coreServices = [
   },
   {
     num: "02",
-    icon: Icon.Track,
+    icon: icons.track,
     title: "Complaint Tracking Service",
-    summary: "Track any complaint end-to-end using its complaint number.",
+    summary:
+      "Track any complaint end-to-end using its complaint number.",
     features: [
       "Track using complaint number",
       "View complaint status",
@@ -93,9 +91,10 @@ const coreServices = [
   },
   {
     num: "03",
-    icon: Icon.Map,
+    icon: icons.map,
     title: "Location & Map Service",
-    summary: "Every issue is pinned precisely — with priority-coded map markers.",
+    summary:
+      "Every issue is pinned precisely — with priority-coded map markers.",
     features: [
       "Automatic GPS location capture",
       "Latitude & longitude recording",
@@ -107,9 +106,10 @@ const coreServices = [
   },
   {
     num: "04",
-    icon: Icon.Field,
+    icon: icons.field,
     title: "Field Staff Service",
-    summary: "Tools for field officers to inspect, act on, and close assigned complaints.",
+    summary:
+      "Tools for field officers to inspect, act on, and close assigned complaints.",
     features: [
       "View assigned complaints",
       "View complaint location",
@@ -122,9 +122,10 @@ const coreServices = [
   },
   {
     num: "05",
-    icon: Icon.Admin,
+    icon: icons.admin,
     title: "Admin & Complaint Management",
-    summary: "Centralized oversight of every complaint, staff member, and category.",
+    summary:
+      "Manage and resolve complaints, users and system settings.",
     features: [
       "Centralized administrative dashboard",
       "View total, new & pending complaints",
@@ -137,9 +138,10 @@ const coreServices = [
   },
   {
     num: "06",
-    icon: Icon.Analytics,
+    icon: icons.analytics,
     title: "Reports, Notifications & Analytics",
-    summary: "Stay informed at every step, and analyze trends across the system.",
+    summary:
+      "Get insights through reports, alerts and real-time analytics.",
     features: [
       "Registration & verification notifications",
       "Assignment & action-started alerts",
@@ -162,73 +164,67 @@ const lifecycleSteps = [
 ];
 
 const priorityLegend = [
-  { color: "red", label: "Critical / Urgent", icon: Icon.Alert },
-  { color: "orange", label: "Action Required", icon: Icon.Shield },
-  { color: "amber", label: "Inspection Required", icon: Icon.Track },
-  { color: "green", label: "Resolved", icon: Icon.Check },
+  { color: "red", label: "Critical / Urgent" },
+  { color: "orange", label: "Action Required" },
+  { color: "amber", label: "Inspection Required" },
+  { color: "green", label: "Resolved" },
 ];
 
 const Services = () => {
-  
   const [activeService, setActiveService] = useState(0);
 
   return (
     <main className="services-page">
-      {/* ================= PAGE HERO — banner as full-cover background ================= */}
+      {/* ================= PAGE HERO — Bright Banner ================= */}
       <section
         className="page-hero"
-        id="home"
         style={{ backgroundImage: `url(${bannerImage})` }}
       >
         <div className="hero-scrim"></div>
+
         <div className="page-hero-inner">
-          <div className="hero-cta-row">
-            <button className="primary-btn" type="button">
-              Report an Issue <Icon.Arrow />
-            </button>
-            {/* <a href="#services" className="secondary-btn">
-              Browse Services
-            </a> */}
+          <div className="breadcrumb">
+            Home / <b>Services</b>
           </div>
+
+          {/* Hidden text for SEO — banner image already has the heading */}
+          <h1 className="sr-only">Our Services</h1>
+          <p className="sr-only">
+            Citizen-centric services for safer, smarter and better roads in India.
+          </p>
         </div>
       </section>
 
       {/* ================= SERVICES GRID ================= */}
-      <section className="section" id="services">
+      <section className="section">
         <div className="section-heading">
           <p className="eyebrow">Core Services</p>
-          <h2>Everything the platform does, organized into 6 services</h2>
+          {/* <h2>
+            Everything the platform does, organized into 6 services
+          </h2> */}
         </div>
 
         <div className="services-grid">
-          {coreServices.map((service, i) => {
-            const ServiceIcon = service.icon;
-            return (
-              <button
-                key={i}
-                type="button"
-                className={`service-card ${activeService === i ? "active" : ""}`}
-                onClick={() => setActiveService(i)}
-              >
-                <div className="service-top">
-                  <span className="service-icon-badge">
-                    <ServiceIcon />
-                  </span>
-                  <span className="service-number">{service.num}</span>
-                </div>
-                <h4>{service.title}</h4>
-                <p>{service.summary}</p>
-                <div className="service-card-bottom">
-                  <span className="service-link">
-                    {activeService === i ? "Viewing details" : "View details"}
-                  </span>
-                  <span className="service-arrow">
-                    <Icon.Arrow />
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+          {coreServices.map((service, i) => (
+            <button
+              key={service.num}
+              type="button"
+              className={`service-card ${
+                activeService === i ? "active" : ""
+              }`}
+              onClick={() => setActiveService(i)}
+              aria-pressed={activeService === i}
+            >
+              {/* Icon */}
+              <div className="service-icon">{service.icon}</div>
+
+              {/* Title */}
+              <h4>{service.title}</h4>
+
+              {/* Description */}
+              <p>{service.summary}</p>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -236,7 +232,10 @@ const Services = () => {
       <section className="section surface">
         <div className="detail-shell">
           <div className="detail-heading">
-            <span className="service-number lg">{coreServices[activeService].num}</span>
+            <span className="service-number lg">
+              {coreServices[activeService].num}
+            </span>
+
             <div>
               <p className="eyebrow">Service Detail</p>
               <h3>{coreServices[activeService].title}</h3>
@@ -246,9 +245,7 @@ const Services = () => {
           <div className="detail-grid">
             {coreServices[activeService].features.map((feat, i) => (
               <div className="feature-pill" key={i}>
-                <span className="check">
-                  <Icon.Check />
-                </span>
+                <span className="check">✓</span>
                 {feat}
               </div>
             ))}
@@ -257,7 +254,7 @@ const Services = () => {
       </section>
 
       {/* ================= COMPLAINT LIFECYCLE ================= */}
-      <section className="section" id="lifecycle">
+      <section className="section">
         <div className="section-heading center">
           <p className="eyebrow center">Complaint Lifecycle</p>
           <h2>Every complaint follows the same transparent path</h2>
@@ -265,19 +262,16 @@ const Services = () => {
 
         <div className="lifecycle-track">
           {lifecycleSteps.map((step, i) => (
-            <React.Fragment key={i}>
-              <div className={`lifecycle-step ${step.state}`}>
-                <div className="lifecycle-dot">{i + 1}</div>
-                <span>{step.label}</span>
-              </div>
-              {i < lifecycleSteps.length - 1 && <div className="lifecycle-connector"></div>}
-            </React.Fragment>
+            <div className={`lifecycle-step ${step.state}`} key={i}>
+              <div className="lifecycle-dot"></div>
+              <span>{step.label}</span>
+            </div>
           ))}
         </div>
       </section>
 
       {/* ================= MAP PRIORITY LEGEND ================= */}
-      <section className="section surface" id="map">
+      <section className="section surface">
         <div className="legend-shell">
           <div>
             <p className="eyebrow">Location & Map Service</p>
@@ -289,30 +283,27 @@ const Services = () => {
           </div>
 
           <div className="legend-grid">
-            {priorityLegend.map((item, i) => {
-              const LegendIcon = item.icon;
-              return (
-                <div className="legend-card" key={i}>
-                  <span className={`legend-icon-badge dot-${item.color}`}>
-                    <LegendIcon />
-                  </span>
-                  {item.label}
-                </div>
-              );
-            })}
+            {priorityLegend.map((item, i) => (
+              <div className="legend-card" key={i}>
+                <span className={`legend-dot dot-${item.color}`}></span>
+                {item.label}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ================= CTA ================= */}
-      <section className="section cta-section" id="contact">
+      <section className="section cta-section">
         <div className="cta-shell">
           <div>
             <h3>Ready to report an issue?</h3>
-            <p>It takes less than two minutes — photo, location, and a few details.</p>
+            <p>
+              It takes less than two minutes — photo, location, and a few details.
+            </p>
           </div>
           <button className="primary-btn" type="button">
-            Report an Issue <Icon.Arrow />
+            Report an Issue <span>→</span>
           </button>
         </div>
       </section>

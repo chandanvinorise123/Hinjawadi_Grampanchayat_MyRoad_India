@@ -1,4 +1,3 @@
-
 import React from "react";
 import "./aboutus.css";
 import bannerImage from "../assets/au.png";
@@ -63,6 +62,86 @@ const flowSteps = [
   {
     label: "Resolution",
     detail: "Work verified and complaint closed",
+  },
+];
+
+/* ================= HINJEWADI GRAM PANCHAYAT DATA ================= */
+
+const hinjewadiProfile = [
+  {
+    label: "Location",
+    value: "Hinjewadi, Mulshi Taluka, Pune District, Maharashtra",
+  },
+  { label: "PIN Code", value: "411057" },
+  { label: "Gram Panchayat Established", value: "25 February 1970" },
+  {
+    label: "Main Economic Activity",
+    value: "IT, services, commercial activities and agriculture",
+  },
+  { label: "Major Development", value: "Rajiv Gandhi Infotech Park" },
+  { label: "Main Water Source", value: "Mula River" },
+];
+
+const hinjewadiStats = [
+  { icon: "👥", value: "11,459", label: "Population", note: "2011" },
+  { icon: "🏠", value: "3,122", label: "Households", note: "2011" },
+  { icon: "🏢", value: "104", label: "Companies", note: "Reported" },
+  {
+    icon: "🚶",
+    value: "~1 Lakh",
+    label: "Floating Population",
+    note: "Reported 2025",
+  },
+];
+
+const hinjewadiAmenities = [
+  { icon: "💡", value: "7,942", label: "Street Lights" },
+  { icon: "☀️", value: "14", label: "Solar Poles" },
+  { icon: "⛽", value: "5", label: "Petrol Pumps" },
+  { icon: "🔌", value: "3", label: "EV Charging Points" },
+  { icon: "🚛", value: "8", label: "Garbage Collection Vehicles" },
+];
+
+const roadConnections = ["Dange Chowk", "Wakad", "Maan", "Marunji"];
+
+const roadIndiaPoints = [
+  {
+    num: "01",
+    title: "Rapid Urbanisation",
+    text: "Hinjewadi has changed from an agricultural village into a major IT and commercial centre.",
+  },
+  {
+    num: "02",
+    title: "Rajiv Gandhi Infotech Park",
+    text: "The IT park is the main driver of economic and infrastructure growth.",
+  },
+  {
+    num: "03",
+    title: "Road Connectivity",
+    text: "Important connections lead toward Dange Chowk, Wakad, Maan and Marunji.",
+  },
+  {
+    num: "04",
+    title: "Traffic Pressure",
+    text: "Large numbers of employees, residents and vehicles travel through the area, creating significant demand for road and transport infrastructure.",
+  },
+  {
+    num: "05",
+    title: "Infrastructure Needs",
+    text: "The key areas to study are:",
+    tags: [
+      "Traffic management",
+      "Road maintenance",
+      "Pedestrian safety",
+      "Public transport",
+      "Parking",
+      "Drainage",
+    ],
+  },
+  {
+    num: "06",
+    title: "Future Mobility",
+    text: "The presence of 3 reported EV charging points provides a useful point for discussing the transition toward electric transportation.",
   },
 ];
 
@@ -259,6 +338,164 @@ const AboutUs = () => {
 
       </section>
 
+      {/* ================= HINJEWADI — AT A GLANCE ================= */}
+      <section className="section" id="hinjewadi">
+
+        <div className="section-heading center">
+
+          <p className="eyebrow center">
+            Our Focus Area
+          </p>
+
+          <h2>
+            Hinjewadi Gram Panchayat at a glance
+          </h2>
+
+          <p className="hj-lead">
+            MyRoad India is rooted in Hinjewadi — a fast-growing Gram
+            Panchayat in Mulshi Taluka, Pune District, home to the Rajiv
+            Gandhi Infotech Park.
+          </p>
+
+        </div>
+
+        <div className="hj-overview">
+
+          {/* Profile */}
+          <div className="hj-profile">
+
+            <h4 className="hj-card-title">
+              Gram Panchayat Profile
+            </h4>
+
+            <dl className="hj-profile-list">
+              {hinjewadiProfile.map((row, i) => (
+                <div className="hj-profile-row" key={i}>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+
+          </div>
+
+          {/* Key numbers */}
+          <div className="hj-stats">
+            {hinjewadiStats.map((stat, i) => (
+              <div className="hj-card" key={i}>
+                <span className="hj-icon">{stat.icon}</span>
+                <span className="hj-value">{stat.value}</span>
+                <span className="hj-label">{stat.label}</span>
+                <span className="hj-tag-note">{stat.note}</span>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        <p className="hj-note">
+          Population and household figures are for 2011. Companies and
+          floating population are as reported.
+        </p>
+
+      </section>
+
+      {/* ================= HINJEWADI — INFRASTRUCTURE & ROADS ================= */}
+      <section className="section surface">
+
+        <div className="section-heading center">
+
+          <p className="eyebrow center">
+            On the Ground
+          </p>
+
+          <h2>
+            Infrastructure and road connections
+          </h2>
+
+        </div>
+
+        <div className="hj-amenities">
+          {hinjewadiAmenities.map((item, i) => (
+            <div className="hj-card" key={i}>
+              <span className="hj-icon">{item.icon}</span>
+              <span className="hj-value">{item.value}</span>
+              <span className="hj-label">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="hj-roads">
+
+          <h4 className="hj-card-title">
+            Major Road Connections
+          </h4>
+
+          <div className="hj-roads-row">
+
+            <span className="hj-hub">
+              📍 Hinjewadi
+            </span>
+
+            <span className="hj-hub-arrow">→</span>
+
+            <ul className="hj-road-chips">
+              {roadConnections.map((place, i) => (
+                <li className="hj-road-chip" key={i}>
+                  {place}
+                </li>
+              ))}
+            </ul>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ================= HINJEWADI — KEY POINTS FOR ROAD INDIA ================= */}
+      <section className="section">
+
+        <div className="section-heading center">
+
+          <p className="eyebrow center">
+            Why It Matters
+          </p>
+
+          <h2>
+            Key points for the Road India project
+          </h2>
+
+        </div>
+
+        <div className="hj-points">
+          {roadIndiaPoints.map((point, i) => (
+            <div className="hj-point" key={i}>
+
+              <span className="hj-point-num">
+                {point.num}
+              </span>
+
+              <h4>{point.title}</h4>
+
+              <p>{point.text}</p>
+
+              {point.tags && (
+                <div className="hj-tags">
+                  {point.tags.map((tag, j) => (
+                    <span className="hj-tag" key={j}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          ))}
+        </div>
+
+      </section>
+
       {/* ================= OUTCOME BANNER ================= */}
       <section className="section cta-section">
 
@@ -290,6 +527,3 @@ const AboutUs = () => {
 };
 
 export default AboutUs;
-
-
-//You can also remove any `.stats-strip`, `.stats-shell`, `.stat-item`, `.stat-value`, and `.stat-label` CSS from `aboutus.css` if those styles are now unused.

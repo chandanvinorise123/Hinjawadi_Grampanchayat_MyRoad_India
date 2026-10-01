@@ -1,7 +1,9 @@
 /* ============================================================
    MYROAD INDIA — ISSUE CATEGORY PAGE STYLES
-   Uses the same design tokens/fonts as services.css. Fully fluid —
-   no per-breakpoint overrides needed for the grids.
+   Category cards use the same premium card design as the Home
+   page quick-action cards and the Services page: white surface,
+   burgundy icon box, navy title, soft grey description and a
+   subtle burgundy accent line.
    ============================================================ */
 
 .issue-category-page {
@@ -11,7 +13,12 @@
   --navy-700: #1b4586;
   --saffron: #ff9933;
   --saffron-dark: #e07f1f;
+  --saffron-light: #fff4e6;
   --green: #128807;
+  --green-light: #e8f6ec;
+  --teal: #0d9488;
+  --teal-light: #e0f2f1;
+  --blue-light: #e8f0fe;
   --white: #ffffff;
   --surface: #f4f6f9;
   --surface-2: #eef1f6;
@@ -23,6 +30,8 @@
   --orange: #e8720c;
   --amber: #e0a800;
   --resolved: #1f8a3d;
+  --burgundy: #8B1E3A;
+  --burgundy-soft: #FBE9ED;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -55,7 +64,7 @@
 .eyebrow.center { text-align: center; }
 .eyebrow-light { color: #ffd9a8; }
 
-/* ================= PAGE HERO — banner as full-cover background ================= */
+/* ================= PAGE HERO ================= */
 .issue-category-page .page-hero {
   position: relative;
   overflow: hidden;
@@ -66,7 +75,7 @@
   background-position: center;
   background-size: cover;
 
-  min-height: clamp(530px, 34vw, 460px);
+  min-height: clamp(430px, 34vw, 560px);
   display: flex;
   align-items: flex-end;
   padding: clamp(1.5rem, 2.5vw, 2.25rem);
@@ -83,44 +92,153 @@
 .issue-category-page .page-hero h1 { color: #fff; font-size: clamp(1.6rem, 1.3rem + 1.6vw, 2.3rem); margin-bottom: 12px; }
 .issue-category-page .hero-lead { color: #d7e0f0; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.02rem); line-height: 1.55; max-width: 520px; margin-bottom: 4px; }
 
-/* ================= CATEGORY GRID (Step 1) ================= */
+/* ================= CATEGORY GRID — same grid as Home quick actions ================= */
 .category-grid {
-  display: grid; gap: 20px;
+  display: grid;
+  gap: 24px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  max-width: 1280px;
+  margin: 0 auto;
 }
-.category-card {
-  text-align: left; background: var(--white); border: 1px solid var(--line);
-  border-radius: var(--radius-md); padding: 26px; cursor: pointer;
-  transition: box-shadow 0.18s, transform 0.18s, border-color 0.18s;
-  font-family: inherit;
-}
-.category-card:hover {
-  box-shadow: 0 16px 32px -18px rgba(11,36,71,0.28);
-  transform: translateY(-3px);
-}
-.category-card.active {
-  border-color: var(--navy-900);
-  box-shadow: 0 16px 32px -18px rgba(11,36,71,0.35);
-}
-.category-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.category-number {
-  font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
-  color: var(--ink-faint); background: var(--surface-2); padding: 4px 10px; border-radius: 999px;
-}
-.category-number.lg { font-size: 20px; padding: 10px 16px; color: var(--white); background: var(--navy-900); }
-.category-icon { font-size: 24px; }
-.category-card h4 { font-size: 16px; margin-bottom: 8px; }
-.category-card p { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; }
-.category-link { font-size: 13px; font-weight: 700; color: var(--navy-800); }
-.category-card.active .category-link { color: var(--saffron-dark); }
 
-/* ================= SUB-ISSUE DETAIL (Step 2) ================= */
+/* ================= CATEGORY CARD ================= */
+.category-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  background: var(--white);
+  border: 1px solid #f0f0f0;
+  border-radius: 18px;
+  padding: 28px 26px 26px;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px rgba(16, 24, 40, 0.06);
+
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  overflow: hidden;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s ease;
+}
+
+/* Icon box */
+.category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+
+  background: var(--burgundy-soft);
+  color: var(--burgundy);
+  line-height: 1;
+
+  margin-bottom: 18px;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.category-icon svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+/* Title */
+.category-card h4 {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+
+  color: #0B2447;
+  margin: 0 0 8px;
+  transition: color 0.3s ease;
+}
+
+/* Description */
+.category-card p {
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+
+  color: #4b5567;
+  margin: 0 0 22px;
+}
+
+/* Bottom accent line */
+.category-card::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--burgundy);
+  opacity: 0.55;
+  margin-top: auto;
+  transition: width 0.35s ease, opacity 0.35s ease;
+}
+
+/* Hover */
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--burgundy-soft);
+  box-shadow:
+    0 2px 4px rgba(16, 24, 40, 0.04),
+    0 12px 28px rgba(139, 30, 58, 0.10);
+}
+.category-card:hover .category-icon { transform: scale(1.06); }
+.category-card:hover h4 { color: var(--burgundy); }
+.category-card:hover::after { width: 44px; opacity: 1; }
+
+/* Keyboard focus */
+.category-card:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 3px;
+}
+
+/* Active (selected) card */
+.category-card.active {
+  border-color: var(--burgundy);
+  box-shadow:
+    0 2px 4px rgba(16, 24, 40, 0.04),
+    0 12px 28px rgba(139, 30, 58, 0.14);
+}
+.category-card.active h4 { color: var(--burgundy); }
+.category-card.active::after { width: 44px; opacity: 1; }
+
+/* ================= SUB-ISSUE DETAIL ================= */
 .detail-shell {
   background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
   padding: clamp(1.5rem, 2vw, 2.5rem);
 }
 .detail-heading { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; flex-wrap: wrap; }
 .detail-heading h3 { font-size: clamp(1.2rem, 1rem + 1vw, 1.6rem); }
+
+.category-number {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 800;
+}
+
+.category-number.lg {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  padding: 10px 16px;
+  color: var(--white);
+  background: var(--navy-900);
+  border-radius: 8px;
+}
 
 .issue-chip-grid {
   display: grid; gap: 12px;
@@ -147,7 +265,7 @@
 .issue-chip.active .check { background: var(--resolved); border-color: var(--resolved); }
 .issue-chip:not(.active) .check { background: transparent; }
 
-/* ================= ISSUE INFORMATION (Step 3) ================= */
+/* ================= ISSUE INFORMATION ================= */
 .info-shell {
   display: grid; gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -183,6 +301,15 @@
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 780px) {
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .category-card {
+    padding: 24px 22px 22px;
+  }
+
   .detail-heading { flex-direction: column; align-items: flex-start; }
   .cta-shell { flex-direction: column; align-items: flex-start; }
 }

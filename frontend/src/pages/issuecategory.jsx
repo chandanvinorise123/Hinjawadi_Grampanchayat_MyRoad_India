@@ -2,10 +2,64 @@ import React, { useState } from "react";
 import "./issuecategory.css";
 import bannerImage from "../assets/ic.png";
 
+// Refined line icons (deep burgundy via currentColor) — consistent 24px set
+const Svg = ({ children }) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {children}
+  </svg>
+);
+
+const icons = {
+  road: (
+    <Svg>
+      <path d="M8 3 5 21M16 3l3 18M12 4v3M12 10.5v3M12 17v3" />
+    </Svg>
+  ),
+  drain: (
+    <Svg>
+      <rect x="3.5" y="5" width="17" height="14" rx="2" />
+      <path d="M8 5v14M12 5v14M16 5v14" />
+    </Svg>
+  ),
+  water: (
+    <Svg>
+      <path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0c0-4.3 6-10.5 6-10.5z" />
+      <path d="M9.5 14.5a2.7 2.7 0 0 0 2.5 2" />
+    </Svg>
+  ),
+  light: (
+    <Svg>
+      <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.2 1.1 2v.2h5v-.2c0-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z" />
+      <path d="M10 19h4M10.8 21.5h2.4" />
+    </Svg>
+  ),
+  safety: (
+    <Svg>
+      <path d="M12 4 21 19.5H3L12 4z" />
+      <path d="M12 10v4.2M12 16.8v.2" />
+    </Svg>
+  ),
+  bridge: (
+    <Svg>
+      <path d="M2.5 18h19M4 18V9M20 18V9M4 9c3 0 5 5.5 8 5.5S17 9 20 9M8 18v-3.5M16 18v-3.5" />
+    </Svg>
+  ),
+};
+
 const issueCategories = [
   {
     num: "01",
-    icon: "🛣️",
+    icon: icons.road,
     title: "Road Issues",
     summary: "Potholes, cracks, and other problems affecting road surfaces.",
     issues: [
@@ -24,7 +78,7 @@ const issueCategories = [
   },
   {
     num: "02",
-    icon: "🚰",
+    icon: icons.drain,
     title: "Sewerage & Drain Issues",
     summary: "Blocked drains, sewage overflow, and related infrastructure faults.",
     issues: [
@@ -45,7 +99,7 @@ const issueCategories = [
   },
   {
     num: "03",
-    icon: "💧",
+    icon: icons.water,
     title: "Drinking Water Issues",
     summary: "Supply, quality, and pipeline issues affecting drinking water access.",
     issues: [
@@ -67,7 +121,7 @@ const issueCategories = [
   },
   {
     num: "04",
-    icon: "💡",
+    icon: icons.light,
     title: "Streetlight Issues",
     summary: "Non-functional or damaged streetlights and related electrical faults.",
     issues: [
@@ -81,7 +135,7 @@ const issueCategories = [
   },
   {
     num: "05",
-    icon: "🚧",
+    icon: icons.safety,
     title: "Road Safety Issues",
     summary: "Signage, markings, and safety hazards along roads.",
     issues: [
@@ -98,7 +152,7 @@ const issueCategories = [
   },
   {
     num: "06",
-    icon: "🌉",
+    icon: icons.bridge,
     title: "Bridge & Culvert Issues",
     summary: "Structural and drainage issues affecting bridges and culverts.",
     issues: [
@@ -160,16 +214,16 @@ const IssueCategory = () => {
               type="button"
               className={`category-card ${activeCategory === i ? "active" : ""}`}
               onClick={() => handleCategorySelect(i)}
+              aria-pressed={activeCategory === i}
             >
-              <div className="category-top">
-                <span className="category-number">{category.num}</span>
-                <span className="category-icon">{category.icon}</span>
-              </div>
+              {/* Icon */}
+              <div className="category-icon">{category.icon}</div>
+
+              {/* Title */}
               <h4>{category.title}</h4>
+
+              {/* Description */}
               <p>{category.summary}</p>
-              <span className="category-link">
-                {activeCategory === i ? "Viewing sub-issues ↓" : "View sub-issues →"}
-              </span>
             </button>
           ))}
         </div>
