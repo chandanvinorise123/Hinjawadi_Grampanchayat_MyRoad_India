@@ -1,16 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./admindashboard.css";
+import VisitorsOverview from "../components/dashboard/VisitorsOverview"; // ✅ ADDED IMPORT
 
-/* Complaint pipeline status, from the flow diagram's System Overview:
-   New Complaints -> Pending -> Under Verification -> Under Action -> Resolved */
+/* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
 const statusTone = { New: "navy", Pending: "amber", "Under Verification": "orange", "Under Action": "orange", Resolved: "green" };
 
 const priorityOptions = ["Critical", "Urgent", "Normal"];
 const priorityTone = { Critical: "red", Urgent: "amber", Normal: "green" };
 
-const roleOptions = ["Citizen", "Staff", "Verifier", "Admin"];
-const roleTone = { Citizen: "navy", Staff: "orange", Verifier: "amber", Admin: "red" };
+// Role options for Staff/Verifier management (excludes Citizen and Admin)
+const staffVerifierRoles = [
+  { value: "verifier", label: "Verifier (Sarpanch)" },
+  { value: "staff", label: "Staff (Contractor)" },
+];
+
+// Role options for Admin management (only Admin)
+const adminRoles = [
+  { value: "admin", label: "Admin" },
+];
+
+const roleTone = { citizen: "navy", staff: "orange", verifier: "amber", admin: "red" };
 
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
@@ -18,102 +28,6 @@ const colorForCategory = (category) => {
   for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
   return mapColors[Math.abs(hash) % mapColors.length];
 };
-
-const seedUsers = [
-  { id: 1, name: "R. Deshmukh", role: "Citizen", contact: "+91 90000 11122", joined: "2026-03-12" },
-  { id: 2, name: "S. Kulkarni", role: "Citizen", contact: "+91 90000 33344", joined: "2026-04-02" },
-  { id: 3, name: "Field Officer", role: "Staff", contact: "+91 98111 22334", joined: "2026-01-20" },
-  { id: 4, name: "N. Pawar", role: "Staff", contact: "+91 98111 55667", joined: "2026-02-14" },
-  { id: 5, name: "Ward Verifier", role: "Verifier", contact: "+91 98222 44556", joined: "2026-01-25" },
-  { id: 6, name: "Admin User", role: "Admin", contact: "+91 99000 00011", joined: "2025-12-01" },
-];
-
-const seedComplaints = [
-  {
-    id: 1,
-    complaintNumber: "MRI-482913",
-    category: "Road Issues",
-    issue: "Road Potholes",
-    location: "Camp Road Bus Stop",
-    citizenName: "R. Deshmukh",
-    description: "Large pothole near the bus stop causing traffic slowdown.",
-    photos: 2,
-    priority: "Critical",
-    status: "Under Action",
-    assignedStaff: "Field Officer",
-    assignedVerifier: "",
-    date: "2026-08-12",
-  },
-  {
-    id: 2,
-    complaintNumber: "MRI-291045",
-    category: "Streetlight Issues",
-    issue: "Light Not Working",
-    location: "House No. 21, Riverside Lane",
-    citizenName: "S. Kulkarni",
-    description: "Streetlight outside house no. 21 has been off for a week.",
-    photos: 1,
-    priority: "Normal",
-    status: "Resolved",
-    assignedStaff: "Field Officer",
-    assignedVerifier: "Ward Verifier",
-    date: "2026-08-25",
-  },
-  {
-    id: 3,
-    complaintNumber: "MRI-661120",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    location: "Riverside Ward Pipeline",
-    citizenName: "A. Joshi",
-    description: "Water leaking continuously from an underground pipeline joint.",
-    photos: 3,
-    priority: "Urgent",
-    status: "Under Verification",
-    assignedStaff: "N. Pawar",
-    assignedVerifier: "Ward Verifier",
-    date: "2026-09-01",
-  },
-  {
-    id: 4,
-    complaintNumber: "MRI-104488",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    location: "Market Yard Junction",
-    citizenName: "P. Naik",
-    description: "Community bin overflowing for three days, needs urgent clearing.",
-    photos: 2,
-    priority: "Urgent",
-    status: "Pending",
-    assignedStaff: "",
-    assignedVerifier: "",
-    date: "2026-09-04",
-  },
-  {
-    id: 5,
-    complaintNumber: "MRI-773820",
-    category: "Drinking Water Issues",
-    issue: "Low Water Pressure",
-    location: "Riverside Ward Pipeline",
-    citizenName: "R. Deshmukh",
-    description: "Very low water pressure every morning in the ward.",
-    photos: 0,
-    priority: "Normal",
-    status: "New",
-    assignedStaff: "",
-    assignedVerifier: "",
-    date: "2026-09-06",
-  },
-];
-
-const notificationFeed = [
-  { type: "Complaint Registered", text: "MRI-773820 registered by R. Deshmukh", time: "1 hour ago" },
-  { type: "Complaint Verified", text: "MRI-291045 verified by Ward Verifier", time: "3 hours ago" },
-  { type: "Staff Assigned", text: "N. Pawar assigned to MRI-661120", time: "6 hours ago" },
-  { type: "Action Initiated", text: "Field Officer started work on MRI-482913", time: "1 day ago" },
-  { type: "Work Completed", text: "Streetlight repair completed for MRI-291045", time: "2 days ago" },
-  { type: "Complaint Closed", text: "MRI-291045 closed after citizen confirmation", time: "2 days ago" },
-];
 
 const notifTone = {
   "Complaint Registered": "navy",
@@ -125,6 +39,12 @@ const notifTone = {
   "Complaint Closed": "green",
 };
 
+// Backend API base URL
+const API_BASE_URL = "http://localhost:3200/api";
+
+// Normalize MongoDB _id to id
+const normalizeId = (doc) => ({ ...doc, id: doc.id || doc._id });
+
 const AdminDashboard = () => {
   const [admin] = useState({
     name: "Admin User",
@@ -133,22 +53,145 @@ const AdminDashboard = () => {
     staffId: "ADM-0001",
   });
 
-  const [users, setUsers] = useState(seedUsers);
-  const [complaints, setComplaints] = useState(seedComplaints);
-  const [selectedId, setSelectedId] = useState(seedComplaints[0].id);
+  // ---------------- USERS (Staff & Verifiers) ----------------
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
+  // ---------------- ADMINS ----------------
+  const [admins, setAdmins] = useState([]);
+  const [adminsLoading, setAdminsLoading] = useState(true);
+
+  // ---------------- COMPLAINTS ----------------
+  const [complaints, setComplaints] = useState([]);
+  const [complaintsLoading, setComplaintsLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
+
+  // ---------------- NOTIFICATIONS ----------------
+  const [notificationFeed, setNotificationFeed] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
 
+  // Staff/Verifier form state
   const [showAddUser, setShowAddUser] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", role: "Citizen", contact: "" });
-  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
-  const [confirmDeleteComplaintId, setConfirmDeleteComplaintId] = useState(null);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [newUser, setNewUser] = useState({
+    name: "",
+    role: "staff",
+    contact: "",
+    email: "",
+    password: "",
+  });
 
-  const selected = complaints.find((c) => c.id === selectedId) || complaints[0];
+  // Admin form state
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [editingAdminId, setEditingAdminId] = useState(null);
+  const [newAdmin, setNewAdmin] = useState({
+    name: "",
+    role: "admin",
+    contact: "",
+    email: "",
+    password: "",
+  });
+
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState(null);
+  const [confirmDeleteAdminId, setConfirmDeleteAdminId] = useState(null);
+  const [confirmDeleteComplaintId, setConfirmDeleteComplaintId] = useState(null);
+  const [userMessage, setUserMessage] = useState({ type: "", text: "" });
+
+  // Password reset UI state
+  const [resettingPasswordId, setResettingPasswordId] = useState(null);
+  const [resettingAdminPasswordId, setResettingAdminPasswordId] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+
+  const selected = complaints.find((c) => c.id === selectedId) || complaints[0] || null;
   const categories = ["All", ...Array.from(new Set(complaints.map((c) => c.category)))];
+
+  const showMessage = (type, text) => {
+    setUserMessage({ type, text });
+    setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
+  };
+
+  // ---------------- FETCH USERS (Staff & Verifiers) ----------------
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setUsersLoading(true);
+        const response = await fetch(`${API_BASE_URL}/users?role=staff,verifier`);
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setUsers(data.users.map(normalizeId));
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // ---------------- FETCH ADMINS ----------------
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        setAdminsLoading(true);
+        const response = await fetch(`${API_BASE_URL}/users?role=admin`);
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setAdmins(data.users.map(normalizeId));
+        }
+      } catch (err) {
+        console.error("Failed to fetch admins:", err);
+      } finally {
+        setAdminsLoading(false);
+      }
+    };
+    fetchAdmins();
+  }, []);
+
+  // ---------------- FETCH COMPLAINTS ----------------
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        setComplaintsLoading(true);
+        const response = await fetch(`${API_BASE_URL}/complaints`);
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const normalized = data.complaints.map(normalizeId);
+          setComplaints(normalized);
+          if (normalized.length > 0) setSelectedId(normalized[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch complaints:", err);
+      } finally {
+        setComplaintsLoading(false);
+      }
+    };
+    fetchComplaints();
+  }, []);
+
+  // ---------------- FETCH NOTIFICATIONS ----------------
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setNotifLoading(true);
+        const response = await fetch(`${API_BASE_URL}/notifications`);
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setNotificationFeed(data.notifications.map(normalizeId));
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      } finally {
+        setNotifLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   // ---------------- SYSTEM OVERVIEW ----------------
   const overviewStats = [
@@ -156,35 +199,236 @@ const AdminDashboard = () => {
     { label: "New Complaints", value: complaints.filter((c) => c.status === "New").length, icon: "🆕", tone: "navy" },
     { label: "Pending", value: complaints.filter((c) => c.status === "Pending").length, icon: "⏳", tone: "amber" },
     { label: "Under Verification", value: complaints.filter((c) => c.status === "Under Verification").length, icon: "🔍", tone: "orange" },
-    { label: "Under Action", value: complaints.filter((c) => c.status === "Under Action").length, icon: "🛠️", tone: "orange" },
+    { label: "Under Action", value: complaints.filter((c) => c.status === "Under Action").length, icon: "️", tone: "orange" },
     { label: "Resolved", value: complaints.filter((c) => c.status === "Resolved").length, icon: "✅", tone: "green" },
     { label: "Critical", value: complaints.filter((c) => c.priority === "Critical").length, icon: "🚨", tone: "red" },
   ];
 
-  // ---------------- USER MANAGEMENT ----------------
-  const userCounts = roleOptions.map((role) => ({
-    role,
-    count: users.filter((u) => u.role === role).length,
-  }));
+  const userCounts = [
+    { role: "staff", label: "Staff (Contractor)", count: users.filter((u) => u.role === "staff").length },
+    { role: "verifier", label: "Verifier (Sarpanch)", count: users.filter((u) => u.role === "verifier").length },
+    { role: "admin", label: "Admin", count: admins.length },
+  ];
 
-  const addUser = (e) => {
+  // ---------------- GENERATE PASSWORD ----------------
+  const generatePassword = () => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#";
+    let pass = "";
+    for (let i = 0; i < 8; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
+  };
+
+  // ---------------- STAFF/VERIFIER CRUD ----------------
+
+  // CREATE/UPDATE Staff/Verifier
+  const saveUser = async (e) => {
     e.preventDefault();
-    if (!newUser.name.trim() || !newUser.contact.trim()) return;
-    setUsers([{ id: Date.now(), ...newUser, joined: new Date().toISOString().slice(0, 10) }, ...users]);
-    setNewUser({ name: "", role: "Citizen", contact: "" });
-    setShowAddUser(false);
+    setUserMessage({ type: "", text: "" });
+
+    if (!newUser.name.trim() || !newUser.contact.trim() || !newUser.email.trim() || !newUser.password.trim()) {
+      showMessage("error", "All fields are required.");
+      return;
+    }
+
+    try {
+      const url = editingUserId
+        ? `${API_BASE_URL}/users/${editingUserId}`
+        : `${API_BASE_URL}/users`;
+      
+      const method = editingUserId ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        if (editingUserId) {
+          setUsers(users.map((u) => (u.id === editingUserId ? normalizeId(data.user) : u)));
+          showMessage("success", `User "${data.user.name}" updated successfully!`);
+        } else {
+          setUsers([normalizeId(data.user), ...users]);
+          showMessage("success", `User "${data.user.name}" registered successfully!`);
+        }
+        
+        setNewUser({ name: "", role: "staff", contact: "", email: "", password: "" });
+        setShowAddUser(false);
+        setEditingUserId(null);
+      } else {
+        showMessage("error", data.message || "Operation failed.");
+      }
+    } catch (err) {
+      showMessage("error", "Unable to reach the server.");
+    }
   };
 
-  const updateUserRole = (id, role) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, role } : u)));
+  const editUser = (user) => {
+    setNewUser({
+      name: user.name,
+      role: user.role,
+      contact: user.contact,
+      email: user.email,
+      password: "", // Don't show existing password
+    });
+    setEditingUserId(user.id);
+    setShowAddUser(true);
   };
 
-  const deleteUser = (id) => {
-    setUsers(users.filter((u) => u.id !== id));
-    setConfirmDeleteUserId(null);
+  const resetUserPassword = async (id) => {
+    if (!newPassword.trim()) {
+      showMessage("error", "Password cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setResettingPasswordId(null);
+        setNewPassword("");
+        showMessage("success", "Password reset successfully!");
+      } else {
+        showMessage("error", data.message || "Failed to reset password.");
+      }
+    } catch (err) {
+      console.error("Failed to reset user password:", err);
+      showMessage("error", "Unable to reach the server.");
+    }
   };
 
-  // ---------------- COMPLAINT MANAGEMENT: filter / search ----------------
+  const deleteUser = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setUsers(users.filter((u) => u.id !== id));
+        setConfirmDeleteUserId(null);
+        showMessage("success", "User removed successfully!");
+      } else {
+        showMessage("error", data.message || "Failed to remove user.");
+      }
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      showMessage("error", "Unable to reach the server.");
+    }
+  };
+
+  // ---------------- ADMIN CRUD ----------------
+
+  // CREATE/UPDATE Admin
+  const saveAdmin = async (e) => {
+    e.preventDefault();
+    setUserMessage({ type: "", text: "" });
+
+    if (!newAdmin.name.trim() || !newAdmin.contact.trim() || !newAdmin.email.trim() || !newAdmin.password.trim()) {
+      showMessage("error", "All fields are required.");
+      return;
+    }
+
+    try {
+      const url = editingAdminId
+        ? `${API_BASE_URL}/users/${editingAdminId}`
+        : `${API_BASE_URL}/users`;
+      
+      const method = editingAdminId ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newAdmin, role: "admin" }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        if (editingAdminId) {
+          setAdmins(admins.map((a) => (a.id === editingAdminId ? normalizeId(data.user) : a)));
+          showMessage("success", `Admin "${data.user.name}" updated successfully!`);
+        } else {
+          setAdmins([normalizeId(data.user), ...admins]);
+          showMessage("success", `Admin "${data.user.name}" registered successfully!`);
+        }
+        
+        setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" });
+        setShowAddAdmin(false);
+        setEditingAdminId(null);
+      } else {
+        showMessage("error", data.message || "Operation failed.");
+      }
+    } catch (err) {
+      showMessage("error", "Unable to reach the server.");
+    }
+  };
+
+  const editAdmin = (adminUser) => {
+    setNewAdmin({
+      name: adminUser.name,
+      role: "admin",
+      contact: adminUser.contact,
+      email: adminUser.email,
+      password: "",
+    });
+    setEditingAdminId(adminUser.id);
+    setShowAddAdmin(true);
+  };
+
+  const resetAdminPassword = async (id) => {
+    if (!newPassword.trim()) {
+      showMessage("error", "Password cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setResettingAdminPasswordId(null);
+        setNewPassword("");
+        showMessage("success", "Password reset successfully!");
+      } else {
+        showMessage("error", data.message || "Failed to reset password.");
+      }
+    } catch (err) {
+      console.error("Failed to reset admin password:", err);
+      showMessage("error", "Unable to reach the server.");
+    }
+  };
+
+  const deleteAdmin = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setAdmins(admins.filter((a) => a.id !== id));
+        setConfirmDeleteAdminId(null);
+        showMessage("success", "Admin removed successfully!");
+      } else {
+        showMessage("error", data.message || "Failed to remove admin.");
+      }
+    } catch (err) {
+      console.error("Failed to delete admin:", err);
+      showMessage("error", "Unable to reach the server.");
+    }
+  };
+
+  // ---------------- COMPLAINT FILTERING ----------------
   const filteredComplaints = complaints.filter((c) => {
     const matchesSearch =
       !searchTerm.trim() ||
@@ -203,32 +447,56 @@ const AdminDashboard = () => {
     return groups;
   }, {});
 
-  // ---------------- CRUD + ASSIGN on complaints ----------------
-  const updateStatus = (id, status) => {
-    setComplaints(complaints.map((c) => (c.id === id ? { ...c, status } : c)));
-  };
-
-  const updatePriority = (id, priority) => {
-    setComplaints(complaints.map((c) => (c.id === id ? { ...c, priority } : c)));
-  };
-
-  const assignStaff = (id, staffName) => {
-    setComplaints(complaints.map((c) => (c.id === id ? { ...c, assignedStaff: staffName } : c)));
-  };
-
-  const assignVerifier = (id, verifierName) => {
-    setComplaints(complaints.map((c) => (c.id === id ? { ...c, assignedVerifier: verifierName } : c)));
-  };
-
-  const deleteComplaint = (id) => {
-    setComplaints(complaints.filter((c) => c.id !== id));
-    setConfirmDeleteComplaintId(null);
-    if (selectedId === id && complaints.length > 1) {
-      setSelectedId(complaints.find((c) => c.id !== id).id);
+  // ---------------- COMPLAINT CRUD ----------------
+  const patchComplaint = async (id, patch, successMsg) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setComplaints(complaints.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+        if (successMsg) showMessage("success", successMsg);
+      } else {
+        showMessage("error", data.message || "Failed to update complaint.");
+      }
+    } catch (err) {
+      console.error("Failed to update complaint:", err);
+      showMessage("error", "Unable to reach the server.");
     }
   };
 
-  // ---------------- REPORTS & ANALYTICS (category-wise / priority-wise breakdown) ----------------
+  const updateStatus = (id, status) => patchComplaint(id, { status });
+  const updatePriority = (id, priority) => patchComplaint(id, { priority });
+  const assignStaff = (id, assignedStaff) => patchComplaint(id, { assignedStaff });
+  const assignVerifier = (id, assignedVerifier) => patchComplaint(id, { assignedVerifier });
+
+  const deleteComplaint = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const remaining = complaints.filter((c) => c.id !== id);
+        setComplaints(remaining);
+        setConfirmDeleteComplaintId(null);
+        if (selectedId === id && remaining.length > 0) {
+          setSelectedId(remaining[0].id);
+        }
+        showMessage("success", "Complaint removed successfully!");
+      } else {
+        showMessage("error", data.message || "Failed to remove complaint.");
+      }
+    } catch (err) {
+      console.error("Failed to delete complaint:", err);
+      showMessage("error", "Unable to reach the server.");
+    }
+  };
+
+  // ---------------- REPORTS & ANALYTICS ----------------
   const byCategory = Array.from(new Set(complaints.map((c) => c.category))).map((cat) => ({
     label: cat,
     count: complaints.filter((c) => c.category === cat).length,
@@ -240,8 +508,8 @@ const AdminDashboard = () => {
   const maxCategoryCount = Math.max(1, ...byCategory.map((b) => b.count));
   const maxPriorityCount = Math.max(1, ...byPriority.map((b) => b.count));
 
-  const staffList = users.filter((u) => u.role === "Staff");
-  const verifierList = users.filter((u) => u.role === "Verifier");
+  const staffList = users.filter((u) => u.role === "staff");
+  const verifierList = users.filter((u) => u.role === "verifier");
 
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -263,7 +531,7 @@ const AdminDashboard = () => {
             <span>Admin Portal</span>
           </div>
         </div>
-
+        
         <div className="ad-sb-label">Overview</div>
         <nav className="ad-sb-nav">
           <button type="button" className="ad-sb-link active" onClick={() => scrollTo("ad-top")}>
@@ -277,8 +545,12 @@ const AdminDashboard = () => {
         <div className="ad-sb-label">Management</div>
         <nav className="ad-sb-nav">
           <button type="button" className="ad-sb-link" onClick={() => scrollTo("user-mgmt")}>
-            👥 User Management
+            👥 Staff & Verifier Management
             <span className="ad-sb-badge">{users.length}</span>
+          </button>
+          <button type="button" className="ad-sb-link" onClick={() => scrollTo("admin-mgmt")}>
+             Admin Management
+            <span className="ad-sb-badge">{admins.length}</span>
           </button>
           <button type="button" className="ad-sb-link" onClick={() => scrollTo("complaint-mgmt")}>
             📋 Complaint Management
@@ -305,7 +577,7 @@ const AdminDashboard = () => {
             📈 Reports &amp; Analytics
           </button>
           <button type="button" className="ad-sb-link" onClick={() => scrollTo("notif-panel")}>
-            🔔 Notification Monitoring
+             Notification Monitoring
             <span className="ad-sb-badge">{notificationFeed.length}</span>
           </button>
         </nav>
@@ -340,7 +612,7 @@ const AdminDashboard = () => {
               🔔<span className="ad-tb-dot"></span>
             </button>
             <button className="ad-btn-primary" type="button" onClick={() => setShowAddUser(true)}>
-              + Add User
+              + Add Staff/Verifier
             </button>
             <div className="ad-tb-user" id="ad-profile">
               <div className="ad-tb-avatar">{initials}</div>
@@ -363,7 +635,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* STAT CARDS — System Overview */}
+          {/* STAT CARDS */}
           <div className="ad-stats-row">
             {overviewStats.map((stat, i) => (
               <div className={`ad-stat-card tone-${stat.tone}`} key={i}>
@@ -374,142 +646,512 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* USER MANAGEMENT */}
+          {/* ✅ NEW: VISITORS OVERVIEW SECTION */}
+          <VisitorsOverview />
+
+          {/* MESSAGE BANNER */}
+          {userMessage.text && (
+            <div className={`ad-message-banner ${userMessage.type}`}>{userMessage.text}</div>
+          )}
+
+          {/* ================= STAFF & VERIFIER MANAGEMENT ================= */}
           <div className="ad-panel ad-form-panel" id="user-mgmt">
             <div className="ad-panel-head">
-              <h3>User Management</h3>
-              <button className="ad-btn-primary small" type="button" onClick={() => setShowAddUser(true)}>
-                + Add User
+              <h3>Staff & Verifier Management</h3>
+              <button className="ad-btn-primary small" type="button" onClick={() => { setShowAddUser(true); setEditingUserId(null); setNewUser({ name: "", role: "staff", contact: "", email: "", password: "" }); }}>
+                + Add Staff/Verifier
               </button>
             </div>
 
+            {/* Role Count Chips */}
             <div className="ad-role-counts">
-              {userCounts.map((rc) => (
+              {userCounts.filter(rc => rc.role !== 'admin').map((rc) => (
                 <div className={`ad-role-chip tone-${roleTone[rc.role]}`} key={rc.role}>
                   <b>{rc.count}</b>
-                  <span>{rc.role}s</span>
+                  <span>{rc.label}s</span>
                 </div>
               ))}
             </div>
 
+            {/* ADD/EDIT USER FORM */}
             {showAddUser && (
-              <form className="ad-new-form" onSubmit={addUser}>
-                <div className="ad-form-row">
-                  <div className="ad-field">
-                    <label htmlFor="new-user-name">Name</label>
-                    <input
-                      id="new-user-name"
-                      type="text"
-                      placeholder="Full name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="ad-field">
-                    <label htmlFor="new-user-role">Role</label>
-                    <select
-                      id="new-user-role"
-                      value={newUser.role}
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                    >
-                      {roleOptions.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="ad-field">
-                    <label htmlFor="new-user-contact">Contact</label>
-                    <input
-                      id="new-user-contact"
-                      type="text"
-                      placeholder="+91 ..."
-                      value={newUser.contact}
-                      onChange={(e) => setNewUser({ ...newUser, contact: e.target.value })}
-                      required
-                    />
-                  </div>
+              <form className="ad-new-form-vertical" onSubmit={saveUser}>
+                <h4>{editingUserId ? "Edit Staff/Verifier" : "Add New Staff/Verifier"}</h4>
+                
+                <div className="ad-vertical-field">
+                  <label htmlFor="user-name">Full Name</label>
+                  <input
+                    id="user-name"
+                    type="text"
+                    placeholder="e.g., Shiv Kumar"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    required
+                  />
                 </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="user-role">Role</label>
+                  <select
+                    id="user-role"
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  >
+                    {staffVerifierRoles.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="user-contact">Contact</label>
+                  <input
+                    id="user-contact"
+                    type="text"
+                    placeholder="+91 ..."
+                    value={newUser.contact}
+                    onChange={(e) => setNewUser({ ...newUser, contact: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="user-email">Email Address</label>
+                  <input
+                    id="user-email"
+                    type="email"
+                    placeholder="e.g., name@example.com"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="user-password">{editingUserId ? "New Password (leave blank to keep current)" : "Password"}</label>
+                  <div className="ad-password-row">
+                    <input
+                      id="user-password"
+                      type="text"
+                      placeholder={editingUserId ? "Leave blank to keep current" : "Generate or type password"}
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      required={!editingUserId}
+                    />
+                    {!editingUserId && (
+                      <button
+                        type="button"
+                        className="ad-btn-outline small"
+                        onClick={() => setNewUser({ ...newUser, password: generatePassword() })}
+                        title="Generate Random Secure Password"
+                      >
+                        🎲 Generate
+                      </button>
+                    )}
+                  </div>
+                  <small className="ad-field-hint">
+                    {editingUserId 
+                      ? "Leave password blank to keep the current one."
+                      : "Provide these credentials to the user for login."}
+                  </small>
+                </div>
+
                 <div className="ad-form-actions">
-                  <button className="ad-btn-outline" type="button" onClick={() => setShowAddUser(false)}>
+                  <button className="ad-btn-outline" type="button" onClick={() => { setShowAddUser(false); setEditingUserId(null); setNewUser({ name: "", role: "staff", contact: "", email: "", password: "" }); }}>
                     Cancel
                   </button>
                   <button className="ad-btn-primary" type="submit">
-                    Add User →
+                    {editingUserId ? "Update User →" : "Register User →"}
                   </button>
                 </div>
               </form>
             )}
 
+            {/* Users Table */}
             <div className="ad-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>Contact</th>
-                    <th>Joined</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <React.Fragment key={u.id}>
+              {usersLoading ? (
+                <div className="ad-loading">Loading users...</div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Password</th>
+                      <th>Role</th>
+                      <th>Contact</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.length === 0 ? (
                       <tr>
-                        <td>{u.name}</td>
-                        <td>
-                          <select
-                            className="ad-inline-select"
-                            value={u.role}
-                            onChange={(e) => updateUserRole(u.id, e.target.value)}
-                          >
-                            {roleOptions.map((r) => (
-                              <option key={r} value={r}>
-                                {r}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="ad-mono">{u.contact}</td>
-                        <td className="ad-mono">{u.joined}</td>
-                        <td>
-                          <button
-                            className="ad-icon-btn small danger"
-                            type="button"
-                            onClick={() => setConfirmDeleteUserId(u.id)}
-                            title="Remove user"
-                          >
-                            🗑️
-                          </button>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
+                          No staff or verifiers registered yet. Click "+ Add Staff/Verifier" to register.
                         </td>
                       </tr>
-                      {confirmDeleteUserId === u.id && (
-                        <tr className="ad-edit-row">
-                          <td colSpan={5}>
-                            <div className="ad-delete-confirm">
-                              <span>Remove {u.name} from the system?</span>
-                              <div>
-                                <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteUserId(null)}>
-                                  No
-                                </button>
-                                <button className="ad-btn-danger small" type="button" onClick={() => deleteUser(u.id)}>
-                                  Yes, Remove
-                                </button>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                    ) : (
+                      users.map((u) => (
+                        <React.Fragment key={u.id}>
+                          <tr>
+                            <td>{u.name}</td>
+                            <td className="ad-mono" style={{ fontWeight: "600", color: "#2e6cb0" }}>
+                              {u.email || "-"}
+                            </td>
+                            <td>
+                              {resettingPasswordId === u.id ? (
+                                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                  <input
+                                    type="text"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    style={{
+                                      width: "120px",
+                                      padding: "4px 8px",
+                                      border: "1px solid #2e6cb0",
+                                      borderRadius: "4px",
+                                      fontSize: "0.85em",
+                                    }}
+                                    placeholder="New password"
+                                    autoFocus
+                                  />
+                                  <button
+                                    className="ad-btn-primary small"
+                                    onClick={() => resetUserPassword(u.id)}
+                                    style={{ padding: "4px 8px", fontSize: "0.8rem" }}
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    className="ad-btn-outline small"
+                                    onClick={() => {
+                                      setResettingPasswordId(null);
+                                      setNewPassword("");
+                                    }}
+                                    style={{ padding: "4px 8px", fontSize: "0.8rem" }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  className="ad-mono"
+                                  style={{
+                                    fontSize: "0.85em",
+                                    color: "#555",
+                                    background: "#f4f6f8",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                    display: "inline-block",
+                                  }}
+                                  onClick={() => {
+                                    setResettingPasswordId(u.id);
+                                    setNewPassword("");
+                                  }}
+                                  title="Click to reset password"
+                                >
+                                  •••••••• (click to reset)
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <span className={`ad-badge ad-badge-${roleTone[u.role]}`}>
+                                {u.role === "staff" ? "Staff (Contractor)" : "Verifier (Sarpanch)"}
+                              </span>
+                            </td>
+                            <td className="ad-mono">{u.contact}</td>
+                            <td className="ad-mono">{u.joined || (u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-")}</td>
+                            <td>
+                              <button
+                                className="ad-btn-outline small"
+                                type="button"
+                                onClick={() => editUser(u)}
+                                title="Edit user"
+                                style={{ marginRight: "4px" }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="ad-icon-btn small danger"
+                                type="button"
+                                onClick={() => setConfirmDeleteUserId(u.id)}
+                                title="Remove user"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                          {confirmDeleteUserId === u.id && (
+                            <tr className="ad-edit-row">
+                              <td colSpan={7}>
+                                <div className="ad-delete-confirm">
+                                  <span>Remove {u.name} from the system?</span>
+                                  <div>
+                                    <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteUserId(null)}>
+                                      No
+                                    </button>
+                                    <button className="ad-btn-danger small" type="button" onClick={() => deleteUser(u.id)}>
+                                      Yes, Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
-          {/* COMPLAINT MANAGEMENT: view / filter / search / priority */}
+          {/* ================= ADMIN MANAGEMENT ================= */}
+          <div className="ad-panel ad-form-panel" id="admin-mgmt">
+            <div className="ad-panel-head">
+              <h3>Admin Management</h3>
+              <button className="ad-btn-primary small" type="button" onClick={() => { setShowAddAdmin(true); setEditingAdminId(null); setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" }); }}>
+                + Add Admin
+              </button>
+            </div>
+
+            {/* Admin Count */}
+            <div className="ad-role-counts">
+              <div className={`ad-role-chip tone-admin`}>
+                <b>{admins.length}</b>
+                <span>Admin{admins.length !== 1 ? "s" : ""}</span>
+              </div>
+            </div>
+
+            {/* ADD/EDIT ADMIN FORM */}
+            {showAddAdmin && (
+              <form className="ad-new-form-vertical" onSubmit={saveAdmin}>
+                <h4>{editingAdminId ? "Edit Admin" : "Add New Admin"}</h4>
+                
+                <div className="ad-vertical-field">
+                  <label htmlFor="admin-name">Full Name</label>
+                  <input
+                    id="admin-name"
+                    type="text"
+                    placeholder="e.g., Admin User"
+                    value={newAdmin.name}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="admin-contact">Contact</label>
+                  <input
+                    id="admin-contact"
+                    type="text"
+                    placeholder="+91 ..."
+                    value={newAdmin.contact}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, contact: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="admin-email">Email Address</label>
+                  <input
+                    id="admin-email"
+                    type="email"
+                    placeholder="e.g., admin@example.com"
+                    value={newAdmin.email}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="ad-vertical-field">
+                  <label htmlFor="admin-password">{editingAdminId ? "New Password (leave blank to keep current)" : "Password"}</label>
+                  <div className="ad-password-row">
+                    <input
+                      id="admin-password"
+                      type="text"
+                      placeholder={editingAdminId ? "Leave blank to keep current" : "Generate or type password"}
+                      value={newAdmin.password}
+                      onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                      required={!editingAdminId}
+                    />
+                    {!editingAdminId && (
+                      <button
+                        type="button"
+                        className="ad-btn-outline small"
+                        onClick={() => setNewAdmin({ ...newAdmin, password: generatePassword() })}
+                        title="Generate Random Secure Password"
+                      >
+                        🎲 Generate
+                      </button>
+                    )}
+                  </div>
+                  <small className="ad-field-hint">
+                    {editingAdminId 
+                      ? "Leave password blank to keep the current one."
+                      : "Provide these credentials to the admin for login."}
+                  </small>
+                </div>
+
+                <div className="ad-form-actions">
+                  <button className="ad-btn-outline" type="button" onClick={() => { setShowAddAdmin(false); setEditingAdminId(null); setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" }); }}>
+                    Cancel
+                  </button>
+                  <button className="ad-btn-primary" type="submit">
+                    {editingAdminId ? "Update Admin →" : "Register Admin →"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Admins Table */}
+            <div className="ad-table-wrap">
+              {adminsLoading ? (
+                <div className="ad-loading">Loading admins...</div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Password</th>
+                      <th>Role</th>
+                      <th>Contact</th>
+                      <th>Joined</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
+                          No admins registered yet. Click "+ Add Admin" to register.
+                        </td>
+                      </tr>
+                    ) : (
+                      admins.map((a) => (
+                        <React.Fragment key={a.id}>
+                          <tr>
+                            <td>{a.name}</td>
+                            <td className="ad-mono" style={{ fontWeight: "600", color: "#2e6cb0" }}>
+                              {a.email || "-"}
+                            </td>
+                            <td>
+                              {resettingAdminPasswordId === a.id ? (
+                                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                  <input
+                                    type="text"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    style={{
+                                      width: "120px",
+                                      padding: "4px 8px",
+                                      border: "1px solid #2e6cb0",
+                                      borderRadius: "4px",
+                                      fontSize: "0.85em",
+                                    }}
+                                    placeholder="New password"
+                                    autoFocus
+                                  />
+                                  <button
+                                    className="ad-btn-primary small"
+                                    onClick={() => resetAdminPassword(a.id)}
+                                    style={{ padding: "4px 8px", fontSize: "0.8rem" }}
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    className="ad-btn-outline small"
+                                    onClick={() => {
+                                      setResettingAdminPasswordId(null);
+                                      setNewPassword("");
+                                    }}
+                                    style={{ padding: "4px 8px", fontSize: "0.8rem" }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  className="ad-mono"
+                                  style={{
+                                    fontSize: "0.85em",
+                                    color: "#555",
+                                    background: "#f4f6f8",
+                                    padding: "4px 8px",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                    display: "inline-block",
+                                  }}
+                                  onClick={() => {
+                                    setResettingAdminPasswordId(a.id);
+                                    setNewPassword("");
+                                  }}
+                                  title="Click to reset password"
+                                >
+                                  •••••••• (click to reset)
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <span className={`ad-badge ad-badge-${roleTone[a.role]}`}>
+                                Admin
+                              </span>
+                            </td>
+                            <td className="ad-mono">{a.contact}</td>
+                            <td className="ad-mono">{a.joined || (a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "-")}</td>
+                            <td>
+                              <button
+                                className="ad-btn-outline small"
+                                type="button"
+                                onClick={() => editAdmin(a)}
+                                title="Edit admin"
+                                style={{ marginRight: "4px" }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="ad-icon-btn small danger"
+                                type="button"
+                                onClick={() => setConfirmDeleteAdminId(a.id)}
+                                title="Remove admin"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                          {confirmDeleteAdminId === a.id && (
+                            <tr className="ad-edit-row">
+                              <td colSpan={7}>
+                                <div className="ad-delete-confirm">
+                                  <span>Remove {a.name} from the system?</span>
+                                  <div>
+                                    <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteAdminId(null)}>
+                                      No
+                                    </button>
+                                    <button className="ad-btn-danger small" type="button" onClick={() => deleteAdmin(a.id)}>
+                                      Yes, Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          {/* COMPLAINT MANAGEMENT */}
           <div className="ad-panel ad-form-panel" id="complaint-mgmt">
             <div className="ad-panel-head">
               <h3>Complaint Management</h3>
@@ -535,187 +1177,199 @@ const AdminDashboard = () => {
             </div>
 
             <div className="ad-table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Complaint</th>
-                    <th>Category</th>
-                    <th>Location</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Photos</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredComplaints.map((c) => (
-                    <React.Fragment key={c.id}>
-                      <tr className={selectedId === c.id ? "ad-row-active" : ""} onClick={() => setSelectedId(c.id)}>
-                        <td className="ad-mono">{c.complaintNumber}</td>
-                        <td>
-                          <div className="ad-cat">
-                            <span className="ad-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
-                            {c.issue}
-                          </div>
-                        </td>
-                        <td>{c.location}</td>
-                        <td>
-                          <span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span>
-                        </td>
-                        <td>
-                          <span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span>
-                        </td>
-                        <td className="ad-mono">{c.photos}</td>
-                        <td onClick={(e) => e.stopPropagation()}>
-                          {c.status === "New" && (
-                            <button
-                              className="ad-icon-btn small danger"
-                              type="button"
-                              onClick={() => setConfirmDeleteComplaintId(c.id)}
-                              title="Remove eligible record"
-                            >
-                              🗑️
-                            </button>
-                          )}
+              {complaintsLoading ? (
+                <div className="ad-loading">Loading complaints...</div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Complaint</th>
+                      <th>Category</th>
+                      <th>Location</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Photos</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredComplaints.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
+                          No complaints found.
                         </td>
                       </tr>
-                      {confirmDeleteComplaintId === c.id && (
-                        <tr className="ad-edit-row">
-                          <td colSpan={7}>
-                            <div className="ad-delete-confirm">
-                              <span>Remove complaint {c.complaintNumber}? Only eligible new records can be removed.</span>
-                              <div>
-                                <button
-                                  className="ad-btn-outline small"
-                                  type="button"
-                                  onClick={() => setConfirmDeleteComplaintId(null)}
-                                >
-                                  No
-                                </button>
-                                <button className="ad-btn-danger small" type="button" onClick={() => deleteComplaint(c.id)}>
-                                  Yes, Remove
-                                </button>
+                    ) : (
+                      filteredComplaints.map((c) => (
+                        <React.Fragment key={c.id}>
+                          <tr className={selectedId === c.id ? "ad-row-active" : ""} onClick={() => setSelectedId(c.id)}>
+                            <td className="ad-mono">{c.complaintNumber}</td>
+                            <td>
+                              <div className="ad-cat">
+                                <span className="ad-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
+                                {c.issue}
                               </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                            </td>
+                            <td>{c.location}</td>
+                            <td>
+                              <span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span>
+                            </td>
+                            <td>
+                              <span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span>
+                            </td>
+                            <td className="ad-mono">{c.photos}</td>
+                            <td onClick={(e) => e.stopPropagation()}>
+                              {c.status === "New" && (
+                                <button
+                                  className="ad-icon-btn small danger"
+                                  type="button"
+                                  onClick={() => setConfirmDeleteComplaintId(c.id)}
+                                  title="Remove eligible record"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                          {confirmDeleteComplaintId === c.id && (
+                            <tr className="ad-edit-row">
+                              <td colSpan={7}>
+                                <div className="ad-delete-confirm">
+                                  <span>Remove complaint {c.complaintNumber}? Only eligible new records can be removed.</span>
+                                  <div>
+                                    <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteComplaintId(null)}>
+                                      No
+                                    </button>
+                                    <button className="ad-btn-danger small" type="button" onClick={() => deleteComplaint(c.id)}>
+                                      Yes, Remove
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
 
-          {/* COMPLAINT DETAILS + UPDATE (status/priority) */}
-          <div className="ad-panel ad-form-panel">
-            <div className="ad-panel-head">
-              <h3>Complaint Details — {selected.complaintNumber}</h3>
+          {/* COMPLAINT DETAILS */}
+          {selected && (
+            <div className="ad-panel ad-form-panel">
+              <div className="ad-panel-head">
+                <h3>Complaint Details — {selected.complaintNumber}</h3>
+              </div>
+              <div className="ad-detail-grid">
+                <div className="ad-detail-item">
+                  <span>Citizen</span>
+                  <b>{selected.citizenName}</b>
+                </div>
+                <div className="ad-detail-item">
+                  <span>Category</span>
+                  <b>{selected.category}</b>
+                </div>
+                <div className="ad-detail-item">
+                  <span>Location</span>
+                  <b>{selected.location}</b>
+                </div>
+                <div className="ad-detail-item">
+                  <span>Date Reported</span>
+                  <b>{selected.date}</b>
+                </div>
+                <div className="ad-detail-item ad-detail-wide">
+                  <span>Description</span>
+                  <b>{selected.description}</b>
+                </div>
+              </div>
+              <div className="ad-update-row">
+                <div className="ad-field">
+                  <label htmlFor="upd-status">Update Status</label>
+                  <select
+                    id="upd-status"
+                    className="ad-inline-select"
+                    value={selected.status}
+                    onChange={(e) => updateStatus(selected.id, e.target.value)}
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="ad-field">
+                  <label htmlFor="upd-priority">Update Priority</label>
+                  <select
+                    id="upd-priority"
+                    className="ad-inline-select"
+                    value={selected.priority}
+                    onChange={(e) => updatePriority(selected.id, e.target.value)}
+                  >
+                    {priorityOptions.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="ad-detail-grid">
-              <div className="ad-detail-item">
-                <span>Citizen</span>
-                <b>{selected.citizenName}</b>
-              </div>
-              <div className="ad-detail-item">
-                <span>Category</span>
-                <b>{selected.category}</b>
-              </div>
-              <div className="ad-detail-item">
-                <span>Location</span>
-                <b>{selected.location}</b>
-              </div>
-              <div className="ad-detail-item">
-                <span>Date Reported</span>
-                <b>{selected.date}</b>
-              </div>
-              <div className="ad-detail-item ad-detail-wide">
-                <span>Description</span>
-                <b>{selected.description}</b>
-              </div>
-            </div>
-            <div className="ad-update-row">
-              <div className="ad-field">
-                <label htmlFor="upd-status">Update Status</label>
-                <select
-                  id="upd-status"
-                  className="ad-inline-select"
-                  value={selected.status}
-                  onChange={(e) => updateStatus(selected.id, e.target.value)}
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="ad-field">
-                <label htmlFor="upd-priority">Update Priority</label>
-                <select
-                  id="upd-priority"
-                  className="ad-inline-select"
-                  value={selected.priority}
-                  onChange={(e) => updatePriority(selected.id, e.target.value)}
-                >
-                  {priorityOptions.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* STAFF / VERIFIER ASSIGNMENT */}
-          <div className="ad-panel ad-form-panel" id="assignment-panel">
-            <div className="ad-panel-head">
-              <h3>Staff / Verifier Assignment — {selected.complaintNumber}</h3>
-            </div>
-            <div className="ad-assign-grid">
-              <div className="ad-assign-card">
-                <h5>Staff Assignment</h5>
-                <p>Assigned issues, work status and action taken are tracked on the staff dashboard once assigned.</p>
-                <div className="ad-field">
-                  <label htmlFor="assign-staff">Assign Staff</label>
-                  <select
-                    id="assign-staff"
-                    className="ad-inline-select"
-                    value={selected.assignedStaff}
-                    onChange={(e) => assignStaff(selected.id, e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {staffList.map((s) => (
-                      <option key={s.id} value={s.name}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
+          {selected && (
+            <div className="ad-panel ad-form-panel" id="assignment-panel">
+              <div className="ad-panel-head">
+                <h3>Staff / Verifier Assignment — {selected.complaintNumber}</h3>
+              </div>
+              <div className="ad-assign-grid">
+                <div className="ad-assign-card">
+                  <h5>Staff Assignment</h5>
+                  <p>Assigned issues, work status and action taken are tracked on the staff dashboard once assigned.</p>
+                  <div className="ad-field">
+                    <label htmlFor="assign-staff">Assign Staff</label>
+                    <select
+                      id="assign-staff"
+                      className="ad-inline-select"
+                      value={selected.assignedStaff}
+                      onChange={(e) => assignStaff(selected.id, e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {staffList.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="ad-assign-card">
+                  <h5>Verifier Assignment</h5>
+                  <p>Verifiers pick this up in their verification queue to approve or reject completed work.</p>
+                  <div className="ad-field">
+                    <label htmlFor="assign-verifier">Assign Verifier</label>
+                    <select
+                      id="assign-verifier"
+                      className="ad-inline-select"
+                      value={selected.assignedVerifier}
+                      onChange={(e) => assignVerifier(selected.id, e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {verifierList.map((v) => (
+                        <option key={v.id} value={v.name}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="ad-assign-card">
-                <h5>Verifier Assignment</h5>
-                <p>Verifiers pick this up in their verification queue to approve or reject completed work.</p>
-                <div className="ad-field">
-                  <label htmlFor="assign-verifier">Assign Verifier</label>
-                  <select
-                    id="assign-verifier"
-                    className="ad-inline-select"
-                    value={selected.assignedVerifier}
-                    onChange={(e) => assignVerifier(selected.id, e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {verifierList.map((v) => (
-                      <option key={v.id} value={v.name}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
             </div>
-          </div>
+          )}
 
           {/* LOCATION / MAP VIEW */}
           {showMapView && (
@@ -799,15 +1453,21 @@ const AdminDashboard = () => {
               <span className="ad-panel-link">Complete System Monitoring</span>
             </div>
             <div className="ad-notif-list">
-              {notificationFeed.map((note, i) => (
-                <div className="ad-notif-item" key={i}>
-                  <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>{note.type}</span>
-                  <div>
-                    <b>{note.text}</b>
-                    <span>{note.time}</span>
+              {notifLoading ? (
+                <div className="ad-loading">Loading notifications...</div>
+              ) : notificationFeed.length === 0 ? (
+                <div className="ad-loading">No notifications yet.</div>
+              ) : (
+                notificationFeed.map((note) => (
+                  <div className="ad-notif-item" key={note.id}>
+                    <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>{note.type}</span>
+                    <div>
+                      <b>{note.text}</b>
+                      <span>{note.time}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

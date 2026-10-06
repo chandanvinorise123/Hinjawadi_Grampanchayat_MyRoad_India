@@ -10,8 +10,9 @@ const roles = [
   { value: "admin", label: "Admin" },
 ];
 
-// Base URL for your backend API
+// Backend API
 const API_BASE_URL = "http://localhost:3200/api/auth";
+const STATS_API_URL = "http://localhost:3200/api/stats"; // stats tracking
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,13 +28,14 @@ const Login = () => {
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setLoginData({
-      ...loginData,
+    setLoginData((previousData) => ({
+      ...previousData,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   // Login API
@@ -41,6 +43,7 @@ const Login = () => {
     e.preventDefault();
 
     setLoginError("");
+    setLoginStatus(null);
     setLoginLoading(true);
 
     try {
@@ -49,136 +52,172 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(loginData),
+        // identifier can be an email address or a 10-digit mobile number
+        body: JSON.stringify({
+          ...loginData,
+          identifier: loginData.identifier.trim(),
+        }),
       });
 
       const data = await response.json();
 
+      console.log("Login response:", data);
+
       if (response.ok && data.success) {
+        // ------------------------------------------
+        // LOGIN SUCCESS
+        // ------------------------------------------
+
+        // Check that backend returned user
+        if (!data.user) {
+          throw new Error(
+            "Login successful, but user information was not returned."
+          );
+        }
+
         setLoginStatus("success");
 
         // Save logged-in user
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Notify Navbar about authentication change
+        // Record successful citizen login for statistics
+        if (String(data.user.role).toLowerCase() === "citizen") {
+          try {
+            await fetch(`${STATS_API_URL}/login`, { method: "POST" });
+          } catch (err) {
+            console.error("Failed to record citizen login stat:", err);
+            // Non-blocking: proceeds with login even if stat tracking fails
+          }
+        }
+
+        // Notify Navbar / other components
         window.dispatchEvent(new Event("authChange"));
 
-        // Redirect to Home
+        // ------------------------------------------
+        // ROLE-BASED REDIRECT
+        // Citizen → Home
+        // Staff/Verifier/Admin → Dashboard
+        // ------------------------------------------
         setTimeout(() => {
-          navigate("/");
+          const userRole = String(data.user.role || "").toLowerCase();
+
+          if (userRole === "citizen") {
+            navigate("/");
+          } else {
+            navigate("/dashboard");
+          }
         }, 1000);
       } else {
+        // ------------------------------------------
+        // LOGIN FAILED
+        // ------------------------------------------
+        setLoginStatus("failed");
+
         setLoginError(
           data.message ||
-          "Incorrect username or password. Please try again."
+            "Incorrect email/mobile number or password. Please try again."
         );
-
-        setLoginStatus("failed");
       }
-    } catch (err) {
-      setLoginError(
-        "Unable to reach the server. Please try again."
-      );
+    } catch (error) {
+      console.error("Login error:", error);
 
       setLoginStatus("failed");
+
+      setLoginError(
+        error.message ===
+          "Login successful, but user information was not returned."
+          ? error.message
+          : "Unable to reach the server. Please try again."
+      );
     } finally {
       setLoginLoading(false);
     }
   };
 
-  // Google OAuth placeholder
+  // Google Login
   const handleGoogleLogin = () => {
     console.log("Continue with Google clicked");
   };
 
   return (
     <div className="login-container">
-
-      {/* =====================================================
+      {/* ================================
           LOGIN CARD
-          Banner + Login Section are now inside one wrapper
-          ===================================================== */}
+      ================================= */}
       <div className="login-card">
-
-        {/* =================================================
+        {/* ================================
             LEFT BANNER
-            ================================================= */}
+        ================================= */}
         <div className="login-banner">
-          <img
-            src={bannerImage}
-            alt="Better Roads. Stronger Communities."
-          />
+          <img src={bannerImage} alt="Better Roads. Stronger Communities." />
         </div>
 
-        {/* =================================================
+        {/* ================================
             RIGHT LOGIN SECTION
-            ================================================= */}
+        ================================= */}
         <div className="login-section">
           <div className="login-box">
-
-            {/* Login Heading */}
+            {/* Heading */}
             <h1>Login</h1>
 
             <p className="login-subtitle">
               Welcome back! Please login to your account.
             </p>
 
-            {/* =================================================
-                ERROR MESSAGE
-                ================================================= */}
+            {/* ================================
+                ERROR
+            ================================= */}
             {loginStatus === "failed" && (
               <div className="error-banner">
                 {loginError ||
-                  "Incorrect username or password. Please try again."}
+                  "Incorrect email/mobile number or password. Please try again."}
               </div>
             )}
 
-            {/* =================================================
-                SUCCESS MESSAGE
-                ================================================= */}
+            {/* ================================
+                SUCCESS
+            ================================= */}
             {loginStatus === "success" && (
               <div className="success-banner">
                 Login successful. Redirecting...
               </div>
             )}
 
-            {/* =================================================
+            {/* ================================
                 LOGIN FORM
-                ================================================= */}
+            ================================= */}
             <form onSubmit={handleSubmit}>
-
-              {/* Role */}
+              {/* ROLE */}
               <div className="input-group">
                 <select
                   name="role"
                   value={loginData.role}
                   onChange={handleChange}
                   aria-label="Login as"
+                  required
                 >
                   {roles.map((role) => (
-                    <option
-                      key={role.value}
-                      value={role.value}
-                    >
+                    <option key={role.value} value={role.value}>
                       Login as {role.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Email / Username */}
+              {/* Email / Mobile Number */}
               <div className="input-group">
                 <input
                   type="text"
                   name="identifier"
-                  placeholder="Email Address"
+                  placeholder="Email or Mobile Number"
                   value={loginData.identifier}
                   onChange={handleChange}
+                  autoComplete="username"
                   required
                 />
               </div>
 
-              {/* Password */}
+              {/* PASSWORD */}
               <div className="input-group">
                 <input
                   type="password"
@@ -190,11 +229,10 @@ const Login = () => {
                 />
               </div>
 
-              {/* =================================================
-                  REMEMBER ME + FORGOT PASSWORD
-                  ================================================= */}
+              {/* ================================
+                  REMEMBER + FORGOT PASSWORD
+              ================================= */}
               <div className="login-options">
-
                 <label className="remember">
                   <input
                     type="checkbox"
@@ -202,22 +240,17 @@ const Login = () => {
                     checked={loginData.remember}
                     onChange={handleChange}
                   />
-
                   <span>Remember me</span>
                 </label>
 
-                <Link
-                  to="/forgot-password"
-                  className="forgot-password"
-                >
+                <Link to="/forgot-password" className="forgot-password">
                   Forgot Password?
                 </Link>
-
               </div>
 
-              {/* =================================================
+              {/* ================================
                   LOGIN BUTTON
-                  ================================================= */}
+              ================================= */}
               <button
                 type="submit"
                 className="login-button"
@@ -231,43 +264,36 @@ const Login = () => {
                   </>
                 )}
               </button>
-
             </form>
 
-            {/* =================================================
+            {/* ================================
                 DIVIDER
-                ================================================= */}
+            ================================= */}
             <div className="divider">
               <span>or</span>
             </div>
 
-            {/* =================================================
+            {/* ================================
                 GOOGLE LOGIN
-                ================================================= */}
+            ================================= */}
             <button
               type="button"
               className="google-button"
               onClick={handleGoogleLogin}
             >
               <span className="google-icon"></span>
-
               Continue with Google
             </button>
 
-            {/* =================================================
-                SIGN UP LINK
-                ================================================= */}
+            {/* ================================
+                SIGN UP
+            ================================= */}
             <p className="signup-text">
               Don't have an account?
-
-              <Link to="/signup">
-                Sign Up
-              </Link>
+              <Link to="/signup">Sign Up</Link>
             </p>
-
           </div>
         </div>
-
       </div>
     </div>
   );

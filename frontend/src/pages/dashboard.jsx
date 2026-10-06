@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import "./dashboard.css";
-import bannerImage from "../assets/db.png";
+
+// Import role-specific dashboards
 import CitizenDashboard from "../dashboard/citizendashboard";
 import StaffDashboard from "../dashboard/staffdashboard";
 import AdminDashboard from "../dashboard/admindashboard";
 import VerifierDashboard from "../dashboard/verifierdashboard";
-
 /* ================= LINE ICONS (no emoji, consistent stroke weight) ================= */
 const Icon = {
   Clipboard: () => (
@@ -89,7 +90,6 @@ const Icon = {
     </svg>
   ),
 };
-
 const roles = [
   { value: "admin", label: "Admin" },
   { value: "staff", label: "Staff" },
@@ -194,312 +194,77 @@ const roleCopy = {
 // (e.g. an Express server connected to MongoDB).
 const API_BASE_URL = "http://localhost:3200/api/auth";
 
+// Read the logged-in user saved by the Login page / this page
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+};
+
 const Dashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [credentials, setCredentials] = useState({
-    identifier: "",
-    password: "",
-    role: "citizen",
-  });
-  const [activeRole, setActiveRole] = useState("citizen");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleChange = (e) => {
-    setCredentials({ ...credentials, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const storedUser = localStorage.getItem("user");
 
-  // Calls your backend, which authenticates against MongoDB
-  // and returns { success: true, user: { role, name, email, ... } }
-  // or { success: false, message: "..." }.
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError("");
-    setLoginLoading(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Trust the role returned by the backend, not the dropdown value,
-        // since the server is the source of truth for who this user is.
-        setActiveRole(data.user.role);
-        setIsAuthenticated(true);
-      } else {
-        setLoginError(data.message || "Incorrect username or password. Please try again.");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error reading user:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setLoginError("Unable to reach the server. Please try again.");
-    } finally {
-      setLoginLoading(false);
-    }
-  };
+    };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCredentials({ identifier: "", password: "", role: "citizen" });
-    setLoginError("");
-  };
+    checkAuth();
 
-  const copy = roleCopy[activeRole];
-  const showAnalytics = activeRole === "admin" || activeRole === "staff";
-  const showReports = activeRole === "admin";
+    window.addEventListener("authChange", checkAuth);
+    window.addEventListener("storage", checkAuth);
 
-  if (!isAuthenticated) {
+    return () => {
+      window.removeEventListener("authChange", checkAuth);
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  if (loading) {
     return (
-      <main className="dashboard-page">
-        {/* ================= PAGE HERO — banner as full-cover background ================= */}
-        <section
-          className="page-hero"
-          style={{ backgroundImage: `url(${bannerImage})` }}
-        >
-          <div className="hero-scrim"></div>
-          {/* <div className="page-hero-inner">
-            <div className="breadcrumb">
-              Home / <b>Dashboard</b>
-            </div>
-            <p className="eyebrow eyebrow-light">Login</p>
-            <h1>MyRoad India Dashboard</h1>
-            <p className="hero-lead">
-              Sign in with your credentials to view complaints, analytics,
-              and reports relevant to your role.
-            </p>
-          </div> */}
-        </section>
-
-        {/* ================= LOGIN / AUTHENTICATION ================= */}
-        <section className="section">
-          <div className="login-shell">
-            <div className="login-heading">
-              <p className="eyebrow">Login / Authentication</p>
-              <h2>Sign in to continue</h2>
-            </div>
-
-            {loginError && <div className="error-banner">{loginError}</div>}
-
-            <form className="login-form" onSubmit={handleLogin}>
-              <div className="form-field">
-                <label htmlFor="role">Login As</label>
-                <select
-                  id="role"
-                  name="role"
-                  value={credentials.role}
-                  onChange={handleChange}
-                  required
-                >
-                  {roles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-field">
-                <label htmlFor="identifier">Username / Email</label>
-                <input
-                  id="identifier"
-                  name="identifier"
-                  type="text"
-                  placeholder="Enter your registered email"
-                  value={credentials.identifier}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-field">
-                <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={credentials.password}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <button className="primary-btn" type="submit" disabled={loginLoading}>
-                {loginLoading ? "Logging in..." : <>Log In <Icon.Arrow /></>}
-              </button>
-            </form>
-          </div>
-        </section>
-      </main>
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading Dashboard...</p>
+      </div>
     );
   }
 
-  // Each role gets its own dedicated dashboard component.
-  if (activeRole === "citizen") {
-    return <CitizenDashboard />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (activeRole === "staff") {
-    return <StaffDashboard />;
+  const userRole = String(user.role || "citizen").toLowerCase();
+
+  switch (userRole) {
+    case "admin":
+      return <AdminDashboard />;
+
+    case "staff":
+      return <StaffDashboard />;
+
+    case "verifier":
+      return <VerifierDashboard />;
+
+    case "citizen":
+    default:
+      return <CitizenDashboard />;
   }
-
-  if (activeRole === "admin") {
-    return <AdminDashboard />;
-  }
-
-  if (activeRole === "verifier") {
-    return <VerifierDashboard />;
-  }
-
-  return (
-    <main className="dashboard-page">
-      {/* ================= PAGE HERO — banner as full-cover background ================= */}
-      <section
-        className="page-hero"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="page-hero-inner">
-          <div className="breadcrumb">
-            Home / <b>Dashboard</b>
-          </div>
-          <p className="eyebrow eyebrow-light">
-            {copy.eyebrow} <span className="role-badge">{roles.find((r) => r.value === activeRole).label}</span>
-          </p>
-          <h1>{copy.heading}</h1>
-          <p className="hero-lead">{copy.lead}</p>
-        </div>
-        <button
-          className="logout-btn"
-          type="button"
-          onClick={handleLogout}
-        >
-          Log Out
-        </button>
-      </section>
-
-      {/* ================= OVERVIEW STATS ================= */}
-      <section className="section">
-        <div className="section-heading">
-          <p className="eyebrow">Complaint Management</p>
-          <h2>{copy.statsHeading}</h2>
-        </div>
-
-        <div className="stats-grid">
-          {roleStats[activeRole].map((stat, i) => {
-            const StatIcon = stat.icon;
-            return (
-              <div className={`stat-card tone-${stat.tone}`} key={i}>
-                <span className={`stat-icon-badge tone-${stat.tone}`}>
-                  <StatIcon />
-                </span>
-                <div>
-                  <span className="stat-value">{stat.value.toLocaleString()}</span>
-                  <span className="stat-label">{stat.label}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ================= ANALYTICS ================= */}
-      {showAnalytics && (
-        <section className="section surface">
-          <div className="analytics-grid">
-            {/* Issue Category Analytics */}
-            <div className="analytics-card">
-              <p className="eyebrow">Issue Category Analytics</p>
-              <h3>Complaints by category</h3>
-              <div className="bar-list">
-                {issueCategoryAnalytics.map((item, i) => (
-                  <div className="bar-row" key={i}>
-                    <div className="bar-row-top">
-                      <span>{item.label}</span>
-                      <span className="bar-value">{item.value}</span>
-                    </div>
-                    <div className="bar-track">
-                      <div
-                        className="bar-fill"
-                        style={{ width: `${(item.value / item.max) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Area / Location Analytics */}
-            <div className="analytics-card">
-              <p className="eyebrow">Area / Location Analytics</p>
-              <h3>Area-wise complaints</h3>
-              <div className="bar-list">
-                {areaAnalytics.map((item, i) => (
-                  <div className="bar-row" key={i}>
-                    <div className="bar-row-top">
-                      <span>{item.label}</span>
-                      <span className="bar-value">{item.value}</span>
-                    </div>
-                    <div className="bar-track">
-                      <div
-                        className="bar-fill alt"
-                        style={{ width: `${(item.value / areaAnalytics[0].value) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <span className="map-note">
-                <Icon.MapPin /> Complaints also plotted on the live map view
-              </span>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ================= COMPLAINT STATUS MONITORING ================= */}
-      <section className="section">
-        <div className="section-heading center">
-          <p className="eyebrow center">Complaint Status Monitoring</p>
-          <h2>Full lifecycle, tracked end-to-end</h2>
-        </div>
-
-        <div className="lifecycle-track">
-          {lifecycleSteps.map((step, i) => (
-            <div className={`lifecycle-step ${step.state}`} key={i}>
-              <div className="lifecycle-dot"></div>
-              <span>{step.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= REPORTS & ANALYTICS ================= */}
-      {showReports && (
-        <section className="section surface">
-          <div className="section-heading">
-            <p className="eyebrow">Reports & Analytics</p>
-            <h2>Generate and review reports</h2>
-          </div>
-
-          <div className="reports-grid">
-            {reportCards.map((report, i) => {
-              const ReportIcon = report.icon;
-              return (
-                <div className="report-card" key={i}>
-                  <span className="report-icon-badge">
-                    <ReportIcon />
-                  </span>
-                  <h4>{report.title}</h4>
-                  <p>{report.summary}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-    </main>
-  );
 };
 
 export default Dashboard;
