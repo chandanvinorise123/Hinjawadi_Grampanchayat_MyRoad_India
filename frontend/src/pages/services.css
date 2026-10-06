@@ -103,7 +103,7 @@
   background-position: center;
   background-size: cover;
 
-  min-height: clamp(485px, 34vw, 800px);
+  min-height: clamp(450px, 34vw, 600px);
   display: flex;
   align-items: flex-end;
   padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 4rem);

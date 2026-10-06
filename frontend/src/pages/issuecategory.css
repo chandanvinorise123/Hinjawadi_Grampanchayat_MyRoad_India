@@ -2,8 +2,8 @@
    MYROAD INDIA — ISSUE CATEGORY PAGE STYLES
    Category cards use the same premium card design as the Home
    page quick-action cards and the Services page: white surface,
-   burgundy icon box, navy title, soft grey description and a
-   subtle burgundy accent line.
+   realistic coloured icon box, navy title, soft grey description
+   and a subtle burgundy accent line.
    ============================================================ */
 
 .issue-category-page {
@@ -75,7 +75,7 @@
   background-position: center;
   background-size: cover;
 
-  min-height: clamp(500px, 34vw, 800px);
+  min-height: clamp(400px, 34vw, 430px);
   display: flex;
   align-items: flex-end;
   padding: clamp(1.5rem, 2.5vw, 2.25rem);
@@ -127,7 +127,7 @@
     border-color 0.35s ease;
 }
 
-/* Icon box */
+/* Icon box — realistic coloured icons */
 .category-icon {
   display: inline-flex;
   align-items: center;
@@ -138,16 +138,16 @@
   border-radius: 12px;
 
   background: var(--burgundy-soft);
-  color: var(--burgundy);
   line-height: 1;
 
   margin-bottom: 18px;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.category-icon svg {
-  width: 24px;
-  height: 24px;
+.category-icon .emoji-icon {
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 24px;
+  line-height: 1;
   display: block;
 }
 

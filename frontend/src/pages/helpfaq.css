@@ -82,10 +82,10 @@
   background-size: cover;
 
   /* Same sizing as issue-category page */
-  min-height: clamp(480px, 34vw, 800px);
+  min-height: clamp(370px, 34vw, 420px);
   display: flex;
   align-items: flex-end;
-  padding: clamp(1.5rem, 2.5vw, 2.25rem);
+  padding: clamp(1.5rem, 1.5vw, 2.25rem);
 }
 
 .help-page .hero-scrim {
