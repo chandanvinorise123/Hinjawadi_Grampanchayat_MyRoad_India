@@ -163,7 +163,7 @@ const Footer = () => {
                   <span className="contact-icon-badge">
                     <ContactIcon.Pin />
                   </span>
-                  <span className="contact-text">Pune, Maharashtra, India</span>
+                  <span className="contact-text">Gera's Imperium Rise, 312, Hinjawadi Phase II, Rajiv Gandhi Infotech Park, Hinjawadi, Pune, Maharashtra 411057</span>
                 </div>
               </div>
             </div>

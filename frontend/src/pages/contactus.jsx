@@ -2,52 +2,64 @@ import React, { useState } from "react";
 import "./contactus.css";
 import bannerImage from "../assets/cu.png";
 
-const contactDetails = [
+// Office details (used for the map, the contact cards and the location card)
+const OFFICE_ADDRESS_LINES = [
+  "Shri Chhatrapati Shivaji Maharaj Chowk,",
+  "Hinjawadi, Taluka-Mulshi,",
+  "District Pune – 411057",
+];
+const OFFICE_ADDRESS_TEXT = OFFICE_ADDRESS_LINES.join(" ");
+const OFFICE_PHONE = "9834206559";
+const OFFICE_EMAIL = "grampanchayat.hinjawadi@gmail.com";
+const MAP_QUERY =
+  "Shri Chhatrapati Shivaji Maharaj Chowk, Hinjawadi, Taluka Mulshi, Pune, Maharashtra 411057";
+const MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&output=embed`;
+
+const contactCards = [
   {
-    icon: "🏛️",
-    label: "Gram Panchayat",
-    value: "Office of the Gram Panchayat, Local Administration",
-  },
-  {
-    icon: "🛣️",
-    label: "MyRoad India",
-    value: "Digital Road & Public Infrastructure Platform",
+    icon: "📍",
+    label: "Office Address",
+    value: OFFICE_ADDRESS_TEXT,
+    wide: true,
   },
   {
     icon: "📞",
-    label: "Contact Details",
-    value: "Phone, email & office hours for citizen assistance",
+    label: "Phone Number",
+    value: OFFICE_PHONE,
+    href: `tel:${OFFICE_PHONE}`,
+  },
+  {
+    icon: "✉️",
+    label: "Email Address",
+    value: OFFICE_EMAIL,
+    href: `mailto:${OFFICE_EMAIL}`,
   },
 ];
 
-const supportOptions = [
-  {
-    num: "01",
-    icon: "💬",
-    title: "General Queries",
-    summary: "Questions about the platform, services, or how the system works.",
-  },
-  {
-    num: "02",
-    icon: "📋",
-    title: "Project Information",
-    summary: "Details on ongoing infrastructure projects and their status.",
-  },
-  {
-    num: "03",
-    icon: "🛠️",
-    title: "Complaint Assistance",
-    summary: "Help with reporting, tracking, or resolving a registered complaint.",
-  },
+// Issue dropdown options
+const issueOptions = [
+  "Pothole / Road Damage",
+  "Road Safety Concern",
+  "Waterlogging / Drainage",
+  "Street Light Issue",
+  "Road Maintenance Request",
+  "Complaint Status / Tracking",
+  "Road Project Information",
+  "GIS Mapping / Map Data Query",
+  "Website / Technical Support",
+  "Other",
 ];
+
+const initialForm = {
+  name: "",
+  email: "",
+  mobile: "",
+  subject: "", // holds the selected issue
+  message: "",
+};
 
 const ContactUs = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [formData, setFormData] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => {
@@ -70,9 +82,9 @@ const ContactUs = () => {
         <div className="hero-scrim"></div>
         <div className="page-hero-inner">
           <div className="hero-cta-row">
-               <button className="primary-btn" type="button">
+               {/* <button className="primary-btn" type="button">
                  Report an Issue <span>→</span>
-               </button>
+               </button> */}
              {/* <div className="breadcrumb">
                Home / <b>Contact Us</b>
              </div>
@@ -87,134 +99,189 @@ const ContactUs = () => {
 
       </section>
 
-      {/* ================= CONTACT INFORMATION ================= */}
-      <section className="section">
-        <div className="section-heading">
-          <p className="eyebrow">Contact Information</p>
-          <h2>Reach the right office for your query</h2>
-        </div>
-
-        <div className="contact-info-grid">
-          {contactDetails.map((item, i) => (
-            <div className="contact-info-card" key={i}>
-              <span className="contact-info-icon">{item.icon}</span>
-              <div>
-                <h4>{item.label}</h4>
-                <p>{item.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= CITIZEN SUPPORT ================= */}
+      {/* ================= GET IN TOUCH + SEND US A MESSAGE ================= */}
       <section className="section surface">
-        <div className="section-heading">
-          <p className="eyebrow">Citizen Support</p>
-          <h2>What can we help you with?</h2>
-        </div>
-
-        <div className="support-grid">
-          {supportOptions.map((option, i) => (
-            <div className="support-card" key={i}>
-              <div className="support-top">
-                <span className="support-number">{option.num}</span>
-                <span className="support-icon">{option.icon}</span>
-              </div>
-              <h4>{option.title}</h4>
-              <p>{option.summary}</p>
+        <div className="touch-layout">
+          {/* ---------- Left: Get in Touch ---------- */}
+          <div className="touch-left">
+            <div className="section-heading">
+              <span className="heading-bar"></span>
+              <h2>Get in Touch</h2>
+              <p className="section-sub">
+                You can reach us through the following channels. We are
+                committed to providing timely and helpful support to all
+                citizens.
+              </p>
             </div>
-          ))}
+
+            <div className="contact-info-grid">
+              {contactCards.map((item, i) => (
+                <div
+                  className={`contact-info-card${item.wide ? " wide" : ""}`}
+                  key={i}
+                >
+                  <span className="contact-info-icon">{item.icon}</span>
+                  <div className="contact-info-body">
+                    <span className="contact-label">{item.label}</span>
+                    {item.href ? (
+                      <a className="contact-value" href={item.href}>
+                        {item.value}
+                      </a>
+                    ) : (
+                      <p className="contact-value">{item.value}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ---------- Right: Send Us a Message ---------- */}
+          <div className="touch-right" id="contact-form">
+            <div className="form-shell">
+              {submitted ? (
+                <div className="response-card">
+                  <span className="response-icon">✓</span>
+                  <h3>Response / Help</h3>
+                  <p>
+                    Thank you for reaching out. Your request has been received —
+                    our team will get back to you shortly.
+                  </p>
+                  <button
+                    className="secondary-btn"
+                    type="button"
+                    onClick={() => {
+                      setSubmitted(false);
+                      setFormData(initialForm);
+                    }}
+                  >
+                    Send another message
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="form-title">Send Us a Message</h2>
+                  <p className="form-sub">
+                    Fill in the form below and we will get back to you shortly.
+                  </p>
+
+                  <form className="contact-form" onSubmit={handleSubmit}>
+                    <div className="form-field">
+                      <label htmlFor="name">Full Name *</label>
+                      <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="email">Email Address *</label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="Enter your email address"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="mobile">Mobile Number *</label>
+                      <input
+                        id="mobile"
+                        name="mobile"
+                        type="tel"
+                        placeholder="Enter your mobile number"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="subject">Issue *</label>
+                      <select
+                        id="subject"
+                        name="subject"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="">Select an issue</option>
+                        {issueOptions.map((opt) => (
+                          <option value={opt} key={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="message">Message *</label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        rows="5"
+                        placeholder="Type your message here..."
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                      ></textarea>
+                    </div>
+
+                    <button className="primary-btn submit-btn" type="submit">
+                      Submit
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ================= CONTACT / SUPPORT REQUEST FORM ================= */}
-      <section className="section">
-        <div className="section-heading center">
-          <p className="eyebrow center">Contact / Support Request</p>
-          <h2>Send us your message</h2>
-        </div>
+      {/* ================= MAP + OFFICE LOCATION (equal blocks) ================= */}
+      <section className="section surface map-section" id="location-map">
+        <div className="map-layout">
+          <div className="map-frame">
+            <iframe
+              title="Office location"
+              src={MAP_EMBED_URL}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            ></iframe>
+          </div>
 
-        <div className="form-shell">
-          {submitted ? (
-            <div className="response-card">
-              <span className="response-icon">✓</span>
-              <h3>Response / Help</h3>
-              <p>
-                Thank you for reaching out. Your request has been received —
-                our team will get back to you shortly.
-              </p>
-              <button
-                className="secondary-btn"
-                type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  setFormData({ name: "", email: "", subject: "", message: "" });
-                }}
-              >
-                Send another message
-              </button>
+          <div className="office-card">
+            <div className="office-block">
+              <span className="office-icon">📍</span>
+              <div>
+                <h3>Our Office Location</h3>
+                {OFFICE_ADDRESS_LINES.map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
             </div>
-          ) : (
-            <form className="contact-form" onSubmit={handleSubmit}>
-              <div className="form-row">
-                <div className="form-field">
-                  <label htmlFor="name">Full Name</label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label htmlFor="email">Email Address</label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="form-field">
-                <label htmlFor="subject">Subject</label>
-                <input
-                  id="subject"
-                  name="subject"
-                  type="text"
-                  placeholder="What is this regarding?"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+            <div className="office-divider"></div>
 
-              <div className="form-field">
-                <label htmlFor="message">Message</label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows="5"
-                  placeholder="Describe your query or request in detail"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                ></textarea>
+            <div className="office-block">
+              <span className="office-icon">🕘</span>
+              <div>
+                <h3>Working Hours</h3>
+                <p>Monday – Friday : 10:00 AM – 6:00 PM</p>
+                <p>(Closed on Government Holidays)</p>
               </div>
-
-              <button className="primary-btn" type="submit">
-                Submit Request <span>→</span>
-              </button>
-            </form>
-          )}
+            </div>
+          </div>
         </div>
       </section>
     </main>

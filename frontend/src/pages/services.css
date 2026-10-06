@@ -1,8 +1,8 @@
 /* ============================================================
    MYROAD INDIA — SERVICES PAGE STYLES
-   Service cards now use the same premium card design as the
+   Service cards use the same premium card design as the
    Home page "Citizen Services" (qa-card): white card, soft
-   shadow, burgundy icon box, navy title, burgundy accent line.
+   shadow, icon box, navy title, burgundy accent line.
    ============================================================ */
 
 .services-page {
@@ -83,7 +83,7 @@
   background-position: center;
   background-size: cover;
 
-  min-height: clamp(400px, 38vw, 475px);
+  min-height: clamp(485px, 34vw, 800px);
   display: flex;
   align-items: flex-end;
   padding: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 4rem);
@@ -135,10 +135,7 @@
   margin: 0 auto;
 }
 
-/* ================= SERVICE CARD =================
-   Exactly the same size, fonts and colours as the Home page
-   quick-action cards: icon, title, description, accent line.
-   ================================================ */
+/* ================= SERVICE CARD ================= */
 .service-card {
   position: relative;
   display: flex;
@@ -163,7 +160,7 @@
     border-color 0.35s ease;
 }
 
-/* Icon box */
+/* Icon box — realistic coloured icons */
 .service-icon {
   display: inline-flex;
   align-items: center;
@@ -174,16 +171,16 @@
   border-radius: 12px;
 
   background: #FBE9ED;
-  color: #8B1E3A;
   line-height: 1;
 
   margin-bottom: 18px;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.service-icon svg {
-  width: 24px;
-  height: 24px;
+.service-icon .emoji-icon {
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 24px;
+  line-height: 1;
   display: block;
 }
 

@@ -82,7 +82,7 @@
   background-size: cover;
 
   /* Same sizing as issue-category page */
-  min-height: clamp(430px, 34vw, 560px);
+  min-height: clamp(480px, 34vw, 800px);
   display: flex;
   align-items: flex-end;
   padding: clamp(1.5rem, 2.5vw, 2.25rem);

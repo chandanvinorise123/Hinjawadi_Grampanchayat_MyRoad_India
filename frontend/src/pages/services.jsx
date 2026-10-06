@@ -2,59 +2,20 @@ import React, { useState } from "react";
 import "./services.css";
 import bannerImage from "../assets/se.png";
 
-// Refined line icons (deep burgundy via currentColor) — consistent 24px set
-const Svg = ({ children }) => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    {children}
-  </svg>
+// Realistic full-colour icons (emoji style)
+const Emoji = ({ symbol }) => (
+  <span className="emoji-icon" role="img" aria-hidden="true">
+    {symbol}
+  </span>
 );
 
 const icons = {
-  report: (
-    <Svg>
-      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
-      <path d="M12 7.5v5M9.5 10h5" />
-    </Svg>
-  ),
-  track: (
-    <Svg>
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="M20 20l-4.2-4.2" />
-    </Svg>
-  ),
-  map: (
-    <Svg>
-      <path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z" />
-      <path d="M9 4v14M15 6v14" />
-    </Svg>
-  ),
-  field: (
-    <Svg>
-      <rect x="3" y="8" width="18" height="12" rx="2" />
-      <path d="M9 8V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V8M3 13h18M10.5 13v2.5h3V13" />
-    </Svg>
-  ),
-  admin: (
-    <Svg>
-      <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6L12 3z" />
-      <path d="M8.8 12.2l2.4 2.4 4.2-4.6" />
-    </Svg>
-  ),
-  analytics: (
-    <Svg>
-      <path d="M3 20.5h18M6.5 20V11M12 20V4.5M17.5 20v-6.5" />
-    </Svg>
-  ),
+  report: <Emoji symbol="📍" />,
+  track: <Emoji symbol="🔍" />,
+  map: <Emoji symbol="🗺️" />,
+  field: <Emoji symbol="👷" />,
+  admin: <Emoji symbol="🛡️" />,
+  analytics: <Emoji symbol="📊" />,
 };
 
 const coreServices = [
@@ -183,9 +144,9 @@ const Services = () => {
         <div className="hero-scrim"></div>
 
         <div className="page-hero-inner">
-          <div className="breadcrumb">
+          {/* <div className="breadcrumb">
             Home / <b>Services</b>
-          </div>
+          </div> */}
 
           {/* Hidden text for SEO — banner image already has the heading */}
           <h1 className="sr-only">Our Services</h1>
