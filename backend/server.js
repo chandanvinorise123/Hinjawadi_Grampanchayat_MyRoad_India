@@ -1,9 +1,13 @@
-
 require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+
 const connectDB = require("./config/db");
+
+// =====================================================
+// ROUTES
+// =====================================================
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -11,121 +15,242 @@ const statRoutes = require("./routes/statRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminProfileRoutes = require("./routes/adminProfileRoutes");
 const photoRoutes = require("./routes/photoRoutes");
-
-// ==========================================
-// ADDITIONAL ROUTES
-// ==========================================
-
-
-// Complaint Routes
 const complaintRoutes = require("./routes/complaintRoutes");
-
-// Admin Management Routes
 const adminManagementRoutes = require("./routes/adminManagementRoutes");
 
-
-const complaintRoutes = require("./routes/complaintRoutes");
-
+// =====================================================
+// APP
+// =====================================================
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// =====================================================
+// CORS
+// =====================================================
 
-// Database Connection
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5800",
+      "http://127.0.0.1:5800",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:5100",
+      "http://127.0.0.1:5100",
+      "http://localhost:5101",
+      "http://127.0.0.1:5101",
+    ],
+
+    credentials: true,
+  })
+);
+
+// =====================================================
+// BODY PARSER
+// =====================================================
+
+app.use(express.json());
+
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+// =====================================================
+// REQUEST LOGGER
+// =====================================================
+
+app.use((req, res, next) => {
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
+  );
+
+  next();
+});
+
+// =====================================================
+// DATABASE
+// =====================================================
+
 connectDB();
 
-// ==========================================
-// ROUTES
-// ==========================================
+// =====================================================
+// API ROUTES
+// =====================================================
 
-// Authentication Routes
-app.use("/api/auth", authRoutes);
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
-// User Routes
-app.use("/api", userRoutes);
+app.use(
+  "/api",
+  userRoutes
+);
 
+app.use(
+  "/api/users",
+  userRoutes
+);
 
-// ==========================================
-// ADDITIONAL USER ROUTE PATH
-// ==========================================
-// This gives:
-// /api/users
-// while keeping your existing /api user routes working.
-app.use("/api/users", userRoutes);
+// =====================================================
+// COMPLAINT ROUTES
+// IMPORTANT
+// =====================================================
 
-// ==========================================
-// Complaint Routes
-// Includes:
-// /api/complaints
-// /api/complaints/analytics
-// ==========================================
-app.use("/api/complaints", complaintRoutes);
+console.log(
+  "🔗 Registering complaint routes at /api/complaints"
+);
 
-// ==========================================
-// Map Routes
-// If mapRoutes.js exists, it will be loaded.
-// If it does not exist, backend will continue running.
-// ==========================================
+app.use(
+  "/api/complaints",
+  complaintRoutes
+);
+
+console.log(
+  "✅ Complaint routes registered"
+);
+
+// =====================================================
+// MAP ROUTES
+// =====================================================
+
 try {
-  const mapRoutes = require("./routes/mapRoutes");
+  const mapRoutes =
+    require("./routes/mapRoutes");
 
-  app.use("/api/map", mapRoutes);
+  app.use(
+    "/api/map",
+    mapRoutes
+  );
 
-  console.log("✅ Map routes loaded");
-} catch (err) {
   console.log(
-    "ℹ️ mapRoutes.js not found. If map endpoints are inside complaintRoutes, this is fine."
+    "✅ Map routes loaded"
+  );
+} catch (error) {
+  console.log(
+    "ℹ️ mapRoutes.js not found. Skipping map routes."
   );
 }
 
-// Statistics Routes
-app.use("/api/stats", statRoutes);
-app.use("/uploads", express.static("uploads"));
-app.use("/api/complaints", complaintRoutes);
+// =====================================================
+// OTHER ROUTES
+// =====================================================
 
-// Notification Routes
-app.use("/api/notifications", notificationRoutes);
+app.use(
+  "/api/stats",
+  statRoutes
+);
 
-// Admin Profile Routes
-app.use("/api/admin", adminProfileRoutes);
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
 
-// ==========================================
-// ADMIN MANAGEMENT ROUTES
-// Includes:
-// Overview
-// Categories
-// Config
-// QR
-// Activity
-// ==========================================
-app.use("/api/admin", adminManagementRoutes);
-app.use("/api/photos", photoRoutes);
+app.use(
+  "/api/admin",
+  adminProfileRoutes
+);
 
-// ==========================================
-// DEFAULT ROUTE
-// ==========================================
+app.use(
+  "/api/admin",
+  adminManagementRoutes
+);
+
+app.use(
+  "/api/photos",
+  photoRoutes
+);
+
+// =====================================================
+// STATIC UPLOADS
+// =====================================================
+
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
+
+// =====================================================
+// ROOT
+// =====================================================
 
 app.get("/", (req, res) => {
-  res.send("MyRoad India Backend is running successfully!");
+  res.status(200).send(
+    "MyRoad India Backend is running successfully!"
+  );
 });
 
+// =====================================================
+// API 404 HANDLER
+// =====================================================
 
-// ==========================================
-// SERVER START
-// ==========================================
+app.use("/api", (req, res) => {
+  console.error(
+    `❌ API route not found: ${req.method} ${req.originalUrl}`
+  );
 
-const PORT = process.env.PORT || 3200;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  res.status(404).json({
+    success: false,
+    message: `API route not found: ${req.method} ${req.originalUrl}`,
+  });
 });
 
-const PORT = process.env.PORT || 3200;
+// =====================================================
+// GLOBAL ERROR HANDLER
+// =====================================================
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.use(
+  (error, req, res, next) => {
+    console.error(
+      "❌ Global server error:",
+      error
+    );
 
+    res.status(
+      error.status || 500
+    ).json({
+      success: false,
+      message:
+        error.message ||
+        "Internal server error",
+    });
+  }
+);
+
+// =====================================================
+// START SERVER
+// =====================================================
+
+const PORT =
+  process.env.PORT || 3200;
+
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      "======================================"
+    );
+
+    console.log(
+      `🚀 MyRoad India Backend running on port ${PORT}`
+    );
+
+    console.log(
+      `🌐 http://localhost:${PORT}`
+    );
+
+    console.log(
+      `🧪 Test: http://localhost:${PORT}/api/complaints/test`
+    );
+
+    console.log(
+      `📋 My Complaints: http://localhost:${PORT}/api/complaints/my/:citizenId`
+    );
+
+    console.log(
+      "======================================"
+    );
+  }
+);

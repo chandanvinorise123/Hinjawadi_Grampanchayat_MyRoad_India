@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const Complaint = require("../models/Complaint");
 const departmentMapping = require("../constants/departmentMapping");
@@ -13,14 +14,13 @@ const isValidObjectId = (id) => {
 // HELPER: CHECK IF COMPLAINT CAN BE EDITED
 // ==========================================
 const canModifyComplaint = (status) => {
-  const normalizedStatus = (status || "")
-    .toLowerCase()
-    .trim();
+  const normalizedStatus = (status || "").toLowerCase().trim();
 
   return [
     "registered",
     "pending",
     "complaint registered",
+    "new",
   ].includes(normalizedStatus);
 };
 
@@ -39,8 +39,15 @@ const createComplaint = async (req, res) => {
       coordinates,
     } = req.body || {};
 
+    // ------------------------------------------
     // Validate required fields
-    if (!citizenId || !category || !issueType || !description) {
+    // ------------------------------------------
+    if (
+      !citizenId ||
+      !category ||
+      !issueType ||
+      !description
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -48,7 +55,9 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // ------------------------------------------
     // Validate citizen ID
+    // ------------------------------------------
     if (!isValidObjectId(citizenId)) {
       return res.status(400).json({
         success: false,
@@ -56,7 +65,9 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // ------------------------------------------
     // Validate category and assign department
+    // ------------------------------------------
     const department = departmentMapping[category];
 
     if (!department) {
@@ -66,7 +77,9 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // ------------------------------------------
     // Parse coordinates from FormData
+    // ------------------------------------------
     let parsedCoordinates;
 
     if (coordinates) {
@@ -75,7 +88,7 @@ const createComplaint = async (req, res) => {
           typeof coordinates === "string"
             ? JSON.parse(coordinates)
             : coordinates;
-      } catch {
+      } catch (error) {
         return res.status(400).json({
           success: false,
           message: "Invalid coordinates format",
@@ -83,22 +96,70 @@ const createComplaint = async (req, res) => {
       }
     }
 
+    // ------------------------------------------
+    // Validate coordinates
+    // ------------------------------------------
+    if (
+      !parsedCoordinates ||
+      parsedCoordinates.latitude === undefined ||
+      parsedCoordinates.longitude === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Valid latitude and longitude coordinates are required",
+      });
+    }
+
+    const latitude = Number(parsedCoordinates.latitude);
+    const longitude = Number(parsedCoordinates.longitude);
+
+    if (
+      Number.isNaN(latitude) ||
+      latitude < -90 ||
+      latitude > 90
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid latitude",
+      });
+    }
+
+    if (
+      Number.isNaN(longitude) ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid longitude",
+      });
+    }
+
+    // ------------------------------------------
     // Get uploaded image paths
+    // ------------------------------------------
     const images = (req.files || []).map(
       (file) => `/uploads/${file.filename}`
     );
 
+    // ------------------------------------------
     // Create complaint
+    // ------------------------------------------
     const complaint = await Complaint.create({
       citizenId,
       category,
       issueType,
       description,
+      location: location || "",
+      landmark: landmark || "",
       department,
-      location,
-      landmark,
-      coordinates: parsedCoordinates,
+      coordinates: {
+        latitude,
+        longitude,
+      },
       images,
+      photos: images.length,
     });
 
     return res.status(201).json({
@@ -133,22 +194,26 @@ const getComplaintById = async (req, res) => {
 
     let complaint = null;
 
-    // Search by MongoDB ID
+    // ------------------------------------------
+    // Search by MongoDB ObjectId
+    // ------------------------------------------
     if (isValidObjectId(complaintId)) {
       complaint = await Complaint.findById(complaintId)
         .select("-__v");
     }
 
-    // Search by complaint number, if available
-    if (
-      !complaint &&
-      Complaint.schema.path("complaintNumber")
-    ) {
+    // ------------------------------------------
+    // Search by complaint number
+    // ------------------------------------------
+    if (!complaint) {
       complaint = await Complaint.findOne({
         complaintNumber: complaintId,
       }).select("-__v");
     }
 
+    // ------------------------------------------
+    // Complaint not found
+    // ------------------------------------------
     if (!complaint) {
       return res.status(404).json({
         success: false,
@@ -179,6 +244,9 @@ const getMyComplaints = async (req, res) => {
   try {
     const { citizenId } = req.params;
 
+    // ------------------------------------------
+    // Validate citizen ID
+    // ------------------------------------------
     if (!citizenId || !isValidObjectId(citizenId)) {
       return res.status(400).json({
         success: false,
@@ -186,44 +254,104 @@ const getMyComplaints = async (req, res) => {
       });
     }
 
-    const complaints = await Complaint.find({ citizenId })
+    // ------------------------------------------
+    // Get complaints belonging to citizen
+    // ------------------------------------------
+    const complaints = await Complaint.find({
+      citizenId,
+    })
       .sort({ createdAt: -1 })
       .select("-__v");
 
+    // ------------------------------------------
     // Format data for CitizenDashboard.jsx
-    const formattedComplaints = complaints.map((complaint) => ({
-      id: complaint._id.toString(),
-      _id: complaint._id,
-      complaintNumber:
-        complaint.complaintNumber ||
-        complaint._id.toString(),
-      category: complaint.category,
-      issue: complaint.issueType,
-      issueType: complaint.issueType,
-      location: complaint.location || "Location pending",
-      description: complaint.description,
-      status: complaint.status || "Registered",
-      date: complaint.createdAt
-        ? complaint.createdAt.toISOString().slice(0, 10)
-        : "",
-      createdAt: complaint.createdAt,
-      department: complaint.department,
-      images: complaint.images || [],
-      landmark: complaint.landmark,
-      coordinates: complaint.coordinates,
-    }));
+    // ------------------------------------------
+    const formattedComplaints = complaints.map(
+      (complaint) => ({
+        id: complaint._id.toString(),
 
+        _id: complaint._id,
+
+        complaintNumber:
+          complaint.complaintNumber ||
+          complaint._id.toString(),
+
+        category: complaint.category,
+
+        // Frontend compatibility
+        issue: complaint.issueType,
+        issueType: complaint.issueType,
+
+        description:
+          complaint.description || "",
+
+        location:
+          complaint.location || "Location pending",
+
+        landmark:
+          complaint.landmark || "",
+
+        coordinates:
+          complaint.coordinates || null,
+
+        status:
+          complaint.status || "New",
+
+        priority:
+          complaint.priority || "Normal",
+
+        department:
+          complaint.department || "",
+
+        images:
+          complaint.images || [],
+
+        photos:
+          complaint.photos || 0,
+
+        assignedStaff:
+          complaint.assignedStaff || "",
+
+        assignedVerifier:
+          complaint.assignedVerifier || "",
+
+        date: complaint.createdAt
+          ? complaint.createdAt
+              .toISOString()
+              .slice(0, 10)
+          : "",
+
+        createdAt:
+          complaint.createdAt,
+
+        updatedAt:
+          complaint.updatedAt,
+
+        statusHistory:
+          complaint.statusHistory || [],
+      })
+    );
+
+    // ------------------------------------------
+    // IMPORTANT:
+    // Return 200 even when no complaints exist.
+    // This prevents frontend JSON/404 problems.
+    // ------------------------------------------
     return res.status(200).json({
       success: true,
       count: formattedComplaints.length,
       data: formattedComplaints,
     });
   } catch (error) {
-    console.error("Get my complaints error:", error);
+    console.error(
+      "Get my complaints error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: "Failed to fetch your complaints",
+      error: error.message,
     });
   }
 };
@@ -234,8 +362,16 @@ const getMyComplaints = async (req, res) => {
 const updateComplaint = async (req, res) => {
   try {
     const { id } = req.params;
-    const { citizenId, location, description } = req.body || {};
 
+    const {
+      citizenId,
+      location,
+      description,
+    } = req.body || {};
+
+    // ------------------------------------------
+    // Validate complaint ID
+    // ------------------------------------------
     if (!isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
@@ -243,13 +379,22 @@ const updateComplaint = async (req, res) => {
       });
     }
 
-    if (!citizenId || !isValidObjectId(citizenId)) {
+    // ------------------------------------------
+    // Validate citizen ID
+    // ------------------------------------------
+    if (
+      !citizenId ||
+      !isValidObjectId(citizenId)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Valid citizen ID is required",
       });
     }
 
+    // ------------------------------------------
+    // Find complaint belonging to citizen
+    // ------------------------------------------
     const complaint = await Complaint.findOne({
       _id: id,
       citizenId,
@@ -258,10 +403,14 @@ const updateComplaint = async (req, res) => {
     if (!complaint) {
       return res.status(404).json({
         success: false,
-        message: "Complaint not found for this citizen",
+        message:
+          "Complaint not found for this citizen",
       });
     }
 
+    // ------------------------------------------
+    // Check whether complaint can be edited
+    // ------------------------------------------
     if (!canModifyComplaint(complaint.status)) {
       return res.status(403).json({
         success: false,
@@ -270,20 +419,29 @@ const updateComplaint = async (req, res) => {
       });
     }
 
-    // Update only the permitted fields
+    // ------------------------------------------
+    // Update location
+    // ------------------------------------------
     if (location !== undefined) {
       complaint.location = location;
     }
 
+    // ------------------------------------------
+    // Update description
+    // ------------------------------------------
     if (description !== undefined) {
-      if (!description.trim()) {
+      if (
+        typeof description !== "string" ||
+        !description.trim()
+      ) {
         return res.status(400).json({
           success: false,
           message: "Description cannot be empty",
         });
       }
 
-      complaint.description = description;
+      complaint.description =
+        description.trim();
     }
 
     await complaint.save();
@@ -294,11 +452,15 @@ const updateComplaint = async (req, res) => {
       data: complaint,
     });
   } catch (error) {
-    console.error("Update complaint error:", error);
+    console.error(
+      "Update complaint error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: "Failed to update complaint",
+      error: error.message,
     });
   }
 };
@@ -309,8 +471,13 @@ const updateComplaint = async (req, res) => {
 const deleteComplaint = async (req, res) => {
   try {
     const { id } = req.params;
-    const { citizenId } = req.body || {};
 
+    const { citizenId } =
+      req.body || {};
+
+    // ------------------------------------------
+    // Validate complaint ID
+    // ------------------------------------------
     if (!isValidObjectId(id)) {
       return res.status(400).json({
         success: false,
@@ -318,13 +485,22 @@ const deleteComplaint = async (req, res) => {
       });
     }
 
-    if (!citizenId || !isValidObjectId(citizenId)) {
+    // ------------------------------------------
+    // Validate citizen ID
+    // ------------------------------------------
+    if (
+      !citizenId ||
+      !isValidObjectId(citizenId)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Valid citizen ID is required",
       });
     }
 
+    // ------------------------------------------
+    // Find complaint belonging to citizen
+    // ------------------------------------------
     const complaint = await Complaint.findOne({
       _id: id,
       citizenId,
@@ -333,10 +509,14 @@ const deleteComplaint = async (req, res) => {
     if (!complaint) {
       return res.status(404).json({
         success: false,
-        message: "Complaint not found for this citizen",
+        message:
+          "Complaint not found for this citizen",
       });
     }
 
+    // ------------------------------------------
+    // Check whether complaint can be deleted
+    // ------------------------------------------
     if (!canModifyComplaint(complaint.status)) {
       return res.status(403).json({
         success: false,
@@ -345,18 +525,27 @@ const deleteComplaint = async (req, res) => {
       });
     }
 
-    await Complaint.deleteOne({ _id: complaint._id });
+    // ------------------------------------------
+    // Delete complaint
+    // ------------------------------------------
+    await Complaint.deleteOne({
+      _id: complaint._id,
+    });
 
     return res.status(200).json({
       success: true,
       message: "Complaint deleted successfully",
     });
   } catch (error) {
-    console.error("Delete complaint error:", error);
+    console.error(
+      "Delete complaint error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: "Failed to delete complaint",
+      error: error.message,
     });
   }
 };

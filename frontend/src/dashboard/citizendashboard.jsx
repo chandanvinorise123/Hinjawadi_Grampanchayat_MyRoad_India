@@ -29,9 +29,7 @@ const colorForCategory = (category = "") => {
   let hash = 0;
 
   for (let i = 0; i < category.length; i++) {
-    hash =
-      category.charCodeAt(i) +
-      ((hash << 5) - hash);
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
   }
 
   return mapColors[Math.abs(hash) % mapColors.length];
@@ -69,11 +67,15 @@ const getStageFromStatus = (status) => {
 
   const statusMap = {
     registered: 0,
+    new: 0,
     "complaint registered": 0,
     pending: 0,
+    submitted: 0,
+    "under review": 0,
 
     verified: 1,
     "complaint verified": 1,
+    "under verification": 1,
 
     assigned: 2,
     "assigned to staff/officer": 2,
@@ -98,14 +100,63 @@ const getStageFromStatus = (status) => {
   return statusMap[normalized] ?? 0;
 };
 
+/*
+ * Safely read JSON from an API response.
+ *
+ * This prevents:
+ * Unexpected token '<', "<!DOCTYPE..."
+ *
+ * when the backend returns an HTML 404/500 page.
+ */
+const readJsonResponse = async (response) => {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("API returned non-JSON response:", text);
+
+    throw new Error(
+      `Server returned an invalid response (${response.status}).`
+    );
+  }
+};
+
+const getStoredUser = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      return {};
+    }
+
+    return JSON.parse(storedUser);
+  } catch (error) {
+    console.error("Unable to read logged-in user:", error);
+    return {};
+  }
+};
+
+const getCitizenId = (user) => {
+  return (
+    user?._id ||
+    user?.id ||
+    user?.userId ||
+    user?.citizenId ||
+    null
+  );
+};
+
 const CitizenDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   // Logged-in user
-  const stored = JSON.parse(
-    localStorage.getItem("user") || "{}"
-  );
+  const stored = getStoredUser();
 
   const [profile] = useState({
     name: stored.name || "Citizen User",
@@ -129,6 +180,11 @@ const CitizenDashboard = () => {
   const [showMapView, setShowMapView] = useState(false);
   const [gpsBusy, setGpsBusy] = useState(false);
 
+  const [complaintsLoading, setComplaintsLoading] =
+    useState(false);
+  const [complaintsError, setComplaintsError] =
+    useState("");
+
   // Track Complaint state
   const [trackId, setTrackId] = useState("");
   const [trackedComplaint, setTrackedComplaint] =
@@ -147,56 +203,138 @@ const CitizenDashboard = () => {
 
   // ---------------- FETCH MY COMPLAINTS ----------------
   const fetchMyComplaints = async () => {
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
-    const citizenId = user.id || user._id;
+    const user = getStoredUser();
+    const citizenId = getCitizenId(user);
+
+    console.log("Logged-in user:", user);
+    console.log("Citizen ID:", citizenId);
 
     if (!citizenId) {
-      console.error("Citizen ID not found");
+      console.error(
+        "Citizen ID not found in localStorage user object."
+      );
+
       setComplaints([]);
       setSelectedId(null);
+      setComplaintsError(
+        "Citizen information was not found. Please log in again."
+      );
+
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${API_URL}/my/${encodeURIComponent(citizenId)}`
-      );
-      const result = await response.json();
+    setComplaintsLoading(true);
+    setComplaintsError("");
 
-      if (!response.ok || !result.success) {
+    const requestUrl = `${API_URL}/my/${encodeURIComponent(
+      String(citizenId)
+    )}`;
+
+    console.log("Fetching complaints from:", requestUrl);
+
+    try {
+      const response = await fetch(requestUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      console.log(
+        "Complaints API response:",
+        response.status,
+        response.statusText
+      );
+
+      const result = await readJsonResponse(response);
+
+      console.log("Complaints API result:", result);
+
+      if (!response.ok) {
         throw new Error(
-          result.message || "Failed to load complaints"
+          result.message ||
+            `Failed to load complaints. Server returned ${response.status}.`
         );
       }
 
-      const formattedComplaints = (result.data || []).map((c) => ({
+      if (!result.success) {
+        throw new Error(
+          result.message || "Failed to load complaints."
+        );
+      }
+
+      const formattedComplaints = (
+        Array.isArray(result.data) ? result.data : []
+      ).map((c) => ({
         ...c,
+
         id: String(c.id || c._id),
-        complaintNumber: c.complaintNumber || c._id || c.id,
-        issue: c.issue || c.issueType || "General Issue",
-        location: c.location || "Location pending",
+
+        complaintNumber:
+          c.complaintNumber ||
+          c._id ||
+          c.id ||
+          "Unknown",
+
+        issue:
+          c.issue ||
+          c.issueType ||
+          "General Issue",
+
+        issueType:
+          c.issueType ||
+          c.issue ||
+          "General Issue",
+
+        location:
+          c.location ||
+          "Location pending",
+
+        description:
+          c.description ||
+          "",
+
         date:
           c.date ||
           (c.createdAt
-            ? new Date(c.createdAt).toISOString().slice(0, 10)
+            ? new Date(c.createdAt)
+                .toISOString()
+                .slice(0, 10)
             : ""),
+
         stage: getStageFromStatus(c.status),
       }));
 
       setComplaints(formattedComplaints);
+
       setSelectedId((currentId) => {
         if (
           currentId &&
-          formattedComplaints.some((c) => c.id === currentId)
+          formattedComplaints.some(
+            (c) => c.id === currentId
+          )
         ) {
           return currentId;
         }
+
         return formattedComplaints[0]?.id ?? null;
       });
     } catch (error) {
-      console.error("Fetch complaints error:", error);
+      console.error(
+        "Fetch complaints error:",
+        error
+      );
+
+      setComplaints([]);
+
+      setSelectedId(null);
+
+      setComplaintsError(
+        error.message ||
+          "Unable to load complaints. Please try again."
+      );
+    } finally {
+      setComplaintsLoading(false);
     }
   };
 
@@ -213,7 +351,9 @@ const CitizenDashboard = () => {
     },
     {
       label: "Pending",
-      value: complaints.filter((c) => c.stage <= 1).length,
+      value: complaints.filter(
+        (c) => c.stage <= 1
+      ).length,
       icon: "⏳",
       tone: "amber",
     },
@@ -227,22 +367,29 @@ const CitizenDashboard = () => {
     },
     {
       label: "Closed",
-      value: complaints.filter((c) => c.stage === 6).length,
+      value: complaints.filter(
+        (c) => c.stage === 6
+      ).length,
       icon: "✅",
       tone: "green",
     },
   ];
 
-  const mapGroups = complaints.reduce((groups, c) => {
-    const key = c.location || "Location pending";
+  const mapGroups = complaints.reduce(
+    (groups, c) => {
+      const key =
+        c.location || "Location pending";
 
-    if (!groups[key]) {
-      groups[key] = [];
-    }
+      if (!groups[key]) {
+        groups[key] = [];
+      }
 
-    groups[key].push(c);
-    return groups;
-  }, {});
+      groups[key].push(c);
+
+      return groups;
+    },
+    {}
+  );
 
   // ---------------- TRACK COMPLAINT ----------------
   const handleTrackComplaint = async (e) => {
@@ -251,8 +398,12 @@ const CitizenDashboard = () => {
     const complaintId = trackId.trim();
 
     if (!complaintId) {
-      setTrackError("Please enter a complaint ID.");
+      setTrackError(
+        "Please enter a complaint ID."
+      );
+
       setTrackedComplaint(null);
+
       return;
     }
 
@@ -261,13 +412,23 @@ const CitizenDashboard = () => {
     setTrackedComplaint(null);
 
     try {
-      const response = await fetch(
-        `${API_URL}/track/${encodeURIComponent(
-          complaintId
-        )}`
+      const requestUrl = `${API_URL}/track/${encodeURIComponent(
+        complaintId
+      )}`;
+
+      console.log(
+        "Tracking complaint:",
+        requestUrl
       );
 
-      const result = await response.json();
+      const response = await fetch(requestUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      const result = await readJsonResponse(response);
 
       if (!response.ok || !result.success) {
         throw new Error(
@@ -284,6 +445,11 @@ const CitizenDashboard = () => {
 
       setTrackedComplaint(result.data);
     } catch (error) {
+      console.error(
+        "Track complaint error:",
+        error
+      );
+
       setTrackError(
         error.message ||
           "Unable to track complaint. Please try again."
@@ -306,21 +472,40 @@ const CitizenDashboard = () => {
 
     const complaint = {
       id: Date.now(),
+
       complaintNumber: `MRI-${Math.floor(
         100000 + Math.random() * 900000
       )}`,
+
       category: newComplaint.category,
-      issue: newComplaint.issue || "General Issue",
+
+      issue:
+        newComplaint.issue ||
+        "General Issue",
+
       location:
-        newComplaint.location || "Location pending",
-      description: newComplaint.description,
+        newComplaint.location ||
+        "Location pending",
+
+      description:
+        newComplaint.description,
+
       photo: newComplaint.photo,
+
       gps: newComplaint.gps,
-      date: new Date().toISOString().slice(0, 10),
+
+      date: new Date()
+        .toISOString()
+        .slice(0, 10),
+
       stage: 0,
     };
 
-    setComplaints((prev) => [complaint, ...prev]);
+    setComplaints((prev) => [
+      complaint,
+      ...prev,
+    ]);
+
     setSelectedId(complaint.id);
 
     setNewComplaint({
@@ -338,7 +523,10 @@ const CitizenDashboard = () => {
   // ---------------- GPS ----------------
   const captureGps = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      alert(
+        "Geolocation is not supported by your browser."
+      );
+
       return;
     }
 
@@ -346,19 +534,30 @@ const CitizenDashboard = () => {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
+        const {
+          latitude,
+          longitude,
+        } = position.coords;
 
         setNewComplaint((prev) => ({
           ...prev,
-          gps: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+
+          gps: `${latitude.toFixed(
+            6
+          )}, ${longitude.toFixed(6)}`,
         }));
 
         setGpsBusy(false);
       },
+
       () => {
-        alert("Unable to get your location. Please allow location access.");
+        alert(
+          "Unable to get your location. Please allow location access."
+        );
+
         setGpsBusy(false);
       },
+
       {
         enableHighAccuracy: true,
         timeout: 10000,
@@ -369,56 +568,89 @@ const CitizenDashboard = () => {
   // ---------------- UPDATE ----------------
   const startEdit = (complaint) => {
     setEditingId(complaint.id);
-    setEditText(complaint.description);
-    setEditLocation(complaint.location || "");
+
+    setEditText(
+      complaint.description || ""
+    );
+
+    setEditLocation(
+      complaint.location || ""
+    );
   };
 
   const saveEdit = async (id) => {
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
-    const citizenId = user.id || user._id;
+    const user = getStoredUser();
+    const citizenId = getCitizenId(user);
 
     if (!citizenId) {
       alert("Please log in again.");
       return;
     }
 
-    try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          citizenId,
-          location: editLocation,
-          description: editText,
-        }),
-      });
+    if (!editText.trim()) {
+      alert("Description cannot be empty.");
+      return;
+    }
 
-      const result = await response.json();
+    try {
+      const response = await fetch(
+        `${API_URL}/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Accept: "application/json",
+          },
+
+          body: JSON.stringify({
+            citizenId,
+
+            location:
+              editLocation.trim(),
+
+            description:
+              editText.trim(),
+          }),
+        }
+      );
+
+      const result =
+        await readJsonResponse(response);
 
       if (!response.ok || !result.success) {
         throw new Error(
-          result.message || "Failed to update complaint"
+          result.message ||
+            "Failed to update complaint"
         );
       }
 
       await fetchMyComplaints();
+
       setEditingId(null);
-      alert("Complaint updated successfully");
+
+      alert(
+        "Complaint updated successfully"
+      );
     } catch (error) {
-      alert(error.message || "Failed to update complaint");
+      console.error(
+        "Update complaint error:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Failed to update complaint"
+      );
     }
   };
 
   // ---------------- DELETE ----------------
   const handleDelete = async (id) => {
-    const user = JSON.parse(
-      localStorage.getItem("user") || "{}"
-    );
-    const citizenId = user.id || user._id;
+    const user = getStoredUser();
+    const citizenId = getCitizenId(user);
 
     if (!citizenId) {
       alert("Please log in again.");
@@ -426,39 +658,67 @@ const CitizenDashboard = () => {
     }
 
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ citizenId }),
-      });
+      const response = await fetch(
+        `${API_URL}/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
 
-      const result = await response.json();
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Accept: "application/json",
+          },
+
+          body: JSON.stringify({
+            citizenId,
+          }),
+        }
+      );
+
+      const result =
+        await readJsonResponse(response);
 
       if (!response.ok || !result.success) {
         throw new Error(
-          result.message || "Failed to delete complaint"
+          result.message ||
+            "Failed to delete complaint"
         );
       }
 
       setConfirmDeleteId(null);
+
       await fetchMyComplaints();
-      alert("Complaint deleted successfully");
+
+      alert(
+        "Complaint deleted successfully"
+      );
     } catch (error) {
-      alert(error.message || "Failed to delete complaint");
+      console.error(
+        "Delete complaint error:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Failed to delete complaint"
+      );
     }
   };
 
   const scrollTo = (id) => {
     document
       .getElementById(id)
-      ?.scrollIntoView({ behavior: "smooth" });
+      ?.scrollIntoView({
+        behavior: "smooth",
+      });
   };
 
-  // Load complaints from MongoDB when the dashboard opens
+  // Load complaints from MongoDB
+  // when dashboard opens
   useEffect(() => {
     fetchMyComplaints();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -477,7 +737,10 @@ const CitizenDashboard = () => {
     }
 
     if (s.scrollTo) {
-      setTimeout(() => scrollTo(s.scrollTo), 50);
+      setTimeout(
+        () => scrollTo(s.scrollTo),
+        50
+      );
     }
 
     navigate(location.pathname, {
@@ -496,7 +759,9 @@ const CitizenDashboard = () => {
     .toUpperCase();
 
   const trackedStage = trackedComplaint
-    ? getStageFromStatus(trackedComplaint.status)
+    ? getStageFromStatus(
+        trackedComplaint.status
+      )
     : 0;
 
   return (
@@ -504,7 +769,9 @@ const CitizenDashboard = () => {
       {/* ============ SIDEBAR ============ */}
       <aside className="cd-sidebar">
         <div className="cd-sb-brand">
-          <div className="cd-sb-logo">MI</div>
+          <div className="cd-sb-logo">
+            MI
+          </div>
 
           <div>
             <b>MyRoad India</b>
@@ -512,13 +779,17 @@ const CitizenDashboard = () => {
           </div>
         </div>
 
-        <div className="cd-sb-label">Overview</div>
+        <div className="cd-sb-label">
+          Overview
+        </div>
 
         <nav className="cd-sb-nav">
           <button
             type="button"
             className="cd-sb-link active"
-            onClick={() => scrollTo("cd-top")}
+            onClick={() =>
+              scrollTo("cd-top")
+            }
           >
             📊 Dashboard
           </button>
@@ -526,7 +797,9 @@ const CitizenDashboard = () => {
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => navigate("/profile")}
+            onClick={() =>
+              navigate("/profile")
+            }
           >
             👤 My Profile
           </button>
@@ -540,7 +813,9 @@ const CitizenDashboard = () => {
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => navigate("/ReportIssue")}
+            onClick={() =>
+              navigate("/ReportIssue")
+            }
           >
             📍 Report an Issue
           </button>
@@ -548,7 +823,9 @@ const CitizenDashboard = () => {
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => scrollTo("track-complaint")}
+            onClick={() =>
+              scrollTo("track-complaint")
+            }
           >
             🔍 Track Complaint
           </button>
@@ -558,7 +835,12 @@ const CitizenDashboard = () => {
             className="cd-sb-link"
             onClick={() => {
               setShowMapView(true);
-              setTimeout(() => scrollTo("map-section"), 50);
+
+              setTimeout(
+                () =>
+                  scrollTo("map-section"),
+                50
+              );
             }}
           >
             🗺️ Issues Map
@@ -567,24 +849,32 @@ const CitizenDashboard = () => {
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => scrollTo("my-activity")}
+            onClick={() =>
+              scrollTo("my-activity")
+            }
           >
             📋 My Complaints
+
             <span className="cd-sb-badge">
               {complaints.length}
             </span>
           </button>
         </nav>
 
-        <div className="cd-sb-label">Activity</div>
+        <div className="cd-sb-label">
+          Activity
+        </div>
 
         <nav className="cd-sb-nav">
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => scrollTo("notif-panel")}
+            onClick={() =>
+              scrollTo("notif-panel")
+            }
           >
             🔔 Notifications
+
             <span className="cd-sb-badge">
               {notifications.length}
             </span>
@@ -593,7 +883,9 @@ const CitizenDashboard = () => {
           <button
             type="button"
             className="cd-sb-link"
-            onClick={() => scrollTo("my-activity")}
+            onClick={() =>
+              scrollTo("my-activity")
+            }
           >
             🕘 Recent Activity
           </button>
@@ -607,7 +899,10 @@ const CitizenDashboard = () => {
 
             <div className="cd-sb-user-info">
               <b>{profile.name}</b>
-              <span>{profile.mobile}</span>
+
+              <span>
+                {profile.mobile}
+              </span>
             </div>
           </div>
 
@@ -619,11 +914,15 @@ const CitizenDashboard = () => {
       </aside>
 
       {/* ============ MAIN AREA ============ */}
-      <div className="cd-main" id="cd-top">
+      <div
+        className="cd-main"
+        id="cd-top"
+      >
         {/* TOPBAR */}
         <div className="cd-topbar">
           <div className="cd-search">
             🔍
+
             <input
               type="text"
               placeholder="Search your complaints..."
@@ -635,7 +934,9 @@ const CitizenDashboard = () => {
               type="button"
               className="cd-icon-btn"
               aria-label="Notifications"
-              onClick={() => scrollTo("notif-panel")}
+              onClick={() =>
+                scrollTo("notif-panel")
+              }
             >
               🔔
               <span className="cd-tb-dot"></span>
@@ -644,15 +945,21 @@ const CitizenDashboard = () => {
             <button
               className="cd-btn-primary"
               type="button"
-              onClick={() => navigate("/ReportIssue")}
+              onClick={() =>
+                navigate("/ReportIssue")
+              }
             >
               + Report an Issue
             </button>
 
             <div
               className="cd-tb-user"
-              onClick={() => navigate("/profile")}
-              style={{ cursor: "pointer" }}
+              onClick={() =>
+                navigate("/profile")
+              }
+              style={{
+                cursor: "pointer",
+              }}
             >
               <div className="cd-tb-avatar">
                 {initials}
@@ -660,7 +967,10 @@ const CitizenDashboard = () => {
 
               <div>
                 <b>{profile.name}</b>
-                <span>Citizen Account</span>
+
+                <span>
+                  Citizen Account
+                </span>
               </div>
             </div>
           </div>
@@ -671,7 +981,8 @@ const CitizenDashboard = () => {
           <div className="cd-title-row">
             <div>
               <h1>
-                Welcome back, {profile.name.split(" ")[0]}
+                Welcome back,{" "}
+                {profile.name.split(" ")[0]}
               </h1>
 
               <p>
@@ -683,25 +994,79 @@ const CitizenDashboard = () => {
 
           {/* DASHBOARD STATS */}
           <div className="cd-stats-row">
-            {overviewStats.map((stat, i) => (
-              <div
-                className={`cd-stat-card tone-${stat.tone}`}
-                key={i}
-              >
-                <div className="cd-stat-ic">
-                  {stat.icon}
-                </div>
+            {overviewStats.map(
+              (stat, i) => (
+                <div
+                  className={`cd-stat-card tone-${stat.tone}`}
+                  key={i}
+                >
+                  <div className="cd-stat-ic">
+                    {stat.icon}
+                  </div>
 
-                <div className="cd-stat-num">
-                  {stat.value}
-                </div>
+                  <div className="cd-stat-num">
+                    {stat.value}
+                  </div>
 
-                <div className="cd-stat-label">
-                  {stat.label}
+                  <div className="cd-stat-label">
+                    {stat.label}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
+
+          {/* API ERROR */}
+          {complaintsError && (
+            <div
+              className="cd-panel"
+              style={{
+                marginBottom: "20px",
+                borderLeft:
+                  "4px solid #cf4438",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  alignItems: "center",
+                  gap: "15px",
+                }}
+              >
+                <div>
+                  <strong>
+                    Unable to load complaints
+                  </strong>
+
+                  <p
+                    style={{
+                      margin:
+                        "6px 0 0",
+                    }}
+                  >
+                    {complaintsError}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="cd-btn-primary"
+                  onClick={
+                    fetchMyComplaints
+                  }
+                  disabled={
+                    complaintsLoading
+                  }
+                >
+                  {complaintsLoading
+                    ? "Loading..."
+                    : "Retry"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* TRACK COMPLAINT */}
           <div
@@ -710,23 +1075,31 @@ const CitizenDashboard = () => {
           >
             <div className="cd-panel-head">
               <div>
-                <h3>Track Your Complaint</h3>
+                <h3>
+                  Track Your Complaint
+                </h3>
+
                 <p>
-                  Enter your complaint ID to check its
-                  latest status.
+                  Enter your complaint ID to
+                  check its latest status.
                 </p>
               </div>
             </div>
 
             <form
               className="cd-track-form"
-              onSubmit={handleTrackComplaint}
+              onSubmit={
+                handleTrackComplaint
+              }
             >
               <input
                 type="text"
                 value={trackId}
                 onChange={(e) => {
-                  setTrackId(e.target.value);
+                  setTrackId(
+                    e.target.value
+                  );
+
                   setTrackError("");
                 }}
                 placeholder="Enter Complaint ID"
@@ -770,7 +1143,9 @@ const CitizenDashboard = () => {
 
                   <span
                     className={`cd-badge cd-badge-${
-                      stageTone[trackedStage]
+                      stageTone[
+                        trackedStage
+                      ]
                     }`}
                   >
                     {trackedComplaint.status ||
@@ -778,74 +1153,108 @@ const CitizenDashboard = () => {
                   </span>
                 </div>
 
-                {/* Complaint progress */}
                 <div className="cd-track-progress">
-                  {lifecycleStages.map((stage, index) => (
-                    <div
-                      className="cd-track-progress-item"
-                      key={stage}
-                    >
+                  {lifecycleStages.map(
+                    (stage, index) => (
                       <div
-                        className={`cd-track-progress-dot ${
-                          index < trackedStage
-                            ? "done"
-                            : index === trackedStage
-                            ? "current"
-                            : "pending"
-                        }`}
+                        className="cd-track-progress-item"
+                        key={stage}
                       >
-                        {index < trackedStage ? "✓" : index + 1}
-                      </div>
+                        <div
+                          className={`cd-track-progress-dot ${
+                            index <
+                            trackedStage
+                              ? "done"
+                              : index ===
+                                trackedStage
+                              ? "current"
+                              : "pending"
+                          }`}
+                        >
+                          {index <
+                          trackedStage
+                            ? "✓"
+                            : index + 1}
+                        </div>
 
-                      <span>{stage}</span>
-                    </div>
-                  ))}
+                        <span>
+                          {stage}
+                        </span>
+                      </div>
+                    )
+                  )}
                 </div>
 
                 <div className="cd-track-details">
                   <div>
-                    <span>Category</span>
+                    <span>
+                      Category
+                    </span>
+
                     <strong>
-                      {trackedComplaint.category || "—"}
+                      {trackedComplaint.category ||
+                        "—"}
                     </strong>
                   </div>
 
                   <div>
-                    <span>Specific Issue</span>
+                    <span>
+                      Specific Issue
+                    </span>
+
                     <strong>
-                      {trackedComplaint.issueType || "—"}
+                      {trackedComplaint.issueType ||
+                        trackedComplaint.issue ||
+                        "—"}
                     </strong>
                   </div>
 
                   <div>
-                    <span>Department</span>
+                    <span>
+                      Department
+                    </span>
+
                     <strong>
-                      {trackedComplaint.department || "—"}
+                      {trackedComplaint.department ||
+                        "—"}
                     </strong>
                   </div>
 
                   <div>
-                    <span>Location</span>
+                    <span>
+                      Location
+                    </span>
+
                     <strong>
-                      {trackedComplaint.location || "—"}
+                      {trackedComplaint.location ||
+                        "—"}
                     </strong>
                   </div>
 
                   <div>
-                    <span>Date Registered</span>
+                    <span>
+                      Date Registered
+                    </span>
+
                     <strong>
                       {trackedComplaint.createdAt
                         ? new Date(
                             trackedComplaint.createdAt
-                          ).toLocaleDateString("en-IN")
+                          ).toLocaleDateString(
+                            "en-IN"
+                          )
                         : "—"}
                     </strong>
                   </div>
 
                   <div>
-                    <span>Description</span>
+                    <span>
+                      Description
+                    </span>
+
                     <strong>
-                      {trackedComplaint.description || "—"}
+                      {trackedComplaint.description ||
+                        "—"}
                     </strong>
                   </div>
                 </div>
@@ -860,7 +1269,10 @@ const CitizenDashboard = () => {
           >
             <div className="cd-panel">
               <div className="cd-panel-head">
-                <h3>My Reported Issues</h3>
+                <h3>
+                  My Reported Issues
+                </h3>
+
                 <span className="cd-panel-link">
                   {complaints.length} total
                 </span>
@@ -880,20 +1292,61 @@ const CitizenDashboard = () => {
                   </thead>
 
                   <tbody>
+                    {complaintsLoading &&
+                      complaints.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            style={{
+                              textAlign:
+                                "center",
+                              padding:
+                                "30px",
+                            }}
+                          >
+                            Loading complaints...
+                          </td>
+                        </tr>
+                      )}
+
+                    {!complaintsLoading &&
+                      complaints.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            style={{
+                              textAlign:
+                                "center",
+                              padding:
+                                "30px",
+                            }}
+                          >
+                            No complaints found.
+                          </td>
+                        </tr>
+                      )}
+
                     {complaints.map((c) => (
-                      <React.Fragment key={c.id}>
+                      <React.Fragment
+                        key={c.id}
+                      >
                         <tr
                           className={
-                            selectedId === c.id
+                            selectedId ===
+                            c.id
                               ? "cd-row-active"
                               : ""
                           }
                           onClick={() =>
-                            setSelectedId(c.id)
+                            setSelectedId(
+                              c.id
+                            )
                           }
                         >
                           <td className="cd-mono">
-                            {c.complaintNumber}
+                            {
+                              c.complaintNumber
+                            }
                           </td>
 
                           <td>
@@ -901,11 +1354,13 @@ const CitizenDashboard = () => {
                               <span
                                 className="cd-cat-dot"
                                 style={{
-                                  background: colorForCategory(
-                                    c.category
-                                  ),
+                                  background:
+                                    colorForCategory(
+                                      c.category
+                                    ),
                                 }}
                               ></span>
+
                               {c.issue}
                             </div>
                           </td>
@@ -918,10 +1373,16 @@ const CitizenDashboard = () => {
                           <td>
                             <span
                               className={`cd-badge cd-badge-${
-                                stageTone[c.stage]
+                                stageTone[
+                                  c.stage
+                                ]
                               }`}
                             >
-                              {lifecycleStages[c.stage]}
+                              {
+                                lifecycleStages[
+                                  c.stage
+                                ]
+                              }
                             </span>
                           </td>
 
@@ -938,18 +1399,23 @@ const CitizenDashboard = () => {
                               <button
                                 className="cd-icon-btn small"
                                 type="button"
-                                onClick={() => startEdit(c)}
+                                onClick={() =>
+                                  startEdit(c)
+                                }
                                 title="Update"
                               >
                                 ✏️
                               </button>
 
-                              {c.stage === 0 && (
+                              {c.stage ===
+                                0 && (
                                 <button
                                   className="cd-icon-btn small danger"
                                   type="button"
                                   onClick={() =>
-                                    setConfirmDeleteId(c.id)
+                                    setConfirmDeleteId(
+                                      c.id
+                                    )
                                   }
                                   title="Delete"
                                 >
@@ -960,16 +1426,22 @@ const CitizenDashboard = () => {
                           </td>
                         </tr>
 
-                        {editingId === c.id && (
+                        {editingId ===
+                          c.id && (
                           <tr className="cd-edit-row">
-                            <td colSpan={6}>
+                            <td
+                              colSpan={6}
+                            >
                               <div className="cd-edit-block">
                                 <input
                                   type="text"
-                                  value={editLocation}
+                                  value={
+                                    editLocation
+                                  }
                                   onChange={(e) =>
                                     setEditLocation(
-                                      e.target.value
+                                      e.target
+                                        .value
                                     )
                                   }
                                   placeholder="Location"
@@ -977,9 +1449,14 @@ const CitizenDashboard = () => {
 
                                 <textarea
                                   rows="2"
-                                  value={editText}
+                                  value={
+                                    editText
+                                  }
                                   onChange={(e) =>
-                                    setEditText(e.target.value)
+                                    setEditText(
+                                      e.target
+                                        .value
+                                    )
                                   }
                                 />
 
@@ -988,7 +1465,9 @@ const CitizenDashboard = () => {
                                     className="cd-btn-outline"
                                     type="button"
                                     onClick={() =>
-                                      setEditingId(null)
+                                      setEditingId(
+                                        null
+                                      )
                                     }
                                   >
                                     Cancel
@@ -998,7 +1477,9 @@ const CitizenDashboard = () => {
                                     className="cd-btn-primary small"
                                     type="button"
                                     onClick={() =>
-                                      saveEdit(c.id)
+                                      saveEdit(
+                                        c.id
+                                      )
                                     }
                                   >
                                     Save
@@ -1009,12 +1490,16 @@ const CitizenDashboard = () => {
                           </tr>
                         )}
 
-                        {confirmDeleteId === c.id && (
+                        {confirmDeleteId ===
+                          c.id && (
                           <tr className="cd-edit-row">
-                            <td colSpan={6}>
+                            <td
+                              colSpan={6}
+                            >
                               <div className="cd-delete-confirm">
                                 <span>
-                                  Delete this complaint?
+                                  Delete this
+                                  complaint?
                                 </span>
 
                                 <div>
@@ -1022,7 +1507,9 @@ const CitizenDashboard = () => {
                                     className="cd-btn-outline small"
                                     type="button"
                                     onClick={() =>
-                                      setConfirmDeleteId(null)
+                                      setConfirmDeleteId(
+                                        null
+                                      )
                                     }
                                   >
                                     No
@@ -1032,7 +1519,9 @@ const CitizenDashboard = () => {
                                     className="cd-btn-danger small"
                                     type="button"
                                     onClick={() =>
-                                      handleDelete(c.id)
+                                      handleDelete(
+                                        c.id
+                                      )
                                     }
                                   >
                                     Yes, Delete
@@ -1053,7 +1542,9 @@ const CitizenDashboard = () => {
             <div className="cd-side-col">
               <div className="cd-panel">
                 <div className="cd-panel-head">
-                  <h3>Complaint Lifecycle</h3>
+                  <h3>
+                    Complaint Lifecycle
+                  </h3>
 
                   <span className="cd-mono cd-faint">
                     {selectedComplaint?.complaintNumber ||
@@ -1078,7 +1569,8 @@ const CitizenDashboard = () => {
                           >
                             <div
                               className={`cd-lc-dot ${
-                                i < selectedComplaint.stage
+                                i <
+                                selectedComplaint.stage
                                   ? "done"
                                   : i ===
                                     selectedComplaint.stage
@@ -1088,7 +1580,9 @@ const CitizenDashboard = () => {
                             ></div>
 
                             <div className="cd-lc-body">
-                              <b>{stage}</b>
+                              <b>
+                                {stage}
+                              </b>
                             </div>
                           </div>
                         )
@@ -1103,26 +1597,36 @@ const CitizenDashboard = () => {
                 id="notif-panel"
               >
                 <div className="cd-panel-head">
-                  <h3>Notifications</h3>
+                  <h3>
+                    Notifications
+                  </h3>
+
                   <span className="cd-panel-link">
                     Mark all read
                   </span>
                 </div>
 
                 <div className="cd-notif-list">
-                  {notifications.map((note, i) => (
-                    <div
-                      className="cd-notif-item"
-                      key={i}
-                    >
-                      <span className="cd-notif-dot"></span>
+                  {notifications.map(
+                    (note, i) => (
+                      <div
+                        className="cd-notif-item"
+                        key={i}
+                      >
+                        <span className="cd-notif-dot"></span>
 
-                      <div>
-                        <b>{note.text}</b>
-                        <span>{note.time}</span>
+                        <div>
+                          <b>
+                            {note.text}
+                          </b>
+
+                          <span>
+                            {note.time}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -1132,12 +1636,16 @@ const CitizenDashboard = () => {
           {showNewForm && (
             <div className="cd-panel cd-form-panel">
               <div className="cd-panel-head">
-                <h3>Register a New Issue</h3>
+                <h3>
+                  Register a New Issue
+                </h3>
               </div>
 
               <form
                 className="cd-new-form"
-                onSubmit={handleCreateComplaint}
+                onSubmit={
+                  handleCreateComplaint
+                }
               >
                 <div className="cd-form-row">
                   <div className="cd-field">
@@ -1149,11 +1657,14 @@ const CitizenDashboard = () => {
                       id="new-category"
                       type="text"
                       placeholder="e.g. Road Issues"
-                      value={newComplaint.category}
+                      value={
+                        newComplaint.category
+                      }
                       onChange={(e) =>
                         setNewComplaint({
                           ...newComplaint,
-                          category: e.target.value,
+                          category:
+                            e.target.value,
                         })
                       }
                       required
@@ -1169,11 +1680,14 @@ const CitizenDashboard = () => {
                       id="new-issue"
                       type="text"
                       placeholder="e.g. Road Potholes"
-                      value={newComplaint.issue}
+                      value={
+                        newComplaint.issue
+                      }
                       onChange={(e) =>
                         setNewComplaint({
                           ...newComplaint,
-                          issue: e.target.value,
+                          issue:
+                            e.target.value,
                         })
                       }
                     />
@@ -1190,11 +1704,14 @@ const CitizenDashboard = () => {
                       id="new-location"
                       type="text"
                       placeholder="Street, landmark or ward"
-                      value={newComplaint.location}
+                      value={
+                        newComplaint.location
+                      }
                       onChange={(e) =>
                         setNewComplaint({
                           ...newComplaint,
-                          location: e.target.value,
+                          location:
+                            e.target.value,
                         })
                       }
                     />
@@ -1210,15 +1727,21 @@ const CitizenDashboard = () => {
                         id="new-gps"
                         type="text"
                         placeholder="Not captured yet"
-                        value={newComplaint.gps}
+                        value={
+                          newComplaint.gps
+                        }
                         readOnly
                       />
 
                       <button
                         className="cd-btn-outline small"
                         type="button"
-                        onClick={captureGps}
-                        disabled={gpsBusy}
+                        onClick={
+                          captureGps
+                        }
+                        disabled={
+                          gpsBusy
+                        }
                       >
                         {gpsBusy
                           ? "Locating…"
@@ -1237,11 +1760,14 @@ const CitizenDashboard = () => {
                     id="new-description"
                     rows="3"
                     placeholder="Describe the issue"
-                    value={newComplaint.description}
+                    value={
+                      newComplaint.description
+                    }
                     onChange={(e) =>
                       setNewComplaint({
                         ...newComplaint,
-                        description: e.target.value,
+                        description:
+                          e.target.value,
                       })
                     }
                     required
@@ -1266,7 +1792,9 @@ const CitizenDashboard = () => {
                         setNewComplaint({
                           ...newComplaint,
                           photo:
-                            e.target.files?.[0]?.name || "",
+                            e.target
+                              .files?.[0]
+                              ?.name || "",
                         })
                       }
                     />
@@ -1277,7 +1805,11 @@ const CitizenDashboard = () => {
                   <button
                     className="cd-btn-outline"
                     type="button"
-                    onClick={() => setShowNewForm(false)}
+                    onClick={() =>
+                      setShowNewForm(
+                        false
+                      )
+                    }
                   >
                     Cancel
                   </button>
@@ -1301,21 +1833,31 @@ const CitizenDashboard = () => {
             >
               <div className="cd-panel-head">
                 <h3>
-                  Reported Issues Near {profile.ward}
+                  Reported Issues Near{" "}
+                  {profile.ward}
                 </h3>
 
                 <span
                   className="cd-panel-link"
-                  onClick={() => setShowMapView(false)}
-                  style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    setShowMapView(false)
+                  }
+                  style={{
+                    cursor: "pointer",
+                  }}
                 >
                   Hide Map View
                 </span>
               </div>
 
               <div className="cd-map-grid">
-                {Object.entries(mapGroups).map(
-                  ([location, items]) => (
+                {Object.entries(
+                  mapGroups
+                ).map(
+                  ([
+                    location,
+                    items,
+                  ]) => (
                     <div
                       className="cd-map-ward-card"
                       key={location}
@@ -1325,25 +1867,32 @@ const CitizenDashboard = () => {
                       </p>
 
                       <div className="cd-map-pins">
-                        {items.map((c) => (
-                          <span
-                            className="cd-map-pin"
-                            key={c.id}
-                            style={{
-                              background: colorForCategory(
-                                c.category
-                              ),
-                            }}
-                            title={`${c.complaintNumber} — ${c.category}`}
-                          >
-                            📍
-                          </span>
-                        ))}
+                        {items.map(
+                          (c) => (
+                            <span
+                              className="cd-map-pin"
+                              key={c.id}
+                              style={{
+                                background:
+                                  colorForCategory(
+                                    c.category
+                                  ),
+                              }}
+                              title={`${c.complaintNumber} — ${c.category}`}
+                            >
+                              📍
+                            </span>
+                          )
+                        )}
                       </div>
 
                       <span className="cd-map-ward-count">
-                        {items.length} issue
-                        {items.length !== 1 ? "s" : ""}{" "}
+                        {items.length}{" "}
+                        issue
+                        {items.length !==
+                        1
+                          ? "s"
+                          : ""}{" "}
                         reported
                       </span>
                     </div>
@@ -1358,30 +1907,50 @@ const CitizenDashboard = () => {
             <button
               className="cd-quick-card"
               type="button"
-              onClick={() => navigate("/ReportIssue")}
+              onClick={() =>
+                navigate(
+                  "/ReportIssue"
+                )
+              }
             >
               <div className="cd-quick-ic navy">
                 📍
               </div>
 
               <div>
-                <h5>Report a New Issue</h5>
-                <p>Photo, location & description</p>
+                <h5>
+                  Report a New Issue
+                </h5>
+
+                <p>
+                  Photo, location &
+                  description
+                </p>
               </div>
             </button>
 
             <button
               className="cd-quick-card"
               type="button"
-              onClick={() => scrollTo("track-complaint")}
+              onClick={() =>
+                scrollTo(
+                  "track-complaint"
+                )
+              }
             >
               <div className="cd-quick-ic saffron">
                 🔍
               </div>
 
               <div>
-                <h5>Track a Complaint</h5>
-                <p>Check status by complaint ID</p>
+                <h5>
+                  Track a Complaint
+                </h5>
+
+                <p>
+                  Check status by
+                  complaint ID
+                </p>
               </div>
             </button>
 
@@ -1390,8 +1959,12 @@ const CitizenDashboard = () => {
               type="button"
               onClick={() => {
                 setShowMapView(true);
+
                 setTimeout(
-                  () => scrollTo("map-section"),
+                  () =>
+                    scrollTo(
+                      "map-section"
+                    ),
                   50
                 );
               }}
@@ -1401,8 +1974,14 @@ const CitizenDashboard = () => {
               </div>
 
               <div>
-                <h5>View Issues Map</h5>
-                <p>See reports near your ward</p>
+                <h5>
+                  View Issues Map
+                </h5>
+
+                <p>
+                  See reports near
+                  your ward
+                </p>
               </div>
             </button>
           </div>

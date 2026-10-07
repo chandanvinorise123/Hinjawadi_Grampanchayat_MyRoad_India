@@ -2,22 +2,22 @@ const mongoose = require("mongoose");
 
 const complaintSchema = new mongoose.Schema(
   {
+    // ==========================================
+    // COMPLAINT IDENTIFICATION
+    // ==========================================
 
-    // Unique identifier for the complaint (e.g., "MRI-482913")
-    complaintNumber: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-
-    // Broad category of the issue
-
+    // Unique identifier for the complaint
+    // Example: "MRI-482913"
     complaintNumber: {
       type: String,
       unique: true,
       index: true,
+      trim: true,
     },
+
+    // ==========================================
+    // CITIZEN INFORMATION
+    // ==========================================
 
     citizenId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -26,26 +26,34 @@ const complaintSchema = new mongoose.Schema(
       index: true,
     },
 
+    citizenName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
+    // ==========================================
+    // COMPLAINT CATEGORY / ISSUE
+    // ==========================================
+
+    // Broad category of the issue
     category: {
       type: String,
       required: true,
       trim: true,
     },
 
-
-    // Specific issue description (e.g., "Road Potholes")
-    issue: {
-
+    // Specific issue type
+    // Example: "Road Potholes"
     issueType: {
-
       type: String,
       required: true,
       trim: true,
     },
 
-
-    // Location where the issue is reported
+    // ==========================================
+    // COMPLAINT DESCRIPTION
+    // ==========================================
 
     description: {
       type: String,
@@ -54,6 +62,9 @@ const complaintSchema = new mongoose.Schema(
       maxlength: 2000,
     },
 
+    // ==========================================
+    // LOCATION INFORMATION
+    // ==========================================
 
     location: {
       type: String,
@@ -61,70 +72,6 @@ const complaintSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Name of the citizen who reported it
-    citizenName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    // Detailed description of the problem
-    description: {
-      type: String,
-      required: true,
-    },
-
-    // Number of photos attached (default 0)
-    photos: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    // Priority level of the complaint
-    priority: {
-      type: String,
-      enum: ["Critical", "Urgent", "Normal"],
-      default: "Normal",
-    },
-
-    // Current status in the pipeline
-    status: {
-      type: String,
-      enum: ["New", "Pending", "Under Verification", "Under Action", "Resolved"],
-      default: "New",
-    },
-
-    // Name of the staff member assigned to fix it
-    assignedStaff: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    // Name of the verifier assigned to check the work
-    assignedVerifier: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    // Date of complaint (Stored as "YYYY-MM-DD" string for easy aggregation grouping)
-    date: {
-      type: String,
-      default: () => new Date().toISOString().split("T")[0], // Automatically sets to today's date in YYYY-MM-DD format
-    },
-  },
-}
-  {
-    // Automatically adds `createdAt` and `updatedAt` fields
-    timestamps: true, 
-  }
-);
-
-// Optional: Create an index on status and category for faster querying in the admin dashboard
-complaintSchema.index({ status: 1, category: 1 });
-complaintSchema.index({ complaintNumber: 1 }
     landmark: {
       type: String,
       trim: true,
@@ -147,31 +94,99 @@ complaintSchema.index({ complaintNumber: 1 }
       },
     },
 
+    // ==========================================
+    // IMAGES / PHOTOS
+    // ==========================================
+
+    // Number of photos attached
+    photos: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Image file paths / URLs
     images: [
       {
         type: String,
       },
     ],
 
+    // ==========================================
+    // PRIORITY
+    // ==========================================
+
+    priority: {
+      type: String,
+      enum: ["Critical", "Urgent", "Normal"],
+      default: "Normal",
+    },
+
+    // ==========================================
+    // STATUS
+    // ==========================================
+
     status: {
       type: String,
       enum: [
+        "New",
+        "Pending",
+        "Under Verification",
+        "Under Action",
+        "Resolved",
         "Submitted",
         "Under Review",
         "Verified",
         "Assigned",
         "In Progress",
-        "Resolved",
         "Closed",
         "Rejected",
       ],
-      default: "Submitted",
+      default: "New",
     },
 
+    // ==========================================
+    // DEPARTMENT
+    // ==========================================
+
     department: {
-     type: String,
-     required: true,
-   },
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // ==========================================
+    // STAFF / VERIFIER ASSIGNMENT
+    // ==========================================
+
+    // Name of the staff member assigned to fix it
+    assignedStaff: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // Name of the verifier assigned to check the work
+    assignedVerifier: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // ==========================================
+    // COMPLAINT DATE
+    // ==========================================
+
+    // Stored as YYYY-MM-DD
+    // for easy aggregation/grouping
+    date: {
+      type: String,
+      default: () => new Date().toISOString().split("T")[0],
+    },
+
+    // ==========================================
+    // STATUS HISTORY
+    // ==========================================
 
     statusHistory: [
       {
@@ -191,13 +206,29 @@ complaintSchema.index({ complaintNumber: 1 }
         },
       },
     ],
-  
+  },
   {
+    // Automatically adds:
+    // createdAt
+    // updatedAt
     timestamps: true,
   }
 );
 
-// Generate a complaint number before saving.
+// ==========================================
+// INDEXES
+// ==========================================
+
+// Faster querying for admin dashboard
+complaintSchema.index({
+  status: 1,
+  category: 1,
+});
+
+// ==========================================
+// GENERATE COMPLAINT NUMBER
+// ==========================================
+
 complaintSchema.pre("save", function () {
   if (!this.complaintNumber) {
     this.complaintNumber =
@@ -207,6 +238,7 @@ complaintSchema.pre("save", function () {
       Math.floor(1000 + Math.random() * 9000);
   }
 
+  // Add initial status history entry
   if (this.isNew && this.statusHistory.length === 0) {
     this.statusHistory.push({
       status: this.status,
@@ -215,5 +247,8 @@ complaintSchema.pre("save", function () {
   }
 });
 
+// ==========================================
+// EXPORT MODEL
+// ==========================================
 
 module.exports = mongoose.model("Complaint", complaintSchema);
