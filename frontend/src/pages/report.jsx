@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./report.css";
-import bannerImage from "../assets/banner.png";
+import bannerImage from "../assets/ri.png";
 import PhotoDetection from "../components/PhotoDetection";
 
 const categories = [
@@ -149,16 +149,35 @@ const ReportIssue = () => {
   return (
     <main className="report-page">
       {/* ================= PAGE HERO — banner as full-cover background ================= */}
-      <section
-        className="page-hero"
-        id="home"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="page-hero-inner">
-          {/* Hero content commented out as in original */}
-        </div>
-      </section>
+
+
+  <section className="page-hero-section">
+  <div
+    className="page-hero"
+    id="home"
+    style={{
+      backgroundImage: `url("${bannerImage}")`,
+    }}
+  >
+    <div className="hero-scrim"></div>
+
+    <div className="page-hero-inner">
+      {/* Hero content commented out as in original */}
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
 
       <section className="section">
         {complaintNumber === null ? (

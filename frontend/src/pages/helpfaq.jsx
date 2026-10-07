@@ -115,23 +115,48 @@ const HelpFaq = () => {
     <main className="help-page">
       {/* ================= PAGE HERO ================= */}
       {/* Added backgroundImage style and changed hero-glow to hero-scrim */}
-      <section
-        className="page-hero"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="page-hero-inner">
-          {/* <div className="breadcrumb">
-            Home / <b>Help / FAQ</b>
-          </div> */}
-          {/* <p className="eyebrow eyebrow-light">Help Center</p>
-          <h1>Frequently asked questions</h1>
-          <p className="hero-lead">
-            Answers to common questions about reporting issues, tracking
-            complaints, and using the MyRoad India mobile app.
-          </p> */}
-        </div>
-      </section>
+
+
+  <section className="page-hero-section">
+  <div
+    className="page-hero"
+    style={{
+      backgroundImage: `url("${bannerImage}")`,
+    }}
+  >
+    <div className="hero-scrim"></div>
+
+    <div className="page-hero-inner">
+      {/* <div className="breadcrumb">
+        Home / <b>Help / FAQ</b>
+      </div> */}
+
+      {/* <p className="eyebrow eyebrow-light">Help Center</p>
+      <h1>Frequently asked questions</h1>
+      <p className="hero-lead">
+        Answers to common questions about reporting issues, tracking
+        complaints, and using the MyRoad India mobile app.
+      </p> */}
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* ================= FAQ CATEGORIES ================= */}
       <section className="section">

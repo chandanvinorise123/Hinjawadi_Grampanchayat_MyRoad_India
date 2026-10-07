@@ -137,24 +137,42 @@ const Services = () => {
   return (
     <main className="services-page">
       {/* ================= PAGE HERO — Bright Banner ================= */}
-      <section
-        className="page-hero"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
 
-        <div className="page-hero-inner">
-          {/* <div className="breadcrumb">
-            Home / <b>Services</b>
-          </div> */}
+  <section className="page-hero-section">
+  <div
+    className="page-hero"
+    style={{ backgroundImage: `url("${bannerImage}")` }}
+  >
+    <div className="hero-scrim"></div>
+  
 
-          {/* Hidden text for SEO — banner image already has the heading */}
-          <h1 className="sr-only">Our Services</h1>
-          <p className="sr-only">
-            Citizen-centric services for safer, smarter and better roads in India.
-          </p>
-        </div>
-      </section>
+    <div className="page-hero-inner">
+      {/*
+      <div className="breadcrumb">
+        Home / <b>Services</b>
+      </div>
+      */}
+
+      
+
+
+      {/* Hidden text for SEO — banner image already has the heading */}
+      <h1 className="sr-only">Our Services</h1>
+
+      <p className="sr-only">
+        Citizen-centric services for safer, smarter and better roads in India.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
 
       {/* ================= SERVICES GRID ================= */}
       <section className="section">

@@ -4,14 +4,14 @@ import bannerImage from "../assets/au.png";
 import sarpanchPhoto from "../assets/sarpanch_Photo.JPG";
 import upsarpanchPhoto from "../assets/upsarpanch_photo.JPG";
 import committee_photo from "../assets/committee_photo.JPG";
-import committee_photo1  from "../assets/committee_photo1.JPG";
-import committee_photo2  from "../assets/committee_photo2.JPG";
-import committee_photo3  from "../assets/committee_photo3.JPG"; 
-import committee_photo4  from "../assets/committee_photo4.JPG";
-import committee_photo5  from "../assets/committee_photo5.JPG";
-import committee_photo6  from "../assets/committee_photo6.JPG";
-import committee_photo7  from "../assets/committee_photo7.JPG";
-import committee_photo8  from "../assets/committee_photo8.JPG";
+import committee_photo1 from "../assets/committee_photo1.JPG";
+import committee_photo2 from "../assets/committee_photo2.JPG";
+import committee_photo3 from "../assets/committee_photo3.JPG";
+import committee_photo4 from "../assets/committee_photo4.JPG";
+import committee_photo5 from "../assets/committee_photo5.JPG";
+import committee_photo6 from "../assets/committee_photo6.JPG";
+import committee_photo7 from "../assets/committee_photo7.JPG";
+import committee_photo8 from "../assets/committee_photo8.JPG";
 
 const missionPoints = [
   "Every complaint is logged with a photo, location, and timestamp — nothing gets lost in a register.",
@@ -166,19 +166,19 @@ const roadIndiaPoints = [
 */
 
 const gpLeaders = [
-  { name: " Shri. Amol Mahadev Gholwe", designation: "Gram Panchayat Officer (ग्रामपंचायत अधिकारी)", photo: committee_photo2  },
-  { name: " Shri. Amol Mahadev Gholwe", designation: "Sadasya (सदस्य)", photo: committee_photo2  },
+  { name: " Shri. Amol Mahadev Gholwe", designation: "Gram Panchayat Officer (ग्रामपंचायत अधिकारी)", photo: committee_photo2 },
+  { name: " Shri. Amol Mahadev Gholwe", designation: "Sadasya (सदस्य)", photo: committee_photo2 },
   { name: "Shri. Ganesh Jambhulkar", designation: "Sarpanch (सरपंच)", photo: sarpanchPhoto },
   { name: "Sau. Shubhangi Suraj Sakhare", designation: "Upsarpanch (उपसरपंच)", photo: upsarpanchPhoto },
 ];
 
 const gpMembers = [
-  { name: "Shri. Mayur Rajendra Sakhare ", designation: "Sadasya (सदस्य)", photo: committee_photo   },
-  { name: " Sau. Manisha Jaysingh Hulawale ", designation: "Sadasya (सदस्य)", photo: committee_photo1  },
-  { name: "Mr. Sachin Namdev Jambhulkar", designation: "Sadasya (सदस्य)", photo: committee_photo8  },
-  { name: "Mrs. Aishwarya Prashant Waghmare", designation: "Sadasya (सदस्य)", photo: committee_photo3  },
-  { name: "Mr. Vishal Laxman Sakhare", designation: "Sadasya (सदस्य)", photo: committee_photo4  },
-  { name: "Sai. Pratiksha Shivaji Ghotkule", designation: "Sadasya (सदस्य)", photo: committee_photo5  },
+  { name: "Shri. Mayur Rajendra Sakhare ", designation: "Sadasya (सदस्य)", photo: committee_photo },
+  { name: " Sau. Manisha Jaysingh Hulawale ", designation: "Sadasya (सदस्य)", photo: committee_photo1 },
+  { name: "Mr. Sachin Namdev Jambhulkar", designation: "Sadasya (सदस्य)", photo: committee_photo8 },
+  { name: "Mrs. Aishwarya Prashant Waghmare", designation: "Sadasya (सदस्य)", photo: committee_photo3 },
+  { name: "Mr. Vishal Laxman Sakhare", designation: "Sadasya (सदस्य)", photo: committee_photo4 },
+  { name: "Sai. Pratiksha Shivaji Ghotkule", designation: "Sadasya (सदस्य)", photo: committee_photo5 },
   { name: "Mr. Vikram Vasant Sakhare", designation: "Sadasya (सदस्य)", photo: committee_photo6 },
   { name: "Ms. Deepali Sharad Jambhulkar", designation: "Sadasya (सदस्य)", photo: committee_photo7 },
 ];
@@ -222,27 +222,37 @@ const AboutUs = () => {
     <main className="about-page">
 
       {/* ================= PAGE HERO ================= */}
-      <section
-        className="page-hero"
-        id="home"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
 
-        <div className="page-hero-inner">
 
-          <div className="hero-cta-row">
-            {/* <button className="primary-btn" type="button">
-              Report an Issue <span>→</span>
-            </button> */}
 
-            {/* <a href="#mission" className="secondary-btn">
-              Our Mission
-            </a> */}
+      <section className="page-hero-section">
+        <div
+          className="page-hero"
+          id="home"
+          style={{ backgroundImage: `url("${bannerImage}")` }}
+        >
+          <div className="hero-scrim"></div>
+
+          <div className="page-hero-inner">
+            <div className="hero-cta-row">
+              {/* <button className="primary-btn" type="button">
+          Report an Issue <span>→</span>
+        </button> */}
+
+              {/* <a href="#mission" className="secondary-btn">
+          Our Mission
+        </a> */}
+            </div>
           </div>
-
         </div>
       </section>
+
+
+
+
+
+
+
 
       {/* ================= INTRO ================= */}
       <section className="section">
@@ -575,22 +585,22 @@ const AboutUs = () => {
 
           <div> */}
 
-            {/* <h3>
+      {/* <h3>
               Better road & public infrastructure
             </h3> */}
 
-            {/* <p>
+      {/* <p>
               Every complaint, every inspection, every resolution — building
               towards infrastructure the community can rely on.
             </p> */}
 
-          {/* </div> */}
+      {/* </div> */}
 
-          {/* <button className="primary-btn" type="button">
+      {/* <button className="primary-btn" type="button">
             Report an Issue <span>→</span>
           </button> */}
 
-        {/* </div>
+      {/* </div>
 
       </section> */}
 

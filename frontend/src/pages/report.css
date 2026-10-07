@@ -6,13 +6,10 @@
    ============================================================ */
 
 .report-page {
-  --navy-950: #081b34;
   --navy-900: #0b2447;
-  --navy-800: #123464;
   --navy-700: #1b4586;
   --saffron: #ff9933;
   --saffron-dark: #e07f1f;
-  --green: #128807;
   --white: #ffffff;
   --surface: #f4f6f9;
   --surface-2: #eef1f6;
@@ -21,28 +18,35 @@
   --ink-soft: #4b5567;
   --ink-faint: #8a93a6;
   --red: #d13438;
-  --orange: #e8720c;
-  --amber: #e0a800;
   --resolved: #1f8a3d;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --field-height: 48px;
-  font-family: "Inter", sans-serif;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
   overflow-x: hidden;
 }
+
+.report-page *,
+.report-page *::before,
+.report-page *::after { box-sizing: border-box; }
 
 .report-page h1,
 .report-page h2,
 .report-page h3,
 .report-page h4 {
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--navy-900);
   font-weight: 800;
 }
 
-.report-page section {
+/* Normal sections. The hero is excluded from this padding. */
+.report-page > section:not(.page-hero-section) {
   padding: clamp(2.5rem, 2rem + 3vw, 5rem) clamp(1.25rem, 1rem + 2vw, 3rem);
 }
 
@@ -53,29 +57,49 @@
 .report-page .eyebrow.center { text-align: center; }
 .report-page .eyebrow-light { color: #ffd9a8; }
 
-/* ================= PAGE HERO — banner as full-cover background ================= */
+/* ================= PAGE HERO — full banner, no cropping ================= */
+/* Removes the global section padding so the banner touches all edges */
+.report-page .page-hero-section {
+  position: relative;
+  width: 100%; max-width: 100%;
+  margin: 0; padding: 0;
+  overflow: hidden;
+}
+
 .report-page .page-hero {
   position: relative;
+  width: 100%; max-width: 100%;
+  height: clamp(420px, 38vw, 620px);
+  min-height: 420px;
+  max-height: 620px;
+  margin: 0; padding: 0;
   overflow: hidden;
   color: #fff;
 
   background-color: var(--navy-900);
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
+  background-position: center center;
+  /* The banner is a designed image with text and graphics: keep all of it visible */
+  background-size: 100% 100%;
 
-  min-height: clamp(260px, 34vw, 3800px);
   display: flex;
   align-items: flex-end;
-  padding: clamp(1.5rem, 2.5vw, 2.25rem);
 }
 
 .report-page .hero-scrim {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(6,15,35,0) 40%, rgba(6,15,35,.55) 75%, rgba(6,15,35,.85) 100%);
+  width: 100%; height: 100%;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(6,15,35,.18) 0%, rgba(8,20,42,.08) 40%, rgba(6,15,35,.02) 70%, rgba(6,15,35,0) 100%);
+  pointer-events: none;
 }
 
-.report-page .page-hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.report-page .page-hero-inner {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 3rem);
+}
 .report-page .breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 16px; }
 .report-page .breadcrumb b { color: var(--saffron); }
 .report-page .page-hero h1 { color: #fff; font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-bottom: 14px; }
@@ -380,7 +404,7 @@
   margin-bottom: 18px;
 }
 .report-page .result-shell h2 {
-  font-family: "JetBrains Mono", monospace; font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
   color: var(--navy-900); margin-bottom: 14px; letter-spacing: 1px;
 }
 .report-page .result-note { font-size: 14px; color: var(--ink-soft); margin-bottom: 26px; }
@@ -408,17 +432,40 @@
 .report-page .secondary-btn:hover { background: var(--surface); }
 
 /* ================= RESPONSIVE ================= */
+
+/* ---------- TABLET ---------- */
+@media (max-width: 1100px) {
+  .report-page .page-hero {
+    height: clamp(400px, 42vw, 560px);
+    min-height: 400px;
+    max-height: 560px;
+  }
+}
+
 @media (max-width: 860px) {
   .report-page .report-grid { grid-template-columns: 1fr; }
   .report-page .upload-dropzone { min-height: 240px; }
 }
 
+/* ---------- MOBILE ---------- */
 @media (max-width: 780px) {
+  .report-page .page-hero {
+    height: 420px;
+    min-height: 420px;
+    max-height: none;
+    /* On mobile, cover works better because the desktop artwork is very wide */
+    background-size: cover;
+    background-position: center center;
+  }
+  .report-page .page-hero-inner { max-width: 100%; padding: 1.5rem; }
   .report-page .result-actions { flex-direction: column; }
   .report-page .result-actions button { width: 100%; }
 }
 
+/* ---------- SMALL MOBILE ---------- */
 @media (max-width: 480px) {
+  .report-page .page-hero { height: 360px; min-height: 360px; }
+  .report-page .page-hero-inner { padding: 1rem; }
   .report-page .primary-btn { width: 100%; }
   .report-page .segmented-toggle { height: auto; flex-direction: column; border-radius: var(--radius-sm); }
   .report-page .segmented-toggle button { padding: 12px; }

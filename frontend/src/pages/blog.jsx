@@ -65,29 +65,49 @@ const Blog = () => {
   return (
     <main className="blog-page">
       {/* ================= PAGE HERO — banner as full-cover background ================= */}
-      <section
-        className="page-hero"
-        id="home"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="page-hero-inner">
-          <div className="hero-cta-row">
-            <button className="primary-btn" type="button">
-              Report an Issue <span>→</span>
-            </button>
-            {/* <div className="breadcrumb">
-            Home / <b>Blog</b>
-          </div>
-          <p className="eyebrow eyebrow-light">MyRoad India Blog</p>
-          <h1>Insights on road safety & community reporting</h1>
-          <p className="hero-lead">
-            Stories, guidance, and ideas on how better roads get built —
-            one report, one repair, and one community at a time.
-          </p> */}
-          </div>
+
+
+      <section className="page-hero-section">
+  <div
+    className="page-hero"
+    id="home"
+    style={{
+      backgroundImage: `url("${bannerImage}")`,
+    }}
+  >
+    <div className="hero-scrim"></div>
+
+    <div className="page-hero-inner">
+      <div className="hero-cta-row">
+        <button className="primary-btn" type="button">
+          Report an Issue <span>→</span>
+        </button>
+
+        {/* <div className="breadcrumb">
+          Home / <b>Blog</b>
         </div>
-      </section>
+
+        <p className="eyebrow eyebrow-light">MyRoad India Blog</p>
+
+        <h1>Insights on road safety & community reporting</h1>
+
+        <p className="hero-lead">
+          Stories, guidance, and ideas on how better roads get built —
+          one report, one repair, and one community at a time.
+        </p> */}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
+
 
       {/* ================= FEATURED IMAGE ================= */}
       <section className="section featured-section">

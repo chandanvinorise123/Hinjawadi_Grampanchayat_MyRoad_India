@@ -1,8 +1,5 @@
 .about-page {
-  --navy-950: #081b34;
   --navy-900: #0b2447;
-  --navy-800: #123464;
-  --navy-700: #1b4586;
 
   --saffron: #ff9933;
   --saffron-dark: #e07f1f;
@@ -17,19 +14,19 @@
   --ink-soft: #4b5567;
   --ink-faint: #8a93a6;
 
-  --red: #d13438;
-  --orange: #e8720c;
-  --amber: #e0a800;
   --resolved: #1f8a3d;
 
   --radius-sm: 10px;
   --radius-md: 14px;
-  --radius-lg: 20px;
 
   width: 100%;
+  max-width: 100%;
   min-height: 100vh;
 
-  font-family: "Inter", sans-serif;
+  margin: 0;
+  padding: 0;
+
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
 
   overflow-x: hidden;
@@ -49,7 +46,7 @@
 .about-page h2,
 .about-page h3,
 .about-page h4 {
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--navy-900);
   font-weight: 700;
   letter-spacing: -0.015em;
@@ -65,7 +62,8 @@
   padding: 0;
 }
 
-.about-page section {
+/* Normal sections. The hero is excluded from this padding. */
+.about-page > section:not(.page-hero-section) {
   width: 100%;
   padding: clamp(2.5rem, 2rem + 3vw, 5rem)
     clamp(1.25rem, 1rem + 2vw, 3rem);
@@ -90,39 +88,51 @@
   text-align: center;
 }
 
-.about-page .eyebrow-light {
-  color: #ffd9a8;
+/* ================= PAGE HERO SECTION ================= */
+
+.about-page .page-hero-section {
+  position: relative;
+
+  width: 100%;
+  max-width: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  overflow: hidden;
 }
 
-/* ================= PAGE HERO — banner as full-cover background ================= */
+/* ================= PAGE HERO / BANNER ================= */
 
 .about-page .page-hero {
   position: relative;
+
+  width: 100%;
+  max-width: 100%;
+
+  height: clamp(420px, 38vw, 620px);
+  min-height: 420px;
+  max-height: 620px;
+
+  margin: 0;
+  padding: 0;
+
   overflow: hidden;
 
   color: #ffffff;
   background-color: var(--navy-900);
 
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center center;
 
   /*
-    Same approach as services.css.
-    "cover" makes the banner fill the complete hero.
-    No empty white space will appear.
+    The banner is a designed image containing text, cards and graphics.
+    Keep the entire image visible on desktop.
   */
-  background-size: cover;
-
-  /*
-    Matches services.css: uncapped max so the banner can scale
-    up on larger screens instead of being capped at a fixed height.
-  */
-  min-height: clamp(500px, 34vw, 800px);
+  background-size: 100% 100%;
 
   display: flex;
   align-items: flex-end;
-
-  padding: clamp(1.5rem, 2.5vw, 2.25rem);
 }
 
 /* ================= HERO OVERLAY ================= */
@@ -131,61 +141,33 @@
   position: absolute;
   inset: 0;
 
+  width: 100%;
+  height: 100%;
+
+  z-index: 1;
+
   background: linear-gradient(
-    180deg,
-    rgba(6, 15, 35, 0) 35%,
-    rgba(6, 15, 35, 0.48) 70%,
-    rgba(6, 15, 35, 0.85) 100%
+    90deg,
+    rgba(6, 15, 35, 0.18) 0%,
+    rgba(8, 20, 42, 0.08) 40%,
+    rgba(6, 15, 35, 0.02) 70%,
+    rgba(6, 15, 35, 0) 100%
   );
+
+  pointer-events: none;
 }
+
+/* ================= HERO INNER ================= */
 
 .about-page .page-hero-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 
   width: 100%;
-  max-width: 720px;
-}
+  max-width: 1200px;
 
-/* ================= BREADCRUMB ================= */
-
-.about-page .breadcrumb {
-  font-size: 13px;
-  color: #93a3bf;
-  margin-bottom: 14px;
-}
-
-.about-page .breadcrumb b {
-  color: var(--saffron);
-}
-
-/* ================= HERO CONTENT ================= */
-
-.about-page .page-hero h1 {
-  color: #ffffff;
-
-  font-size: clamp(
-    1.6rem,
-    1.3rem + 1.6vw,
-    2.3rem
-  );
-
-  margin-bottom: 12px;
-}
-
-.about-page .hero-lead {
-  color: #d7e0f0;
-
-  font-size: clamp(
-    0.9rem,
-    0.85rem + 0.3vw,
-    1.02rem
-  );
-
-  line-height: 1.55;
-
-  max-width: 520px;
-  margin-bottom: 22px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 3rem);
 }
 
 /* ================= HERO BUTTON ROW ================= */
@@ -194,137 +176,6 @@
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-}
-
-/* ================= BUTTONS ================= */
-
-.about-page .primary-btn,
-.about-page .secondary-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  font-family: inherit;
-  font-size: 14.5px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
-
-  border-radius: var(--radius-sm);
-
-  padding: 13px 22px;
-  margin-left: 400px;
-
-  cursor: pointer;
-  white-space: nowrap;
-
-  transition:
-    background 0.18s ease,
-    transform 0.18s ease,
-    border-color 0.18s ease;
-}
-
-.about-page .primary-btn {
-  border: none;
-  background: var(--saffron);
-  color: #3a1e00;
-}
-
-.about-page .primary-btn:hover {
-  background: var(--saffron-dark);
-  transform: translateY(-2px);
-}
-
-.about-page .primary-btn span {
-  font-size: 17px;
-}
-
-.about-page .secondary-btn {
-  background: transparent;
-  color: #ffffff;
-
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-
-  text-decoration: none;
-}
-
-.about-page .secondary-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #ffffff;
-}
-
-/* ================= STATS ================= */
-
-.about-page .stats-strip {
-  position: relative;
-  z-index: 5;
-
-  padding: 0 1.25rem;
-
-  margin-top: -28px;
-
-  background: transparent;
-}
-
-.about-page .stats-shell {
-  width: 100%;
-  max-width: 1200px;
-
-  margin: 0 auto;
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
-  background: var(--white);
-
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-
-  box-shadow: 0 18px 45px rgba(11, 36, 71, 0.12);
-
-  overflow: hidden;
-}
-
-.about-page .stat-item {
-  min-height: 105px;
-
-  padding: 22px 18px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  text-align: center;
-
-  border-right: 1px solid var(--line);
-}
-
-.about-page .stat-item:last-child {
-  border-right: none;
-}
-
-.about-page .stat-value {
-  color: var(--navy-900);
-
-  font-family: "Plus Jakarta Sans", sans-serif;
-
-  font-size: clamp(1.35rem, 1rem + 1vw, 1.9rem);
-
-  font-weight: 800;
-
-  line-height: 1.1;
-
-  margin-bottom: 7px;
-}
-
-.about-page .stat-label {
-  color: var(--ink-soft);
-
-  font-size: 12.5px;
-  font-weight: 500;
-
-  line-height: 1.4;
 }
 
 /* ================= INTRO ================= */
@@ -492,8 +343,7 @@
 
   border-color: #cbd5e1;
 
-  box-shadow:
-    0 16px 32px -18px rgba(11, 36, 71, 0.3);
+  box-shadow: 0 16px 32px -18px rgba(11, 36, 71, 0.3);
 }
 
 .about-page .pillar-top {
@@ -507,7 +357,7 @@
 }
 
 .about-page .pillar-number {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 
   font-size: 12px;
 
@@ -634,7 +484,7 @@
 
   color: #ffffff;
 
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 
   font-size: 14px;
 
@@ -841,7 +691,7 @@
 }
 
 .about-page .hj-value {
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
   font-weight: 800;
@@ -863,7 +713,7 @@
 .about-page .hj-tag-note {
   margin-top: 10px;
 
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   font-size: 11px;
 
   color: var(--ink-faint);
@@ -942,7 +792,7 @@
 
   color: #ffffff;
 
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 15px;
   font-weight: 700;
 
@@ -1044,7 +894,7 @@
 .about-page .hj-point-num {
   display: inline-block;
 
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   font-size: 12px;
   font-weight: 600;
 
@@ -1109,303 +959,6 @@
   padding: 5px 11px;
 
   border-radius: 999px;
-}
-
-/* ================= CTA ================= */
-
-.about-page .cta-section {
-  padding-block: clamp(2rem, 3vw, 3.5rem);
-}
-
-.about-page .cta-shell {
-  width: 100%;
-  max-width: 1200px;
-
-  margin: 0 auto;
-
-  background: var(--navy-900);
-
-  border-radius: var(--radius-lg);
-
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: space-between;
-
-  gap: 20px;
-
-  flex-wrap: wrap;
-}
-
-.about-page .cta-shell h3 {
-  color: #ffffff;
-
-  font-size: 22px;
-
-  margin-bottom: 6px;
-}
-
-.about-page .cta-shell p {
-  color: #c3d0e6;
-
-  font-size: 14px;
-
-  line-height: 1.55;
-
-  margin-bottom: 0;
-
-  max-width: 650px;
-}
-
-/* ================= RESPONSIVE ================= */
-
-@media (max-width: 1000px) {
-  .about-page .hj-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .about-page .hj-amenities {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .about-page .hj-points {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .about-page .stats-shell {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-page .stat-item:nth-child(2) {
-    border-right: none;
-  }
-
-  .about-page .stat-item:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--line);
-  }
-
-  .about-page .mission-points {
-    grid-template-columns: 1fr;
-  }
-
-  .about-page .pillars-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-page .flow-track {
-    flex-wrap: wrap;
-  }
-}
-
-/* ================= TABLET ================= */
-
-@media (max-width: 780px) {
-  .about-page .page-hero {
-    min-height: 320px;
-
-    background-size: cover;
-
-    padding: 1.5rem;
-  }
-
-  .about-page .page-hero-inner {
-    max-width: 620px;
-  }
-
-  .about-page .pillars-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .about-page .flow-arrow {
-    display: none;
-  }
-
-  .about-page .flow-track {
-    display: grid;
-
-    grid-template-columns: repeat(2, 1fr);
-
-    gap: 28px 20px;
-  }
-
-  .about-page .flow-step {
-    max-width: none;
-    min-width: 0;
-  }
-
-  .about-page .cta-shell {
-    align-items: flex-start;
-
-    flex-direction: column;
-  }
-}
-
-/* ================= MOBILE ================= */
-
-@media (max-width: 640px) {
-  .about-page .hj-points {
-    grid-template-columns: 1fr;
-  }
-
-  .about-page .hj-amenities {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-page .hj-profile {
-    padding: 22px;
-  }
-
-  .about-page .hj-profile-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-
-  .about-page .hj-profile-row dt {
-    padding-top: 0;
-  }
-
-  .about-page .hj-point {
-    padding: 22px;
-  }
-
-  .about-page .hj-roads {
-    padding: 22px;
-  }
-
-  .about-page .hj-hub-arrow {
-    display: none;
-  }
-}
-
-@media (max-width: 560px) {
-  .about-page section {
-    padding: 2.5rem 1rem;
-  }
-
-  .about-page .page-hero {
-    min-height: 300px;
-
-    background-size: cover;
-
-    padding: 1.25rem;
-  }
-
-  .about-page .page-hero h1 {
-    font-size: 1.55rem;
-  }
-
-  .about-page .hero-lead {
-    font-size: 13.5px;
-
-    margin-bottom: 17px;
-  }
-
-  .about-page .hero-cta-row {
-    gap: 9px;
-  }
-
-  .about-page .primary-btn,
-  .about-page .secondary-btn {
-    padding: 11px 16px;
-
-    font-size: 13px;
-  }
-
-  .about-page .stats-strip {
-    margin-top: -20px;
-
-    padding-inline: 0.75rem;
-  }
-
-  .about-page .stats-shell {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .about-page .stat-item {
-    min-height: 90px;
-
-    padding: 16px 8px;
-  }
-
-  .about-page .stat-value {
-    font-size: 1.25rem;
-  }
-
-  .about-page .stat-label {
-    font-size: 11px;
-  }
-
-  .about-page .intro-shell h2,
-  .about-page .mission-copy h2,
-  .about-page .section-heading h2 {
-    font-size: 1.55rem;
-  }
-
-  .about-page .intro-lead,
-  .about-page .mission-lead,
-  .about-page .hj-lead {
-    font-size: 13.5px;
-  }
-
-  .about-page .flow-track {
-    grid-template-columns: 1fr;
-  }
-
-  .about-page .pillar-card {
-    padding: 20px;
-  }
-
-  .about-page .cta-shell {
-    padding: 1.5rem;
-  }
-
-  .about-page .cta-shell h3 {
-    font-size: 19px;
-  }
-
-  .about-page .cta-shell p {
-    font-size: 13px;
-  }
-}
-
-/* ================= SMALL MOBILE ================= */
-
-@media (max-width: 400px) {
-  .about-page .page-hero {
-    min-height: 285px;
-  }
-
-  .about-page .breadcrumb {
-    font-size: 11px;
-  }
-
-  .about-page .eyebrow {
-    font-size: 11px;
-  }
-
-  .about-page .page-hero h1 {
-    font-size: 1.4rem;
-  }
-
-  .about-page .hero-cta-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .about-page .primary-btn,
-  .about-page .secondary-btn {
-    width: auto;
-  }
-
-  .about-page .hj-stats,
-  .about-page .hj-amenities {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ================= GRAM PANCHAYAT LEADERS & MEMBERS ================= */
@@ -1532,44 +1085,6 @@
   color: var(--ink-soft);
 }
 
-@media (max-width: 1000px) {
-  .about-page .gp-members-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .about-page .gp-leaders-grid .gp-person {
-    flex-basis: calc((100% - 40px) / 3);
-  }
-}
-
-@media (max-width: 780px) {
-  .about-page .gp-members-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .about-page .gp-leaders-grid .gp-person {
-    flex-basis: calc((100% - 20px) / 2);
-  }
-}
-
-@media (max-width: 560px) {
-  .about-page .gp-leaders-grid {
-    max-width: 320px;
-  }
-
-  .about-page .gp-leaders-grid .gp-person {
-    flex-basis: 100%;
-  }
-}
-
-@media (max-width: 400px) {
-  .about-page .gp-members-grid {
-    grid-template-columns: 1fr;
-
-    max-width: 280px;
-  }
-}
-
 /* ================= GRAM PANCHAYAT CONTACT ================= */
 
 .about-page .gp-contact-grid {
@@ -1661,18 +1176,224 @@
   text-decoration: underline;
 }
 
+/* ================= RESPONSIVE ================= */
+
+/* ---------- TABLET ---------- */
+
+@media (max-width: 1100px) {
+  .about-page .page-hero {
+    height: clamp(400px, 42vw, 560px);
+
+    min-height: 400px;
+
+    max-height: 560px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .about-page .hj-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .hj-amenities {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .about-page .hj-points {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-page .gp-members-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .about-page .gp-leaders-grid .gp-person {
+    flex-basis: calc((100% - 40px) / 3);
+  }
+}
+
+@media (max-width: 900px) {
+  .about-page .mission-points {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-page .flow-track {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 780px) {
+  .about-page .page-hero {
+    height: 420px;
+
+    min-height: 420px;
+
+    max-height: none;
+
+    /* On mobile, cover works better because the desktop artwork is very wide */
+    background-size: cover;
+
+    background-position: center center;
+  }
+
+  .about-page .page-hero-inner {
+    max-width: 100%;
+
+    padding: 1.5rem;
+  }
+
+  .about-page .pillars-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .flow-arrow {
+    display: none;
+  }
+
+  .about-page .flow-track {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 28px 20px;
+  }
+
+  .about-page .flow-step {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .about-page .gp-members-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-page .gp-leaders-grid .gp-person {
+    flex-basis: calc((100% - 20px) / 2);
+  }
+}
+
 @media (max-width: 700px) {
   .about-page .gp-contact-grid {
     grid-template-columns: 1fr;
   }
 }
 
+@media (max-width: 640px) {
+  .about-page .hj-points {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .hj-amenities {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .about-page .hj-profile {
+    padding: 22px;
+  }
+
+  .about-page .hj-profile-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .about-page .hj-profile-row dt {
+    padding-top: 0;
+  }
+
+  .about-page .hj-point {
+    padding: 22px;
+  }
+
+  .about-page .hj-roads {
+    padding: 22px;
+  }
+
+  .about-page .hj-hub-arrow {
+    display: none;
+  }
+}
+
 @media (max-width: 560px) {
+  .about-page > section:not(.page-hero-section) {
+    padding: 2.5rem 1rem;
+  }
+
+  .about-page .hero-cta-row {
+    gap: 9px;
+  }
+
+  .about-page .intro-shell h2,
+  .about-page .mission-copy h2,
+  .about-page .section-heading h2 {
+    font-size: 1.55rem;
+  }
+
+  .about-page .intro-lead,
+  .about-page .mission-lead,
+  .about-page .hj-lead {
+    font-size: 13.5px;
+  }
+
+  .about-page .flow-track {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .pillar-card {
+    padding: 20px;
+  }
+
+  .about-page .gp-leaders-grid {
+    max-width: 320px;
+  }
+
+  .about-page .gp-leaders-grid .gp-person {
+    flex-basis: 100%;
+  }
+
   .about-page .gp-contact-card {
     padding: 16px;
   }
 
   .about-page .gp-contact-value {
     font-size: 14px;
+  }
+}
+
+/* ---------- SMALL MOBILE ---------- */
+
+@media (max-width: 480px) {
+  .about-page .page-hero {
+    height: 360px;
+
+    min-height: 360px;
+
+    background-position: center center;
+  }
+
+  .about-page .page-hero-inner {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .about-page .eyebrow {
+    font-size: 11px;
+  }
+
+  .about-page .hj-stats,
+  .about-page .hj-amenities {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .gp-members-grid {
+    grid-template-columns: 1fr;
+
+    max-width: 280px;
   }
 }

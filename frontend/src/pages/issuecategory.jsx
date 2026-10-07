@@ -144,23 +144,52 @@ const IssueCategory = () => {
   return (
     <main className="issue-category-page">
       {/* ================= PAGE HERO ================= */}
-      <section
-        className="page-hero"
-        style={{ backgroundImage: `url(${bannerImage})` }}
-      >
-        <div className="hero-scrim"></div>
-        <div className="page-hero-inner">
-          {/* <div className="breadcrumb">
-            Home / Services / <b>Issue Category</b>
-          </div>
-          <p className="eyebrow eyebrow-light">Report an Issue</p>
-          <h1>Select a category to report your issue</h1>
-          <p className="hero-lead">
-            Choose the category that best matches the problem, then pick the
-            specific issue to see guidance before you submit your report.
-          </p> */}
-        </div>
-      </section>
+         <section className="page-hero-section">
+  <div
+    className="page-hero"
+    style={{
+      backgroundImage: `url("${bannerImage}")`,
+    }}
+  >
+    <div className="hero-scrim"></div>
+
+    <div className="page-hero-inner">
+      {/*
+      <div className="breadcrumb">
+        Home / Services / <b>Issue Category</b>
+      </div>
+
+      <p className="eyebrow eyebrow-light">
+        Report an Issue
+      </p>
+
+      <h1>
+        Select a category to report your issue
+      </h1>
+
+      <p className="hero-lead">
+        Choose the category that best matches the problem, then pick the
+        specific issue to see guidance before you submit your report.
+      </p>
+      */}
+
+      {/* Hidden SEO content */}
+      <h1 className="sr-only">
+        Select a category to report your issue
+      </h1>
+
+      <p className="sr-only">
+        Choose the category that best matches the problem, then pick the
+        specific issue to see guidance before you submit your report.
+      </p>
+    </div>
+  </div>
+</section>
+
+      
+
+
+
 
       {/* ================= CATEGORY GRID ================= */}
       <section className="section">

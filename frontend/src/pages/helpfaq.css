@@ -7,13 +7,9 @@
 
 /* ================= ROOT VARIABLES ================= */
 .help-page {
-  --navy-950: #081b34;
   --navy-900: #0b2447;
-  --navy-800: #123464;
-  --navy-700: #1b4586;
   --saffron: #ff9933;
   --saffron-dark: #e07f1f;
-  --green: #128807;
   --white: #ffffff;
   --surface: #f4f6f9;
   --surface-2: #eef1f6;
@@ -21,30 +17,35 @@
   --ink: #161b26;
   --ink-soft: #4b5567;
   --ink-faint: #8a93a6;
-  --red: #d13438;
-  --orange: #e8720c;
-  --amber: #e0a800;
-  --resolved: #1f8a3d;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  font-family: "Inter", sans-serif;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
   overflow-x: hidden;
 }
+
+.help-page *,
+.help-page *::before,
+.help-page *::after { box-sizing: border-box; }
 
 /* ================= TYPOGRAPHY ================= */
 .help-page h1,
 .help-page h2,
 .help-page h3,
 .help-page h4 {
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--navy-900);
   font-weight: 800;
 }
 
 /* ================= SECTIONS ================= */
-.help-page section {
+/* Normal sections. The hero is excluded from this padding. */
+.help-page > section:not(.page-hero-section) {
   padding: clamp(2.5rem, 2rem + 3vw, 5rem) clamp(1.25rem, 1rem + 2vw, 3rem);
 }
 .help-page .surface { background: var(--surface); }
@@ -70,40 +71,62 @@
 .help-page .eyebrow.center { text-align: center; }
 .help-page .eyebrow-light { color: #ffd9a8; }
 
-/* ================= PAGE HERO — Matches Issue Category Banner ================= */
+/* ================= PAGE HERO — full banner, no cropping ================= */
+/* Removes the global section padding so the banner touches all edges */
+.help-page .page-hero-section {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .help-page .page-hero {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: clamp(420px, 38vw, 620px);
+  min-height: 420px;
+  max-height: 620px;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   color: #fff;
 
   background-color: var(--navy-900);
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
+  background-position: center center;
+  /* The banner is a designed image with text and graphics: keep all of it visible */
+  background-size: 100% 100%;
 
-  /* Same sizing as issue-category page */
-  min-height: clamp(370px, 34vw, 420px);
   display: flex;
   align-items: flex-end;
-  padding: clamp(1.5rem, 1.5vw, 2.25rem);
 }
 
 .help-page .hero-scrim {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
   background: linear-gradient(
-    180deg,
-    rgba(6, 15, 35, 0) 40%,
-    rgba(6, 15, 35, 0.55) 75%,
-    rgba(6, 15, 35, 0.85) 100%
+    90deg,
+    rgba(6, 15, 35, 0.18) 0%,
+    rgba(8, 20, 42, 0.08) 40%,
+    rgba(6, 15, 35, 0.02) 70%,
+    rgba(6, 15, 35, 0) 100%
   );
+  pointer-events: none;
 }
 
 .help-page .page-hero-inner {
   position: relative;
-  z-index: 1;
-  max-width: 720px;
+  z-index: 2;
+  max-width: 1200px;
   width: 100%;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 3rem);
 }
 
 .help-page .breadcrumb {
@@ -256,7 +279,7 @@
 }
 
 .help-page .guidance-number {
-  font-family: "JetBrains Mono", monospace;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   font-size: 13px;
   font-weight: 700;
   color: var(--ink-faint);
@@ -270,7 +293,8 @@
 .help-page .guidance-card p { font-size: 13.5px; color: var(--ink-soft); }
 
 /* ================= CTA ================= */
-.help-page .cta-section {
+/* Higher specificity so it still beats the global section padding */
+.help-page > section.cta-section {
   padding-block: clamp(2rem, 3vw, 3.5rem);
 }
 
@@ -317,7 +341,33 @@
 }
 
 /* ================= RESPONSIVE ================= */
+
+/* ---------- TABLET ---------- */
+@media (max-width: 1100px) {
+  .help-page .page-hero {
+    height: clamp(400px, 42vw, 560px);
+    min-height: 400px;
+    max-height: 560px;
+  }
+}
+
+/* ---------- MOBILE ---------- */
 @media (max-width: 780px) {
+  .help-page .page-hero {
+    height: 420px;
+    min-height: 420px;
+    max-height: none;
+    /* On mobile, cover works better because the desktop artwork is very wide */
+    background-size: cover;
+    background-position: center center;
+  }
+  .help-page .page-hero-inner { max-width: 100%; padding: 1.5rem; }
   .help-page .faq-tabs { justify-content: flex-start; }
   .help-page .faq-question { font-size: 14px; }
+}
+
+/* ---------- SMALL MOBILE ---------- */
+@media (max-width: 480px) {
+  .help-page .page-hero { height: 360px; min-height: 360px; }
+  .help-page .page-hero-inner { padding: 1rem; }
 }
