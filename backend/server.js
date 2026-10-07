@@ -24,11 +24,15 @@ const complaintRoutes = require("./routes/complaintRoutes");
 const adminManagementRoutes = require("./routes/adminManagementRoutes");
 
 
+const complaintRoutes = require("./routes/complaintRoutes");
+
+
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Database Connection
 connectDB();
@@ -79,6 +83,8 @@ try {
 
 // Statistics Routes
 app.use("/api/stats", statRoutes);
+app.use("/uploads", express.static("uploads"));
+app.use("/api/complaints", complaintRoutes);
 
 // Notification Routes
 app.use("/api/notifications", notificationRoutes);
@@ -103,8 +109,9 @@ app.use("/api/photos", photoRoutes);
 // ==========================================
 
 app.get("/", (req, res) => {
-  res.send("✅ MyRoad India Backend is running successfully!");
+  res.send("MyRoad India Backend is running successfully!");
 });
+
 
 // ==========================================
 // SERVER START
@@ -114,5 +121,11 @@ const PORT = process.env.PORT || 3200;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+});
+
+const PORT = process.env.PORT || 3200;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 

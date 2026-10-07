@@ -13,7 +13,15 @@ import HelpFaq from "./pages/helpfaq";
 import Login from "./pages/login";
 import Signup from "./pages/signup";
 import ReportIssue from "./pages/report";
-import Blog from "./pages/blog";
+import Blog from "./pages/blog";  
+// import CitizenDashboard from "./dashboard/citizendashboard";
+// import StaffDashboard from "./dashboard/staffdashboard";
+// import VerifierDashboard from "./dashboard/verifierdashboard";
+// import AdminDashboard from "./dashboard/admindashboard";  
+
+// import CitizenDashboard from "./dashboard/citizendashboard";
+import UserProfile from "./userprofiledashboard/userprofile";
+// import Blog from "./pages/blog";
 import Dashboard from "./pages/dashboard"; // ✅ Main gateway dashboard
 
 // ✅ Import ProtectedRoute
@@ -45,6 +53,15 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/ReportIssue" element={<ReportIssue />} />
         
+        {/* <Route path="/CitizenDashboard" element={<CitizenDashboard />} />
+        <Route path="/StaffDashboard" element={<StaffDashboard />} />
+        <Route path="/VerifierDashboard" element={<VerifierDashboard />} />
+        <Route path="/admindashboard" element={<AdminDashboard />} />
+       */}
+
+       <Route path="/dashboard" element={<CitizenDashboard />} />
+       <Route path="/profile" element={<UserProfile />} />
+
         {/* ✅ MAIN DASHBOARD GATEWAY PAGE */}
         <Route path="/dashboard" element={<Dashboard />} />
         

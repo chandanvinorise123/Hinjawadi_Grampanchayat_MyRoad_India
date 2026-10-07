@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./signup.css";
 import { useNavigate, Link } from "react-router-dom";
-import bannerImage from "../assets/signup-banner.png";
+import bannerImage from "../assets/su.png";
 
 const roles = [
   { value: "citizen", label: "Citizen" },
@@ -13,6 +13,9 @@ const roles = [
 // Base URL for your backend API
 const API_BASE_URL = "http://localhost:3200/api/auth";
 
+// Indian mobile number: 10 digits, starting with 6-9
+const MOBILE_REGEX = /^[6-9]\d{9}$/;
+
 const Signup = () => {
   const navigate = useNavigate();
 
@@ -20,9 +23,9 @@ const Signup = () => {
     role: "citizen",
     name: "",
     email: "",
+    mobile: "",
     password: "",
     confirmPassword: "",
-    mobile: "",
     location: "",
   });
 
@@ -35,7 +38,8 @@ const Signup = () => {
 
     setSignupData((prevData) => ({
       ...prevData,
-      [name]: value,
+      // Mobile field accepts digits only
+      [name]: name === "mobile" ? value.replace(/\D/g, "") : value,
     }));
   };
 
@@ -44,6 +48,15 @@ const Signup = () => {
 
     setSignupError("");
     setSignupStatus(null);
+
+    // Mobile validation
+    if (!MOBILE_REGEX.test(signupData.mobile)) {
+      setSignupError(
+        "Enter a valid 10-digit mobile number starting with 6, 7, 8 or 9."
+      );
+      setSignupStatus("failed");
+      return;
+    }
 
     // Password validation
     if (signupData.password !== signupData.confirmPassword) {
@@ -180,6 +193,23 @@ const Signup = () => {
                 />
               </div>
 
+              {/* ================= MOBILE ================= */}
+              <div className="input-group">
+                <input
+                  type="tel"
+                  name="mobile"
+                  placeholder="Mobile Number"
+                  value={signupData.mobile}
+                  onChange={handleChange}
+                  pattern="[6-9][0-9]{9}"
+                  maxLength={10}
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  title="Enter a valid 10-digit mobile number"
+                  required
+                />
+              </div>
+
               {/* ================= PASSWORD ================= */}
               <div className="input-group">
                 <input
@@ -203,18 +233,6 @@ const Signup = () => {
                   required
                 />
               </div>
-
-              {/* ================= MOBILE ================= */}
-              {/* <div className="input-group">
-                <input
-                  type="tel"
-                  name="mobile"
-                  placeholder="Mobile Number"
-                  value={signupData.mobile}
-                  onChange={handleChange}
-                  required
-                />
-              </div> */}
 
               {/* ================= LOCATION ================= */}
               {/* <div className="input-group">

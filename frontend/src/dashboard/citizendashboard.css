@@ -257,3 +257,182 @@
   .cd-tb-user { display: none; }
   .cd-search { max-width: none; }
 }
+
+/* ==============================
+   TRACK COMPLAINT
+================================ */
+
+.cd-track-panel {
+  margin-bottom: 24px;
+}
+
+.cd-track-panel .cd-panel-head p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.cd-track-form {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cd-track-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+
+.cd-track-form input:focus {
+  border-color: #2e6cb0;
+  box-shadow: 0 0 0 3px rgba(46, 108, 176, 0.1);
+}
+
+.cd-track-form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.cd-track-error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #b42318;
+  background: #fef3f2;
+  font-size: 14px;
+}
+
+.cd-track-result {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cd-track-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cd-track-label {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.cd-track-result-header h4 {
+  margin: 6px 0 0;
+  color: #172b4d;
+  font-size: 16px;
+}
+
+.cd-track-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding-top: 20px;
+}
+
+.cd-track-details div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cd-track-details span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.cd-track-details strong {
+  color: #243447;
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Complaint progress */
+.cd-track-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.cd-track-progress-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+}
+
+.cd-track-progress-dot {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.cd-track-progress-dot.done {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.cd-track-progress-dot.current {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+.cd-track-progress-item span {
+  max-width: 120px;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .cd-track-form {
+    flex-direction: column;
+  }
+
+  .cd-track-form button {
+    width: 100%;
+  }
+
+  .cd-track-details {
+    grid-template-columns: 1fr;
+  }
+
+  .cd-track-result-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cd-track-progress {
+    justify-content: flex-start;
+  }
+}

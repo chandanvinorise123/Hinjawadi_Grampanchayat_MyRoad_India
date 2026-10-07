@@ -45,7 +45,7 @@ const ReportIssue = () => {
   const [issueType, setIssueType] = useState("");
   const [description, setDescription] = useState("");
 
-  // ✅ NEW: State for verified photos and captured location
+  // ✅ State for verified photos and captured location
   const [verifiedPhotosData, setVerifiedPhotosData] = useState([]);
   const [capturedLocation, setCapturedLocation] = useState(null);
 
@@ -77,7 +77,7 @@ const ReportIssue = () => {
     );
   };
 
-  // ✅ NEW: Handle photo verification callbacks from PhotoDetection component
+  // ✅ Handle photo verification callbacks from PhotoDetection component
   const handlePhotoVerified = (photoId, aiResult) => {
     console.log("Photo verified:", photoId, aiResult);
   };
@@ -90,23 +90,24 @@ const ReportIssue = () => {
   // ✅ UPDATED: Submit report using verified data and real backend API
   const handleSubmitReport = async (e) => {
     e.preventDefault();
-    
+
     // Check if we have verified photos
     if (verifiedPhotosData.length === 0) {
       alert("Please upload and verify at least one photo");
       return;
     }
 
-    // Prepare complaint data
+    // ✅ FIXED: Payload structure now perfectly matches backend expectations
     const complaintData = {
       fullName,
       mobile,
       email,
       issueType,
       description,
-      location: locationMode === "url" ? locationUrl : capturedLocation,
-      photos: verifiedPhotosData,
-      timestamp: new Date().toISOString(),
+      locationUrl: locationMode === "url" ? locationUrl : "GPS Captured Location",
+      latitude: capturedLocation?.latitude,
+      longitude: capturedLocation?.longitude,
+      photoVerifications: verifiedPhotosData, // Backend expects this exact key
     };
 
     try {
@@ -121,11 +122,12 @@ const ReportIssue = () => {
         const data = await response.json();
         setComplaintNumber(data.complaintNumber || `MRI-${Math.floor(100000 + Math.random() * 900000)}`);
       } else {
-        throw new Error("Failed to submit complaint");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit complaint");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      alert("Failed to submit complaint. Please try again.");
+      alert(`Error: ${error.message}`);
     }
   };
 

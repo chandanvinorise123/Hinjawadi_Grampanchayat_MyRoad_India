@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const complaintSchema = new mongoose.Schema(
   {
+
     // Unique identifier for the complaint (e.g., "MRI-482913")
     complaintNumber: {
       type: String,
@@ -11,20 +12,49 @@ const complaintSchema = new mongoose.Schema(
     },
 
     // Broad category of the issue
+
+    complaintNumber: {
+      type: String,
+      unique: true,
+      index: true,
+    },
+
+    citizenId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
+
     category: {
       type: String,
       required: true,
       trim: true,
     },
 
+
     // Specific issue description (e.g., "Road Potholes")
     issue: {
+
+    issueType: {
+
       type: String,
       required: true,
       trim: true,
     },
 
+
     // Location where the issue is reported
+
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 2000,
+    },
+
+
     location: {
       type: String,
       required: true,
@@ -85,6 +115,7 @@ const complaintSchema = new mongoose.Schema(
       default: () => new Date().toISOString().split("T")[0], // Automatically sets to today's date in YYYY-MM-DD format
     },
   },
+}
   {
     // Automatically adds `createdAt` and `updatedAt` fields
     timestamps: true, 
@@ -93,6 +124,96 @@ const complaintSchema = new mongoose.Schema(
 
 // Optional: Create an index on status and category for faster querying in the admin dashboard
 complaintSchema.index({ status: 1, category: 1 });
-complaintSchema.index({ complaintNumber: 1 });
+complaintSchema.index({ complaintNumber: 1 }
+    landmark: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    coordinates: {
+      latitude: {
+        type: Number,
+        required: true,
+        min: -90,
+        max: 90,
+      },
+
+      longitude: {
+        type: Number,
+        required: true,
+        min: -180,
+        max: 180,
+      },
+    },
+
+    images: [
+      {
+        type: String,
+      },
+    ],
+
+    status: {
+      type: String,
+      enum: [
+        "Submitted",
+        "Under Review",
+        "Verified",
+        "Assigned",
+        "In Progress",
+        "Resolved",
+        "Closed",
+        "Rejected",
+      ],
+      default: "Submitted",
+    },
+
+    department: {
+     type: String,
+     required: true,
+   },
+
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          required: true,
+        },
+
+        remarks: {
+          type: String,
+          default: "",
+        },
+
+        updatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  
+  {
+    timestamps: true,
+  }
+);
+
+// Generate a complaint number before saving.
+complaintSchema.pre("save", function () {
+  if (!this.complaintNumber) {
+    this.complaintNumber =
+      "MRI-" +
+      Date.now().toString() +
+      "-" +
+      Math.floor(1000 + Math.random() * 9000);
+  }
+
+  if (this.isNew && this.statusHistory.length === 0) {
+    this.statusHistory.push({
+      status: this.status,
+      remarks: "Complaint registered",
+    });
+  }
+});
+
 
 module.exports = mongoose.model("Complaint", complaintSchema);

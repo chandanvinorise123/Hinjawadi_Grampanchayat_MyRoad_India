@@ -1,30 +1,18 @@
 import React, { useState } from "react";
 import "./login.css";
 import { useNavigate, Link } from "react-router-dom";
-import bannerImage from "../assets/login-banner.png";
+import bannerImage from "../assets/lg.png";
 
 const roles = [
-  {
-    value: "citizen",
-    label: "Citizen",
-  },
-  {
-    value: "staff",
-    label: "Staff",
-  },
-  {
-    value: "verifier",
-    label: "Verifier",
-  },
-  {
-    value: "admin",
-    label: "Admin",
-  },
+  { value: "citizen", label: "Citizen" },
+  { value: "staff", label: "Staff" },
+  { value: "verifier", label: "Verifier" },
+  { value: "admin", label: "Admin" },
 ];
 
 // Backend API
 const API_BASE_URL = "http://localhost:3200/api/auth";
-const STATS_API_URL = "http://localhost:3200/api/stats"; // ✅ Added for stats tracking
+const STATS_API_URL = "http://localhost:3200/api/stats"; // stats tracking
 
 const Login = () => {
   const navigate = useNavigate();
@@ -42,19 +30,11 @@ const Login = () => {
 
   // Handle input changes
   const handleChange = (e) => {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = e.target;
+    const { name, value, type, checked } = e.target;
 
     setLoginData((previousData) => ({
       ...previousData,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -67,16 +47,17 @@ const Login = () => {
     setLoginLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(loginData),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // identifier can be an email address or a 10-digit mobile number
+        body: JSON.stringify({
+          ...loginData,
+          identifier: loginData.identifier.trim(),
+        }),
+      });
 
       const data = await response.json();
 
@@ -87,8 +68,6 @@ const Login = () => {
         // LOGIN SUCCESS
         // ------------------------------------------
 
-        setLoginStatus("success");
-
         // Check that backend returned user
         if (!data.user) {
           throw new Error(
@@ -96,17 +75,12 @@ const Login = () => {
           );
         }
 
-        // ------------------------------------------
-        // IMPORTANT
+        setLoginStatus("success");
+
         // Save logged-in user
-        // ------------------------------------------
+        localStorage.setItem("user", JSON.stringify(data.user));
 
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        );
-
-        // ✅ ADD THIS: Record successful citizen login for statistics
+        // Record successful citizen login for statistics
         if (String(data.user.role).toLowerCase() === "citizen") {
           try {
             await fetch(`${STATS_API_URL}/login`, { method: "POST" });
@@ -116,42 +90,32 @@ const Login = () => {
           }
         }
 
-        // ------------------------------------------
         // Notify Navbar / other components
-        // ------------------------------------------
-
-        window.dispatchEvent(
-          new Event("authChange")
-        );
+        window.dispatchEvent(new Event("authChange"));
 
         // ------------------------------------------
-        // ✅ ROLE-BASED REDIRECT
+        // ROLE-BASED REDIRECT
         // Citizen → Home
         // Staff/Verifier/Admin → Dashboard
         // ------------------------------------------
-
         setTimeout(() => {
           const userRole = String(data.user.role || "").toLowerCase();
-          
+
           if (userRole === "citizen") {
-            // Citizen goes to Home page
             navigate("/");
           } else {
-            // Staff, Verifier, Admin go directly to Dashboard
             navigate("/dashboard");
           }
         }, 1000);
-
       } else {
         // ------------------------------------------
         // LOGIN FAILED
         // ------------------------------------------
-
         setLoginStatus("failed");
 
         setLoginError(
           data.message ||
-            "Incorrect username or password. Please try again."
+            "Incorrect email/mobile number or password. Please try again."
         );
       }
     } catch (error) {
@@ -172,44 +136,29 @@ const Login = () => {
 
   // Google Login
   const handleGoogleLogin = () => {
-    console.log(
-      "Continue with Google clicked"
-    );
+    console.log("Continue with Google clicked");
   };
 
   return (
     <div className="login-container">
-
       {/* ================================
           LOGIN CARD
       ================================= */}
-
       <div className="login-card">
-
         {/* ================================
             LEFT BANNER
         ================================= */}
-
         <div className="login-banner">
-          <img
-            src={bannerImage}
-            alt="Better Roads. Stronger Communities."
-          />
+          <img src={bannerImage} alt="Better Roads. Stronger Communities." />
         </div>
 
         {/* ================================
             RIGHT LOGIN SECTION
         ================================= */}
-
         <div className="login-section">
-
           <div className="login-box">
-
             {/* Heading */}
-
-            <h1>
-              Login
-            </h1>
+            <h1>Login</h1>
 
             <p className="login-subtitle">
               Welcome back! Please login to your account.
@@ -218,18 +167,16 @@ const Login = () => {
             {/* ================================
                 ERROR
             ================================= */}
-
             {loginStatus === "failed" && (
               <div className="error-banner">
                 {loginError ||
-                  "Incorrect username or password. Please try again."}
+                  "Incorrect email/mobile number or password. Please try again."}
               </div>
             )}
 
             {/* ================================
                 SUCCESS
             ================================= */}
-
             {loginStatus === "success" && (
               <div className="success-banner">
                 Login successful. Redirecting...
@@ -239,13 +186,9 @@ const Login = () => {
             {/* ================================
                 LOGIN FORM
             ================================= */}
-
             <form onSubmit={handleSubmit}>
-
               {/* ROLE */}
-
               <div className="input-group">
-
                 <select
                   name="role"
                   value={loginData.role}
@@ -253,39 +196,29 @@ const Login = () => {
                   aria-label="Login as"
                   required
                 >
-
                   {roles.map((role) => (
-                    <option
-                      key={role.value}
-                      value={role.value}
-                    >
+                    <option key={role.value} value={role.value}>
                       Login as {role.label}
                     </option>
                   ))}
-
                 </select>
-
               </div>
 
-              {/* EMAIL / USERNAME */}
-
+              {/* Email / Mobile Number */}
               <div className="input-group">
-
                 <input
                   type="text"
                   name="identifier"
-                  placeholder="Email Address"
+                  placeholder="Email or Mobile Number"
                   value={loginData.identifier}
                   onChange={handleChange}
+                  autoComplete="username"
                   required
                 />
-
               </div>
 
               {/* PASSWORD */}
-
               <div className="input-group">
-
                 <input
                   type="password"
                   name="password"
@@ -294,49 +227,35 @@ const Login = () => {
                   onChange={handleChange}
                   required
                 />
-
               </div>
 
               {/* ================================
                   REMEMBER + FORGOT PASSWORD
               ================================= */}
-
               <div className="login-options">
-
                 <label className="remember">
-
                   <input
                     type="checkbox"
                     name="remember"
                     checked={loginData.remember}
                     onChange={handleChange}
                   />
-
-                  <span>
-                    Remember me
-                  </span>
-
+                  <span>Remember me</span>
                 </label>
 
-                <Link
-                  to="/forgot-password"
-                  className="forgot-password"
-                >
+                <Link to="/forgot-password" className="forgot-password">
                   Forgot Password?
                 </Link>
-
               </div>
 
               {/* ================================
                   LOGIN BUTTON
               ================================= */}
-
               <button
                 type="submit"
                 className="login-button"
                 disabled={loginLoading}
               >
-
                 {loginLoading ? (
                   "Logging in..."
                 ) : (
@@ -344,57 +263,38 @@ const Login = () => {
                     Login <span>→</span>
                   </>
                 )}
-
               </button>
-
             </form>
 
             {/* ================================
                 DIVIDER
             ================================= */}
-
             <div className="divider">
-              <span>
-                or
-              </span>
+              <span>or</span>
             </div>
 
             {/* ================================
                 GOOGLE LOGIN
             ================================= */}
-
             <button
               type="button"
               className="google-button"
               onClick={handleGoogleLogin}
             >
-
               <span className="google-icon"></span>
-
               Continue with Google
-
             </button>
 
             {/* ================================
                 SIGN UP
             ================================= */}
-
             <p className="signup-text">
-
               Don't have an account?
-
-              <Link to="/signup">
-                Sign Up
-              </Link>
-
+              <Link to="/signup">Sign Up</Link>
             </p>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 };

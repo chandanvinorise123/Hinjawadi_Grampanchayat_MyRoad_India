@@ -2,10 +2,26 @@ import React, { useState } from "react";
 import "./issuecategory.css";
 import bannerImage from "../assets/ic.png";
 
+// Realistic full-colour icons (emoji style)
+const Emoji = ({ symbol }) => (
+  <span className="emoji-icon" role="img" aria-hidden="true">
+    {symbol}
+  </span>
+);
+
+const icons = {
+  road: <Emoji symbol="🛣️" />,
+  drain: <Emoji symbol="🕳️" />,
+  water: <Emoji symbol="🚰" />,
+  light: <Emoji symbol="💡" />,
+  safety: <Emoji symbol="⚠️" />,
+  bridge: <Emoji symbol="🌉" />,
+};
+
 const issueCategories = [
   {
     num: "01",
-    icon: "🛣️",
+    icon: icons.road,
     title: "Road Issues",
     summary: "Potholes, cracks, and other problems affecting road surfaces.",
     issues: [
@@ -24,7 +40,7 @@ const issueCategories = [
   },
   {
     num: "02",
-    icon: "🚰",
+    icon: icons.drain,
     title: "Sewerage & Drain Issues",
     summary: "Blocked drains, sewage overflow, and related infrastructure faults.",
     issues: [
@@ -45,7 +61,7 @@ const issueCategories = [
   },
   {
     num: "03",
-    icon: "💧",
+    icon: icons.water,
     title: "Drinking Water Issues",
     summary: "Supply, quality, and pipeline issues affecting drinking water access.",
     issues: [
@@ -67,7 +83,7 @@ const issueCategories = [
   },
   {
     num: "04",
-    icon: "💡",
+    icon: icons.light,
     title: "Streetlight Issues",
     summary: "Non-functional or damaged streetlights and related electrical faults.",
     issues: [
@@ -81,7 +97,7 @@ const issueCategories = [
   },
   {
     num: "05",
-    icon: "🚧",
+    icon: icons.safety,
     title: "Road Safety Issues",
     summary: "Signage, markings, and safety hazards along roads.",
     issues: [
@@ -98,7 +114,7 @@ const issueCategories = [
   },
   {
     num: "06",
-    icon: "🌉",
+    icon: icons.bridge,
     title: "Bridge & Culvert Issues",
     summary: "Structural and drainage issues affecting bridges and culverts.",
     issues: [
@@ -160,16 +176,16 @@ const IssueCategory = () => {
               type="button"
               className={`category-card ${activeCategory === i ? "active" : ""}`}
               onClick={() => handleCategorySelect(i)}
+              aria-pressed={activeCategory === i}
             >
-              <div className="category-top">
-                <span className="category-number">{category.num}</span>
-                <span className="category-icon">{category.icon}</span>
-              </div>
+              {/* Icon */}
+              <div className="category-icon">{category.icon}</div>
+
+              {/* Title */}
               <h4>{category.title}</h4>
+
+              {/* Description */}
               <p>{category.summary}</p>
-              <span className="category-link">
-                {activeCategory === i ? "Viewing sub-issues ↓" : "View sub-issues →"}
-              </span>
             </button>
           ))}
         </div>
