@@ -93,6 +93,8 @@ function App() {
           } 
         />
 
+        <Route path="/report" element={<ReportIssue />} />
+
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
         

@@ -79,9 +79,9 @@ const Blog = () => {
 
     <div className="page-hero-inner">
       <div className="hero-cta-row">
-        <button className="primary-btn" type="button">
+        {/* <button className="primary-btn" type="button">
           Report an Issue <span>→</span>
-        </button>
+        </button> */}
 
         {/* <div className="breadcrumb">
           Home / <b>Blog</b>

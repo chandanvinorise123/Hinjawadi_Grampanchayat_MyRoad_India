@@ -69,6 +69,73 @@
   position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
 }
 
+
+/* ================= GEO-TAGGING STAMP ================= */
+.pd-geo-stamp {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px;
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.pd-stamp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #cbd5e1;
+}
+
+.pd-stamp-header strong {
+  color: #0f172a;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pd-stamp-time {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pd-stamp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pd-stamp-address {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pd-stamp-coords {
+  display: flex;
+  justify-content: space-between;
+  font-family: monospace;
+  color: #3b82f6;
+  background: #eff6ff;
+  padding: 4px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.pd-stamp-accuracy {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-align: right;
+}
+
 .pd-camera-content { pointer-events: none; }
 .pd-camera-icon { font-size: 3.5rem; margin-bottom: 12px; }
 .pd-camera-text { margin: 0 0 8px 0; color: #1e3a8a; font-size: 1.1rem; font-weight: 700; }

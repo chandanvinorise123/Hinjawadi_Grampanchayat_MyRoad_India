@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import "./home.css";
 
 // ---- Hero background slider images (replace with your real assets) ----
@@ -79,6 +80,8 @@ const teamMembers = [
 ];
 
 const Home = () => {
+
+  const navigate = useNavigate();
   const { t } = useTranslation();
   
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -176,15 +179,24 @@ const Home = () => {
           </p>
 
           <div className="hero-buttons">
-            <button className="primary-btn" type="button">
-              Report an Issue <span>→</span>
-            </button>
+
+            <button
+                    className="primary-btn"
+                                        type="button"
+                        onClick={() => navigate("/report")}
+                            >
+                                Report an Issue <span>→</span>
+                        </button>
+
+
+
+          {/* 
             <button className="secondary-btn" type="button">
               Track Complaint
-            </button>
+            </button> */}
           </div>
 
-          <div className="hero-trust">
+          {/* <div className="hero-trust">
             <div>
               <b>17,438</b>
               <span>Issues reported</span>
@@ -197,7 +209,9 @@ const Home = () => {
               <b>4.2 days</b>
               <span>Avg. resolution time</span>
             </div>
-          </div>
+          </div> */}
+
+
         </div>
 
 

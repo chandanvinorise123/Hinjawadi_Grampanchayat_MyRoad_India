@@ -210,6 +210,8 @@
 
   flex-wrap: wrap;
 
+ 
+
 }
 
 .primary-btn,
@@ -226,7 +228,7 @@
 
   font-weight: 700;
 
-  font-size: 14.5px;
+  font-size: 20px;
 
   border-radius: var(--radius-sm);
 
@@ -237,6 +239,8 @@
   cursor: pointer;
 
   white-space: nowrap;
+
+   margin-left:600px ;
 
 }
 

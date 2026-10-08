@@ -332,6 +332,9 @@ const ReportIssue = () => {
                   Submit Report <span>→</span>
                 </button>
               </div>
+
+
+              
             </form>
           </div>
         ) : (

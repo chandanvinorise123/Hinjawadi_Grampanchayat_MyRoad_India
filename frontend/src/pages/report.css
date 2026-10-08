@@ -5,6 +5,7 @@
    has a premium elevated treatment.
    ============================================================ */
 
+/* ================= 1. VARIABLES & RESETS ================= */
 .report-page {
   --navy-900: #0b2447;
   --navy-700: #1b4586;
@@ -23,6 +24,7 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --field-height: 48px;
+  
   width: 100%;
   max-width: 100%;
   margin: 0;
@@ -34,8 +36,11 @@
 
 .report-page *,
 .report-page *::before,
-.report-page *::after { box-sizing: border-box; }
+.report-page *::after {
+  box-sizing: border-box;
+}
 
+/* ================= 2. TYPOGRAPHY ================= */
 .report-page h1,
 .report-page h2,
 .report-page h3,
@@ -45,70 +50,106 @@
   font-weight: 800;
 }
 
+.report-page .eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--saffron-dark);
+  margin-bottom: 10px;
+}
+
+.report-page .eyebrow.center {
+  text-align: center;
+}
+
+.report-page .eyebrow-light {
+  color: #ffd9a8;
+}
+
+/* ================= 3. LAYOUT & SECTIONS ================= */
 /* Normal sections. The hero is excluded from this padding. */
 .report-page > section:not(.page-hero-section) {
   padding: clamp(2.5rem, 2rem + 3vw, 5rem) clamp(1.25rem, 1rem + 2vw, 3rem);
 }
 
-.report-page .eyebrow {
-  font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
-  color: var(--saffron-dark); margin-bottom: 10px;
-}
-.report-page .eyebrow.center { text-align: center; }
-.report-page .eyebrow-light { color: #ffd9a8; }
-
-/* ================= PAGE HERO — full banner, no cropping ================= */
+/* ================= 4. PAGE HERO ================= */
 /* Removes the global section padding so the banner touches all edges */
 .report-page .page-hero-section {
   position: relative;
-  width: 100%; max-width: 100%;
-  margin: 0; padding: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
 }
 
 .report-page .page-hero {
   position: relative;
-  width: 100%; max-width: 100%;
+  width: 100%;
+  max-width: 100%;
   height: clamp(420px, 38vw, 620px);
   min-height: 420px;
   max-height: 620px;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   color: #fff;
-
   background-color: var(--navy-900);
   background-repeat: no-repeat;
   background-position: center center;
   /* The banner is a designed image with text and graphics: keep all of it visible */
   background-size: 100% 100%;
-
   display: flex;
   align-items: flex-end;
 }
 
 .report-page .hero-scrim {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
   background: linear-gradient(90deg, rgba(6,15,35,.18) 0%, rgba(8,20,42,.08) 40%, rgba(6,15,35,.02) 70%, rgba(6,15,35,0) 100%);
   pointer-events: none;
 }
 
 .report-page .page-hero-inner {
-  position: relative; z-index: 2;
-  width: 100%; max-width: 1200px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: clamp(1.5rem, 3vw, 3rem);
 }
-.report-page .breadcrumb { font-size: 13px; color: #93a3bf; margin-bottom: 16px; }
-.report-page .breadcrumb b { color: var(--saffron); }
-.report-page .page-hero h1 { color: #fff; font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem); margin-bottom: 14px; }
-.report-page .hero-lead { color: #c3d0e6; font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem); max-width: 560px; }
 
-/* ================= REPORT SHELL (premium card) ================= */
+.report-page .breadcrumb {
+  font-size: 13px;
+  color: #93a3bf;
+  margin-bottom: 16px;
+}
+
+.report-page .breadcrumb b {
+  color: var(--saffron);
+}
+
+.report-page .page-hero h1 {
+  color: #fff;
+  font-size: clamp(1.8rem, 1.4rem + 2vw, 2.6rem);
+  margin-bottom: 14px;
+}
+
+.report-page .hero-lead {
+  color: #c3d0e6;
+  font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem);
+  max-width: 560px;
+}
+
+/* ================= 5. REPORT SHELL (Premium Card) ================= */
 .report-page .report-shell {
   position: relative;
-  max-width: 960px; margin: 0 auto;
+  max-width: 960px;
+  margin: 0 auto;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -119,7 +160,9 @@
 .report-page .report-shell::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 5px;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: linear-gradient(90deg, var(--navy-900), var(--navy-700), var(--saffron));
@@ -136,9 +179,12 @@
   letter-spacing: -0.3px;
 }
 
-.report-page .step-note { font-size: 13.5px; color: var(--ink-soft); }
+.report-page .step-note {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
 
-/* ================= GRID LAYOUT ================= */
+/* ================= 6. GRID LAYOUT ================= */
 .report-page .report-grid {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -160,7 +206,7 @@
   border-top: 1px solid var(--line);
 }
 
-/* ================= FORM FIELDS (consistent sizing) ================= */
+/* ================= 7. FORM FIELDS (Consistent Sizing) ================= */
 .report-page .form-field {
   display: flex;
   flex-direction: column;
@@ -175,15 +221,12 @@
   letter-spacing: 0.1px;
 }
 
-.report-page .form-field input,
-.report-page .form-field select {
-  height: var(--field-height);
-  box-sizing: border-box;
-}
-
+/* Merged input, select, and textarea base styles to remove duplication */
 .report-page .form-field input,
 .report-page .form-field select,
 .report-page .form-field textarea {
+  height: var(--field-height);
+  box-sizing: border-box;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.4;
@@ -257,7 +300,7 @@
   pointer-events: none;
 }
 
-/* ================= LOCATION TOGGLE ================= */
+/* ================= 8. LOCATION TOGGLE ================= */
 .report-page .segmented-toggle {
   display: flex;
   width: 100%;
@@ -292,18 +335,20 @@
   background: var(--surface);
   border-radius: var(--radius-sm);
 }
+
 .report-page .location-status.success {
   color: var(--resolved);
   font-weight: 700;
   background: rgba(31, 138, 61, 0.08);
 }
+
 .report-page .location-status.error {
   color: var(--red);
   font-weight: 700;
   background: rgba(209, 52, 56, 0.08);
 }
 
-/* ================= UPLOAD DROPZONE ================= */
+/* ================= 9. UPLOAD DROPZONE ================= */
 .report-page .upload-field {
   height: 100%;
   display: flex;
@@ -390,48 +435,97 @@
   justify-content: center;
 }
 
-/* ================= RESULT / COMPLAINT NUMBER ================= */
+/* ================= 10. RESULT / COMPLAINT NUMBER ================= */
 .report-page .result-shell {
-  max-width: 520px; margin: 0 auto; text-align: center;
-  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   padding: clamp(2rem, 3vw, 3rem);
   box-shadow: 0 24px 60px -28px rgba(11, 36, 71, 0.28);
 }
+
 .report-page .result-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--resolved); color: #fff; font-size: 24px; font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--resolved);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
   margin-bottom: 18px;
 }
-.report-page .result-shell h2 {
-  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
-  color: var(--navy-900); margin-bottom: 14px; letter-spacing: 1px;
-}
-.report-page .result-note { font-size: 14px; color: var(--ink-soft); margin-bottom: 26px; }
-.report-page .result-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
 
-/* ================= BUTTONS ================= */
+.report-page .result-shell h2 {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
+  color: var(--navy-900);
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+}
+
+.report-page .result-note {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 26px;
+}
+
+.report-page .result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ================= 11. BUTTONS ================= */
 .report-page .primary-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: linear-gradient(120deg, var(--saffron), var(--saffron-dark));
-  color: #3a1e00; font-weight: 700; font-size: 14.5px;
-  border: none; border-radius: var(--radius-sm); padding: 14px 36px; cursor: pointer; white-space: nowrap;
+  color: #3a1e00;
+  font-weight: 700;
+  font-size: 14.5px;
+  margin-left: 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 36px;
+  cursor: pointer;
+  white-space: nowrap;
   font-family: inherit;
   box-shadow: 0 12px 24px -10px rgba(224, 127, 31, 0.55);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
 .report-page .primary-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 28px -10px rgba(224, 127, 31, 0.6);
 }
-.report-page .secondary-btn {
-  background: var(--surface-2); color: var(--navy-900); font-weight: 700; font-size: 14px;
-  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 13px 26px; cursor: pointer;
-  font-family: inherit; transition: background 0.15s;
-}
-.report-page .secondary-btn:hover { background: var(--surface); }
 
-/* ================= RESPONSIVE ================= */
+.report-page .secondary-btn {
+  background: var(--surface-2);
+  color: var(--navy-900);
+  font-weight: 700;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 13px 26px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.report-page .secondary-btn:hover {
+  background: var(--surface);
+}
+
+/* ================= 12. RESPONSIVE MEDIA QUERIES ================= */
 
 /* ---------- TABLET ---------- */
 @media (max-width: 1100px) {
@@ -443,8 +537,12 @@
 }
 
 @media (max-width: 860px) {
-  .report-page .report-grid { grid-template-columns: 1fr; }
-  .report-page .upload-dropzone { min-height: 240px; }
+  .report-page .report-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-page .upload-dropzone {
+    min-height: 240px;
+  }
 }
 
 /* ---------- MOBILE ---------- */
@@ -457,16 +555,36 @@
     background-size: cover;
     background-position: center center;
   }
-  .report-page .page-hero-inner { max-width: 100%; padding: 1.5rem; }
-  .report-page .result-actions { flex-direction: column; }
-  .report-page .result-actions button { width: 100%; }
+  .report-page .page-hero-inner {
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+  .report-page .result-actions {
+    flex-direction: column;
+  }
+  .report-page .result-actions button {
+    width: 100%;
+  }
 }
 
 /* ---------- SMALL MOBILE ---------- */
 @media (max-width: 480px) {
-  .report-page .page-hero { height: 360px; min-height: 360px; }
-  .report-page .page-hero-inner { padding: 1rem; }
-  .report-page .primary-btn { width: 100%; }
-  .report-page .segmented-toggle { height: auto; flex-direction: column; border-radius: var(--radius-sm); }
-  .report-page .segmented-toggle button { padding: 12px; }
+  .report-page .page-hero {
+    height: 360px;
+    min-height: 360px;
+  }
+  .report-page .page-hero-inner {
+    padding: 1rem;
+  }
+  .report-page .primary-btn {
+    width: 100%;
+  }
+  .report-page .segmented-toggle {
+    height: auto;
+    flex-direction: column;
+    border-radius: var(--radius-sm);
+  }
+  .report-page .segmented-toggle button {
+    padding: 12px;
+  }
 }
