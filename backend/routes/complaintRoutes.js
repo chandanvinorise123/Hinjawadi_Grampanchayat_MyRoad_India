@@ -207,7 +207,10 @@ router.get("/analytics", async (req, res) => {
         data.locationWise.map(
           (item) => ({
             label:
-              item._id || "Unknown",
+              item._id &&
+              typeof item._id === "object"
+                ? item._id.address || "Unknown"
+                : item._id || "Unknown",
             count: item.count,
           })
         ),

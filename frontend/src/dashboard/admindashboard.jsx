@@ -1637,7 +1637,7 @@ const AdminDashboard = () => {
                       <h5>Area / Location-Wise Complaints</h5>
                       {analytics.locationWise.map((item, i) => (
                         <div className="ad-bar-row" key={i}>
-                          <span className="ad-bar-label">{item.label}</span>
+                          <span className="ad-bar-label">{getLocationString(item.label)}</span>
                           <div className="ad-bar-track">
                             <div className="ad-bar-fill alt" style={{ width: `${(item.count / Math.max(1, ...analytics.locationWise.map(b => b.count))) * 100}%` }}></div>
                           </div>
@@ -1645,6 +1645,18 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                     </div>
+
+
+
+
+
+
+
+
+
+
+
+
 
                     {/* 3. Priority-Wise */}
                     <div className="ad-report-block">
@@ -1855,6 +1867,10 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
+
+
+
+              
 
               {/* COMPLAINT DETAILS */}
               {selected && (

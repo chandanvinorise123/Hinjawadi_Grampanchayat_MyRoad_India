@@ -2,92 +2,55 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const [user, setUser] = useState(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
   const location = useLocation();
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const stored = localStorage.getItem("user");
+    console.log("🛡️ ProtectedRoute: Checking authentication...");
+    const stored = localStorage.getItem("user");
+    console.log("📦 Raw localStorage 'user':", stored);
 
-        if (stored) {
-          const parsedUser = JSON.parse(stored);
-          setUser(parsedUser);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error(
-          "Error reading user from localStorage:",
-          error
-        );
-        setUser(null);
-      } finally {
-        setIsCheckingAuth(false);
+    if (!stored) {
+      console.warn("🚫 ProtectedRoute: No user in localStorage. Redirecting to /login");
+      setIsAllowed(false);
+      setIsChecking(false);
+      return;
+    }
+
+    try {
+      const user = JSON.parse(stored);
+      console.log("✅ ProtectedRoute: Parsed user object:", user);
+      console.log("👤 ProtectedRoute: User role is exactly -> '", user.role, "'");
+
+      const userRole = String(user.role || "").toLowerCase();
+      const hasRole = allowedRoles.includes(userRole);
+
+      console.log("🔑 ProtectedRoute: Allowed roles:", allowedRoles, "| Has role?", hasRole);
+
+      if (!hasRole) {
+        console.warn("🚫 ProtectedRoute: Role mismatch! Redirecting to /");
+        setIsAllowed(false);
+      } else {
+        console.log("🎉 ProtectedRoute: Access GRANTED. Rendering component.");
+        setIsAllowed(true);
       }
-    };
+    } catch (error) {
+      console.error("❌ ProtectedRoute: Failed to parse user from localStorage", error);
+      setIsAllowed(false);
+    } finally {
+      setIsChecking(false);
+    }
+  }, [allowedRoles]);
 
-    // Check authentication immediately
-    checkAuth();
-
-    // Listen for login/logout events
-    window.addEventListener("authChange", checkAuth);
-    window.addEventListener("storage", checkAuth);
-
-    return () => {
-      window.removeEventListener("authChange", checkAuth);
-      window.removeEventListener("storage", checkAuth);
-    };
-  }, []);
-
-  // ------------------------------------------
-  // WAIT UNTIL AUTHENTICATION CHECK IS COMPLETE
-  // ------------------------------------------
-  if (isCheckingAuth) {
-    return null;
+  if (isChecking) {
+    return <div style={{ padding: "50px", textAlign: "center", fontSize: "20px" }}>🔄 Verifying access...</div>;
   }
 
-  // ------------------------------------------
-  // USER NOT LOGGED IN
-  // ------------------------------------------
-  if (!user) {
-    return (
-      <Navigate
-        to="/Login"
-        state={{
-          from: location,
-          message: "Please login to access this page",
-        }}
-        replace
-      />
-    );
+  if (!isAllowed) {
+    return <Navigate to="/login" state={{ from: location, message: "Please login to access this page" }} replace />;
   }
 
-  // ------------------------------------------
-  // USER LOGGED IN BUT WRONG ROLE
-  // ------------------------------------------
-  if (
-    allowedRoles &&
-    !allowedRoles.includes(
-      String(user.role || "").toLowerCase()
-    )
-  ) {
-    return (
-      <Navigate
-        to="/"
-        state={{
-          message: "You do not have permission to access this page",
-        }}
-        replace
-      />
-    );
-  }
-
-  // ------------------------------------------
-  // AUTHENTICATED + CORRECT ROLE
-  // ------------------------------------------
   return children;
 };
 

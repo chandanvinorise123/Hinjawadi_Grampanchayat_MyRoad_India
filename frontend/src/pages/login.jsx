@@ -94,23 +94,22 @@ const Login = () => {
         window.dispatchEvent(new Event("authChange"));
 
         // ------------------------------------------
-        // ✅ FIXED: ROLE-BASED REDIRECT
+        // ✅ FIXED: IMMEDIATE ROLE-BASED REDIRECT (Removed setTimeout)
         // ------------------------------------------
-        setTimeout(() => {
-          const userRole = String(data.user.role || "").toLowerCase();
+        const userRole = String(data.user.role || "").toLowerCase();
+        console.log("🚀 Attempting to navigate to role:", userRole);
 
-          if (userRole === "citizen") {
-            navigate("/");
-          } else if (userRole === "admin") {
-            navigate("/admindashboard");
-          } else if (userRole === "staff") {
-            navigate("/staffdashboard");
-          } else if (userRole === "verifier") {
-            navigate("/verifierdashboard");
-          } else {
-            navigate("/dashboard"); // Fallback
-          }
-        }, 1000);
+        if (userRole === "citizen") {
+          navigate("/", { replace: true });
+        } else if (userRole === "admin") {
+          navigate("/admindashboard", { replace: true });
+        } else if (userRole === "staff") {
+          navigate("/staffdashboard", { replace: true });
+        } else if (userRole === "verifier") {
+          navigate("/verifierdashboard", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true }); // Fallback
+        }
         
       } else {
         // ------------------------------------------
