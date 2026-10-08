@@ -56,6 +56,13 @@ const API_BASE_URL = "http://localhost:3200/api";
 // Normalize MongoDB _id to id
 const normalizeId = (doc) => ({ ...doc, id: doc.id || doc._id });
 
+// ✅ HELPER: Safely extract location string whether it's an object or plain string
+const getLocationString = (loc) => {
+  if (!loc) return "Location pending";
+  if (typeof loc === 'object' && loc !== null) return loc.address || "Location pending";
+  return String(loc);
+};
+
 // Google Maps configuration
 const mapContainerStyle = {
   width: "100%",
@@ -589,18 +596,19 @@ const AdminDashboard = () => {
 
   // ---------------- COMPLAINT FILTERING ----------------
   const filteredComplaints = complaints.filter((c) => {
+    const locStr = getLocationString(c.location).toLowerCase();
     const matchesSearch =
       !searchTerm.trim() ||
       c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location.toLowerCase().includes(searchTerm.toLowerCase());
+      locStr.includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "All" || c.category === categoryFilter;
     const matchesPriority = priorityFilter === "All" || c.priority === priorityFilter;
     return matchesSearch && matchesCategory && matchesPriority;
   });
 
   const mapGroups = complaints.reduce((groups, c) => {
-    const key = c.location || "Location pending";
+    const key = getLocationString(c.location);
     if (!groups[key]) groups[key] = [];
     groups[key].push(c);
     return groups;
@@ -1551,7 +1559,8 @@ const AdminDashboard = () => {
                                     {c.issue}
                                   </div>
                                 </td>
-                                <td>{c.location}</td>
+                                {/* ✅ FIX 1: Safely render location */}
+                                <td>{getLocationString(c.location)}</td>
                                 <td>
                                   <span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span>
                                 </td>
@@ -1683,6 +1692,7 @@ const AdminDashboard = () => {
                   <div className="ad-loading">No analytics data available.</div>
                 )}
               </div>
+              
 
               {/* ================= MAP DASHBOARD (NEW) ================= */}
               <div className="ad-panel ad-form-panel" id="map-dashboard">
@@ -1756,6 +1766,7 @@ const AdminDashboard = () => {
                       />
                     ))}
 
+
                     {selectedMapComplaint && (
                       <InfoWindow
                         position={{ lat: selectedMapComplaint.lat, lng: selectedMapComplaint.lng }}
@@ -1786,8 +1797,9 @@ const AdminDashboard = () => {
                               {selectedMapComplaint.priority}
                             </span>
                           </p>
+                          {/* ✅ FIX 2: Safely render location in InfoWindow */}
                           <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Location:</strong> {selectedMapComplaint.location}
+                            <strong>Location:</strong> {getLocationString(selectedMapComplaint.location)}
                           </p>
                           <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
                             <strong>Citizen:</strong> {selectedMapComplaint.citizenName}
@@ -1861,7 +1873,8 @@ const AdminDashboard = () => {
                     </div>
                     <div className="ad-detail-item">
                       <span>Location</span>
-                      <b>{selected.location}</b>
+                      {/* ✅ FIX 3: Safely render location in details */}
+                      <b>{getLocationString(selected.location)}</b>
                     </div>
                     <div className="ad-detail-item">
                       <span>Date Reported</span>

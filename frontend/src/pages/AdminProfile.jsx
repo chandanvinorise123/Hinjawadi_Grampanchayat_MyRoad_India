@@ -3,6 +3,15 @@ import "./adminprofile.css";
 
 const API_BASE_URL = "http://localhost:3200/api";
 
+// ✅ HELPER: Safely extract address string whether it's an object or plain string
+const getAddressString = (addr) => {
+  if (!addr) return "";
+  if (typeof addr === 'object' && addr !== null) {
+    return addr.address || ""; // Extract the string from the object
+  }
+  return String(addr);
+};
+
 const AdminProfile = ({ adminId = "ADM001", onBack }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +65,8 @@ const AdminProfile = ({ adminId = "ADM001", onBack }) => {
             contact: admin.contact || "",
             gender: admin.gender || "",
             profilePhoto: admin.profilePhoto || "",
-            address: admin.address || "",
+            // ✅ FIX: Safely extract address string to prevent object crash
+            address: getAddressString(admin.address || admin.location),
           });
           setPreferences({
             language: admin.language || "English",

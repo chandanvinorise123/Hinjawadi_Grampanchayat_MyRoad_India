@@ -94,19 +94,24 @@ const Login = () => {
         window.dispatchEvent(new Event("authChange"));
 
         // ------------------------------------------
-        // ROLE-BASED REDIRECT
-        // Citizen → Home
-        // Staff/Verifier/Admin → Dashboard
+        // ✅ FIXED: ROLE-BASED REDIRECT
         // ------------------------------------------
         setTimeout(() => {
           const userRole = String(data.user.role || "").toLowerCase();
 
           if (userRole === "citizen") {
             navigate("/");
+          } else if (userRole === "admin") {
+            navigate("/admindashboard");
+          } else if (userRole === "staff") {
+            navigate("/staffdashboard");
+          } else if (userRole === "verifier") {
+            navigate("/verifierdashboard");
           } else {
-            navigate("/dashboard");
+            navigate("/dashboard"); // Fallback
           }
         }, 1000);
+        
       } else {
         // ------------------------------------------
         // LOGIN FAILED

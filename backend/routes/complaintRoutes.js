@@ -18,13 +18,30 @@ const {
 // =====================================================
 // ROUTE FILE LOAD CHECK
 // =====================================================
-
 console.log("✅ complaintRoutes.js loaded successfully");
+
+// =====================================================
+// ✅ ADDED: GET ALL COMPLAINTS (For Admin Dashboard)
+// =====================================================
+router.get("/", async (req, res) => {
+  try {
+    const complaints = await Complaint.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      complaints,
+    });
+  } catch (error) {
+    console.error("Fetch all complaints error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch complaints",
+    });
+  }
+});
 
 // =====================================================
 // UPLOAD DIRECTORY
 // =====================================================
-
 const uploadDir = path.join(__dirname, "../uploads");
 
 if (!fs.existsSync(uploadDir)) {
@@ -36,7 +53,6 @@ if (!fs.existsSync(uploadDir)) {
 // =====================================================
 // MULTER CONFIGURATION
 // =====================================================
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -75,7 +91,6 @@ const upload = multer({
 // =====================================================
 // TEST ROUTE
 // =====================================================
-
 router.get("/test", (req, res) => {
   console.log(
     "✅ GET /api/complaints/test"
@@ -90,7 +105,6 @@ router.get("/test", (req, res) => {
 // =====================================================
 // ANALYTICS
 // =====================================================
-
 router.get("/analytics", async (req, res) => {
   try {
     const aggregationResult =
@@ -248,7 +262,6 @@ router.get("/analytics", async (req, res) => {
 // GET MY COMPLAINTS
 // IMPORTANT: This is the route your frontend needs.
 // =====================================================
-
 router.get(
   "/my/:citizenId",
   (req, res, next) => {
@@ -277,7 +290,6 @@ router.get(
 // =====================================================
 // GET SINGLE COMPLAINT / TRACK
 // =====================================================
-
 router.get(
   "/track/:complaintId",
   getComplaintById
@@ -286,7 +298,6 @@ router.get(
 // =====================================================
 // CREATE COMPLAINT
 // =====================================================
-
 router.post(
   "/",
   upload.array("images", 5),
@@ -296,7 +307,6 @@ router.post(
 // =====================================================
 // UPDATE COMPLAINT
 // =====================================================
-
 router.put(
   "/:id",
   updateComplaint
@@ -305,7 +315,6 @@ router.put(
 // =====================================================
 // DELETE COMPLAINT
 // =====================================================
-
 router.delete(
   "/:id",
   deleteComplaint
@@ -314,5 +323,4 @@ router.delete(
 // =====================================================
 // EXPORT ROUTER
 // =====================================================
-
 module.exports = router;

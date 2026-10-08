@@ -1,9 +1,39 @@
 const express = require("express");
 const router = express.Router();
 
-const Complaint = require("../models/Map");
+// ✅ FIXED: Changed "../models/Map" to "../models/Complaint"
+const Complaint = require("../models/Complaint");
 
-// GET /api/complaints/geocode?address=...
+// =====================================================
+// ✅ ADDED: GET ALL COMPLAINTS FOR MAP (For Admin Dashboard)
+// =====================================================
+router.get("/complaints", async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      "location.coordinates": { $exists: true, $ne: [0, 0] }
+    }).select("complaintNumber category issue location status priority citizenName date description photos");
+    
+    const formattedComplaints = complaints.map(c => ({
+      ...c.toObject(),
+      id: c._id,
+      lat: c.location.coordinates[1],
+      lng: c.location.coordinates[0]
+    }));
+
+    res.status(200).json({
+      success: true,
+      complaints: formattedComplaints
+    });
+  } catch (error) {
+    console.error("Fetch map complaints error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch map complaints"
+    });
+  }
+});
+
+// GET /api/map/geocode?address=...
 router.get("/geocode", async (req, res) => {
   try {
     const { address } = req.query;
@@ -64,7 +94,7 @@ router.get("/geocode", async (req, res) => {
   }
 });
 
-// PATCH /api/complaints/:id/location
+// PATCH /api/map/:id/location
 // Update complaint coordinates
 router.patch("/:id/location", async (req, res) => {
   try {
@@ -90,8 +120,7 @@ router.patch("/:id/location", async (req, res) => {
       req.params.id,
       {
         $set: {
-          lat,
-          lng,
+          "location.coordinates": [lng, lat], // ✅ FIXED: Updated to match GeoJSON format
         },
       },
       {
