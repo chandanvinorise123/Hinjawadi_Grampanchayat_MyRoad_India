@@ -1,0 +1,288 @@
+/* ============================================================
+   MYROAD INDIA — ACTION / WORK MANAGEMENT PAGE STYLES
+   ============================================================ */
+
+.awm-shell {
+  --navy-900: #0b2447;
+  --navy-700: #1b4586;
+  --saffron: #ff9933;
+  --saffron-dark: #e07f1f;
+  --white: #ffffff;
+  --surface: #f4f6f9;
+  --surface-2: #eef1f6;
+  --line: #e2e6ee;
+  --ink: #161b26;
+  --ink-soft: #4b5567;
+  --ink-faint: #8a93a6;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+
+  min-height: 100vh;
+  background: var(--surface);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  padding: 32px clamp(16px, 4vw, 64px);
+}
+
+/* Header */
+.awm-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.awm-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.awm-back-btn:hover {
+  background: var(--surface-2);
+  color: var(--navy-900);
+  border-color: var(--navy-700);
+}
+
+.awm-header h2 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--navy-900);
+  margin: 0;
+}
+
+.awm-container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Selector Card */
+.awm-selector-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(11, 36, 71, 0.04);
+}
+
+.awm-selector-card label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.awm-selector-card select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  outline: none;
+  cursor: pointer;
+}
+
+.awm-selector-card select:focus {
+  border-color: var(--navy-700);
+}
+
+/* Form Card */
+.awm-form-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(11, 36, 71, 0.04);
+}
+
+.awm-form-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.awm-form-header h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin: 0 0 4px 0;
+}
+
+.awm-form-header p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+/* Form Grid & Fields */
+.awm-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 4px;
+}
+
+.awm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.awm-full-width {
+  grid-column: 1 / -1;
+}
+
+.awm-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.awm-field input,
+.awm-field textarea,
+.awm-status-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.awm-field input:focus,
+.awm-field textarea:focus,
+.awm-status-select:focus {
+  outline: none;
+  border-color: var(--navy-700);
+  box-shadow: 0 0 0 3px rgba(27, 69, 134, 0.1);
+}
+
+.awm-field textarea {
+  resize: vertical;
+}
+
+/* Photo Upload */
+.awm-photo-upload {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.awm-photo-upload:hover {
+  border-color: var(--saffron);
+  background: #fff6ea;
+}
+
+.awm-photo-upload span {
+  font-size: 13px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.awm-photo-upload input {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Form Actions */
+.awm-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.awm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--saffron);
+  color: #3a1e00;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.awm-btn-primary:hover {
+  background: var(--saffron-dark);
+  transform: translateY(-1px);
+}
+
+.awm-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  color: var(--navy-900);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.awm-btn-outline:hover {
+  border-color: var(--navy-700);
+  color: var(--navy-700);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .awm-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .awm-selector-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .awm-form-actions {
+    flex-direction: column;
+  }
+  .awm-btn-primary, .awm-btn-outline {
+    width: 100%;
+    justify-content: center;
+  }
+}
