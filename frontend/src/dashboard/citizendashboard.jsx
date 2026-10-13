@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./citizendashboard.css";
 import logo from "../assets/logo.jpeg"; // ⚠ make sure this file name + extension exist in src/assets
-import MyProfile from "../Citizenprofiledashboard/MyProfile";
 
 const API_URL = "http://localhost:3200/api/complaints";
 
