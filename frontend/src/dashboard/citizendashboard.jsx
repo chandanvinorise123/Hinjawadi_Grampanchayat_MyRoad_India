@@ -680,9 +680,8 @@ const CitizenDashboard = () => {
                     {lifecycleStages.map((stage, index) => (
                       <div className="cdp-track-progress-item" key={stage}>
                         <div
-                          className={`cdp-track-progress-dot ${
-                            index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"
-                          }`}
+                          className={`cdp-track-progress-dot ${index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"
+                            }`}
                         >
                           {index < trackedStage ? "✓" : index + 1}
                         </div>
@@ -880,13 +879,12 @@ const CitizenDashboard = () => {
                       {lifecycleStages.map((stage, i) => (
                         <div className="cdp-lc-item" key={i}>
                           <div
-                            className={`cdp-lc-dot ${
-                              i < selectedComplaint.stage
+                            className={`cdp-lc-dot ${i < selectedComplaint.stage
                                 ? "done"
                                 : i === selectedComplaint.stage
-                                ? "now"
-                                : "pend"
-                            }`}
+                                  ? "now"
+                                  : "pend"
+                              }`}
                           ></div>
                           <div className="cdp-lc-body">
                             <b>{stage}</b>

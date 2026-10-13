@@ -41,7 +41,6 @@ app.use(
       "http://localhost:5101",
       "http://127.0.0.1:5101",
     ],
-
     credentials: true,
   })
 );
@@ -68,97 +67,56 @@ connectDB();
 // API ROUTES
 // =====================================================
 
-app.use(
-  "/api/auth",
-  authRoutes
-);
+app.use("/api/auth", authRoutes);
 
-app.use(
-  "/api",
-  userRoutes
-);
+app.use("/api", userRoutes);
 
-app.use(
-  "/api/users",
-  userRoutes
-);
+app.use("/api/users", userRoutes);
 
 // =====================================================
 // COMPLAINT ROUTES
 // =====================================================
 
-console.log(
-  "🔗 Registering complaint routes at /api/complaints"
-);
-
-app.use(
-  "/api/complaints",
-  complaintRoutes
-);
-
-console.log(
-  "✅ Complaint routes registered"
-);
+app.use("/api/complaints", complaintRoutes);
 
 // =====================================================
 // MAP ROUTES
 // =====================================================
 
 try {
-  const mapRoutes =
-    require("./routes/mapRoutes");
+  const mapRoutes = require("./routes/mapRoutes");
 
-  app.use(
-    "/api/map",
-    mapRoutes
-  );
-
-  console.log(
-    "✅ Map routes loaded"
-  );
+  app.use("/api/map", mapRoutes);
 } catch (error) {
-  console.log(
-    "ℹ️ mapRoutes.js not found. Skipping map routes."
-  );
+  if (
+    error.code === "MODULE_NOT_FOUND" &&
+    error.message.includes("./routes/mapRoutes")
+  ) {
+    // Optional map routes are not available.
+  } else {
+    throw error;
+  }
 }
 
 // =====================================================
 // OTHER ROUTES
 // =====================================================
 
-app.use(
-  "/api/stats",
-  statRoutes
-);
+app.use("/api/stats", statRoutes);
 
-app.use(
-  "/api/notifications",
-  notificationRoutes
-);
+app.use("/api/notifications", notificationRoutes);
 
-app.use(
-  "/api/admin",
-  adminProfileRoutes
-);
+app.use("/api/admin", adminProfileRoutes);
 
-app.use(
-  "/api/admin",
-  adminManagementRoutes
-);
+app.use("/api/admin", adminManagementRoutes);
 
-app.use(
-  "/api/photos",
-  photoRoutes
-);
+app.use("/api/photos", photoRoutes);
 
 // =====================================================
 // STATIC UPLOADS
 // =====================================================
 
-app.use(
-  "/uploads",
-  express.static("uploads")
-);
+app.use("/uploads", express.static("uploads"));
 
 // =====================================================
 // ROOT
@@ -175,10 +133,6 @@ app.get("/", (req, res) => {
 // =====================================================
 
 app.use("/api", (req, res) => {
-  console.error(
-    `❌ API route not found: ${req.method} ${req.originalUrl}`
-  );
-
   res.status(404).json({
     success: false,
     message: `API route not found: ${req.method} ${req.originalUrl}`,
@@ -189,56 +143,28 @@ app.use("/api", (req, res) => {
 // GLOBAL ERROR HANDLER
 // =====================================================
 
-app.use(
-  (error, req, res, next) => {
-    console.error(
-      "❌ Global server error:",
-      error
-    );
+app.use((error, req, res, next) => {
+  console.error("Global server error:", error);
 
-    res.status(
-      error.status || 500
-    ).json({
-      success: false,
-      message:
-        error.message ||
-        "Internal server error",
-    });
-  }
-);
+  res.status(error.status || 500).json({
+    success: false,
+    message: error.message || "Internal server error",
+  });
+});
 
 // =====================================================
 // START SERVER
 // =====================================================
 
-const PORT =
-  process.env.PORT || 3200;
+const PORT = process.env.PORT || 3200;
 
-app.listen(
-  PORT,
-  () => {
-    console.log(
-      "======================================"
-    );
+app.listen(PORT, () => {
+  console.log(
+    `MyRoad India Backend running on http://localhost:${PORT}`
+  );
 
-    console.log(
-      `🚀 MyRoad India Backend running on port ${PORT}`
-    );
+  
 
-    console.log(
-      `🌐 http://localhost:${PORT}`
-    );
 
-    console.log(
-      `🧪 Test: http://localhost:${PORT}/api/complaints/test`
-    );
 
-    console.log(
-      `📋 My Complaints: http://localhost:${PORT}/api/complaints/my/:citizenId`
-    );
-
-    console.log(
-      "======================================"
-    );
-  }
-);
+});
