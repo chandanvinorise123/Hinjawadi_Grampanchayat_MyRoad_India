@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 
+
 // ---- Hero background slider images (replace with your real assets) ----
 import heroImage1 from "../assets/r1.jpg";
 import heroImage2 from "../assets/r2.jpg";

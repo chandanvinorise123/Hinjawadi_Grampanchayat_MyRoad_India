@@ -6,6 +6,14 @@ import MyProfile from "../Citizenprofiledashboard/MyProfile";
 
 const API_URL = "http://localhost:3200/api/complaints";
 
+/*
+ * ✅ SINGLE SOURCE OF TRUTH for the Report page route.
+ * This MUST match the path in App.jsx, e.g.
+ *   <Route path="/reportissue" element={<Report />} />
+ * If your route is different (e.g. "/report"), change it ONLY here.
+ */
+const REPORT_ROUTE = "/reportissue";
+
 const lifecycleStages = [
   "Complaint Registered",
   "Complaint Verified",
@@ -203,6 +211,11 @@ const CitizenDashboard = () => {
 
   const [showProfile, setShowProfile] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  // ---------------- GO TO REPORT PAGE ----------------
+  const goToReportIssue = () => {
+    navigate(REPORT_ROUTE);
+  };
 
   // ---------------- FETCH MY COMPLAINTS ----------------
   const fetchMyComplaints = async () => {
@@ -493,9 +506,11 @@ const CitizenDashboard = () => {
 
         <div className="cdp-sb-label">Citizen Functions</div>
         <nav className="cdp-sb-nav">
-          <button type="button" className="cdp-sb-link" onClick={() => navigate("/reportissue")}>
+          {/* ✅ FIXED: uses the shared REPORT_ROUTE */}
+          <button type="button" className="cdp-sb-link" onClick={goToReportIssue}>
             <Icons.Report /> Report an Issue
           </button>
+
           <button type="button" className="cdp-sb-link" onClick={() => scrollTo("my-activity")}>
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
@@ -562,7 +577,7 @@ const CitizenDashboard = () => {
               <span className="cdp-tb-dot"></span>
             </button>
 
-            {/* <button className="cdp-btn-primary" type="button" onClick={() => navigate("/reportissue")}>
+            {/* <button className="cdp-btn-primary" type="button" onClick={goToReportIssue}>
               + Report an Issue
             </button> */}
 
@@ -665,8 +680,9 @@ const CitizenDashboard = () => {
                     {lifecycleStages.map((stage, index) => (
                       <div className="cdp-track-progress-item" key={stage}>
                         <div
-                          className={`cdp-track-progress-dot ${index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"
-                            }`}
+                          className={`cdp-track-progress-dot ${
+                            index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"
+                          }`}
                         >
                           {index < trackedStage ? "✓" : index + 1}
                         </div>
@@ -864,12 +880,13 @@ const CitizenDashboard = () => {
                       {lifecycleStages.map((stage, i) => (
                         <div className="cdp-lc-item" key={i}>
                           <div
-                            className={`cdp-lc-dot ${i < selectedComplaint.stage
-                              ? "done"
-                              : i === selectedComplaint.stage
+                            className={`cdp-lc-dot ${
+                              i < selectedComplaint.stage
+                                ? "done"
+                                : i === selectedComplaint.stage
                                 ? "now"
                                 : "pend"
-                              }`}
+                            }`}
                           ></div>
                           <div className="cdp-lc-body">
                             <b>{stage}</b>
@@ -1045,7 +1062,8 @@ const CitizenDashboard = () => {
 
           {/* QUICK ACTIONS */}
           <div className="cdp-quick-row">
-            <button className="cdp-quick-card" type="button" onClick={() => navigate("/reportissue")}>
+            {/* ✅ FIXED: same route as the sidebar button */}
+            <button className="cdp-quick-card" type="button" onClick={goToReportIssue}>
               <div className="cdp-quick-ic navy">📍</div>
               <div>
                 <h5>Report a New Issue</h5>
