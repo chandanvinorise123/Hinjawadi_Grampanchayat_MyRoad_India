@@ -4,14 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
 
-
 // ---- Hero background slider images (replace with your real assets) ----
 import heroImage1 from "../assets/r1.jpg";
 import heroImage2 from "../assets/r2.jpg";
 import heroImage3 from "../assets/r3.jpg";
 import heroImage4 from "../assets/r4.png";
 import heroImage5 from "../assets/r5.jpg";
-
 
 // ---- TV preview video (replace with your real demo clip) ----
 import tvDemoVideo from "../assets/myRoadvideo.mp4";
@@ -22,11 +20,24 @@ import gallery2 from "../assets/r2.jpg";
 import gallery3 from "../assets/r3.jpg";
 import gallery4 from "../assets/r4.png";
 
+/*
+ * ✅ SINGLE SOURCE OF TRUTH for the Report page route.
+ * This MUST match the path in App.jsx, e.g.
+ *   <Route path="/reportissue" element={<Report />} />
+ * If your route is different (e.g. "/report"), change it ONLY here
+ * (and in citizendashboard.jsx).
+ */
+const REPORT_ROUTE = "/reportissue";
 
 const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
 
 const quickActions = [
-  { icon: "📍", title: "Report an Issue", desc: "Submit a photo, location & description" },
+  {
+    icon: "📍",
+    title: "Report an Issue",
+    desc: "Submit a photo, location & description",
+    path: REPORT_ROUTE, // ✅ FIXED: this card now knows where to go
+  },
   { icon: "🔍", title: "Track Complaint", desc: "Check status with your complaint ID" },
   { icon: "🗺️", title: "Issues on Map", desc: "View reported issues near you" },
   { icon: "📷", title: "Scan QR Code", desc: "Report from a roadside QR sign" },
@@ -81,13 +92,17 @@ const teamMembers = [
 ];
 
 const Home = () => {
-
   const navigate = useNavigate();
   const { t } = useTranslation();
-  
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tvPlaying, setTvPlaying] = useState(true);
   const videoRef = useRef(null);
+
+  // ✅ One function used by every "Report an Issue" button
+  const goToReportIssue = () => {
+    navigate(REPORT_ROUTE);
+  };
 
   // Automatic hero background slider
   useEffect(() => {
@@ -111,8 +126,8 @@ const Home = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.muted = false;   // 🔊 Turn audio ON
-      video.volume = 0.2;    // 🔉 20% volume
+      video.muted = false; // 🔊 Turn audio ON
+      video.volume = 0.2; // 🔉 20% volume
       video.play();
       setTvPlaying(true);
     } else {
@@ -121,7 +136,7 @@ const Home = () => {
     }
   };
 
-  // ✅ ADD THIS: Record a visit every time the home page mounts
+  // Record a visit every time the home page mounts
   useEffect(() => {
     const recordVisit = async () => {
       try {
@@ -132,15 +147,6 @@ const Home = () => {
     };
     recordVisit();
   }, []);
-
-
-  
-
-
-
-
-
-
 
   return (
     <main className="home-page">
@@ -158,8 +164,6 @@ const Home = () => {
 
         <div className="hero-scrim"></div>
 
-
-
         <div className="hero-content">
           <div className="hero-badge">
             <span className="live-dot"></span>
@@ -170,9 +174,6 @@ const Home = () => {
             Report Road &amp; Public <span>Infrastructure Issues</span>
           </h1>
 
-
-
-
           <p className="hero-description">
             Photograph the problem, share your location, and get a complaint
             number in seconds. Track every step — from verification to repair —
@@ -180,24 +181,20 @@ const Home = () => {
           </p>
 
           <div className="hero-buttons">
+            {/* ✅ FIXED: uses the shared REPORT_ROUTE */}
+            <button className="primary-btn" type="button" onClick={goToReportIssue}>
+              Report an Issue <span>→</span>
+            </button>
 
-            <button
-                    className="primary-btn"
-                                        type="button"
-                        onClick={() => navigate("/report")}
-                            >
-                                Report an Issue <span>→</span>
-                        </button>
-
-
-
-          {/* 
+            {/*
             <button className="secondary-btn" type="button">
               Track Complaint
-            </button> */}
+            </button>
+            */}
           </div>
 
-          {/* <div className="hero-trust">
+          {/*
+          <div className="hero-trust">
             <div>
               <b>17,438</b>
               <span>Issues reported</span>
@@ -210,16 +207,9 @@ const Home = () => {
               <b>4.2 days</b>
               <span>Avg. resolution time</span>
             </div>
-          </div> */}
-
-
+          </div>
+          */}
         </div>
-
-
-
-
-
-
 
         {/* Slider dots (hero background) */}
         {heroImages.length > 1 && (
@@ -236,9 +226,6 @@ const Home = () => {
           </div>
         )}
 
-
-
-
         {/* TV preview panel with actual video + play/pause */}
         <div className="tv-unit">
           <div className={`tv-frame ${!tvPlaying ? "tv-paused" : ""}`}>
@@ -250,22 +237,16 @@ const Home = () => {
             </div>
 
             <div className="tv-screen">
-
-
               <video ref={videoRef} autoPlay muted loop playsInline>
                 <source src={tvDemoVideo} type="video/mp4" />
               </video>
-
-
-
-
-
 
               <div className="tv-overlay-top">
                 <span className="dot"></span> Reporting a Pothole
               </div>
 
               <button
+                type="button"
                 className="tv-play-btn"
                 onClick={toggleTvPlayback}
                 aria-label="Play or pause preview"
@@ -290,17 +271,6 @@ const Home = () => {
         </div>
       </section>
 
-
-
-
-
-
-
-
-
-
-
-
       {/* ================= QUICK ACTIONS ================= */}
       <section className="quick-actions-section">
         <div className="section-heading">
@@ -310,7 +280,13 @@ const Home = () => {
 
         <div className="quick-actions-grid">
           {quickActions.map((item, i) => (
-            <button className="qa-card" key={i} type="button">
+            <button
+              className="qa-card"
+              key={i}
+              type="button"
+              /* ✅ FIXED: cards that have a path now navigate */
+              onClick={() => item.path && navigate(item.path)}
+            >
               <div className="qa-icon">{item.icon}</div>
               <h4>{item.title}</h4>
               <p>{item.desc}</p>
