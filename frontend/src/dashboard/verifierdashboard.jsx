@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import "./verifierdashboard.css";
 
-/* Physical Verification lifecycle, from the flow diagram:
-   Completed Work Received -> Physical Verification -> (Work Satisfied -> Verified | Work Not Satisfied -> Rejected -> Re-verification)
-   -> Verified -> Update Status as Verified -> Complaint Resolved/Closed -> Citizen Gets Status Update */
+import MyProfile from "../verifierprofiledashboard/MyProfile";
+import NewComplaints from "../verifierprofiledashboard/NewComplaints";
+import CompletedWork from "../verifierprofiledashboard/CompletedWork";
+import Reverification from "../verifierprofiledashboard/Reverification";
+import PhysicalVerification from "../verifierprofiledashboard/PhysicalVerification";
+import ComplaintHistory from "../verifierprofiledashboard/ComplaintHistory";
+import Notifications from "../verifierprofiledashboard/Notifications";
+import ViewLocation from "../verifierprofiledashboard/ViewLocation"; // Adjust path if 
 const lifecycleStages = [
   "Completed Work Received",
   "Physical Verification",
@@ -114,6 +119,45 @@ const seedQueue = [
   },
 ];
 
+const mockNotifications = [
+  {
+    id: 1,
+    category: "Work Submitted",
+    complaintNumber: "MRI-482913",
+    title: "Work Submitted for Verification",
+    message: "Staff has marked the work for 'Road Potholes' at Camp Road Bus Stop as completed. Please review the before/after photos and verify.",
+    time: "2 hours ago",
+    isRead: false
+  },
+  {
+    id: 2,
+    category: "Verification Required",
+    complaintNumber: "MRI-661120",
+    title: "Verification Required: Pipeline Leakage",
+    message: "The completed work for the pipeline leakage at Riverside Ward Pipeline is awaiting your physical verification. Action needed within 24 hours.",
+    time: "5 hours ago",
+    isRead: false
+  },
+  {
+    id: 3,
+    category: "Reassignment",
+    complaintNumber: "MRI-104488",
+    title: "Complaint Reassigned for Re-verification",
+    message: "Complaint MRI-104488 (Overflowing Garbage Bin) has been updated by the staff with new after-repair photos. It is now back in your queue for re-verification.",
+    time: "1 day ago",
+    isRead: true
+  },
+  {
+    id: 4,
+    category: "Pending Reminder",
+    complaintNumber: "MRI-291045",
+    title: "Pending Verification Reminder",
+    message: "Reminder: Complaint MRI-291045 (Light Not Working) has been pending verification for over 48 hours. Please prioritize this review.",
+    time: "2 days ago",
+    isRead: true
+  }
+];
+
 const VerifierDashboard = () => {
   const [verifier] = useState({
     name: "Ward Verifier",
@@ -123,19 +167,42 @@ const VerifierDashboard = () => {
     staffId: "VER-0087",
   });
 
+
+
   const [items, setItems] = useState(seedQueue);
   const [selectedId, setSelectedId] = useState(seedQueue[0].id);
   const [showMapView, setShowMapView] = useState(false);
   const [remarksDraft, setRemarksDraft] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
+  const [showNewComplaints, setShowNewComplaints] = useState(false);
+  const [showCompletedWork, setShowCompletedWork] = useState(false);
+  const [showReverification, setShowReverification] = useState(false);
+  const [showPhysicalVerification, setShowPhysicalVerification] = useState(false);
+  const [showComplaintHistory, setShowComplaintHistory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [showViewLocation, setShowViewLocation] = useState(false);
+
+
 
   const selected = items.find((c) => c.id === selectedId) || items[0];
 
-  const overviewStats = [
-    { label: "Total Complaints", value: items.length, icon: "🗂️", tone: "navy" },
-    { label: "Pending Verification", value: items.filter((c) => c.status === "pending" || c.status === "in_review").length, icon: "⏳", tone: "amber" },
+  // ✅ PREVIOUS 5 CARDS (First Grid Row)
+  const previousStats = [
+    { label: "Total Complaints", value: items.length, icon: "📊", tone: "navy" },
+    { label: "Pending Verification", value: items.filter((c) => c.status === "pending").length, icon: "⏳", tone: "amber" },
     { label: "Verified", value: items.filter((c) => c.status === "verified").length, icon: "✅", tone: "green" },
     { label: "Rejected", value: items.filter((c) => c.status === "rejected").length, icon: "⛔", tone: "red" },
-    { label: "Resolved", value: items.filter((c) => c.status === "resolved" || c.status === "notified").length, icon: "📁", tone: "green" },
+    { label: "Resolved", value: items.filter((c) => c.status === "resolved").length, icon: "📂", tone: "green" },
+  ];
+
+  // ✅ NEW 5 CARDS (Second Grid Row)
+  const newStats = [
+    { label: "Under Verification", value: items.filter((c) => c.status === "in_review").length, icon: "🔍", tone: "orange" },
+    { label: "Completed Work Awaiting", value: items.filter((c) => c.queue === "Completed Work").length, icon: "🛠️", tone: "navy" },
+    { label: "Rework / Correction", value: items.filter((c) => c.status === "rejected").length, icon: "🔄", tone: "red" },
+    { label: "Resolution Requests", value: items.filter((c) => c.queue === "Resolution Requests").length, icon: "📌", tone: "amber" },
+    { label: "Re-verification Queue", value: items.filter((c) => c.queue === "Re-verification").length, icon: "🔁", tone: "red" },
   ];
 
   const mapGroups = items.reduce((groups, c) => {
@@ -155,6 +222,135 @@ const VerifierDashboard = () => {
     scrollTo("verification-panel");
   };
 
+  const handleUpdateProfile = (updatedVerifier) => {
+    // In a real app, you would send this to your backend API
+    console.log("Profile updated:", updatedVerifier);
+  };
+
+  // ✅ Handler for Completed Work Verification
+  const handleCompletedWorkVerify = (id, action, remarks, dateTime) => {
+    setItems(
+      items.map((c) => {
+        if (c.id === id) {
+          if (action === "approve") {
+            return {
+              ...c,
+              status: "verified",
+              queue: "Resolution Requests", // Move to next stage
+              verifierRemarks: remarks,
+              verificationDateTime: dateTime,
+              log: [...c.log, { text: `Verified by ${verifier.name}: ${remarks}`, time: "just now" }]
+            };
+          } else {
+            return {
+              ...c,
+              status: "rejected",
+              queue: "Re-verification", // Send back to staff
+              verifierRemarks: remarks,
+              verificationDateTime: dateTime,
+              log: [...c.log, { text: `Rejected by ${verifier.name}: ${remarks}`, time: "just now" }]
+            };
+          }
+        }
+        return c;
+      })
+    );
+  };
+
+
+
+  const handleMarkNotifAsRead = (id) => {
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+  };
+
+  const handleMarkAllNotifsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+  };
+
+
+
+  // ✅ Handler for Physical Verification Submission
+  const handlePhysicalVerificationSubmit = (id, decision, remarks, dateTime) => {
+    setItems(
+      items.map((c) => {
+        if (c.id === id) {
+          const logEntry = {
+            text: `Physical Verification ${decision === 'approve' ? 'Approved' : 'Rejected'}: "${remarks}"`,
+            time: "just now"
+          };
+
+          if (decision === "approve") {
+            return {
+              ...c,
+              status: "verified",
+              queue: "Resolution Requests", // Moves to next stage
+              remarks: remarks,
+              verificationDateTime: dateTime,
+              log: [...c.log, logEntry]
+            };
+          } else {
+            return {
+              ...c,
+              status: "rejected",
+              queue: "Re-verification", // Sent back for correction
+              remarks: remarks,
+              previousRemarks: remarks, // Saves reason for the Re-verification page
+              verificationDateTime: dateTime,
+              log: [...c.log, logEntry]
+            };
+          }
+        }
+        return c;
+      })
+    );
+  };
+
+  // ✅ Handler for Re-verification Actions
+  const handleReverifyAction = (id, action, remarks, dateTime) => {
+    setItems(
+      items.map((c) => {
+        if (c.id === id) {
+          const logEntry = {
+            text: `${action === "approve" ? "Re-verification Approved" : "Rejected Again"} by ${verifier.name}: "${remarks}"`,
+            time: "just now"
+          };
+
+          if (action === "approve") {
+            return {
+              ...c,
+              status: "verified",
+              queue: "Resolution Requests", // Moves to final resolution stage
+              remarks: remarks,
+              verificationDateTime: dateTime,
+              log: [...c.log, logEntry, { text: "System: Assigned staff member notified of approval.", time: "just now" }]
+            };
+          } else {
+            // Stays in Re-verification queue but updates remarks
+            return {
+              ...c,
+              status: "rejected",
+              queue: "Re-verification",
+              remarks: remarks,
+              previousRemarks: remarks, // Update the previous remarks for the next loop
+              verificationDateTime: dateTime,
+              log: [...c.log, logEntry, { text: "System: Assigned staff member notified of rejection.", time: "just now" }]
+            };
+          }
+        }
+        return c;
+      })
+    );
+  };
+  // ✅ ADDED: Proper Logout Functionality
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("verifierData");
+      window.location.href = "/login";
+    }
+  };
+
   // ---------------- PHYSICAL VERIFICATION: compare, then approve or reject ----------------
   const approveWork = (id) => {
     setItems(
@@ -172,12 +368,12 @@ const VerifierDashboard = () => {
       items.map((c) =>
         c.id === id
           ? {
-              ...c,
-              status: "rejected",
-              queue: "Re-verification",
-              remarks: remarksDraft,
-              log: addLog(c.log, "Rejected — sent back for further action"),
-            }
+            ...c,
+            status: "rejected",
+            queue: "Re-verification",
+            remarks: remarksDraft,
+            log: addLog(c.log, "Rejected — sent back for further action"),
+          }
           : c
       )
     );
@@ -214,6 +410,91 @@ const VerifierDashboard = () => {
     .slice(0, 2)
     .toUpperCase();
 
+
+  if (showProfile) {
+    return (
+      <MyProfile
+        initialVerifier={verifier}
+        onBack={() => setShowProfile(false)}
+        onUpdate={handleUpdateProfile}
+      />
+    );
+  }
+
+  // ✅ FULL PAGE CONDITIONAL RENDERING - Shows NewComplaints as full page
+  if (showNewComplaints) {
+    return (
+      <NewComplaints
+        complaints={items}
+        onBack={() => setShowNewComplaints(false)}
+      />
+    );
+  }
+
+  // ✅ FULL PAGE CONDITIONAL RENDERING
+  if (showComplaintHistory) {
+    return (
+      <ComplaintHistory
+        complaints={items}
+        onBack={() => setShowComplaintHistory(false)}
+      />
+    );
+  }
+
+  // ✅ FULL PAGE CONDITIONAL RENDERING
+  if (showPhysicalVerification) {
+    return (
+      <PhysicalVerification
+        complaints={items}
+        onBack={() => setShowPhysicalVerification(false)}
+        onSubmitVerification={handlePhysicalVerificationSubmit}
+      />
+    );
+  }
+
+  // ✅ FULL PAGE CONDITIONAL RENDERING
+  if (showCompletedWork) {
+    return (
+      <CompletedWork
+        complaints={items}
+        onBack={() => setShowCompletedWork(false)}
+        onVerify={handleCompletedWorkVerify}
+      />
+    );
+  }
+
+  // ✅ FULL PAGE CONDITIONAL RENDERING
+  if (showReverification) {
+    return (
+      <Reverification
+        complaints={items}
+        onBack={() => setShowReverification(false)}
+        onReverify={handleReverifyAction}
+      />
+    );
+  }
+  if (showNotifications) {
+    return (
+      <Notifications
+        notifications={notifications}
+        onBack={() => setShowNotifications(false)}
+        onMarkAsRead={handleMarkNotifAsRead}
+        onMarkAllRead={handleMarkAllNotifsRead}
+      />
+    );
+  }
+
+    // ✅ FULL PAGE CONDITIONAL RENDERING
+  if (showViewLocation) {
+    return (
+      <ViewLocation 
+        complaints={items} 
+        onBack={() => setShowViewLocation(false)} 
+      />
+    );
+  }
+
+
   return (
     <div className="vd-shell">
       {/* ============ SIDEBAR ============ */}
@@ -226,50 +507,86 @@ const VerifierDashboard = () => {
           </div>
         </div>
 
+        {/* ✅ REORGANIZED & CLEAN SIDEBAR NAVIGATION */}
         <div className="vd-sb-label">Overview</div>
         <nav className="vd-sb-nav">
           <button type="button" className="vd-sb-link active" onClick={() => scrollTo("vd-top")}>
             📊 Dashboard
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("vd-profile")}>
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowProfile(true)}>
             👤 My Profile
           </button>
+
+
         </nav>
 
-        <div className="vd-sb-label">Pending Verifications</div>
+        <div className="vd-sb-label">Verification Queues</div>
         <nav className="vd-sb-nav">
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("queue-panel")}>
-            🆕 New Complaints
+
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowNewComplaints(true)}>
+            🆕New Complaints
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("queue-panel")}>
-            🧰 Completed Work
+
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowCompletedWork(true)}>
+            🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("queue-panel")}>
-            🔁 Re-verification
+
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowReverification(true)}>
+            🛠️Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("queue-panel")}>
-            📌 Resolution Requests
-            <span className="vd-sb-badge">{items.filter((c) => c.queue === "Resolution Requests").length}</span>
-          </button>
+
+
+
+
+
         </nav>
 
-        <div className="vd-sb-label">Verification</div>
+        <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
-          <button type="button" className="vd-sb-link" onClick={() => scrollTo("verification-panel")}>
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowPhysicalVerification(true)}>
             🔍 Physical Verification
           </button>
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowComplaintHistory(true)}>
+            📜 Complaint History
+          </button>
+
+          <button type="button" className="vd-sb-link" onClick={() => setShowNotifications(true)}>
+            🔔 Notifications
+            <span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span>
+          </button>
+
           <button
             type="button"
             className="vd-sb-link"
-            onClick={() => {
-              setShowMapView(true);
-              scrollTo("map-section");
-            }}
+            onClick={() => setShowViewLocation(true)}
           >
-            🗺️ View Location on Map
+            🗺️ View Location
+          </button>
+
+
+
+
+
+        </nav>
+
+        <div className="vd-sb-label">Account</div>
+        <nav className="vd-sb-nav">
+          <button
+            type="button"
+            className="vd-sb-link"
+            onClick={handleLogout}
+            style={{ color: "#ff6b6b", marginTop: "8px" }}
+          >
+            🚪 Logout
           </button>
         </nav>
 
@@ -316,9 +633,20 @@ const VerifierDashboard = () => {
             </div>
           </div>
 
-          {/* STAT CARDS — Dashboard Overview */}
+          {/* ✅ FIRST GRID ROW: Previous 5 Cards */}
           <div className="vd-stats-row">
-            {overviewStats.map((stat, i) => (
+            {previousStats.map((stat, i) => (
+              <div className={`vd-stat-card tone-${stat.tone}`} key={i}>
+                <div className="vd-stat-ic">{stat.icon}</div>
+                <div className="vd-stat-num">{stat.value}</div>
+                <div className="vd-stat-label">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ✅ SECOND GRID ROW: New 5 Cards */}
+          <div className="vd-stats-row" style={{ marginTop: "16px" }}>
+            {newStats.map((stat, i) => (
               <div className={`vd-stat-card tone-${stat.tone}`} key={i}>
                 <div className="vd-stat-ic">{stat.icon}</div>
                 <div className="vd-stat-num">{stat.value}</div>
@@ -398,15 +726,14 @@ const VerifierDashboard = () => {
                     return (
                       <div className="vd-lc-item" key={i}>
                         <div
-                          className={`vd-lc-dot ${
-                            selected.status === "rejected" && i === 1
+                          className={`vd-lc-dot ${selected.status === "rejected" && i === 1
                               ? "reject"
                               : i < currentIndex
-                              ? "done"
-                              : i === currentIndex
-                              ? "now"
-                              : "pend"
-                          }`}
+                                ? "done"
+                                : i === currentIndex
+                                  ? "now"
+                                  : "pend"
+                            }`}
                         ></div>
                         <div className="vd-lc-body">
                           <b>{stage}</b>
@@ -534,6 +861,8 @@ const VerifierDashboard = () => {
                     Update Status → Resolved / Closed
                   </button>
                 )}
+
+
 
                 {selected.status === "resolved" && (
                   <button className="vd-btn-primary" type="button" onClick={() => notifyCitizen(selected.id)}>

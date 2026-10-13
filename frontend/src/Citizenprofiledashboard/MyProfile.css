@@ -1,0 +1,432 @@
+/* ============================================================
+   MYROAD INDIA — CITIZEN PROFILE PAGE STYLES (Standalone)
+   ============================================================ */
+
+/* 1. CSS Variables & Base Layout */
+.cdp-profile-page {
+  --navy-900: #0b2447;
+  --navy-700: #1b4586;
+  --saffron: #ff9933;
+  --saffron-dark: #e07f1f;
+  --green: #128807;
+  --white: #ffffff;
+  --surface: #f4f6f9;
+  --surface-2: #eef1f6;
+  --line: #e2e6ee;
+  --ink: #161b26;
+  --ink-soft: #4b5567;
+  --ink-faint: #8a93a6;
+  --red: #d13438;
+  --resolved: #1f8a3d;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--surface);
+  padding: 32px clamp(16px, 4vw, 64px);
+}
+
+.cdp-profile-page *, .cdp-profile-page *::before, .cdp-profile-page *::after {
+  box-sizing: border-box;
+}
+
+/* 2. Header */
+.cdp-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.cdp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cdp-back-btn:hover {
+  background: var(--surface-2);
+  color: var(--navy-900);
+  border-color: var(--navy-700);
+  transform: translateX(-2px);
+}
+
+.cdp-profile-header h1 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(20px, 1.6rem + 0.5vw, 28px);
+  color: var(--navy-900);
+  font-weight: 800;
+  margin: 0;
+}
+
+.cdp-profile-subtitle {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+/* 3. Content Layout (NEW: Left/Right Split) */
+.cdp-profile-content {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.cdp-profile-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr; /* Left column fixed width, right column flexible */
+  gap: 24px;
+  align-items: start;
+}
+
+/* Makes the left profile card stick to the top while scrolling the right side */
+.cdp-sticky-card {
+  position: sticky;
+  top: 24px;
+}
+
+.cdp-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 4. Panels & Cards */
+.cdp-panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.cdp-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cdp-panel-head h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 15.5px;
+  color: var(--navy-900);
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Forms */
+.cdp-new-form {
+  padding: 20px 22px;
+}
+
+.cdp-form-row {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 4px;
+}
+
+.cdp-field {
+  margin-bottom: 16px;
+}
+
+.cdp-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.cdp-field input,
+.cdp-field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cdp-field input:disabled {
+  background: var(--surface);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.cdp-field input:focus:not(:disabled),
+.cdp-field textarea:focus {
+  outline: none;
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.18);
+}
+
+.cdp-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Profile Summary Card */
+.cdp-profile-card {
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.cdp-profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  margin: 0 auto;
+  background: linear-gradient(155deg, var(--navy-900), var(--navy-700));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  color: #fff;
+}
+
+.cdp-profile-card h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 17px;
+  color: var(--navy-900);
+  font-weight: 800;
+  margin: 14px 0 2px;
+}
+
+.cdp-profile-card > p {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-bottom: 18px;
+}
+
+.cdp-kv {
+  margin: 0;
+  text-align: left;
+}
+
+.cdp-kv > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--surface-2);
+  font-size: 13px;
+}
+
+.cdp-kv dt {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+.cdp-kv dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cdp-mono {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--navy-700);
+}
+
+.cdp-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cdp-badge-green {
+  background: #e8f6ec;
+  color: var(--resolved);
+}
+
+/* Security Hint */
+.cdp-security-hint {
+  padding: 20px 22px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--surface);
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* Delete Account Section */
+.cdp-danger-panel {
+  border-color: #f6c9c9;
+}
+
+.cdp-danger-body {
+  padding: 20px 22px;
+}
+
+.cdp-danger-body p {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.cdp-danger-form {
+  max-width: 420px;
+}
+
+.cdp-danger-form .cdp-form-actions {
+  justify-content: flex-start;
+}
+
+/* Buttons */
+.cdp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--saffron);
+  color: #3a1e00;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cdp-btn-primary:hover {
+  background: var(--saffron-dark);
+  transform: translateY(-1px);
+}
+
+.cdp-btn-primary.small {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+.cdp-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cdp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fff;
+  color: var(--navy-900);
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.cdp-btn-outline:hover {
+  border-color: var(--navy-700);
+  color: var(--navy-700);
+}
+
+.cdp-btn-outline.small {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+.cdp-btn-danger {
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cdp-btn-danger:hover {
+  background: #b91c1c;
+}
+
+.cdp-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Banners */
+.cdp-banner {
+  padding: 12px 16px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.cdp-banner.success {
+  background: #e8f6ec;
+  border-color: #bfe3ca;
+  color: var(--resolved);
+}
+
+.cdp-banner.error {
+  background: #fdecec;
+  border-color: #f6c9c9;
+  color: var(--red);
+}
+
+/* 5. Responsive Design */
+@media (max-width: 900px) {
+  .cdp-profile-grid {
+    grid-template-columns: 1fr; /* Stack into a single column */
+  }
+  
+  .cdp-sticky-card {
+    position: static;
+    order: -1; /* Puts the summary card on top on mobile/tablet */
+  }
+}
+
+@media (max-width: 480px) {
+  .cdp-profile-page {
+    padding: 20px 16px;
+  }
+
+  .cdp-form-actions {
+    flex-direction: column;
+  }
+
+  .cdp-btn-primary,
+  .cdp-btn-outline,
+  .cdp-btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+}

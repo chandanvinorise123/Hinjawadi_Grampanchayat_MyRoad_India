@@ -1,9 +1,16 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+// ================================
+// COMPONENTS
+// ================================
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
+import ProtectedRoute from "./components/ProtectedRoute";
 
+// ================================
+// PUBLIC PAGES
+// ================================
 import Home from "./pages/home";
 import Services from "./pages/services";
 import IssuesCategory from "./pages/issuecategory";
@@ -13,15 +20,12 @@ import HelpFaq from "./pages/helpfaq";
 import Login from "./pages/login";
 import Signup from "./pages/signup";
 import ReportIssue from "./pages/report";
-import Blog from "./pages/blog";  
+import Blog from "./pages/blog";
+import Dashboard from "./pages/dashboard"; // Main gateway dashboard
 
-import UserProfile from "./userprofiledashboard/userprofile";
-import Dashboard from "./pages/dashboard"; // ✅ Main gateway dashboard
-
-// ✅ Import ProtectedRoute
-import ProtectedRoute from "./components/ProtectedRoute";
-
-// ✅ Import Role-Specific Dashboards (for direct access if needed)
+// ================================
+// ROLE-SPECIFIC DASHBOARDS
+// ================================
 import CitizenDashboard from "./dashboard/citizendashboard";
 import StaffDashboard from "./dashboard/staffdashboard";
 import VerifierDashboard from "./dashboard/verifierdashboard";
@@ -39,23 +43,19 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/issues-category" element={<IssuesCategory />} />
-        <Route path="/AboutUs" element={<AboutUs />} />
-        <Route path="/ContactUs" element={<ContactUs />} />
-        <Route path="/Blog" element={<Blog />} />
-        <Route path="/HelpFaq" element={<HelpFaq />} />
-        <Route path="/Login" element={<Login />} />
+        <Route path="/aboutus" element={<AboutUs />} />
+        <Route path="/contactus" element={<ContactUs />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/helpfaq" element={<HelpFaq />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/ReportIssue" element={<ReportIssue />} />
+        <Route path="/reportissue" element={<ReportIssue />} />
         
-        {/* ✅ FIXED: Removed duplicate CitizenDashboard route that was overriding the gateway */}
-        <Route path="/profile" element={<UserProfile />} />
-
-        {/* ✅ MAIN DASHBOARD GATEWAY PAGE */}
+        {/* Main Dashboard Gateway Page */}
         <Route path="/dashboard" element={<Dashboard />} />
         
         {/* ================================
-            ✅ PROTECTED ROLE-SPECIFIC DASHBOARDS
-            (Direct access routes)
+            PROTECTED ROLE-SPECIFIC DASHBOARDS
         ================================= */}
         <Route 
           path="/citizendashboard" 
@@ -93,11 +93,8 @@ function App() {
           } 
         />
 
-        <Route path="/report" element={<ReportIssue />} />
-
-        {/* Catch-all route */}
+        {/* Catch-all route for undefined paths */}
         <Route path="*" element={<Navigate to="/" replace />} />
-        
       </Routes>
 
       <Footer />
