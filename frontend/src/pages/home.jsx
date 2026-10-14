@@ -1,94 +1,269 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
+const REPORT_ROUTE = "/reportissue";
 
-// ---- Hero background slider images (replace with your real assets) ----
+// Hero background slider images
 import heroImage1 from "../assets/r1.jpg";
 import heroImage2 from "../assets/r2.jpg";
 import heroImage3 from "../assets/r3.jpg";
 import heroImage4 from "../assets/r4.png";
 import heroImage5 from "../assets/r5.jpg";
 
-// ---- TV preview video (replace with your real demo clip) ----
+// TV preview video
 import tvDemoVideo from "../assets/myRoadvideo.mp4";
 
-// ---- Gallery images (reuse hero images or add separate ones) ----
+// Gallery images
 import gallery1 from "../assets/r1.jpg";
 import gallery2 from "../assets/r2.jpg";
 import gallery3 from "../assets/r3.jpg";
 import gallery4 from "../assets/r4.png";
 
-/*
- * ✅ SINGLE SOURCE OF TRUTH for the Report page route.
- * This MUST match the path in App.jsx, e.g.
- *   <Route path="/reportissue" element={<Report />} />
- * If your route is different (e.g. "/report"), change it ONLY here
- * (and in citizendashboard.jsx).
- */
-const REPORT_ROUTE = "/reportissue";
+// Gram Panchayat team photos
+import sarpanchPhoto1 from "../assets/avtar.jpg";
+import upsarpanchPhoto2 from "../assets/avtar.jpg";
 
-const heroImages = [heroImage1, heroImage2, heroImage3, heroImage4, heroImage5];
+
+const heroImages = [
+  heroImage1,
+  heroImage2,
+  heroImage3,
+  heroImage4,
+  heroImage5,
+];
 
 const quickActions = [
   {
     icon: "📍",
-    title: "Report an Issue",
-    desc: "Submit a photo, location & description",
-    path: REPORT_ROUTE, // ✅ FIXED: this card now knows where to go
+    title: "reportIssue",
+    desc: "submitPhoto",
   },
-  { icon: "🔍", title: "Track Complaint", desc: "Check status with your complaint ID" },
-  { icon: "🗺️", title: "Issues on Map", desc: "View reported issues near you" },
-  { icon: "📷", title: "Scan QR Code", desc: "Report from a roadside QR sign" },
-  { icon: "⚠️", title: "Road Safety", desc: "Guidelines & alerts for citizens" },
+  {
+    icon: "🔍",
+    title: "trackComplaint",
+    desc: "checkStatus",
+  },
+  {
+    icon: "🗺️",
+    title: "issuesOnMap",
+    desc: "viewNearby",
+  },
+  {
+    icon: "📷",
+    title: "scanQRCode",
+    desc: "reportQR",
+  },
+  {
+    icon: "⚠️",
+    title: "roadSafety",
+    desc: "guidelinesAlerts",
+  },
 ];
 
 const liveStats = [
-  { value: "17,438", label: "Total Reported Issues", trend: "+4.2%", color: "blue" },
-  { value: "1,742", label: "Under Verification", trend: "-1.1%", color: "amber" },
-  { value: "2,317", label: "Action Required", trend: "+2.6%", color: "orange" },
-  { value: "1,987", label: "Under Repair", trend: "+6.8%", color: "saffron" },
-  { value: "15,932", label: "Resolved", trend: "+9.3%", color: "green" },
+  {
+    value: "17,438",
+    label: "totalReported",
+    trend: "+4.2%",
+    color: "blue",
+  },
+  {
+    value: "1,742",
+    label: "underVerification",
+    trend: "-1.1%",
+    color: "amber",
+  },
+  {
+    value: "2,317",
+    label: "actionRequired",
+    trend: "+2.6%",
+    color: "orange",
+  },
+  {
+    value: "1,987",
+    label: "underRepair",
+    trend: "+6.8%",
+    color: "saffron",
+  },
+  {
+    value: "15,932",
+    label: "resolved",
+    trend: "+9.3%",
+    color: "green",
+  },
 ];
 
 const categories = [
-  { icon: "🛣️", title: "Road Issues", desc: "Potholes, cracked surfaces, damaged shoulders.", count: "4,812" },
-  { icon: "🌊", title: "Sewerage & Drainage", desc: "Blocked drains, overflowing sewers.", count: "2,145" },
-  { icon: "💧", title: "Drinking Water", desc: "Pipeline leakage, contaminated supply.", count: "1,760" },
-  { icon: "💡", title: "Streetlights", desc: "Non-functional or flickering lights.", count: "3,398" },
-  { icon: "⚠️", title: "Road Safety", desc: "Missing signage, hazardous junctions.", count: "1,204" },
-  { icon: "🌉", title: "Bridges & Culverts", desc: "Structural damage, erosion.", count: "419" },
+  {
+    icon: "🛣️",
+    title: "roadIssues",
+    desc: "roadIssuesDesc",
+    count: "4,812",
+  },
+  {
+    icon: "🌊",
+    title: "sewerageDrainage",
+    desc: "sewerageDesc",
+    count: "2,145",
+  },
+  {
+    icon: "💧",
+    title: "drinkingWater",
+    desc: "waterDesc",
+    count: "1,760",
+  },
+  {
+    icon: "💡",
+    title: "streetlights",
+    desc: "streetlightsDesc",
+    count: "3,398",
+  },
+  {
+    icon: "⚠️",
+    title: "roadSafetyCategory",
+    desc: "roadSafetyDesc",
+    count: "1,204",
+  },
+  {
+    icon: "🌉",
+    title: "bridgesCulverts",
+    desc: "bridgesDesc",
+    count: "419",
+  },
 ];
 
 const steps = [
-  { num: "01", title: "Report Issue", desc: "Describe the problem with photos" },
-  { num: "02", title: "Capture Location", desc: "GPS pinpoints the exact spot" },
-  { num: "03", title: "Verification", desc: "Panchayat staff review the report" },
-  { num: "04", title: "Staff Assignment", desc: "A field officer is assigned" },
-  { num: "05", title: "Repair & Evidence", desc: "Work done, before/after logged" },
-  { num: "06", title: "Resolution & Closure", desc: "Citizen confirms, complaint closes" },
+  {
+    num: "01",
+    title: "reportStep",
+    desc: "reportStepDesc",
+  },
+  {
+    num: "02",
+    title: "captureLocation",
+    desc: "captureLocationDesc",
+  },
+  {
+    num: "03",
+    title: "verification",
+    desc: "verificationDesc",
+  },
+  {
+    num: "04",
+    title: "staffAssignment",
+    desc: "staffAssignmentDesc",
+  },
+  {
+    num: "05",
+    title: "repairEvidence",
+    desc: "repairEvidenceDesc",
+  },
+  {
+    num: "06",
+    title: "resolutionClosure",
+    desc: "resolutionClosureDesc",
+  },
 ];
 
 const trustItems = [
-  { icon: "👥", title: "Citizen Participation", desc: "Every resident can report and follow up." },
-  { icon: "🔍", title: "Transparent Tracking", desc: "Full visibility from registration to closure." },
-  { icon: "📍", title: "GPS-Based Reporting", desc: "Exact location tagging for field teams." },
-  { icon: "📷", title: "Digital Evidence", desc: "Before/after photos verify every repair." },
-  { icon: "✅", title: "Accountable Resolution", desc: "Named staff and timelines for closures." },
-  { icon: "📊", title: "Data-Driven Planning", desc: "Ward-level analytics guide planning." },
+  {
+    icon: "👥",
+    title: "citizenParticipation",
+    desc: "citizenParticipationDesc",
+  },
+  {
+    icon: "🔍",
+    title: "transparentTracking",
+    desc: "transparentTrackingDesc",
+  },
+  {
+    icon: "📍",
+    title: "gpsReporting",
+    desc: "gpsReportingDesc",
+  },
+  {
+    icon: "📷",
+    title: "digitalEvidence",
+    desc: "digitalEvidenceDesc",
+  },
+  {
+    icon: "✅",
+    title: "accountableResolution",
+    desc: "accountableResolutionDesc",
+  },
+  {
+    icon: "📊",
+    title: "dataDrivenPlanning",
+    desc: "dataDrivenPlanningDesc",
+  },
 ];
 
 const galleryImages = [
-  { src: gallery1, caption: "National Highway Interchange" },
-  { src: gallery2, caption: "Expressway Flyover" },
-  { src: gallery3, caption: "Urban Cloverleaf Junction" },
-  { src: gallery4, caption: "Green Corridor Overpass" },
+  {
+    src: gallery1,
+    caption: "nationalHighway",
+  },
+  {
+    src: gallery2,
+    caption: "expresswayFlyover",
+  },
+  {
+    src: gallery3,
+    caption: "urbanJunction",
+  },
+  {
+    src: gallery4,
+    caption: "greenCorridor",
+  },
 ];
 
 const teamMembers = [
-  { name: "Full Name", role: "Sarpanch · Village Head" },
-  { name: "Full Name", role: "Gram Sevak · Secretary" },
+  {
+    // name: "Shri. Amol Mahadev Gholwe",
+    role: "sarpanchRole",
+    photo: sarpanchPhoto1,
+  },
+  {
+    // name: "Sau. Shubhangi Suraj Sakhare",
+    role: "upsarpanchRole",
+    photo: upsarpanchPhoto2,
+  },
+];
+
+const trackTimeline = [
+  {
+    label: "complaintRegistered",
+    time: "18 Aug, 10:42 AM",
+    state: "done",
+  },
+  {
+    label: "verified",
+    time: "18 Aug, 3:10 PM",
+    state: "done",
+  },
+  {
+    label: "assignedToStaff",
+    time: "19 Aug, 9:05 AM",
+    state: "done",
+  },
+  {
+    label: "repairInProgress",
+    time: "21 Aug, 11:20 AM",
+    state: "now",
+  },
+  {
+    label: "resolutionVerified",
+    time: "pending",
+    state: "pend",
+  },
+  {
+    label: "closed",
+    time: "pending",
+    state: "pend",
+  },
 ];
 
 const Home = () => {
@@ -99,25 +274,45 @@ const Home = () => {
   const [tvPlaying, setTvPlaying] = useState(true);
   const videoRef = useRef(null);
 
-  // ✅ One function used by every "Report an Issue" button
-  const goToReportIssue = () => {
-    navigate(REPORT_ROUTE);
-  };
+  // Gallery lightbox
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const lightboxOpen = lightboxIndex !== null;
+
+  const openLightbox = (index) => setLightboxIndex(index);
+  const closeLightbox = () => setLightboxIndex(null);
+
+  const showPrevImage = () =>
+    setLightboxIndex((i) =>
+      i === 0 ? galleryImages.length - 1 : i - 1
+    );
+
+  const showNextImage = () =>
+    setLightboxIndex((i) =>
+      i === galleryImages.length - 1 ? 0 : i + 1
+    );
 
   // Automatic hero background slider
   useEffect(() => {
     if (heroImages.length <= 1) return;
+
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === heroImages.length - 1 ? 0 : prev + 1));
+      setCurrentSlide((prev) =>
+        prev === heroImages.length - 1 ? 0 : prev + 1
+      );
     }, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
   const nextSlide = () =>
-    setCurrentSlide((prev) => (prev === heroImages.length - 1 ? 0 : prev + 1));
+    setCurrentSlide((prev) =>
+      prev === heroImages.length - 1 ? 0 : prev + 1
+    );
 
   const previousSlide = () =>
-    setCurrentSlide((prev) => (prev === 0 ? heroImages.length - 1 : prev - 1));
+    setCurrentSlide((prev) =>
+      prev === 0 ? heroImages.length - 1 : prev - 1
+    );
 
   const goToSlide = (index) => setCurrentSlide(index);
 
@@ -125,9 +320,10 @@ const Home = () => {
   const toggleTvPlayback = () => {
     const video = videoRef.current;
     if (!video) return;
+
     if (video.paused) {
-      video.muted = false; // 🔊 Turn audio ON
-      video.volume = 0.2; // 🔉 20% volume
+      video.muted = false;
+      video.volume = 0.2;
       video.play();
       setTvPlaying(true);
     } else {
@@ -140,13 +336,37 @@ const Home = () => {
   useEffect(() => {
     const recordVisit = async () => {
       try {
-        await fetch("http://localhost:3200/api/stats/visit", { method: "POST" });
+        await fetch("http://localhost:3200/api/stats/visit", {
+          method: "POST",
+        });
       } catch (err) {
         console.error("Failed to record visit", err);
       }
     };
+
     recordVisit();
   }, []);
+
+  // Lightbox keyboard controls and scroll locking
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") showPrevImage();
+      if (e.key === "ArrowRight") showNextImage();
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [lightboxOpen]);
 
   return (
     <main className="home-page">
@@ -156,7 +376,9 @@ const Home = () => {
           {heroImages.map((image, index) => (
             <div
               key={index}
-              className={`hero-slide ${index === currentSlide ? "active" : ""}`}
+              className={`hero-slide ${
+                index === currentSlide ? "active" : ""
+              }`}
               style={{ backgroundImage: `url(${image})` }}
             />
           ))}
@@ -167,72 +389,57 @@ const Home = () => {
         <div className="hero-content">
           <div className="hero-badge">
             <span className="live-dot"></span>
-            Live Civic Reporting Network — Gram Panchayat
+            {t("home.liveNetwork")}
           </div>
 
           <h1>
-            Report Road &amp; Public <span>Infrastructure Issues</span>
+            {t("home.heroTitle")}{" "}
+            <span>{t("home.heroTitleHighlight")}</span>
           </h1>
 
           <p className="hero-description">
-            Photograph the problem, share your location, and get a complaint
-            number in seconds. Track every step — from verification to repair —
-            until it's resolved.
+            {t("home.heroDescription")}
           </p>
 
           <div className="hero-buttons">
-            {/* ✅ FIXED: uses the shared REPORT_ROUTE */}
-            <button className="primary-btn" type="button" onClick={goToReportIssue}>
-              Report an Issue <span>→</span>
+            <button
+              className="primary-btn"
+              type="button"
+              onClick={() => navigate(REPORT_ROUTE)}
+            >
+              {t("home.reportIssue")} <span>→</span>
             </button>
-
-            {/*
-            <button className="secondary-btn" type="button">
-              Track Complaint
-            </button>
-            */}
           </div>
-
-          {/*
-          <div className="hero-trust">
-            <div>
-              <b>17,438</b>
-              <span>Issues reported</span>
-            </div>
-            <div>
-              <b>91.4%</b>
-              <span>Resolution rate</span>
-            </div>
-            <div>
-              <b>4.2 days</b>
-              <span>Avg. resolution time</span>
-            </div>
-          </div>
-          */}
         </div>
 
-        {/* Slider dots (hero background) */}
+        {/* Slider dots */}
         {heroImages.length > 1 && (
           <div className="slider-dots">
             {heroImages.map((_, index) => (
               <button
                 key={index}
                 type="button"
-                className={`slider-dot ${index === currentSlide ? "active" : ""}`}
+                className={`slider-dot ${
+                  index === currentSlide ? "active" : ""
+                }`}
                 onClick={() => goToSlide(index)}
-                aria-label={`Go to slide ${index + 1}`}
+                aria-label={t("home.goToSlide", {
+                  number: index + 1,
+                })}
               />
             ))}
           </div>
         )}
 
-        {/* TV preview panel with actual video + play/pause */}
+        {/* TV preview panel */}
         <div className="tv-unit">
           <div className={`tv-frame ${!tvPlaying ? "tv-paused" : ""}`}>
             <div className="tv-topbar">
               <div className="tv-live">
-                <span className="dot"></span> Live Preview
+                <span className="dot"></span>{" "}
+                {t("home.livePreview")}
               </div>
+
               <div className="tv-brand">MYROAD · DEMO</div>
             </div>
 
@@ -242,21 +449,21 @@ const Home = () => {
               </video>
 
               <div className="tv-overlay-top">
-                <span className="dot"></span> Reporting a Pothole
+                <span className="dot"></span>{" "}
+                {t("home.reportingPothole")}
               </div>
 
               <button
-                type="button"
                 className="tv-play-btn"
                 onClick={toggleTvPlayback}
-                aria-label="Play or pause preview"
+                aria-label={t("home.playPausePreview")}
               >
                 {tvPlaying ? "❚❚" : "▶"}
               </button>
 
               <div className="tv-overlay-bottom">
                 <b>#MRI-2026-08341</b>
-                <span>Under Repair</span>
+                <span>{t("home.underRepair")}</span>
               </div>
             </div>
 
@@ -266,6 +473,7 @@ const Home = () => {
               ))}
             </div>
           </div>
+
           <div className="tv-stand-neck"></div>
           <div className="tv-stand-base"></div>
         </div>
@@ -274,22 +482,18 @@ const Home = () => {
       {/* ================= QUICK ACTIONS ================= */}
       <section className="quick-actions-section">
         <div className="section-heading">
-          <p className="section-label">Citizen Services</p>
-          <h2>What would you like to do?</h2>
+          <p className="section-label">
+            {t("home.citizenServices")}
+          </p>
+          <h2>{t("home.whatWouldYouLikeToDo")}</h2>
         </div>
 
         <div className="quick-actions-grid">
           {quickActions.map((item, i) => (
-            <button
-              className="qa-card"
-              key={i}
-              type="button"
-              /* ✅ FIXED: cards that have a path now navigate */
-              onClick={() => item.path && navigate(item.path)}
-            >
+            <button className="qa-card" key={i} type="button">
               <div className="qa-icon">{item.icon}</div>
-              <h4>{item.title}</h4>
-              <p>{item.desc}</p>
+              <h4>{t(`home.${item.title}`)}</h4>
+              <p>{t(`home.${item.desc}`)}</p>
             </button>
           ))}
         </div>
@@ -298,8 +502,10 @@ const Home = () => {
       {/* ================= LIVE STATS ================= */}
       <section className="stats-section">
         <div className="section-heading">
-          <p className="section-label">Real-time · Updated every 5 minutes</p>
-          <h2>Live civic complaint statistics</h2>
+          <p className="section-label">
+            {t("home.statsUpdated")}
+          </p>
+          <h2>{t("home.liveStatistics")}</h2>
         </div>
 
         <div className="stats-bar">
@@ -309,8 +515,12 @@ const Home = () => {
                 <span className={`stat-dot dot-${stat.color}`}></span>
                 <span className="stat-trend">{stat.trend}</span>
               </div>
+
               <div className="stat-num">{stat.value}</div>
-              <div className="stat-label">{stat.label}</div>
+
+              <div className="stat-label">
+                {t(`home.${stat.label}`)}
+              </div>
             </div>
           ))}
         </div>
@@ -319,8 +529,10 @@ const Home = () => {
       {/* ================= CATEGORIES ================= */}
       <section className="categories-section">
         <div className="section-heading">
-          <p className="section-label">Browse by Category</p>
-          <h2>What do you want to report?</h2>
+          <p className="section-label">
+            {t("home.browseByCategory")}
+          </p>
+          <h2>{t("home.whatToReport")}</h2>
         </div>
 
         <div className="categories-grid">
@@ -328,11 +540,18 @@ const Home = () => {
             <div className="cat-card" key={i}>
               <div className="cat-top">
                 <div className="cat-icon">{cat.icon}</div>
-                <span className="cat-count">{cat.count} issues</span>
+
+                <span className="cat-count">
+                  {cat.count} {t("home.issues")}
+                </span>
               </div>
-              <h4>{cat.title}</h4>
-              <p>{cat.desc}</p>
-              <span className="cat-link">View Issues →</span>
+
+              <h4>{t(`home.${cat.title}`)}</h4>
+              <p>{t(`home.${cat.desc}`)}</p>
+
+              <span className="cat-link">
+                {t("home.viewIssues")} →
+              </span>
             </div>
           ))}
         </div>
@@ -341,16 +560,19 @@ const Home = () => {
       {/* ================= HOW IT WORKS ================= */}
       <section className="steps-section">
         <div className="section-heading center">
-          <p className="section-label">Process</p>
-          <h2>How it works</h2>
+          <p className="section-label">{t("home.process")}</p>
+          <h2>{t("home.howItWorks")}</h2>
         </div>
 
         <div className="steps-track">
           {steps.map((step, i) => (
-            <div className={`step ${i < 3 ? "done" : ""}`} key={i}>
+            <div
+              className={`step ${i < 3 ? "done" : ""}`}
+              key={i}
+            >
               <div className="step-num">{step.num}</div>
-              <h5>{step.title}</h5>
-              <p>{step.desc}</p>
+              <h5>{t(`home.${step.title}`)}</h5>
+              <p>{t(`home.${step.desc}`)}</p>
             </div>
           ))}
         </div>
@@ -359,35 +581,58 @@ const Home = () => {
       {/* ================= TRACK COMPLAINT ================= */}
       <section className="track-section">
         <div className="track-shell">
-          <div className="track-left">
-            <h3>Track your complaint</h3>
-            <p>Enter your complaint number to see real-time progress.</p>
-            <div className="track-input-row">
-              <input type="text" placeholder="Enter Complaint Number, e.g. MRI-2026-08341" />
-              <button className="primary-btn" type="button">
-                Track Status
+          {/* Left card: search */}
+          <div className="track-card track-form-card">
+            <div className="track-icon">🔍</div>
+
+            <h3>{t("home.trackYourComplaint")}</h3>
+            <p>{t("home.trackDescription")}</p>
+
+            <form
+              className="track-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                // Connect your existing tracking API here.
+              }}
+            >
+              <label htmlFor="track-id" className="sr-only">
+                {t("home.complaintNumber")}
+              </label>
+
+              <input
+                id="track-id"
+                type="text"
+                placeholder={t("home.complaintPlaceholder")}
+              />
+
+              <button
+                className="primary-btn track-btn"
+                type="submit"
+              >
+                {t("home.trackStatus")}
               </button>
-            </div>
+            </form>
           </div>
 
-          <div className="timeline-card">
+          {/* Right card: timeline */}
+          <div className="track-card timeline-card">
             <div className="tl-head">
               <b>#MRI-2026-08341</b>
-              <span>On Track</span>
+              <span>{t("home.onTrack")}</span>
             </div>
-            {[
-              { label: "Complaint Registered", time: "18 Aug, 10:42 AM", state: "done" },
-              { label: "Verified", time: "18 Aug, 3:10 PM", state: "done" },
-              { label: "Assigned to Staff", time: "19 Aug, 9:05 AM", state: "done" },
-              { label: "Repair Work in Progress", time: "21 Aug, 11:20 AM", state: "now" },
-              { label: "Resolution Verified", time: "Pending", state: "pend" },
-              { label: "Closed", time: "Pending", state: "pend" },
-            ].map((item, i) => (
+
+            {trackTimeline.map((item, i) => (
               <div className="tl-item" key={i}>
                 <div className={`tl-dot ${item.state}`}></div>
+
                 <div className="tl-body">
-                  <b>{item.label}</b>
-                  <span>{item.time}</span>
+                  <b>{t(`home.${item.label}`)}</b>
+
+                  <span>
+                    {item.time === "pending"
+                      ? t("home.pending")
+                      : item.time}
+                  </span>
                 </div>
               </div>
             ))}
@@ -398,19 +643,41 @@ const Home = () => {
       {/* ================= GALLERY ================= */}
       <section className="gallery-section">
         <div className="section-heading center">
-          <p className="section-label">Infrastructure in Focus</p>
-          <h2>Road Infrastructure Gallery</h2>
+          <p className="section-label">
+            {t("home.infrastructureInFocus")}
+          </p>
+
+          <h2>{t("home.roadGallery")}</h2>
+
           <p className="section-sub">
-            A look at the national and regional road networks that connect our
-            villages and cities.
+            {t("home.galleryDescription")}
           </p>
         </div>
 
         <div className="gallery-grid">
           {galleryImages.map((img, i) => (
-            <div className="gallery-item" key={i}>
-              <img src={img.src} alt={img.caption} />
-              <span>{img.caption}</span>
+            <div
+              className="gallery-item"
+              key={i}
+              role="button"
+              tabIndex={0}
+              aria-label={t("home.viewImage", {
+                caption: t(`home.${img.caption}`),
+              })}
+              onClick={() => openLightbox(i)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openLightbox(i);
+                }
+              }}
+            >
+              <img
+                src={img.src}
+                alt={t(`home.${img.caption}`)}
+              />
+
+              <span>{t(`home.${img.caption}`)}</span>
             </div>
           ))}
         </div>
@@ -419,16 +686,19 @@ const Home = () => {
       {/* ================= TRUST ================= */}
       <section className="trust-section">
         <div className="section-heading center">
-          <p className="section-label">Why MyRoad India</p>
-          <h2>Built for public trust</h2>
+          <p className="section-label">
+            {t("home.whyMyRoad")}
+          </p>
+
+          <h2>{t("home.builtForTrust")}</h2>
         </div>
 
         <div className="trust-grid">
           {trustItems.map((item, i) => (
             <div className="trust-card" key={i}>
               <div className="t-ic">{item.icon}</div>
-              <h5>{item.title}</h5>
-              <p>{item.desc}</p>
+              <h5>{t(`home.${item.title}`)}</h5>
+              <p>{t(`home.${item.desc}`)}</p>
             </div>
           ))}
         </div>
@@ -437,20 +707,99 @@ const Home = () => {
       {/* ================= GRAM PANCHAYAT TEAM ================= */}
       <section className="team-section">
         <div className="section-heading center">
-          <p className="section-label">Local Governance</p>
-          <h2>Gram Panchayat Team</h2>
+          <p className="section-label">
+            {t("home.localGovernance")}
+          </p>
+
+          <h2>{t("home.gramPanchayatTeam")}</h2>
         </div>
 
         <div className="team-grid">
           {teamMembers.map((member, i) => (
             <div className="team-member" key={i}>
-              <div className="team-avatar">👤</div>
+              <div className="team-avatar">
+                {member.photo ? (
+                  <img
+                    src={member.photo}
+                    alt={t("home.teamMemberAlt", {
+                      name: member.name,
+                      role: t(`home.${member.role}`),
+                    })}
+                  />
+                ) : (
+                  "👤"
+                )}
+              </div>
+
               <h4>{member.name}</h4>
-              <span>{member.role}</span>
+              <span>{t(`home.${member.role}`)}</span>
             </div>
           ))}
         </div>
       </section>
+
+      {/* ================= GALLERY LIGHTBOX ================= */}
+      {lightboxOpen && (
+        <div
+          className="lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t(`home.${galleryImages[lightboxIndex].caption}`)}
+          onClick={closeLightbox}
+        >
+          <button
+            className="lightbox-close"
+            type="button"
+            aria-label={t("home.closeImage")}
+            onClick={closeLightbox}
+            autoFocus
+          >
+            ✕
+          </button>
+
+          <button
+            className="lightbox-nav prev"
+            type="button"
+            aria-label={t("home.previousImage")}
+            onClick={(e) => {
+              e.stopPropagation();
+              showPrevImage();
+            }}
+          >
+            ‹
+          </button>
+
+          <figure
+            className="lightbox-figure"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={galleryImages[lightboxIndex].src}
+              alt={t(`home.${galleryImages[lightboxIndex].caption}`)}
+            />
+
+            <figcaption>
+              {t(`home.${galleryImages[lightboxIndex].caption}`)}
+
+              <span>
+                {lightboxIndex + 1} / {galleryImages.length}
+              </span>
+            </figcaption>
+          </figure>
+
+          <button
+            className="lightbox-nav next"
+            type="button"
+            aria-label={t("home.nextImage")}
+            onClick={(e) => {
+              e.stopPropagation();
+              showNextImage();
+            }}
+          >
+            ›
+          </button>
+        </div>
+      )}
     </main>
   );
 };

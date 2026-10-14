@@ -25,6 +25,10 @@
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
+
+  /* Distance of the hero "Report an Issue" button from the left (desktop). Change this one value to move it. */
+  --report-btn-offset: 650px;
+
   font-family: "Inter", sans-serif;
   color: var(--ink);
   overflow-x: hidden;
@@ -79,516 +83,310 @@
   );
 }
 
-
 /* =========================================================
    HERO CONTENT
    ========================================================= */
-       
-       
-       .hero-content {
-
+.hero-content {
   position: relative;
-
   z-index: 2;
-
   max-width: 640px;
-
   /* Move all hero content upward */
-
   transform: translateY(-180px);
-
 }
 
 .hero-badge {
-
   display: inline-flex;
-
   align-items: center;
-
   gap: 8px;
-
   background: rgba(255, 255, 255, 0.08);
-
   border: 1px solid rgba(255, 255, 255, 0.18);
-
   color: #ffd9a8;
-
   font-size: 12.5px;
-
   font-weight: 700;
-
   letter-spacing: 0.6px;
-
   padding: 7px 14px;
-
   border-radius: 999px;
-
   text-transform: uppercase;
-
   margin-bottom: 20px;
-
 }
 
 .live-dot {
-
   width: 7px;
-
   height: 7px;
-
   border-radius: 50%;
-
   background: #3ddc63;
-
   box-shadow: 0 0 0 3px rgba(61, 220, 99, 0.25);
-
 }
 
-
 /* =========================================================
-
    HERO HEADING
-
    ========================================================= */
-
 .hero-content h1 {
-
   color: var(--white);
-
   font-size: clamp(2.2rem, 1.6rem + 3vw, 3.4rem);
-
   line-height: 1.08;
-
   letter-spacing: -1px;
-
   margin-bottom: 20px;
-
 }
 
 .hero-content h1 span {
-
   color: var(--saffron);
-
   display: block;
-
   margin-top: 8px;
-
 }
 
-
 /* =========================================================
-
    HERO DESCRIPTION
-
    ========================================================= */
-
 .hero-description {
-
   color: #c3d0e6;
-
   font-size: 17px;
-
   max-width: 480px;
-
   margin-bottom: 24px;
-
 }
-
 
 /* =========================================================
-
    HERO BUTTONS
-
    ========================================================= */
-
 .hero-buttons {
-
   display: flex;
-
   gap: 14px;
-
   margin-bottom: 36px;
-
   flex-wrap: wrap;
-
- 
-
-}
-
-.primary-btn,
-
-.secondary-btn {
-
-  display: inline-flex;
-
-  align-items: center;
-
   justify-content: center;
-
-  gap: 8px;
-
-  font-weight: 700;
-
-  font-size: 20px;
-
-  border-radius: var(--radius-sm);
-
-  border: none;
-
-  padding: 13px 24px;
-
-  cursor: pointer;
-
-  white-space: nowrap;
-
-   margin-left:600px ;
-
 }
 
+/* Shared button styles (no margin here, so buttons can be centered anywhere) */
+.primary-btn,
+.secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  padding: 13px 24px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Hero button position (desktop only) */
+.hero-buttons .primary-btn,
+.hero-buttons .secondary-btn { margin-left: var(--report-btn-offset); }
+
+@media (max-width: 1100px) {
+  .hero-buttons .primary-btn,
+  .hero-buttons .secondary-btn { margin-left: 0; }
+}
 
 /* Primary button */
-
 .primary-btn {
-
   background: var(--saffron);
-
   color: #3a1e00;
-
 }
 
 .primary-btn:hover {
-
   background: var(--saffron-dark);
-
 }
 
-
 /* Secondary button */
-
 .secondary-btn {
-
   background: transparent;
-
   color: var(--white);
-
   border: 1.5px solid rgba(255, 255, 255, 0.4);
-
 }
 
 .secondary-btn:hover {
-
   background: rgba(255, 255, 255, 0.1);
-
   border-color: #fff;
-
 }
 
-
-
 /* =========================================================
-
    HERO TRUST / STATISTICS
-
    ========================================================= */
-
 .hero-trust {
-
   display: flex;
-
   gap: 28px;
-
   flex-wrap: wrap;
-
 }
 
 .hero-trust b {
-
   display: block;
-
   font-family: "JetBrains Mono", monospace;
-
   font-size: 21px;
-
   color: var(--white);
-
 }
 
 .hero-trust span {
-
   color: #93a3bf;
-
   font-size: 12.5px;
-
 }
-
-
 
 /* =========================================================
    HERO SLIDER DOTS
    ========================================================= */
-
 .slider-dots {
   position: absolute;
-
   left: 50%;
   bottom: 22px;
-
   transform: translateX(-50%);
-
   z-index: 3;
-
   display: flex;
-
   gap: 7px;
 }
 
 .slider-dot {
   width: 6px;
   height: 6px;
-
   border-radius: 50%;
-
   border: none;
-
   background: rgba(255, 255, 255, 0.3);
-
   cursor: pointer;
-
   padding: 0;
 }
 
 .slider-dot.active {
   background: var(--saffron);
-
   width: 18px;
-
   border-radius: 999px;
 }
-
 
 /* =========================================================
    TV PREVIEW
    ========================================================= */
-
 .tv-unit {
   position: absolute;
-
   right: clamp(1rem, 4vw, 4rem);
-
-  /*
-    Increased bottom value moves the TV upward
-    so it sits closer to the navbar/hero content.
-  */
+  /* Increased bottom value moves the TV upward */
   bottom: clamp(4rem, 8vw, 7rem);
-
   z-index: 2;
-
   width: min(380px, 40vw);
   margin-bottom: 260px;
 }
 
-
-/* =========================================================
-   TV FRAME
-   ========================================================= */
-
+/* TV frame */
 .tv-frame {
   background: #fff;
-
   border-radius: 20px;
-
   padding: 12px 12px 16px;
-
   box-shadow: 0 30px 70px -20px rgba(3, 12, 30, 0.55);
 }
 
-
-/* =========================================================
-   TV TOP BAR
-   ========================================================= */
-
+/* TV top bar */
 .tv-topbar {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   padding: 2px 4px 10px;
 }
 
 .tv-live {
   display: flex;
-
   align-items: center;
-
   gap: 7px;
-
   font-size: 11px;
-
   font-weight: 700;
-
   color: var(--navy-900);
-
   text-transform: uppercase;
 }
 
 .tv-live .dot {
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
-
   background: #ff5b5b;
 }
 
 .tv-brand {
   font-size: 10.5px;
-
   color: var(--ink-faint);
-
   font-weight: 700;
-
   letter-spacing: 1px;
 }
 
-
-/* =========================================================
-   TV SCREEN
-   ========================================================= */
-
+/* TV screen */
 .tv-screen {
   position: relative;
-
   border-radius: 13px;
-
   overflow: hidden;
-
   aspect-ratio: 16 / 10;
-
   background: #000;
 }
 
 .tv-screen video {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
-
   display: block;
 }
 
-
-/* =========================================================
-   TV TOP OVERLAY
-   ========================================================= */
-
+/* TV top overlay */
 .tv-overlay-top {
   position: absolute;
-
   top: 10px;
   left: 10px;
-
   display: flex;
-
   gap: 6px;
-
   align-items: center;
-
   background: rgba(8, 20, 40, 0.55);
-
   padding: 5px 10px;
-
   border-radius: 999px;
-
   font-size: 10.5px;
-
   font-weight: 700;
-
   color: #fff;
 }
 
 .tv-overlay-top .dot {
   width: 6px;
   height: 6px;
-
   border-radius: 50%;
-
   background: var(--saffron);
 }
 
-
-/* =========================================================
-   TV BOTTOM OVERLAY
-   ========================================================= */
-
+/* TV bottom overlay */
 .tv-overlay-bottom {
   position: absolute;
-
   left: 10px;
   right: 10px;
   bottom: 10px;
-
   background: rgba(8, 20, 40, 0.6);
-
   border-radius: 10px;
-
   padding: 8px 12px;
-
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
 }
 
 .tv-overlay-bottom b {
   font-family: "JetBrains Mono", monospace;
-
   font-size: 11px;
-
   color: #fff;
 }
 
 .tv-overlay-bottom span {
   font-size: 10.5px;
-
   color: #8fc3ff;
-
   font-weight: 600;
 }
 
-
-/* =========================================================
-   TV PLAY / PAUSE BUTTON
-   ========================================================= */
-
+/* TV play / pause button */
 .tv-play-btn {
   position: absolute;
-
   top: 50%;
   left: 50%;
-
   transform: translate(-50%, -50%);
-
   width: 44px;
   height: 44px;
-
   border-radius: 50%;
-
   border: none;
-
   background: rgba(8, 20, 40, 0.6);
-
   color: #fff;
-
   font-size: 16px;
-
   cursor: pointer;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 }
 
@@ -596,64 +394,43 @@
   background: rgba(8, 20, 40, 0.8);
 }
 
-
-/* =========================================================
-   TV BOTTOM SPEAKER BAR
-   ========================================================= */
-
+/* TV bottom speaker bar */
 .tv-bottombar {
   display: flex;
-
   justify-content: center;
-
   gap: 6px;
-
   padding-top: 10px;
 }
 
 .speaker-dot {
   width: 4px;
   height: 4px;
-
   border-radius: 50%;
-
   background: var(--line);
 }
 
-
-/* =========================================================
-   TV STAND
-   ========================================================= */
-
+/* TV stand */
 .tv-stand-neck {
   width: 14px;
   height: 22px;
-
   background: #fff;
-
   margin: 0 auto;
 }
 
 .tv-stand-base {
   width: 110px;
   height: 8px;
-
   border-radius: 6px;
-
   background: #fff;
-
   margin: 0 auto;
-
   box-shadow: 0 8px 18px -6px rgba(3, 12, 30, 0.4);
 }
 
-
 /* =========================================================
-   RESPONSIVE DESIGN
+   HERO RESPONSIVE DESIGN
    ========================================================= */
 
 /* Tablet */
-
 @media (max-width: 1100px) {
   .hero-content {
     transform: translateY(-30px);
@@ -661,37 +438,28 @@
 
   .tv-unit {
     width: min(330px, 35vw);
-
     bottom: clamp(3rem, 6vw, 5rem);
   }
 }
 
-
 /* Smaller tablet */
-
 @media (max-width: 900px) {
   .hero-content {
     max-width: 560px;
-
     transform: translateY(-20px);
   }
 
   .tv-unit {
     width: 300px;
-
     right: 1.5rem;
-
     bottom: 3rem;
   }
 }
 
-
 /* Mobile */
-
 @media (max-width: 768px) {
   .hero-content {
     max-width: 100%;
-
     transform: none;
   }
 
@@ -701,20 +469,17 @@
 
   .hero-description {
     font-size: 15px;
-
     max-width: 100%;
   }
 
   .hero-buttons {
     gap: 10px;
-
     margin-bottom: 28px;
   }
 
   .primary-btn,
   .secondary-btn {
     padding: 11px 18px;
-
     font-size: 13.5px;
   }
 
@@ -724,13 +489,9 @@
 
   .tv-unit {
     position: relative;
-
     width: min(380px, 90vw);
-
     right: auto;
-
     bottom: auto;
-
     margin: 30px auto 0;
   }
 
@@ -739,31 +500,25 @@
   }
 }
 
-
 /* Small mobile */
-
 @media (max-width: 480px) {
   .hero-badge {
     font-size: 10px;
-
     padding: 6px 10px;
   }
 
   .hero-content h1 {
     font-size: 2rem;
-
     letter-spacing: -0.5px;
   }
 
   .hero-description {
     font-size: 14px;
-
     line-height: 1.6;
   }
 
   .hero-buttons {
     flex-direction: column;
-
     align-items: stretch;
   }
 
@@ -786,25 +541,11 @@
 
   .tv-unit {
     width: 92vw;
-
     margin-top: 25px;
   }
 }
 
-
-
-
-
-
-
-
-
-/* ================= QUICK ACTIONS ================= */
-
-
-
 /* ================= PREMIUM QUICK ACTIONS SECTION ================= */
-
 .quick-actions-section {
   width: 100%;
   padding: 30px 0;
@@ -813,33 +554,27 @@
 
 .quick-actions-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 26px;
-  width: 80%;
+  width: 95%;
 }
 
 /* ================= QUICK ACTION CARD ================= */
-
 .qa-card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   min-height: 200px;
-
   padding: 26px 24px;
-
   background: #ffffff;
   border: 1px solid #eeeeF1;
   border-radius: 24px;
-
   text-align: left;
   cursor: pointer;
-
   box-shadow:
     0 6px 20px rgba(0, 0, 0, 0.06),
     0 2px 6px rgba(0, 0, 0, 0.02);
-
   transition: all 250ms ease-out;
 }
 
@@ -856,12 +591,10 @@
   transition: width 250ms ease-out;
 }
 
-/* ================= HOVER EFFECT ================= */
-
+/* Hover effect */
 .qa-card:hover {
   transform: translateY(-4px);
   border-color: #ead5dc;
-
   box-shadow:
     0 18px 35px rgba(11, 36, 71, 0.10),
     0 6px 12px rgba(0, 0, 0, 0.04);
@@ -871,24 +604,19 @@
   width: 46px;
 }
 
-/* ================= QUICK ACTION ICON ================= */
-
+/* Quick action icon */
 .qa-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 52px;
   height: 52px;
   margin-bottom: 20px;
-
   font-size: 25px;
   color: #b01845;
-
   background: #fff4f7;
   border: 1px solid #f8e5eb;
   border-radius: 16px;
-
   transition: all 250ms ease-out;
 }
 
@@ -898,17 +626,14 @@
   border-color: #f1d0dc;
 }
 
-/* ================= QUICK ACTION TITLE ================= */
-
+/* Quick action title */
 .qa-card h4 {
   margin: 0 0 8px;
-
   color: #111827;
   font-size: 17px;
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: -0.3px;
-
   transition: color 250ms ease-out;
 }
 
@@ -916,19 +641,16 @@
   color: #b01845;
 }
 
-/* ================= QUICK ACTION DESCRIPTION ================= */
-
+/* Quick action description */
 .qa-card p {
   margin: 0;
-
   color: #6b7280;
   font-size: 13.5px;
   font-weight: 400;
   line-height: 1.7;
 }
 
-/* ================= TABLET ================= */
-
+/* Tablet */
 @media (max-width: 1100px) {
   .quick-actions-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -936,8 +658,7 @@
   }
 }
 
-/* ================= MOBILE ================= */
-
+/* Mobile */
 @media (max-width: 650px) {
   .quick-actions-section {
     padding: 20px 0;
@@ -970,31 +691,11 @@
   }
 }
 
-/* ================= ACCESSIBILITY ================= */
-
+/* Accessibility */
 .qa-card:focus-visible {
   outline: 3px solid rgba(176, 24, 69, 0.25);
   outline-offset: 4px;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .qa-card,
-  .qa-card::before,
-  .qa-icon,
-  .qa-card h4 {
-    transition: none;
-  }
-}
-
-
-
-
-
-
-
-
-
-
 
 /* ================= LIVE STATS ================= */
 .stats-section { background: var(--surface); }
@@ -1012,14 +713,69 @@
 .stat-num { font-family: "JetBrains Mono", monospace; font-size: 26px; color: var(--white); }
 .stat-label { font-size: 12.5px; color: #93a3bf; margin-top: 4px; }
 
-/* ================= CATEGORIES ================= */
+/* ================= CATEGORIES (Quick Actions card style) ================= */
 .categories-grid {
   display: grid; gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
-.cat-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 26px; }
-.cat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-.cat-icon { font-size: 26px; }
+
+.cat-card {
+  position: relative;
+  background: var(--white);
+  border: 1px solid #eeeef1;
+  border-radius: 24px;
+  padding: 26px 24px 50px;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 250ms ease-out;
+}
+
+/* Crimson accent line */
+.cat-card::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  width: 28px;
+  height: 3px;
+  border-radius: 10px;
+  background: #b01845;
+  transition: width 250ms ease-out;
+}
+
+.cat-card:hover {
+  transform: translateY(-4px);
+  border-color: #ead5dc;
+  box-shadow:
+    0 18px 35px rgba(11, 36, 71, 0.10),
+    0 6px 12px rgba(0, 0, 0, 0.04);
+}
+
+.cat-card:hover::before { width: 46px; }
+
+.cat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+
+/* Icon tile */
+.cat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  font-size: 25px;
+  background: #fff4f7;
+  border: 1px solid #f8e5eb;
+  border-radius: 16px;
+  transition: all 250ms ease-out;
+}
+
+.cat-card:hover .cat-icon {
+  transform: scale(1.05);
+  background: #fceaf0;
+  border-color: #f1d0dc;
+}
+
 .cat-count { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-faint); background: var(--surface-2); padding: 4px 10px; border-radius: 999px; }
 .cat-card h4 { font-size: 17px; margin-bottom: 6px; }
 .cat-card p { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; }
@@ -1040,52 +796,339 @@
 .step h5 { font-size: 14.5px; margin-bottom: 6px; }
 .step p { font-size: 12.5px; color: var(--ink-faint); }
 
-/* ================= TRACK ================= */
+/* ================= TRACK COMPLAINT (card style) ================= */
 .track-section { background: var(--surface); }
+
 .track-shell {
-  background: var(--navy-900); border-radius: var(--radius-lg); padding: clamp(1.5rem, 3vw, 3rem);
-  display: grid; gap: 32px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: stretch;
+  max-width: 1100px;
+  margin: 0 auto;
 }
-.track-left h3 { color: var(--white); font-size: 24px; margin-bottom: 10px; }
-.track-left p { color: #c3d0e6; font-size: 14px; margin-bottom: 22px; }
-.track-input-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.track-input-row input {
-  flex: 1; min-width: 200px; padding: 13px 15px; border-radius: 10px; border: none;
-  font-family: "JetBrains Mono", monospace; font-size: 14px;
+
+/* Card base: same look as the Quick Action cards */
+.track-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #eeeef1;
+  border-radius: 24px;
+  padding: 32px 30px 52px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: transform 250ms ease-out, box-shadow 250ms ease-out, border-color 250ms ease-out;
 }
-.timeline-card { background: var(--white); border-radius: 14px; padding: 22px; }
-.tl-head { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 12.5px; }
-.tl-head b { font-family: "JetBrains Mono", monospace; color: var(--navy-900); }
-.tl-head span { color: var(--resolved); font-weight: 700; background: #e8f6ec; padding: 3px 9px; border-radius: 999px; }
-.tl-item { display: flex; gap: 12px; padding-bottom: 16px; }
-.tl-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+.track-card::after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  bottom: 22px;
+  width: 28px;
+  height: 3px;
+  border-radius: 10px;
+  background: #b01845;
+  transition: width 250ms ease-out;
+}
+.track-card:hover {
+  transform: translateY(-4px);
+  border-color: #ead5dc;
+  box-shadow: 0 18px 35px rgba(11, 36, 71, 0.10), 0 6px 12px rgba(0, 0, 0, 0.04);
+}
+.track-card:hover::after { width: 46px; }
+
+/* Left card: search form */
+.track-form-card { display: flex; flex-direction: column; justify-content: center; }
+
+.track-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 20px;
+  font-size: 25px;
+  background: #fff4f7;
+  border: 1px solid #f8e5eb;
+  border-radius: 16px;
+}
+.track-form-card h3 {
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: #111827;
+  letter-spacing: -0.3px;
+}
+.track-form-card > p {
+  margin: 0 0 22px;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.track-form { display: flex; flex-direction: column; gap: 16px; }
+.track-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+.track-form input:focus {
+  outline: none;
+  border-color: #b01845;
+  box-shadow: 0 0 0 3px rgba(176, 24, 69, 0.12);
+}
+
+/* The centered button */
+.track-form .track-btn {
+  align-self: center;      /* centers it under the input */
+  margin: 4px auto 0;
+  min-width: 200px;
+  font-size: 16px;
+  padding: 13px 32px;
+  border-radius: 14px;
+}
+
+/* Right card: timeline */
+.tl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--surface-2);
+}
+.tl-head b { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--navy-900); }
+.tl-head span {
+  color: var(--resolved);
+  font-size: 12px;
+  font-weight: 700;
+  background: #e8f6ec;
+  padding: 4px 11px;
+  border-radius: 999px;
+}
+
+.tl-item { position: relative; display: flex; gap: 14px; padding-bottom: 18px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 20px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--line);
+}
+.tl-item:last-child::before { display: none; }
+
+/* box-sizing fixes the pending dots looking wider and shifting the text */
+.tl-dot { box-sizing: border-box; width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 1; }
 .tl-dot.done { background: var(--resolved); }
-.tl-dot.now { background: var(--saffron); }
+.tl-dot.now { background: var(--saffron); box-shadow: 0 0 0 4px rgba(255, 153, 51, 0.2); }
 .tl-dot.pend { background: var(--surface-2); border: 1.5px solid var(--line); }
+
 .tl-body b { display: block; font-size: 13.5px; color: var(--ink); }
 .tl-body span { font-size: 11.5px; color: var(--ink-faint); font-family: "JetBrains Mono", monospace; }
+
+/* screen-reader-only label */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ================= GALLERY ================= */
 .gallery-grid {
   display: grid; gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
-.gallery-item { position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 4/3; }
-.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-item { position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 4/3; cursor: zoom-in; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease-out; }
+.gallery-item:hover img { transform: scale(1.04); }
+.gallery-item:focus-visible { outline: 3px solid rgba(176, 24, 69, 0.35); outline-offset: 3px; }
 .gallery-item span {
   position: absolute; left: 12px; bottom: 12px; color: #fff; font-weight: 700; font-size: 13px;
   background: rgba(8,20,40,0.55); padding: 4px 10px; border-radius: 8px;
 }
 
-/* ================= TRUST ================= */
+/* ================= GALLERY LIGHTBOX ================= */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(6, 15, 35, 0.88);
+  animation: lightbox-fade 200ms ease-out;
+}
+
+@keyframes lightbox-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lightbox-figure {
+  margin: 0;
+  max-width: min(92vw, 1100px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lightbox-figure img {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #000;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.6);
+}
+
+.lightbox-figure figcaption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.lightbox-figure figcaption span {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #93a3bf;
+}
+
+.lightbox-close,
+.lightbox-nav {
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 200ms ease-out;
+}
+
+.lightbox-close:hover,
+.lightbox-nav:hover { background: rgba(255, 255, 255, 0.24); }
+
+.lightbox-close:focus-visible,
+.lightbox-nav:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+
+.lightbox-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+
+.lightbox-nav {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  font-size: 28px;
+  line-height: 1;
+}
+
+@media (max-width: 650px) {
+  .lightbox { padding: 12px; }
+  .lightbox-figure img { max-height: 70vh; }
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    font-size: 22px;
+    background: rgba(0, 0, 0, 0.45);
+  }
+  .lightbox-nav.prev { left: 10px; }
+  .lightbox-nav.next { right: 10px; }
+}
+
+/* ================= TRUST (Quick Actions card style) ================= */
 .trust-section { background: var(--surface); }
 .trust-grid {
   display: grid; gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
-.trust-card { background: var(--white); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--line); }
-.t-ic { font-size: 24px; margin-bottom: 12px; }
+
+.trust-card {
+  position: relative;
+  background: var(--white);
+  padding: 24px 24px 50px;
+  border-radius: 24px;
+  border: 1px solid #eeeef1;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 250ms ease-out;
+}
+
+/* Crimson accent line */
+.trust-card::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  width: 28px;
+  height: 3px;
+  border-radius: 10px;
+  background: #b01845;
+  transition: width 250ms ease-out;
+}
+
+.trust-card:hover {
+  transform: translateY(-4px);
+  border-color: #ead5dc;
+  box-shadow:
+    0 18px 35px rgba(11, 36, 71, 0.10),
+    0 6px 12px rgba(0, 0, 0, 0.04);
+}
+
+.trust-card:hover::before { width: 46px; }
+
+/* Icon tile */
+.t-ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 20px;
+  font-size: 25px;
+  background: #fff4f7;
+  border: 1px solid #f8e5eb;
+  border-radius: 16px;
+  transition: all 250ms ease-out;
+}
+
+.trust-card:hover .t-ic {
+  transform: scale(1.05);
+  background: #fceaf0;
+  border-color: #f1d0dc;
+}
+
 .trust-card h5 { font-size: 15px; margin-bottom: 6px; }
 .trust-card p { font-size: 13px; color: var(--ink-faint); }
 
@@ -1095,11 +1138,13 @@
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   max-width: 520px; margin: 0 auto; text-align: center;
 }
-.team-avatar {
-  width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 14px;
-  background: linear-gradient(155deg, var(--navy-900), var(--navy-700));
-  display: flex; align-items: center; justify-content: center; font-size: 30px;
-  color: #fff;
+.team-avatar { overflow: hidden; }
+.team-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top; /* keeps faces in frame */
+  display: block;
 }
 .team-member h4 { font-size: 16px; margin-bottom: 4px; }
 .team-member span {
@@ -1107,8 +1152,56 @@
   background: #fff4e0; padding: 3px 10px; border-radius: 999px;
 }
 
-/* ================= RESPONSIVE (fluid-only, no manual breakpoints needed) ================= */
+/* ================= MOBILE CARD TWEAKS ================= */
+@media (max-width: 650px) {
+  .track-card { padding: 24px 22px 48px; border-radius: 20px; }
+  .track-card::after { left: 22px; }
+  .track-form .track-btn { width: 100%; }
+
+  .cat-card,
+  .trust-card { border-radius: 20px; }
+}
+
+/* ================= REDUCED MOTION ================= */
+@media (prefers-reduced-motion: reduce) {
+  .qa-card,
+  .qa-card::before,
+  .qa-icon,
+  .qa-card h4,
+  .cat-card,
+  .cat-card::before,
+  .cat-icon,
+  .trust-card,
+  .trust-card::before,
+  .t-ic,
+  .track-card,
+  .track-card::after,
+  .gallery-item img {
+    transition: none;
+  }
+
+  .track-card:hover,
+  .cat-card:hover,
+  .trust-card:hover { transform: none; }
+
+  .gallery-item:hover img { transform: none; }
+  .lightbox { animation: none; }
+}
+
+/* ================= RESPONSIVE ================= */
 @media (max-width: 720px) {
   .tv-unit { position: static; width: 100%; margin-top: 32px; }
   .hero-section { align-items: flex-start; }
+}
+
+
+.team-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0b2447, #1b4586);
+  font-size: 48px;
 }

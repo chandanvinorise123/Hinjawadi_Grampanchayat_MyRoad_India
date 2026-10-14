@@ -1,22 +1,30 @@
 import React, { useState } from "react";
 import "./login.css";
 import { useNavigate, Link } from "react-router-dom";
-import bannerImage from "../assets/lg.png";
+import { useTranslation } from "react-i18next";
+import bannerImageEn from "../assets/lg.png";
+import bannerImageHi from "../assets/lg-hi.png";
+import bannerImageMr from "../assets/lg-mr.png";
 
-const roles = [
-  { value: "citizen", label: "Citizen" },
-  { value: "staff", label: "Staff" },
-  { value: "verifier", label: "Verifier" },
-  { value: "admin", label: "Admin" },
-];
 
-// Backend API
 const API_BASE_URL = "http://localhost:3200/api/auth";
-const STATS_API_URL = "http://localhost:3200/api/stats"; // stats tracking
+const STATS_API_URL = "http://localhost:3200/api/stats";
 
 const Login = () => {
   const navigate = useNavigate();
+const { t, i18n } = useTranslation();
 
+const currentLanguage = (
+  i18n.resolvedLanguage || i18n.language || "en"
+).split("-")[0];
+
+const bannerImage =
+  {
+    en: bannerImageEn,
+    hi: bannerImageHi,
+    mr: bannerImageMr,
+  }[currentLanguage] || bannerImageEn;
+  
   const [loginData, setLoginData] = useState({
     role: "citizen",
     identifier: "",
@@ -27,6 +35,13 @@ const Login = () => {
   const [loginStatus, setLoginStatus] = useState(null);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+
+  const roles = [
+    { value: "citizen", label: t("login.roles.citizen") },
+    { value: "staff", label: t("login.roles.staff") },
+    { value: "verifier", label: t("login.roles.verifier") },
+    { value: "admin", label: t("login.roles.admin") },
+  ];
 
   // Handle input changes
   const handleChange = (e) => {
@@ -52,7 +67,6 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        // identifier can be an email address or a 10-digit mobile number
         body: JSON.stringify({
           ...loginData,
           identifier: loginData.identifier.trim(),
@@ -64,11 +78,6 @@ const Login = () => {
       console.log("Login response:", data);
 
       if (response.ok && data.success) {
-        // ------------------------------------------
-        // LOGIN SUCCESS
-        // ------------------------------------------
-
-        // Check that backend returned user
         if (!data.user) {
           throw new Error(
             "Login successful, but user information was not returned."
@@ -83,21 +92,19 @@ const Login = () => {
         // Record successful citizen login for statistics
         if (String(data.user.role).toLowerCase() === "citizen") {
           try {
-            await fetch(`${STATS_API_URL}/login`, { method: "POST" });
+            await fetch(`${STATS_API_URL}/login`, {
+              method: "POST",
+            });
           } catch (err) {
             console.error("Failed to record citizen login stat:", err);
-            // Non-blocking: proceeds with login even if stat tracking fails
           }
         }
 
-        // Notify Navbar / other components
+        // Notify Navbar and other components
         window.dispatchEvent(new Event("authChange"));
 
-        // ------------------------------------------
-        // ✅ FIXED: IMMEDIATE ROLE-BASED REDIRECT (Removed setTimeout)
-        // ------------------------------------------
+        // Role-based redirect
         const userRole = String(data.user.role || "").toLowerCase();
-        console.log("🚀 Attempting to navigate to role:", userRole);
 
         if (userRole === "citizen") {
           navigate("/", { replace: true });
@@ -108,18 +115,12 @@ const Login = () => {
         } else if (userRole === "verifier") {
           navigate("/verifierdashboard", { replace: true });
         } else {
-          navigate("/dashboard", { replace: true }); // Fallback
+          navigate("/dashboard", { replace: true });
         }
-        
       } else {
-        // ------------------------------------------
-        // LOGIN FAILED
-        // ------------------------------------------
         setLoginStatus("failed");
-
         setLoginError(
-          data.message ||
-            "Incorrect email/mobile number or password. Please try again."
+          data.message || t("login.errors.invalidCredentials")
         );
       }
     } catch (error) {
@@ -130,8 +131,8 @@ const Login = () => {
       setLoginError(
         error.message ===
           "Login successful, but user information was not returned."
-          ? error.message
-          : "Unable to reach the server. Please try again."
+          ? t("login.errors.userNotReturned")
+          : t("login.errors.serverUnavailable")
       );
     } finally {
       setLoginLoading(false);
@@ -145,51 +146,39 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      {/* ================================
-          LOGIN CARD
-      ================================= */}
       <div className="login-card">
-        {/* ================================
-            LEFT BANNER
-        ================================= */}
+        {/* LEFT BANNER */}
         <div className="login-banner">
-          <img src={bannerImage} alt="Better Roads. Stronger Communities." />
+          <img
+            src={bannerImage}
+            alt={t("login.bannerAlt")}
+          />
         </div>
 
-        {/* ================================
-            RIGHT LOGIN SECTION
-        ================================= */}
+        {/* RIGHT LOGIN SECTION */}
         <div className="login-section">
           <div className="login-box">
-            {/* Heading */}
-            <h1>Login</h1>
+            <h1>{t("login.title")}</h1>
 
             <p className="login-subtitle">
-              Welcome back! Please login to your account.
+              {t("login.subtitle")}
             </p>
 
-            {/* ================================
-                ERROR
-            ================================= */}
+            {/* ERROR */}
             {loginStatus === "failed" && (
-              <div className="error-banner">
-                {loginError ||
-                  "Incorrect email/mobile number or password. Please try again."}
+              <div className="error-banner" role="alert">
+                {loginError || t("login.errors.invalidCredentials")}
               </div>
             )}
 
-            {/* ================================
-                SUCCESS
-            ================================= */}
+            {/* SUCCESS */}
             {loginStatus === "success" && (
-              <div className="success-banner">
-                Login successful. Redirecting...
+              <div className="success-banner" role="status">
+                {t("login.success")}
               </div>
             )}
 
-            {/* ================================
-                LOGIN FORM
-            ================================= */}
+            {/* LOGIN FORM */}
             <form onSubmit={handleSubmit}>
               {/* ROLE */}
               <div className="input-group">
@@ -197,26 +186,27 @@ const Login = () => {
                   name="role"
                   value={loginData.role}
                   onChange={handleChange}
-                  aria-label="Login as"
+                  aria-label={t("login.loginAs")}
                   required
                 >
                   {roles.map((role) => (
                     <option key={role.value} value={role.value}>
-                      Login as {role.label}
+                      {t("login.loginAs")} {role.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Email / Mobile Number */}
+              {/* EMAIL / MOBILE NUMBER */}
               <div className="input-group">
                 <input
                   type="text"
                   name="identifier"
-                  placeholder="Email or Mobile Number"
+                  placeholder={t("login.identifierPlaceholder")}
                   value={loginData.identifier}
                   onChange={handleChange}
                   autoComplete="username"
+                  aria-label={t("login.identifierPlaceholder")}
                   required
                 />
               </div>
@@ -226,16 +216,16 @@ const Login = () => {
                 <input
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder={t("login.passwordPlaceholder")}
                   value={loginData.password}
                   onChange={handleChange}
+                  autoComplete="current-password"
+                  aria-label={t("login.passwordPlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================================
-                  REMEMBER + FORGOT PASSWORD
-              ================================= */}
+              {/* REMEMBER + FORGOT PASSWORD */}
               <div className="login-options">
                 <label className="remember">
                   <input
@@ -244,57 +234,54 @@ const Login = () => {
                     checked={loginData.remember}
                     onChange={handleChange}
                   />
-                  <span>Remember me</span>
+                  <span>{t("login.rememberMe")}</span>
                 </label>
 
-                <Link to="/forgot-password" className="forgot-password">
-                  Forgot Password?
+                <Link
+                  to="/forgot-password"
+                  className="forgot-password"
+                >
+                  {t("login.forgotPassword")}
                 </Link>
               </div>
 
-              {/* ================================
-                  LOGIN BUTTON
-              ================================= */}
+              {/* LOGIN BUTTON */}
               <button
                 type="submit"
                 className="login-button"
                 disabled={loginLoading}
               >
                 {loginLoading ? (
-                  "Logging in..."
+                  t("login.loggingIn")
                 ) : (
                   <>
-                    Login <span>→</span>
+                    {t("login.submit")} <span>→</span>
                   </>
                 )}
               </button>
             </form>
 
-            {/* ================================
-                DIVIDER
-            ================================= */}
+            {/* DIVIDER */}
             <div className="divider">
-              <span>or</span>
+              <span>{t("login.or")}</span>
             </div>
 
-            {/* ================================
-                GOOGLE LOGIN
-            ================================= */}
+            {/* GOOGLE LOGIN */}
             <button
               type="button"
               className="google-button"
               onClick={handleGoogleLogin}
             >
               <span className="google-icon"></span>
-              Continue with Google
+              {t("login.continueWithGoogle")}
             </button>
 
-            {/* ================================
-                SIGN UP
-            ================================= */}
+            {/* SIGN UP */}
             <p className="signup-text">
-              Don't have an account?
-              <Link to="/signup">Sign Up</Link>
+              {t("login.noAccount")}{" "}
+              <Link to="/signup">
+                {t("login.signUp")}
+              </Link>
             </p>
           </div>
         </div>

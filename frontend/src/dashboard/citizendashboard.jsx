@@ -2,14 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./citizendashboard.css";
 import logo from "../assets/logo.jpeg"; // ⚠ make sure this file name + extension exist in src/assets
-import MyProfile from "../Citizenprofiledashboard/Myprofile";
+
+// ✅ SUB-PAGE IMPORTS
+import MyProfile from "../Citizenprofiledashboard/MyProfile";
+import MyComplaints from "../Citizenprofiledashboard/MyComplaints";
+import TrackComplaint from "../Citizenprofiledashboard/TrackComplaint";
+import ComplaintsDetails from "../Citizenprofiledashboard/ComplaintsDetails";
+import IssueMap from "../Citizenprofiledashboard/IssueMap";
+import Notifications from "../Citizenprofiledashboard/Notifications";
+import RecentActivity from "../Citizenprofiledashboard/RecentActivity";
+
 const API_URL = "http://localhost:3200/api/complaints";
 
 /*
  * ✅ SINGLE SOURCE OF TRUTH for the Report page route.
  * This MUST match the path in App.jsx, e.g.
  *   <Route path="/reportissue" element={<Report />} />
- * If your route is different (e.g. "/report"), change it ONLY here.
  */
 const REPORT_ROUTE = "/reportissue";
 
@@ -175,6 +183,14 @@ const Icons = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
+  // ✅ ADDED: Logout Icon
+  Logout: () => (
+    <svg width="18" height="18" {...svgProps}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  ),
 };
 
 const CitizenDashboard = () => {
@@ -182,6 +198,7 @@ const CitizenDashboard = () => {
   const location = useLocation();
   const stored = getStoredUser();
 
+  // ---------------- STATE VARIABLES ----------------
   const [profile] = useState({
     name: stored.name || "Citizen User",
     mobile: stored.mobile ? `+91 ${stored.mobile}` : "+91 98765 43210",
@@ -208,15 +225,30 @@ const CitizenDashboard = () => {
     category: "", issue: "", location: "", description: "", photo: "", gps: "",
   });
 
+  // Page visibility states
   const [showProfile, setShowProfile] = useState(false);
+  const [showMyComplaints, setShowMyComplaints] = useState(false);
+  const [showTrackComplaint, setShowTrackComplaint] = useState(false);
+  const [showComplaintDetails, setShowComplaintDetails] = useState(false);
+  const [showIssueMap, setShowIssueMap] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showRecentActivity, setShowRecentActivity] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
-  // ---------------- GO TO REPORT PAGE ----------------
+  // ---------------- HANDLERS ----------------
   const goToReportIssue = () => {
     navigate(REPORT_ROUTE);
   };
 
-  // ---------------- FETCH MY COMPLAINTS ----------------
+  // ✅ FIXED: Proper Logout Functionality
+  const handleLogout = () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("authChange"));
+      navigate("/login"); // Change to "/" if your login route is root
+    }
+  };
+
   const fetchMyComplaints = async () => {
     const user = getStoredUser();
     const citizenId = getCitizenId(user);
@@ -240,9 +272,7 @@ const CitizenDashboard = () => {
       const result = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(
-          result.message || `Failed to load complaints. Server returned ${response.status}.`
-        );
+        throw new Error(result.message || `Failed to load complaints. Server returned ${response.status}.`);
       }
       if (!result.success) throw new Error(result.message || "Failed to load complaints.");
 
@@ -273,24 +303,6 @@ const CitizenDashboard = () => {
     }
   };
 
-  const selectedComplaint = complaints.find((c) => c.id === selectedId) || complaints[0];
-
-  const overviewStats = [
-    { label: "Total Complaints", value: complaints.length, icon: "📋", tone: "navy" },
-    { label: "Pending", value: complaints.filter((c) => c.stage <= 1).length, icon: "⏳", tone: "amber" },
-    { label: "Under Process", value: complaints.filter((c) => c.stage > 1 && c.stage < 5).length, icon: "🧰", tone: "orange" },
-    { label: "Resolved", value: complaints.filter((c) => c.stage === 5).length, icon: "✅", tone: "green" },
-    { label: "Closed", value: complaints.filter((c) => c.stage === 6).length, icon: "📁", tone: "navy" },
-  ];
-
-  const mapGroups = complaints.reduce((groups, c) => {
-    const key = c.location || "Location pending";
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(c);
-    return groups;
-  }, {});
-
-  // ---------------- TRACK COMPLAINT ----------------
   const handleTrackComplaint = async (e) => {
     e.preventDefault();
     const complaintId = trackId.trim();
@@ -325,7 +337,6 @@ const CitizenDashboard = () => {
     }
   };
 
-  // ---------------- CREATE (quick form) ----------------
   const handleCreateComplaint = (e) => {
     e.preventDefault();
     if (!newComplaint.category.trim() || !newComplaint.description.trim()) return;
@@ -349,7 +360,6 @@ const CitizenDashboard = () => {
     setShowNewForm(false);
   };
 
-  // ---------------- GPS ----------------
   const captureGps = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
@@ -373,7 +383,6 @@ const CitizenDashboard = () => {
     );
   };
 
-  // ---------------- UPDATE ----------------
   const startEdit = (complaint) => {
     setEditingId(complaint.id);
     setEditText(complaint.description || "");
@@ -409,7 +418,6 @@ const CitizenDashboard = () => {
     }
   };
 
-  // ---------------- DELETE ----------------
   const handleDelete = async (id) => {
     const user = getStoredUser();
     const citizenId = getCitizenId(user);
@@ -438,13 +446,12 @@ const CitizenDashboard = () => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load complaints when dashboard opens
+  // ---------------- EFFECTS ----------------
   useEffect(() => {
     fetchMyComplaints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle navigation state (openForm / openMap / scrollTo)
   useEffect(() => {
     const s = location.state;
     if (!s) return;
@@ -455,19 +462,34 @@ const CitizenDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  const initials = profile.name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
+  // ---------------- DERIVED VALUES ----------------
+  const selectedComplaint = complaints.find((c) => c.id === selectedId) || complaints[0];
+  const initials = profile.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const trackedStage = trackedComplaint ? getStageFromStatus(trackedComplaint.status) : 0;
 
-  // ✅ Profile view (placed AFTER all hooks, so it follows the Rules of Hooks)
-  if (showProfile) {
-    return <MyProfile onBack={() => setShowProfile(false)} />;
-  }
+  const overviewStats = [
+    { label: "Total Complaints", value: complaints.length, icon: "📋", tone: "navy" },
+    { label: "Pending", value: complaints.filter((c) => c.stage <= 1).length, icon: "⏳", tone: "amber" },
+    { label: "Under Process", value: complaints.filter((c) => c.stage > 1 && c.stage < 5).length, icon: "🧰", tone: "orange" },
+    { label: "Resolved", value: complaints.filter((c) => c.stage === 5).length, icon: "✅", tone: "green" },
+    { label: "Closed", value: complaints.filter((c) => c.stage === 6).length, icon: "📁", tone: "navy" },
+  ];
+
+  const mapGroups = complaints.reduce((groups, c) => {
+    const key = c.location || "Location pending";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+    return groups;
+  }, {});
+
+  // ✅ CONDITIONAL RENDERING (Must be AFTER all hooks, BEFORE main return)
+  if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
+  if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} />;
+  if (showTrackComplaint) return <TrackComplaint onBack={() => setShowTrackComplaint(false)} />;
+  if (showComplaintDetails) return <ComplaintsDetails onBack={() => setShowComplaintDetails(false)} />;
+  if (showIssueMap) return <IssueMap onBack={() => setShowIssueMap(false)} />;
+  if (showNotifications) return <Notifications onBack={() => setShowNotifications(false)} />;
+  if (showRecentActivity) return <RecentActivity onBack={() => setShowRecentActivity(false)} />;
 
   // ✅ MAIN DASHBOARD RENDER
   return (
@@ -505,41 +527,41 @@ const CitizenDashboard = () => {
 
         <div className="cdp-sb-label">Citizen Functions</div>
         <nav className="cdp-sb-nav">
-          {/* ✅ FIXED: uses the shared REPORT_ROUTE */}
           <button type="button" className="cdp-sb-link" onClick={goToReportIssue}>
             <Icons.Report /> Report an Issue
           </button>
-
-          <button type="button" className="cdp-sb-link" onClick={() => scrollTo("my-activity")}>
+          <button type="button" className="cdp-sb-link" onClick={() => setShowMyComplaints(true)}>
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => scrollTo("track-complaint")}>
+          <button type="button" className="cdp-sb-link" onClick={() => setShowTrackComplaint(true)}>
             <Icons.Track /> Track Complaint
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => scrollTo("track-complaint")}>
+          <button type="button" className="cdp-sb-link" onClick={() => setShowComplaintDetails(true)}>
             <Icons.Details /> Complaint Details
           </button>
-          <button
-            type="button"
-            className="cdp-sb-link"
-            onClick={() => {
-              setShowMapView(true);
-              setTimeout(() => scrollTo("map-section"), 50);
-            }}
-          >
+          <button type="button" className="cdp-sb-link" onClick={() => setShowIssueMap(true)}>
             <Icons.Map /> Issues Map
           </button>
         </nav>
 
         <div className="cdp-sb-label">Activity</div>
         <nav className="cdp-sb-nav">
-          <button type="button" className="cdp-sb-link" onClick={() => scrollTo("notif-panel")}>
+          <button type="button" className="cdp-sb-link" onClick={() => setShowNotifications(true)}>
             <Icons.Bell /> Notifications
             <span className="cdp-sb-badge">{notifications.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => scrollTo("my-activity")}>
+          <button type="button" className="cdp-sb-link" onClick={() => setShowRecentActivity(true)}>
             <Icons.Clock /> Recent Activity
+          </button>
+          {/* ✅ FIXED: Proper Logout Button */}
+          <button 
+            type="button" 
+            className="cdp-sb-link" 
+            onClick={handleLogout}
+            style={{ color: "var(--red, #d13438)", marginTop: "8px" }}
+          >
+            <Icons.Logout /> Logout
           </button>
         </nav>
 
@@ -570,16 +592,11 @@ const CitizenDashboard = () => {
               type="button"
               className="cdp-icon-btn"
               aria-label="Notifications"
-              onClick={() => scrollTo("notif-panel")}
+              onClick={() => setShowNotifications(true)}
             >
               <Icons.Bell />
               <span className="cdp-tb-dot"></span>
             </button>
-
-            {/* <button className="cdp-btn-primary" type="button" onClick={goToReportIssue}>
-              + Report an Issue
-            </button> */}
-
             <div className="cdp-tb-user" onClick={() => setShowProfile(true)}>
               <div className="cdp-tb-avatar">{initials}</div>
               <div>
@@ -594,9 +611,7 @@ const CitizenDashboard = () => {
         <div className="cdp-content">
           <div className="cdp-title-row">
             <h1>Welcome back, {profile.name.split(" ")[0]}</h1>
-            <p>
-              {profile.ward} · Member since {profile.memberSince}
-            </p>
+            <p>{profile.ward} · Member since {profile.memberSince}</p>
           </div>
 
           {/* DASHBOARD STAT CARDS */}
@@ -638,7 +653,6 @@ const CitizenDashboard = () => {
                 <p>Enter your complaint ID to check its latest status.</p>
               </div>
             </div>
-
             <div className="cdp-track-body">
               <form className="cdp-track-form" onSubmit={handleTrackComplaint}>
                 <input
@@ -656,13 +670,11 @@ const CitizenDashboard = () => {
                   {trackLoading ? "Tracking..." : "Track Complaint"}
                 </button>
               </form>
-
               {trackError && (
                 <div className="cdp-track-error" role="alert">
                   {trackError}
                 </div>
               )}
-
               {trackedComplaint && (
                 <div className="cdp-track-result">
                   <div className="cdp-track-result-header">
@@ -674,13 +686,11 @@ const CitizenDashboard = () => {
                       {trackedComplaint.status || lifecycleStages[0]}
                     </span>
                   </div>
-
                   <div className="cdp-track-progress">
                     {lifecycleStages.map((stage, index) => (
                       <div className="cdp-track-progress-item" key={stage}>
                         <div
-                          className={`cdp-track-progress-dot ${index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"
-                            }`}
+                          className={`cdp-track-progress-dot ${index < trackedStage ? "done" : index === trackedStage ? "current" : "pending"}`}
                         >
                           {index < trackedStage ? "✓" : index + 1}
                         </div>
@@ -688,36 +698,16 @@ const CitizenDashboard = () => {
                       </div>
                     ))}
                   </div>
-
                   <div className="cdp-track-details">
-                    <div>
-                      <span>Category</span>
-                      <strong>{trackedComplaint.category || "—"}</strong>
-                    </div>
-                    <div>
-                      <span>Specific Issue</span>
-                      <strong>{trackedComplaint.issueType || trackedComplaint.issue || "—"}</strong>
-                    </div>
-                    <div>
-                      <span>Department</span>
-                      <strong>{trackedComplaint.department || "—"}</strong>
-                    </div>
-                    <div>
-                      <span>Location</span>
-                      <strong>{trackedComplaint.location || "—"}</strong>
-                    </div>
+                    <div><span>Category</span><strong>{trackedComplaint.category || "—"}</strong></div>
+                    <div><span>Specific Issue</span><strong>{trackedComplaint.issueType || trackedComplaint.issue || "—"}</strong></div>
+                    <div><span>Department</span><strong>{trackedComplaint.department || "—"}</strong></div>
+                    <div><span>Location</span><strong>{trackedComplaint.location || "—"}</strong></div>
                     <div>
                       <span>Date Registered</span>
-                      <strong>
-                        {trackedComplaint.createdAt
-                          ? new Date(trackedComplaint.createdAt).toLocaleDateString("en-IN")
-                          : "—"}
-                      </strong>
+                      <strong>{trackedComplaint.createdAt ? new Date(trackedComplaint.createdAt).toLocaleDateString("en-IN") : "—"}</strong>
                     </div>
-                    <div>
-                      <span>Description</span>
-                      <strong>{trackedComplaint.description || "—"}</strong>
-                    </div>
+                    <div><span>Description</span><strong>{trackedComplaint.description || "—"}</strong></div>
                   </div>
                 </div>
               )}
@@ -731,7 +721,6 @@ const CitizenDashboard = () => {
                 <h3>My Reported Issues</h3>
                 <span className="cdp-panel-link">{complaints.length} total</span>
               </div>
-
               <div className="cdp-table-wrap">
                 <table>
                   <thead>
@@ -744,109 +733,61 @@ const CitizenDashboard = () => {
                       <th></th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {complaintsLoading && complaints.length === 0 && (
-                      <tr className="cdp-empty-row">
-                        <td colSpan={6} className="cdp-empty-cell">Loading complaints...</td>
-                      </tr>
+                      <tr className="cdp-empty-row"><td colSpan={6} className="cdp-empty-cell">Loading complaints...</td></tr>
                     )}
-
                     {!complaintsLoading && complaints.length === 0 && (
-                      <tr className="cdp-empty-row">
-                        <td colSpan={6} className="cdp-empty-cell">No complaints found.</td>
-                      </tr>
+                      <tr className="cdp-empty-row"><td colSpan={6} className="cdp-empty-cell">No complaints found.</td></tr>
                     )}
-
                     {complaints.map((c) => (
                       <React.Fragment key={c.id}>
-                        <tr
-                          className={selectedId === c.id ? "cdp-row-active" : ""}
-                          onClick={() => setSelectedId(c.id)}
-                        >
+                        <tr className={selectedId === c.id ? "cdp-row-active" : ""} onClick={() => setSelectedId(c.id)}>
                           <td className="cdp-mono">{c.complaintNumber}</td>
                           <td>
                             <div className="cdp-cat">
-                              <span
-                                className="cdp-cat-dot"
-                                style={{ background: colorForCategory(c.category) }}
-                              ></span>
+                              <span className="cdp-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
                               {c.issue}
                             </div>
                           </td>
                           <td>{c.location || "Location pending"}</td>
-                          <td>
-                            <span className={`cdp-badge cdp-badge-${stageTone[c.stage]}`}>
-                              {lifecycleStages[c.stage]}
-                            </span>
-                          </td>
+                          <td><span className={`cdp-badge cdp-badge-${stageTone[c.stage]}`}>{lifecycleStages[c.stage]}</span></td>
                           <td className="cdp-mono">{c.date}</td>
                           <td onClick={(e) => e.stopPropagation()}>
                             <div className="cdp-row-actions">
-                              <button
-                                className="cdp-icon-btn small"
-                                type="button"
-                                onClick={() => startEdit(c)}
-                                title="Update"
-                                aria-label="Update complaint"
-                              >
+                              <button className="cdp-icon-btn small" type="button" onClick={() => startEdit(c)} title="Update" aria-label="Update complaint">
                                 <Icons.Edit />
                               </button>
                               {c.stage === 0 && (
-                                <button
-                                  className="cdp-icon-btn small danger"
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(c.id)}
-                                  title="Delete"
-                                  aria-label="Delete complaint"
-                                >
+                                <button className="cdp-icon-btn small danger" type="button" onClick={() => setConfirmDeleteId(c.id)} title="Delete" aria-label="Delete complaint">
                                   <Icons.Delete />
                                 </button>
                               )}
                             </div>
                           </td>
                         </tr>
-
                         {editingId === c.id && (
                           <tr className="cdp-edit-row">
                             <td colSpan={6}>
                               <div className="cdp-edit-block">
-                                <input
-                                  type="text"
-                                  value={editLocation}
-                                  onChange={(e) => setEditLocation(e.target.value)}
-                                  placeholder="Location"
-                                />
-                                <textarea
-                                  rows="2"
-                                  value={editText}
-                                  onChange={(e) => setEditText(e.target.value)}
-                                />
+                                <input type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Location" />
+                                <textarea rows="2" value={editText} onChange={(e) => setEditText(e.target.value)} />
                                 <div className="cdp-edit-actions">
-                                  <button className="cdp-btn-outline" type="button" onClick={() => setEditingId(null)}>
-                                    Cancel
-                                  </button>
-                                  <button className="cdp-btn-primary small" type="button" onClick={() => saveEdit(c.id)}>
-                                    Save
-                                  </button>
+                                  <button className="cdp-btn-outline" type="button" onClick={() => setEditingId(null)}>Cancel</button>
+                                  <button className="cdp-btn-primary small" type="button" onClick={() => saveEdit(c.id)}>Save</button>
                                 </div>
                               </div>
                             </td>
                           </tr>
                         )}
-
                         {confirmDeleteId === c.id && (
                           <tr className="cdp-edit-row">
                             <td colSpan={6}>
                               <div className="cdp-delete-confirm">
                                 <span>Delete this complaint?</span>
                                 <div>
-                                  <button className="cdp-btn-outline small" type="button" onClick={() => setConfirmDeleteId(null)}>
-                                    No
-                                  </button>
-                                  <button className="cdp-btn-danger small" type="button" onClick={() => handleDelete(c.id)}>
-                                    Yes, Delete
-                                  </button>
+                                  <button className="cdp-btn-outline small" type="button" onClick={() => setConfirmDeleteId(null)}>No</button>
+                                  <button className="cdp-btn-danger small" type="button" onClick={() => handleDelete(c.id)}>Yes, Delete</button>
                                 </div>
                               </div>
                             </td>
@@ -864,30 +805,16 @@ const CitizenDashboard = () => {
               <div className="cdp-panel">
                 <div className="cdp-panel-head">
                   <h3>Complaint Lifecycle</h3>
-                  <span className="cdp-mono cdp-faint">
-                    {selectedComplaint?.complaintNumber || "No complaint selected"}
-                  </span>
+                  <span className="cdp-mono cdp-faint">{selectedComplaint?.complaintNumber || "No complaint selected"}</span>
                 </div>
-
                 {selectedComplaint && (
                   <>
-                    <p className="cdp-lifecycle-location">
-                      📍 {selectedComplaint.location || "Location pending"}
-                    </p>
+                    <p className="cdp-lifecycle-location">📍 {selectedComplaint.location || "Location pending"}</p>
                     <div className="cdp-lifecycle">
                       {lifecycleStages.map((stage, i) => (
                         <div className="cdp-lc-item" key={i}>
-                          <div
-                            className={`cdp-lc-dot ${i < selectedComplaint.stage
-                                ? "done"
-                                : i === selectedComplaint.stage
-                                  ? "now"
-                                  : "pend"
-                              }`}
-                          ></div>
-                          <div className="cdp-lc-body">
-                            <b>{stage}</b>
-                          </div>
+                          <div className={`cdp-lc-dot ${i < selectedComplaint.stage ? "done" : i === selectedComplaint.stage ? "now" : "pend"}`}></div>
+                          <div className="cdp-lc-body"><b>{stage}</b></div>
                         </div>
                       ))}
                     </div>
@@ -918,105 +845,47 @@ const CitizenDashboard = () => {
           {/* QUICK REGISTER FORM (optional) */}
           {showNewForm && (
             <div className="cdp-panel cdp-form-panel">
-              <div className="cdp-panel-head">
-                <h3>Quick Register a New Issue</h3>
-              </div>
-
+              <div className="cdp-panel-head"><h3>Quick Register a New Issue</h3></div>
               <form className="cdp-new-form" onSubmit={handleCreateComplaint}>
                 <div className="cdp-form-row">
                   <div className="cdp-field">
                     <label htmlFor="new-category">Category</label>
-                    <input
-                      id="new-category"
-                      type="text"
-                      placeholder="e.g. Road Issues"
-                      value={newComplaint.category}
-                      onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })}
-                      required
-                    />
+                    <input id="new-category" type="text" placeholder="e.g. Road Issues" value={newComplaint.category} onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })} required />
                   </div>
                   <div className="cdp-field">
                     <label htmlFor="new-issue">Specific Issue</label>
-                    <input
-                      id="new-issue"
-                      type="text"
-                      placeholder="e.g. Road Potholes"
-                      value={newComplaint.issue}
-                      onChange={(e) => setNewComplaint({ ...newComplaint, issue: e.target.value })}
-                    />
+                    <input id="new-issue" type="text" placeholder="e.g. Road Potholes" value={newComplaint.issue} onChange={(e) => setNewComplaint({ ...newComplaint, issue: e.target.value })} />
                   </div>
                 </div>
-
                 <div className="cdp-form-row">
                   <div className="cdp-field">
                     <label htmlFor="new-location">Location</label>
-                    <input
-                      id="new-location"
-                      type="text"
-                      placeholder="Street, landmark or ward"
-                      value={newComplaint.location}
-                      onChange={(e) => setNewComplaint({ ...newComplaint, location: e.target.value })}
-                    />
+                    <input id="new-location" type="text" placeholder="Street, landmark or ward" value={newComplaint.location} onChange={(e) => setNewComplaint({ ...newComplaint, location: e.target.value })} />
                   </div>
                   <div className="cdp-field">
                     <label htmlFor="new-gps">Capture GPS</label>
                     <div className="cdp-gps-row">
-                      <input
-                        id="new-gps"
-                        type="text"
-                        placeholder="Not captured yet"
-                        value={newComplaint.gps}
-                        readOnly
-                      />
-                      <button
-                        className="cdp-btn-outline small"
-                        type="button"
-                        onClick={captureGps}
-                        disabled={gpsBusy}
-                      >
+                      <input id="new-gps" type="text" placeholder="Not captured yet" value={newComplaint.gps} readOnly />
+                      <button className="cdp-btn-outline small" type="button" onClick={captureGps} disabled={gpsBusy}>
                         {gpsBusy ? "Locating…" : "📍 Capture"}
                       </button>
                     </div>
                   </div>
                 </div>
-
                 <div className="cdp-field">
                   <label htmlFor="new-description">Description</label>
-                  <textarea
-                    id="new-description"
-                    rows="3"
-                    placeholder="Describe the issue"
-                    value={newComplaint.description}
-                    onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })}
-                    required
-                  />
+                  <textarea id="new-description" rows="3" placeholder="Describe the issue" value={newComplaint.description} onChange={(e) => setNewComplaint({ ...newComplaint, description: e.target.value })} required />
                 </div>
-
                 <div className="cdp-field">
                   <label htmlFor="new-photo">Upload Photo</label>
                   <label className="cdp-photo-upload">
                     {newComplaint.photo ? `📷 ${newComplaint.photo}` : "📷 Click to attach a photo"}
-                    <input
-                      id="new-photo"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setNewComplaint({
-                          ...newComplaint,
-                          photo: e.target.files?.[0]?.name || "",
-                        })
-                      }
-                    />
+                    <input id="new-photo" type="file" accept="image/*" onChange={(e) => setNewComplaint({ ...newComplaint, photo: e.target.files?.[0]?.name || "" })} />
                   </label>
                 </div>
-
                 <div className="cdp-form-actions">
-                  <button className="cdp-btn-outline" type="button" onClick={() => setShowNewForm(false)}>
-                    Cancel
-                  </button>
-                  <button className="cdp-btn-primary" type="submit">
-                    Submit Complaint →
-                  </button>
+                  <button className="cdp-btn-outline" type="button" onClick={() => setShowNewForm(false)}>Cancel</button>
+                  <button className="cdp-btn-primary" type="submit">Submit Complaint →</button>
                 </div>
               </form>
             </div>
@@ -1027,30 +896,18 @@ const CitizenDashboard = () => {
             <div className="cdp-panel cdp-form-panel" id="map-section">
               <div className="cdp-panel-head">
                 <h3>Reported Issues Near {profile.ward}</h3>
-                <span className="cdp-panel-link cdp-clickable" onClick={() => setShowMapView(false)}>
-                  Hide Map View
-                </span>
+                <span className="cdp-panel-link cdp-clickable" onClick={() => setShowMapView(false)}>Hide Map View</span>
               </div>
-
               <div className="cdp-map-grid">
                 {Object.entries(mapGroups).map(([loc, items]) => (
                   <div className="cdp-map-ward-card" key={loc}>
                     <p className="cdp-map-ward-name">{loc}</p>
                     <div className="cdp-map-pins">
                       {items.map((c) => (
-                        <span
-                          className="cdp-map-pin"
-                          key={c.id}
-                          style={{ background: colorForCategory(c.category) }}
-                          title={`${c.complaintNumber} — ${c.category}`}
-                        >
-                          📍
-                        </span>
+                        <span className="cdp-map-pin" key={c.id} style={{ background: colorForCategory(c.category) }} title={`${c.complaintNumber} — ${c.category}`}>📍</span>
                       ))}
                     </div>
-                    <span className="cdp-map-ward-count">
-                      {items.length} issue{items.length !== 1 ? "s" : ""} reported
-                    </span>
+                    <span className="cdp-map-ward-count">{items.length} issue{items.length !== 1 ? "s" : ""} reported</span>
                   </div>
                 ))}
               </div>
@@ -1059,36 +916,17 @@ const CitizenDashboard = () => {
 
           {/* QUICK ACTIONS */}
           <div className="cdp-quick-row">
-            {/* ✅ FIXED: same route as the sidebar button */}
             <button className="cdp-quick-card" type="button" onClick={goToReportIssue}>
               <div className="cdp-quick-ic navy">📍</div>
-              <div>
-                <h5>Report a New Issue</h5>
-                <p>Photo, location & description</p>
-              </div>
+              <div><h5>Report a New Issue</h5><p>Photo, location & description</p></div>
             </button>
-
             <button className="cdp-quick-card" type="button" onClick={() => scrollTo("track-complaint")}>
               <div className="cdp-quick-ic saffron">🔍</div>
-              <div>
-                <h5>Track a Complaint</h5>
-                <p>Check status by complaint ID</p>
-              </div>
+              <div><h5>Track a Complaint</h5><p>Check status by complaint ID</p></div>
             </button>
-
-            <button
-              className="cdp-quick-card"
-              type="button"
-              onClick={() => {
-                setShowMapView(true);
-                setTimeout(() => scrollTo("map-section"), 50);
-              }}
-            >
+            <button className="cdp-quick-card" type="button" onClick={() => { setShowMapView(true); setTimeout(() => scrollTo("map-section"), 50); }}>
               <div className="cdp-quick-ic green">🗺️</div>
-              <div>
-                <h5>View Issues Map</h5>
-                <p>See reports near your ward</p>
-              </div>
+              <div><h5>View Issues Map</h5><p>See reports near your ward</p></div>
             </button>
           </div>
         </div>

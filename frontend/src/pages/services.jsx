@@ -1,6 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import "./services.css";
-import bannerImage from "../assets/se.png";
+const REPORT_ROUTE = "/reportissue";
+
+import bannerImageEn from "../assets/se.png";
+import bannerImageHi from "../assets/se-hi.png";
+import bannerImageMr from "../assets/se-mr.png";
 
 // Realistic full-colour icons (emoji style)
 const Emoji = ({ symbol }) => (
@@ -18,169 +24,164 @@ const icons = {
   analytics: <Emoji symbol="📊" />,
 };
 
+// Translation keys for core services
 const coreServices = [
   {
     num: "01",
     icon: icons.report,
-    title: "Report & Register Issues",
-    summary:
-      "Report road and public infrastructure issues through the online portal.",
-    features: [
-      "Select issue category",
-      "Add issue description",
-      "Upload photographs",
-      "Capture GPS location",
-      "Generate complaint number",
-      "QR-code-based registration",
-      "Mobile-based registration",
+    titleKey: "services.items.report.title",
+    summaryKey: "services.items.report.summary",
+    featureKeys: [
+      "services.items.report.features.category",
+      "services.items.report.features.description",
+      "services.items.report.features.photos",
+      "services.items.report.features.gps",
+      "services.items.report.features.number",
+      "services.items.report.features.qr",
+      "services.items.report.features.mobile",
     ],
   },
   {
     num: "02",
     icon: icons.track,
-    title: "Complaint Tracking Service",
-    summary:
-      "Track any complaint end-to-end using its complaint number.",
-    features: [
-      "Track using complaint number",
-      "View complaint status",
-      "View complaint history",
-      "View all registered complaints",
-      "Receive status update notifications",
-      "Follow complete complaint lifecycle",
+    titleKey: "services.items.track.title",
+    summaryKey: "services.items.track.summary",
+    featureKeys: [
+      "services.items.track.features.number",
+      "services.items.track.features.status",
+      "services.items.track.features.history",
+      "services.items.track.features.all",
+      "services.items.track.features.notifications",
+      "services.items.track.features.lifecycle",
     ],
   },
   {
     num: "03",
     icon: icons.map,
-    title: "Location & Map Service",
-    summary:
-      "Every issue is pinned precisely — with priority-coded map markers.",
-    features: [
-      "Automatic GPS location capture",
-      "Latitude & longitude recording",
-      "Exact issue location on map",
-      "View reported issues on map",
-      "Category/location-based identification",
-      "Criticality-based map indicators",
+    titleKey: "services.items.map.title",
+    summaryKey: "services.items.map.summary",
+    featureKeys: [
+      "services.items.map.features.gps",
+      "services.items.map.features.coordinates",
+      "services.items.map.features.exact",
+      "services.items.map.features.view",
+      "services.items.map.features.identification",
+      "services.items.map.features.criticality",
     ],
   },
   {
     num: "04",
     icon: icons.field,
-    title: "Field Staff Service",
-    summary:
-      "Tools for field officers to inspect, act on, and close assigned complaints.",
-    features: [
-      "View assigned complaints",
-      "View complaint location",
-      "Conduct physical inspection",
-      "Upload site photographs",
-      "Record action taken",
-      "Update work status & remarks",
-      "Maintain before/after repair records",
+    titleKey: "services.items.field.title",
+    summaryKey: "services.items.field.summary",
+    featureKeys: [
+      "services.items.field.features.assigned",
+      "services.items.field.features.location",
+      "services.items.field.features.inspection",
+      "services.items.field.features.photos",
+      "services.items.field.features.action",
+      "services.items.field.features.status",
+      "services.items.field.features.records",
     ],
   },
   {
     num: "05",
     icon: icons.admin,
-    title: "Admin & Complaint Management",
-    summary:
-      "Manage and resolve complaints, users and system settings.",
-    features: [
-      "Centralized administrative dashboard",
-      "View total, new & pending complaints",
-      "Verify complaints",
-      "Assign complaints to staff",
-      "Set complaint priority",
-      "Monitor progress by category/location",
-      "Manage complete complaint lifecycle",
+    titleKey: "services.items.admin.title",
+    summaryKey: "services.items.admin.summary",
+    featureKeys: [
+      "services.items.admin.features.dashboard",
+      "services.items.admin.features.total",
+      "services.items.admin.features.verify",
+      "services.items.admin.features.assign",
+      "services.items.admin.features.priority",
+      "services.items.admin.features.monitor",
+      "services.items.admin.features.lifecycle",
     ],
   },
   {
     num: "06",
     icon: icons.analytics,
-    title: "Reports, Notifications & Analytics",
-    summary:
-      "Get insights through reports, alerts and real-time analytics.",
-    features: [
-      "Registration & verification notifications",
-      "Assignment & action-started alerts",
-      "Work-completed & resolution alerts",
-      "Daily, weekly & monthly reports",
-      "Category-wise & area-wise reports",
-      "Priority-wise & action-taken reports",
-      "Infrastructure issue analytics",
+    titleKey: "services.items.analytics.title",
+    summaryKey: "services.items.analytics.summary",
+    featureKeys: [
+      "services.items.analytics.features.registration",
+      "services.items.analytics.features.assignment",
+      "services.items.analytics.features.resolution",
+      "services.items.analytics.features.periodic",
+      "services.items.analytics.features.category",
+      "services.items.analytics.features.priority",
+      "services.items.analytics.features.analytics",
     ],
   },
 ];
 
+// Complaint lifecycle translation keys
 const lifecycleSteps = [
-  { label: "Registered", state: "done" },
-  { label: "Verified", state: "done" },
-  { label: "Assigned", state: "done" },
-  { label: "Action", state: "now" },
-  { label: "Completed", state: "pend" },
-  { label: "Closed", state: "pend" },
+  { labelKey: "services.lifecycle.registered", state: "done" },
+  { labelKey: "services.lifecycle.verified", state: "done" },
+  { labelKey: "services.lifecycle.assigned", state: "done" },
+  { labelKey: "services.lifecycle.action", state: "now" },
+  { labelKey: "services.lifecycle.completed", state: "pend" },
+  { labelKey: "services.lifecycle.closed", state: "pend" },
 ];
 
+// Map priority legend translation keys
 const priorityLegend = [
-  { color: "red", label: "Critical / Urgent" },
-  { color: "orange", label: "Action Required" },
-  { color: "amber", label: "Inspection Required" },
-  { color: "green", label: "Resolved" },
+  { color: "red", labelKey: "services.priority.critical" },
+  { color: "orange", labelKey: "services.priority.action" },
+  { color: "amber", labelKey: "services.priority.inspection" },
+  { color: "green", labelKey: "services.priority.resolved" },
 ];
 
 const Services = () => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [activeService, setActiveService] = useState(0);
+
+  // Detect the current language
+  const currentLanguage = (
+    i18n.resolvedLanguage || i18n.language || "en"
+  ).split("-")[0];
+
+  // Select the matching banner image
+  const bannerImage =
+    {
+      en: bannerImageEn,
+      hi: bannerImageHi,
+      mr: bannerImageMr,
+    }[currentLanguage] || bannerImageEn;
+
+  const activeServiceData = coreServices[activeService];
 
   return (
     <main className="services-page">
-      {/* ================= PAGE HERO — Bright Banner ================= */}
+      {/* ================= PAGE HERO ================= */}
+      <section className="page-hero-section">
+        <div
+          className="page-hero"
+          style={{ backgroundImage: `url("${bannerImage}")` }}
+        >
+          <div className="hero-scrim"></div>
 
-  <section className="page-hero-section">
-  <div
-    className="page-hero"
-    style={{ backgroundImage: `url("${bannerImage}")` }}
-  >
-    <div className="hero-scrim"></div>
-  
+          <div className="page-hero-inner">
+            <h1 className="sr-only">
+              {t("services.hero.title")}
+            </h1>
 
-    <div className="page-hero-inner">
-      {/*
-      <div className="breadcrumb">
-        Home / <b>Services</b>
-      </div>
-      */}
-
-      
-
-
-      {/* Hidden text for SEO — banner image already has the heading */}
-      <h1 className="sr-only">Our Services</h1>
-
-      <p className="sr-only">
-        Citizen-centric services for safer, smarter and better roads in India.
-      </p>
-    </div>
-  </div>
-</section>
-
-
-
-
-
-
-
-
+            <p className="sr-only">
+              {t("services.hero.description")}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* ================= SERVICES GRID ================= */}
       <section className="section">
         <div className="section-heading">
-          <p className="eyebrow">Core Services</p>
-          {/* <h2>
-            Everything the platform does, organized into 6 services
-          </h2> */}
+          <p className="eyebrow">
+            {t("services.coreServices")}
+          </p>
         </div>
 
         <div className="services-grid">
@@ -188,20 +189,14 @@ const Services = () => {
             <button
               key={service.num}
               type="button"
-              className={`service-card ${
-                activeService === i ? "active" : ""
-              }`}
+              className={`service-card ${activeService === i ? "active" : ""
+                }`}
               onClick={() => setActiveService(i)}
               aria-pressed={activeService === i}
             >
-              {/* Icon */}
               <div className="service-icon">{service.icon}</div>
-
-              {/* Title */}
-              <h4>{service.title}</h4>
-
-              {/* Description */}
-              <p>{service.summary}</p>
+              <h4>{t(service.titleKey)}</h4>
+              <p>{t(service.summaryKey)}</p>
             </button>
           ))}
         </div>
@@ -212,20 +207,22 @@ const Services = () => {
         <div className="detail-shell">
           <div className="detail-heading">
             <span className="service-number lg">
-              {coreServices[activeService].num}
+              {activeServiceData.num}
             </span>
 
             <div>
-              <p className="eyebrow">Service Detail</p>
-              <h3>{coreServices[activeService].title}</h3>
+              <p className="eyebrow">
+                {t("services.serviceDetail")}
+              </p>
+              <h3>{t(activeServiceData.titleKey)}</h3>
             </div>
           </div>
 
           <div className="detail-grid">
-            {coreServices[activeService].features.map((feat, i) => (
+            {activeServiceData.featureKeys.map((featureKey, i) => (
               <div className="feature-pill" key={i}>
                 <span className="check">✓</span>
-                {feat}
+                {t(featureKey)}
               </div>
             ))}
           </div>
@@ -235,15 +232,20 @@ const Services = () => {
       {/* ================= COMPLAINT LIFECYCLE ================= */}
       <section className="section">
         <div className="section-heading center">
-          <p className="eyebrow center">Complaint Lifecycle</p>
-          <h2>Every complaint follows the same transparent path</h2>
+          <p className="eyebrow center">
+            {t("services.lifecycle.title")}
+          </p>
+          <h2>{t("services.lifecycle.description")}</h2>
         </div>
 
         <div className="lifecycle-track">
           {lifecycleSteps.map((step, i) => (
-            <div className={`lifecycle-step ${step.state}`} key={i}>
+            <div
+              className={`lifecycle-step ${step.state}`}
+              key={i}
+            >
               <div className="lifecycle-dot"></div>
-              <span>{step.label}</span>
+              <span>{t(step.labelKey)}</span>
             </div>
           ))}
         </div>
@@ -253,19 +255,22 @@ const Services = () => {
       <section className="section surface">
         <div className="legend-shell">
           <div>
-            <p className="eyebrow">Location & Map Service</p>
-            <h3>Priority-coded map markers</h3>
+            <p className="eyebrow">
+              {t("services.mapPriority.title")}
+            </p>
+            <h3>{t("services.mapPriority.heading")}</h3>
             <p className="hero-lead-dark">
-              Every issue on the public map is color-coded by urgency, so
-              citizens and staff can see what needs attention first.
+              {t("services.mapPriority.description")}
             </p>
           </div>
 
           <div className="legend-grid">
             {priorityLegend.map((item, i) => (
               <div className="legend-card" key={i}>
-                <span className={`legend-dot dot-${item.color}`}></span>
-                {item.label}
+                <span
+                  className={`legend-dot dot-${item.color}`}
+                ></span>
+                {t(item.labelKey)}
               </div>
             ))}
           </div>
@@ -276,13 +281,16 @@ const Services = () => {
       <section className="section cta-section">
         <div className="cta-shell">
           <div>
-            <h3>Ready to report an issue?</h3>
-            <p>
-              It takes less than two minutes — photo, location, and a few details.
-            </p>
+            <h3>{t("services.cta.title")}</h3>
+            <p>{t("services.cta.description")}</p>
           </div>
-          <button className="primary-btn" type="button">
-            Report an Issue <span>→</span>
+
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={() => navigate(REPORT_ROUTE)}
+          >
+            {t("services.cta.button")} <span>→</span>
           </button>
         </div>
       </section>

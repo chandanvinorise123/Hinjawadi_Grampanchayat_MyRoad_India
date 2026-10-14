@@ -1,726 +1,751 @@
+
 {
-  "topbar": {
-    "govService": "सरकारी डिजिटल सेवा · ग्राम पंचायत पोर्टल",
-    "screenReader": "स्क्रीन रीडर एक्सेस"
-  },
-  "nav": {
+  "navbar": {
+    "governmentPortal": "सरकारी डिजिटल सेवा · ग्राम पंचायत पोर्टल",
+    "screenReader": "स्क्रीन रीडर सुविधा",
+    "tagline": "रिपोर्ट करें · ट्रैक करें · समाधान पाएं",
     "home": "होम",
-    "services": "सेवाएं",
-    "issuesCategory": "समस्या श्रेणी",
+    "services": "सेवाएँ",
+    "issuesCategory": "समस्याओं की श्रेणियाँ",
     "aboutUs": "हमारे बारे में",
     "contactUs": "संपर्क करें",
+    "blog": "ब्लॉग",
     "dashboard": "डैशबोर्ड",
-    "helpFaq": "सहायता / प्रश्न",
+    "helpFaq": "सहायता / अक्सर पूछे जाने वाले प्रश्न",
     "login": "लॉगिन",
-    "reportIssue": "समस्या दर्ज करें"
+    "reportIssue": "समस्या दर्ज करें",
+    "profile": "प्रोफ़ाइल",
+    "user": "उपयोगकर्ता",
+    "editProfile": "प्रोफ़ाइल संपादित करें",
+    "helpCenter": "सहायता केंद्र",
+    "logout": "लॉगआउट",
+    "languages": {
+      "english": "अंग्रेज़ी",
+      "hindi": "हिंदी",
+      "marathi": "मराठी"
+    },
+    "roles": {
+      "admin": "एडमिन",
+      "staff": "कर्मचारी",
+      "verifier": "सत्यापन अधिकारी",
+      "citizen": "नागरिक"
+    },
+    "roleDashboard": "{{role}} डैशबोर्ड"
   },
   "footer": {
-    "description": "ग्राम पंचायत के भीतर सड़क और अवसंरचना समस्याओं की रिपोर्टिंग, ट्रैकिंग और समाधान के लिए एक डिजिटल सार्वजनिक-सेवा मंच।",
-    "badge": "डिजिटल सार्वजनिक सेवा मंच",
-    "citizenServicesHeading": "नागरिक सेवाएं",
-    "citizenServices": [
-      { "label": "समस्या दर्ज करें" },
-      { "label": "शिकायत ट्रैक करें" },
-      { "label": "समस्या मानचित्र" },
-      { "label": "सड़क सुरक्षा" }
-    ],
-    "platformHeading": "प्लेटफ़ॉर्म",
-    "platformLinks": [
-      { "label": "हमारे बारे में" },
-      { "label": "यह कैसे काम करता है" },
-      { "label": "सामान्य प्रश्न" },
-      { "label": "संपर्क करें" }
-    ],
-    "legalHeading": "कानूनी",
-    "legalLinks": [
-      { "label": "गोपनीयता नीति" },
-      { "label": "सुगम्यता" },
-      { "label": "उपयोग की शर्तें" }
-    ],
-    "accessHeading": "एक्सेस",
-    "accessLinks": [
-      { "label": "सिस्टम लॉगिन" },
-      { "label": "स्टाफ पोर्टल" },
-      { "label": "एडमिन डैशबोर्ड" }
-    ],
-    "copyright": "© 2026 माईरोड इंडिया · ग्राम पंचायत डिजिटल सेवाएं",
-    "tagline": "पारदर्शिता, जवाबदेही और बेहतर सड़कों के लिए निर्मित।"
+    "logoAlt": "मायरोड इंडिया लोगो",
+    "subtitle": "सड़क सुरक्षा • GIS मानचित्र • स्मार्ट सड़क प्रबंधन",
+    "tagline": "सुरक्षित सड़कें • स्मार्ट समुदाय • बेहतर भारत",
+    "citizenServices": "नागरिक सेवाएँ",
+    "reportIssue": "समस्या दर्ज करें",
+    "trackComplaint": "शिकायत का ट्रैक रखें",
+    "issuesMap": "समस्याओं का मानचित्र",
+    "roadSafety": "सड़क सुरक्षा",
+    "platform": "प्लेटफ़ॉर्म",
+    "about": "हमारे बारे में",
+    "howItWorks": "यह कैसे काम करता है",
+    "faq": "अक्सर पूछे जाने वाले प्रश्न",
+    "contact": "संपर्क करें",
+    "legal": "कानूनी जानकारी",
+    "privacyPolicy": "गोपनीयता नीति",
+    "accessibility": "सुलभता",
+    "termsOfUse": "उपयोग की शर्तें",
+    "access": "पहुँच",
+    "systemLogin": "सिस्टम लॉगिन",
+    "staffPortal": "कर्मचारी पोर्टल",
+    "adminDashboard": "एडमिन डैशबोर्ड",
+    "bottomLinks": "समस्या दर्ज करें | मानचित्र | ट्रैक करें | सुरक्षित सड़कों के लिए मिलकर काम करें",
+    "bottomTagline": "स्वच्छ सड़कें • सुरक्षित जीवन • हरित भविष्य"
   },
+
   "home": {
-    "badge": "लाइव नागरिक शिकायत नेटवर्क — ग्राम पंचायत",
-    "title1": "सड़क और",
-    "title2": "सार्वजनिक अवसंरचना समस्याएं दर्ज करें",
-    "description": "समस्या की फोटो लें, अपना स्थान साझा करें, और सेकंडों में शिकायत नंबर प्राप्त करें। सत्यापन से लेकर मरम्मत तक हर चरण को ट्रैक करें — जब तक यह हल न हो जाए।",
-    "reportBtn": "समस्या दर्ज करें",
-    "trackBtn": "शिकायत ट्रैक करें",
-    "issuesReported": "दर्ज समस्याएं",
-    "resolutionRate": "समाधान दर",
-    "avgTime": "औसत समाधान समय",
-    "tvLive": "लाइव पूर्वावलोकन",
-    "tvBrand": "माईरोड · डेमो",
-    "tvReporting": "गड्ढे की रिपोर्ट",
-    "tvComplaintId": "#MRI-2026-08341",
-    "tvStatus": "मरम्मत जारी",
-
-    "quickActionsLabel": "नागरिक सेवाएं",
-    "quickActionsTitle": "आप क्या करना चाहेंगे?",
-    "quickActions": [
-      { "icon": "📍", "title": "समस्या दर्ज करें", "desc": "फोटो, स्थान और विवरण जमा करें" },
-      { "icon": "🔍", "title": "शिकायत ट्रैक करें", "desc": "अपने शिकायत आईडी से स्थिति जांचें" },
-      { "icon": "🗺️", "title": "मानचित्र पर समस्याएं", "desc": "अपने पास दर्ज समस्याएं देखें" },
-      { "icon": "📷", "title": "क्यूआर कोड स्कैन करें", "desc": "सड़क किनारे क्यूआर साइन से दर्ज करें" },
-      { "icon": "⚠️", "title": "सड़क सुरक्षा", "desc": "नागरिकों के लिए दिशानिर्देश और अलर्ट" }
-    ],
-
-    "statsLabel": "रीयल-टाइम · हर 5 मिनट में अपडेट",
-    "statsTitle": "लाइव नागरिक शिकायत आँकड़े",
-    "liveStats": [
-      { "value": "17,438", "label": "कुल दर्ज समस्याएं", "trend": "+4.2%", "color": "blue" },
-      { "value": "1,742", "label": "सत्यापन में", "trend": "-1.1%", "color": "amber" },
-      { "value": "2,317", "label": "कार्रवाई आवश्यक", "trend": "+2.6%", "color": "orange" },
-      { "value": "1,987", "label": "मरम्मत जारी", "trend": "+6.8%", "color": "saffron" },
-      { "value": "15,932", "label": "समाधान हुआ", "trend": "+9.3%", "color": "green" }
-    ],
-
-    "categoriesLabel": "श्रेणी के अनुसार देखें",
-    "categoriesTitle": "आप क्या रिपोर्ट करना चाहते हैं?",
-    "viewIssues": "समस्याएं देखें →",
-    "issuesSuffix": "समस्याएं",
-    "categories": [
-      { "icon": "🛣️", "title": "सड़क समस्याएं", "desc": "गड्ढे, टूटी सतह, क्षतिग्रस्त किनारे।", "count": "4,812" },
-      { "icon": "🌊", "title": "सीवरेज और जल निकासी", "desc": "अवरुद्ध नालियां, बहती सीवर।", "count": "2,145" },
-      { "icon": "💧", "title": "पेयजल", "desc": "पाइपलाइन रिसाव, दूषित आपूर्ति।", "count": "1,760" },
-      { "icon": "💡", "title": "स्ट्रीट लाइट", "desc": "काम न करने वाली या टिमटिमाती लाइटें।", "count": "3,398" },
-      { "icon": "⚠️", "title": "सड़क सुरक्षा", "desc": "गायब संकेत, खतरनाक चौराहे।", "count": "1,204" },
-      { "icon": "🌉", "title": "पुल और कल्वर्ट", "desc": "संरचनात्मक क्षति, कटाव।", "count": "419" }
-    ],
-
-    "stepsLabel": "प्रक्रिया",
-    "stepsTitle": "यह कैसे काम करता है",
-    "steps": [
-      { "num": "01", "title": "समस्या दर्ज करें", "desc": "फोटो के साथ समस्या का वर्णन करें" },
-      { "num": "02", "title": "स्थान कैप्चर करें", "desc": "जीपीएस सटीक स्थान बताता है" },
-      { "num": "03", "title": "सत्यापन", "desc": "पंचायत कर्मचारी रिपोर्ट की समीक्षा करते हैं" },
-      { "num": "04", "title": "स्टाफ नियुक्ति", "desc": "एक फील्ड अधिकारी नियुक्त किया जाता है" },
-      { "num": "05", "title": "मरम्मत और प्रमाण", "desc": "काम पूरा, पहले/बाद का रिकॉर्ड" },
-      { "num": "06", "title": "समाधान और समापन", "desc": "नागरिक पुष्टि करता है, शिकायत बंद होती है" }
-    ],
-
-    "trackTitle": "अपनी शिकायत ट्रैक करें",
-    "trackDesc": "रीयल-टाइम प्रगति देखने के लिए अपना शिकायत नंबर दर्ज करें।",
-    "trackPlaceholder": "शिकायत नंबर दर्ज करें, जैसे MRI-2026-08341",
-    "trackStatusBtn": "स्थिति ट्रैक करें",
-    "trackOnTrack": "प्रगति पर",
-    "timeline": [
-      { "label": "शिकायत दर्ज हुई", "time": "18 अगस्त, 10:42 AM", "state": "done" },
-      { "label": "सत्यापित", "time": "18 अगस्त, 3:10 PM", "state": "done" },
-      { "label": "स्टाफ को सौंपा गया", "time": "19 अगस्त, 9:05 AM", "state": "done" },
-      { "label": "मरम्मत कार्य जारी", "time": "21 अगस्त, 11:20 AM", "state": "now" },
-      { "label": "समाधान सत्यापित", "time": "लंबित", "state": "pend" },
-      { "label": "बंद", "time": "लंबित", "state": "pend" }
-    ],
-
-    "galleryLabel": "अवसंरचना पर ध्यान",
-    "galleryTitle": "सड़क अवसंरचना गैलरी",
-    "gallerySub": "हमारे गांवों और शहरों को जोड़ने वाले राष्ट्रीय और क्षेत्रीय सड़क नेटवर्क पर एक नज़र।",
-    "gallery": [
-      { "caption": "राष्ट्रीय राजमार्ग इंटरचेंज" },
-      { "caption": "एक्सप्रेसवे फ्लाईओवर" },
-      { "caption": "शहरी क्लोवरलीफ जंक्शन" },
-      { "caption": "ग्रीन कॉरिडोर ओवरपास" }
-    ],
-
-    "trustLabel": "माईरोड इंडिया क्यों",
-    "trustTitle": "सार्वजनिक विश्वास के लिए निर्मित",
-    "trustItems": [
-      { "icon": "👥", "title": "नागरिक भागीदारी", "desc": "हर निवासी रिपोर्ट कर सकता है और फॉलो-अप कर सकता है।" },
-      { "icon": "🔍", "title": "पारदर्शी ट्रैकिंग", "desc": "पंजीकरण से समापन तक पूरी दृश्यता।" },
-      { "icon": "📍", "title": "जीपीएस-आधारित रिपोर्टिंग", "desc": "फील्ड टीमों के लिए सटीक स्थान टैगिंग।" },
-      { "icon": "📷", "title": "डिजिटल प्रमाण", "desc": "पहले/बाद की फोटो हर मरम्मत को सत्यापित करती हैं।" },
-      { "icon": "✅", "title": "जवाबदेह समाधान", "desc": "समापन के लिए नामित स्टाफ और समयसीमा।" },
-      { "icon": "📊", "title": "डेटा-संचालित योजना", "desc": "वार्ड-स्तरीय विश्लेषण योजना का मार्गदर्शन करते हैं।" }
-    ],
-
-    "teamLabel": "स्थानीय शासन",
-    "teamTitle": "ग्राम पंचायत टीम",
-    "teamMembers": [
-      { "name": "पूरा नाम", "role": "सरपंच · गांव प्रमुख" },
-      { "name": "पूरा नाम", "role": "ग्राम सेवक · सचिव" }
-    ]
+    "liveNetwork": "लाइव नागरिक शिकायत नेटवर्क — ग्राम पंचायत",
+    "heroTitle": "सड़क और सार्वजनिक",
+    "heroTitleHighlight": "बुनियादी ढाँचे की समस्याएँ दर्ज करें",
+    "heroDescription": "समस्या की तस्वीर लें, अपना स्थान साझा करें और कुछ ही सेकंड में शिकायत संख्या प्राप्त करें। सत्यापन से लेकर मरम्मत तक हर चरण की प्रगति देखें।",
+    "reportIssue": "समस्या की रिपोर्ट करें",
+    "goToSlide": "स्लाइड {{number}} पर जाएँ",
+    "livePreview": "लाइव प्रीव्यू",
+    "reportingPothole": "सड़क के गड्ढे की रिपोर्ट",
+    "playPausePreview": "प्रीव्यू चलाएँ या रोकें",
+    "underRepair": "मरम्मत जारी है",
+    "citizenServices": "नागरिक सेवाएँ",
+    "whatWouldYouLikeToDo": "आप क्या करना चाहते हैं?",
+    "submitPhoto": "फोटो, स्थान और विवरण जमा करें",
+    "trackComplaint": "शिकायत ट्रैक करें",
+    "checkStatus": "शिकायत संख्या से स्थिति देखें",
+    "issuesOnMap": "नक्शे पर समस्याएँ",
+    "viewNearby": "अपने आसपास दर्ज समस्याएँ देखें",
+    "scanQRCode": "QR कोड स्कैन करें",
+    "reportQR": "सड़क किनारे लगे QR कोड से रिपोर्ट करें",
+    "roadSafety": "सड़क सुरक्षा",
+    "guidelinesAlerts": "नागरिकों के लिए दिशानिर्देश और अलर्ट",
+    "statsUpdated": "रीयल-टाइम · हर 5 मिनट में अपडेट",
+    "liveStatistics": "नागरिक शिकायतों के लाइव आँकड़े",
+    "totalReported": "कुल दर्ज समस्याएँ",
+    "underVerification": "सत्यापन जारी",
+    "actionRequired": "कार्रवाई आवश्यक",
+    "resolved": "समाधान हो गया",
+    "browseByCategory": "श्रेणी के अनुसार देखें",
+    "whatToReport": "आप किस समस्या की रिपोर्ट करना चाहते हैं?",
+    "roadIssues": "सड़क संबंधी समस्याएँ",
+    "roadIssuesDesc": "गड्ढे, टूटी सड़कें और क्षतिग्रस्त सड़क किनारे।",
+    "sewerageDrainage": "सीवरेज और जल निकासी",
+    "sewerageDesc": "बंद नालियाँ और उफनते सीवर।",
+    "drinkingWater": "पीने का पानी",
+    "waterDesc": "पाइपलाइन में रिसाव और दूषित जल आपूर्ति।",
+    "streetlights": "स्ट्रीट लाइट",
+    "streetlightsDesc": "बंद या टिमटिमाती स्ट्रीट लाइट।",
+    "roadSafetyCategory": "सड़क सुरक्षा",
+    "roadSafetyDesc": "गायब संकेतक और खतरनाक चौराहे।",
+    "bridgesCulverts": "पुल और पुलिया",
+    "bridgesDesc": "संरचनात्मक क्षति और मिट्टी का कटाव।",
+    "issues": "समस्याएँ",
+    "viewIssues": "समस्याएँ देखें",
+    "process": "प्रक्रिया",
+    "howItWorks": "यह कैसे काम करता है",
+    "reportStep": "समस्या की रिपोर्ट करें",
+    "reportStepDesc": "फोटो के साथ समस्या का विवरण दें",
+    "captureLocation": "स्थान दर्ज करें",
+    "captureLocationDesc": "GPS सटीक स्थान बताता है",
+    "verification": "सत्यापन",
+    "verificationDesc": "पंचायत कर्मचारी रिपोर्ट की समीक्षा करते हैं",
+    "staffAssignment": "कर्मचारी नियुक्ति",
+    "staffAssignmentDesc": "एक फील्ड अधिकारी नियुक्त किया जाता है",
+    "repairEvidence": "मरम्मत और प्रमाण",
+    "repairEvidenceDesc": "काम और मरम्मत से पहले व बाद की तस्वीरें दर्ज होती हैं",
+    "resolutionClosure": "समाधान और समापन",
+    "resolutionClosureDesc": "नागरिक पुष्टि करता है और शिकायत बंद हो जाती है",
+    "trackYourComplaint": "अपनी शिकायत ट्रैक करें",
+    "trackDescription": "रीयल-टाइम प्रगति देखने के लिए शिकायत संख्या दर्ज करें।",
+    "complaintNumber": "शिकायत संख्या",
+    "complaintPlaceholder": "शिकायत संख्या दर्ज करें, जैसे MRI-2026-08341",
+    "trackStatus": "स्थिति देखें",
+    "onTrack": "प्रगति पर",
+    "complaintRegistered": "शिकायत दर्ज हुई",
+    "verified": "सत्यापित",
+    "assignedToStaff": "कर्मचारी को सौंपा गया",
+    "repairInProgress": "मरम्मत का काम जारी है",
+    "resolutionVerified": "समाधान सत्यापित",
+    "closed": "बंद",
+    "pending": "लंबित",
+    "infrastructureInFocus": "बुनियादी ढाँचे पर एक नज़र",
+    "roadGallery": "सड़क बुनियादी ढाँचा गैलरी",
+    "galleryDescription": "हमारे गाँवों और शहरों को जोड़ने वाले राष्ट्रीय और क्षेत्रीय सड़क नेटवर्क की झलक।",
+    "nationalHighway": "राष्ट्रीय राजमार्ग इंटरचेंज",
+    "expresswayFlyover": "एक्सप्रेसवे फ्लाईओवर",
+    "urbanJunction": "शहरी क्लोवरलीफ जंक्शन",
+    "greenCorridor": "ग्रीन कॉरिडोर ओवरपास",
+    "whyMyRoad": "MyRoad India क्यों?",
+    "builtForTrust": "जनविश्वास के लिए बनाया गया",
+    "citizenParticipation": "नागरिक भागीदारी",
+    "citizenParticipationDesc": "हर निवासी समस्या दर्ज कर सकता है और उसकी प्रगति देख सकता है।",
+    "transparentTracking": "पारदर्शी ट्रैकिंग",
+    "transparentTrackingDesc": "पंजीकरण से समापन तक पूरी जानकारी।",
+    "gpsReporting": "GPS आधारित रिपोर्टिंग",
+    "gpsReportingDesc": "फील्ड टीमों के लिए सटीक स्थान दर्ज करना।",
+    "digitalEvidence": "डिजिटल प्रमाण",
+    "digitalEvidenceDesc": "मरम्मत की पुष्टि के लिए पहले और बाद की तस्वीरें।",
+    "accountableResolution": "जवाबदेह समाधान",
+    "accountableResolutionDesc": "समापन के लिए जिम्मेदार कर्मचारी और समय-सीमा।",
+    "dataDrivenPlanning": "डेटा आधारित योजना",
+    "dataDrivenPlanningDesc": "वार्ड स्तर के आँकड़े योजना बनाने में मदद करते हैं।",
+    "localGovernance": "स्थानीय प्रशासन",
+    "gramPanchayatTeam": "ग्राम पंचायत टीम",
+    "sarpanchRole": "सरपंच · ग्राम प्रमुख",
+    "upsarpanchRole": "उपसरपंच · उप ग्राम प्रमुख",
+    "viewImage": "{{caption}} देखें",
+    "teamMemberAlt": "{{name}}, {{role}}",
+    "closeImage": "तस्वीर बंद करें",
+    "previousImage": "पिछली तस्वीर",
+    "nextImage": "अगली तस्वीर"
   },
-  "services": {
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "सेवाएं",
-    "eyebrow": "नागरिक सेवा केंद्र",
-    "heroTitle": "छह मुख्य सेवाएं, एक जुड़ी हुई प्रणाली",
-    "heroLead": "समस्या दर्ज करने से लेकर उसके समाधान तक — माईरोड इंडिया प्लेटफ़ॉर्म का हर कदम इन छह सेवाओं के माध्यम से चलता है।",
 
-    "coreServicesEyebrow": "मुख्य सेवाएं",
-    "coreServicesTitle": "प्लेटफ़ॉर्म जो कुछ भी करता है, 6 सेवाओं में व्यवस्थित",
-    "viewDetails": "विवरण देखें →",
-    "viewingDetails": "विवरण देख रहे हैं ↓",
-
-    "coreServices": [
-      {
-        "num": "01",
-        "icon": "📝",
-        "title": "समस्या दर्ज व पंजीकृत करें",
-        "summary": "वेबसाइट, मोबाइल, या क्यूआर कोड के माध्यम से सड़क और सार्वजनिक अवसंरचना समस्याएं दर्ज करें।",
-        "features": [
-          "समस्या श्रेणी चुनें",
-          "समस्या विवरण जोड़ें",
-          "फोटोग्राफ अपलोड करें",
-          "जीपीएस स्थान कैप्चर करें",
-          "शिकायत नंबर जनरेट करें",
-          "क्यूआर-कोड आधारित पंजीकरण",
-          "मोबाइल आधारित पंजीकरण"
-        ]
+    "services": {
+    "hero": {
+      "title": "हमारी सेवाएँ",
+      "description": "भारत में सुरक्षित, स्मार्ट और बेहतर सड़कों के लिए नागरिक-केंद्रित सेवाएँ।"
+    },
+    "coreServices": "मुख्य सेवाएँ",
+    "serviceDetail": "सेवा का विवरण",
+    "items": {
+      "report": {
+        "title": "समस्या दर्ज करें",
+        "summary": "ऑनलाइन पोर्टल के माध्यम से सड़क और सार्वजनिक बुनियादी ढाँचे से जुड़ी समस्याएँ दर्ज करें।",
+        "features": {
+          "category": "समस्या की श्रेणी चुनें",
+          "description": "समस्या का विवरण जोड़ें",
+          "photos": "फोटो अपलोड करें",
+          "gps": "GPS स्थान दर्ज करें",
+          "number": "शिकायत संख्या प्राप्त करें",
+          "qr": "QR कोड के माध्यम से पंजीकरण",
+          "mobile": "मोबाइल के माध्यम से पंजीकरण"
+        }
       },
-      {
-        "num": "02",
-        "icon": "🔍",
+      "track": {
         "title": "शिकायत ट्रैकिंग सेवा",
-        "summary": "शिकायत नंबर का उपयोग करके किसी भी शिकायत को अंत तक ट्रैक करें।",
-        "features": [
-          "शिकायत नंबर से ट्रैक करें",
-          "शिकायत की स्थिति देखें",
-          "शिकायत इतिहास देखें",
-          "सभी पंजीकृत शिकायतें देखें",
-          "स्थिति अपडेट सूचनाएं प्राप्त करें",
-          "पूरा शिकायत जीवनचक्र फॉलो करें"
-        ]
+        "summary": "शिकायत संख्या का उपयोग करके शिकायत की पूरी प्रगति देखें।",
+        "features": {
+          "number": "शिकायत संख्या से ट्रैक करें",
+          "status": "शिकायत की स्थिति देखें",
+          "history": "शिकायत का इतिहास देखें",
+          "all": "सभी दर्ज शिकायतें देखें",
+          "notifications": "स्थिति अपडेट की सूचनाएँ प्राप्त करें",
+          "lifecycle": "शिकायत की पूरी प्रक्रिया देखें"
+        }
       },
-      {
-        "num": "03",
-        "icon": "🗺️",
+      "map": {
         "title": "स्थान और मानचित्र सेवा",
-        "summary": "हर समस्या को सटीक रूप से चिह्नित किया जाता है — प्राथमिकता-कोडित मानचित्र संकेतकों के साथ।",
-        "features": [
-          "स्वचालित जीपीएस स्थान कैप्चर",
-          "अक्षांश और देशांतर रिकॉर्डिंग",
-          "मानचित्र पर सटीक समस्या स्थान",
-          "मानचित्र पर दर्ज समस्याएं देखें",
-          "श्रेणी/स्थान आधारित पहचान",
-          "गंभीरता आधारित मानचित्र संकेतक"
-        ]
+        "summary": "हर समस्या का सटीक स्थान मानचित्र पर प्राथमिकता के अनुसार रंगीन संकेतकों के साथ दिखाया जाता है।",
+        "features": {
+          "gps": "स्वचालित GPS स्थान प्राप्त करें",
+          "coordinates": "अक्षांश और देशांतर दर्ज करें",
+          "exact": "मानचित्र पर समस्या का सटीक स्थान देखें",
+          "view": "मानचित्र पर दर्ज समस्याएँ देखें",
+          "identification": "श्रेणी और स्थान के आधार पर पहचान",
+          "criticality": "गंभीरता के आधार पर मानचित्र संकेतक"
+        }
       },
-      {
-        "num": "04",
-        "icon": "🧰",
+      "field": {
         "title": "फील्ड स्टाफ सेवा",
-        "summary": "फील्ड अधिकारियों के लिए सौंपी गई शिकायतों का निरीक्षण, कार्रवाई और समापन करने के उपकरण।",
-        "features": [
-          "सौंपी गई शिकायतें देखें",
-          "शिकायत स्थान देखें",
-          "भौतिक निरीक्षण करें",
-          "साइट फोटोग्राफ अपलोड करें",
-          "की गई कार्रवाई दर्ज करें",
-          "कार्य स्थिति और टिप्पणियां अपडेट करें",
-          "पहले/बाद की मरम्मत रिकॉर्ड बनाए रखें"
-        ]
+        "summary": "फील्ड अधिकारियों को सौंपी गई शिकायतों का निरीक्षण करने, कार्रवाई करने और उन्हें बंद करने के लिए उपकरण।",
+        "features": {
+          "assigned": "सौंपी गई शिकायतें देखें",
+          "location": "शिकायत का स्थान देखें",
+          "inspection": "स्थल का भौतिक निरीक्षण करें",
+          "photos": "स्थल की तस्वीरें अपलोड करें",
+          "action": "की गई कार्रवाई दर्ज करें",
+          "status": "कार्य की स्थिति और टिप्पणियाँ अपडेट करें",
+          "records": "मरम्मत से पहले और बाद के रिकॉर्ड रखें"
+        }
       },
-      {
-        "num": "05",
-        "icon": "🛡️",
-        "title": "एडमिन और शिकायत प्रबंधन",
-        "summary": "हर शिकायत, स्टाफ सदस्य और श्रेणी की केंद्रीकृत निगरानी।",
-        "features": [
-          "केंद्रीकृत प्रशासनिक डैशबोर्ड",
-          "कुल, नई और लंबित शिकायतें देखें",
-          "शिकायतों को सत्यापित करें",
-          "स्टाफ को शिकायतें सौंपें",
-          "शिकायत प्राथमिकता निर्धारित करें",
-          "श्रेणी/स्थान के अनुसार प्रगति की निगरानी करें",
-          "पूरा शिकायत जीवनचक्र प्रबंधित करें"
-        ]
+      "admin": {
+        "title": "प्रशासन और शिकायत प्रबंधन",
+        "summary": "शिकायतों, उपयोगकर्ताओं और सिस्टम सेटिंग्स का प्रबंधन करें तथा समस्याओं का समाधान करें।",
+        "features": {
+          "dashboard": "केंद्रीकृत प्रशासनिक डैशबोर्ड",
+          "total": "कुल, नई और लंबित शिकायतें देखें",
+          "verify": "शिकायतों का सत्यापन करें",
+          "assign": "शिकायतें कर्मचारियों को सौंपें",
+          "priority": "शिकायत की प्राथमिकता तय करें",
+          "monitor": "श्रेणी और स्थान के अनुसार प्रगति देखें",
+          "lifecycle": "शिकायत की पूरी प्रक्रिया का प्रबंधन करें"
+        }
       },
-      {
-        "num": "06",
-        "icon": "📊",
-        "title": "रिपोर्ट, सूचनाएं और विश्लेषण",
-        "summary": "हर कदम पर सूचित रहें, और पूरे सिस्टम में रुझानों का विश्लेषण करें।",
-        "features": [
-          "पंजीकरण और सत्यापन सूचनाएं",
-          "असाइनमेंट और कार्रवाई-शुरू अलर्ट",
-          "कार्य-पूर्ण और समाधान अलर्ट",
-          "दैनिक, साप्ताहिक और मासिक रिपोर्ट",
-          "श्रेणी-वार और क्षेत्र-वार रिपोर्ट",
-          "प्राथमिकता-वार और कार्रवाई-वार रिपोर्ट",
-          "अवसंरचना समस्या विश्लेषण"
-        ]
+      "analytics": {
+        "title": "रिपोर्ट, सूचनाएँ और विश्लेषण",
+        "summary": "रिपोर्ट, अलर्ट और रियल-टाइम विश्लेषण के माध्यम से जानकारी प्राप्त करें।",
+        "features": {
+          "registration": "पंजीकरण और सत्यापन की सूचनाएँ",
+          "assignment": "कार्य सौंपने और कार्रवाई शुरू होने के अलर्ट",
+          "resolution": "कार्य पूरा होने और समाधान के अलर्ट",
+          "periodic": "दैनिक, साप्ताहिक और मासिक रिपोर्ट",
+          "category": "श्रेणी और क्षेत्र के अनुसार रिपोर्ट",
+          "priority": "प्राथमिकता और की गई कार्रवाई के अनुसार रिपोर्ट",
+          "analytics": "बुनियादी ढाँचे की समस्याओं का विश्लेषण"
+        }
       }
-    ],
-
-    "detailEyebrow": "सेवा विवरण",
-
-    "lifecycleEyebrow": "शिकायत जीवनचक्र",
-    "lifecycleTitle": "हर शिकायत एक समान पारदर्शी मार्ग का पालन करती है",
-    "lifecycleSteps": [
-      { "label": "दर्ज", "state": "done" },
-      { "label": "सत्यापित", "state": "done" },
-      { "label": "सौंपा गया", "state": "done" },
-      { "label": "कार्रवाई", "state": "now" },
-      { "label": "पूर्ण", "state": "pend" },
-      { "label": "बंद", "state": "pend" }
-    ],
-
-    "legendEyebrow": "स्थान और मानचित्र सेवा",
-    "legendTitle": "प्राथमिकता-कोडित मानचित्र संकेतक",
-    "legendLead": "सार्वजनिक मानचित्र पर हर समस्या को तात्कालिकता के अनुसार रंग-कोडित किया जाता है, ताकि नागरिक और स्टाफ देख सकें कि पहले किस पर ध्यान देना है।",
-    "priorityLegend": [
-      { "color": "red", "label": "गंभीर / तत्काल" },
-      { "color": "orange", "label": "कार्रवाई आवश्यक" },
-      { "color": "amber", "label": "निरीक्षण आवश्यक" },
-      { "color": "green", "label": "समाधान हुआ" }
-    ],
-
-    "ctaTitle": "समस्या दर्ज करने के लिए तैयार हैं?",
-    "ctaDesc": "इसमें दो मिनट से भी कम समय लगता है — फोटो, स्थान, और कुछ विवरण।",
-    "ctaBtn": "समस्या दर्ज करें"
+    },
+    "lifecycle": {
+      "title": "शिकायत की प्रक्रिया",
+      "description": "हर शिकायत एक पारदर्शी प्रक्रिया से गुजरती है",
+      "registered": "दर्ज",
+      "verified": "सत्यापित",
+      "assigned": "सौंपी गई",
+      "action": "कार्रवाई",
+      "completed": "पूर्ण",
+      "closed": "बंद"
+    },
+    "priority": {
+      "critical": "गंभीर / तत्काल",
+      "action": "कार्रवाई आवश्यक",
+      "inspection": "निरीक्षण आवश्यक",
+      "resolved": "समाधान हो गया"
+    },
+    "mapPriority": {
+      "title": "स्थान और मानचित्र सेवा",
+      "heading": "प्राथमिकता के अनुसार रंगीन मानचित्र संकेतक",
+      "description": "सार्वजनिक मानचित्र पर प्रत्येक समस्या को उसकी तात्कालिकता के अनुसार अलग रंग दिया जाता है, ताकि नागरिक और कर्मचारी समझ सकें कि किस समस्या पर पहले ध्यान देना है।"
+    },
+    "cta": {
+      "title": "क्या आप समस्या दर्ज करना चाहते हैं?",
+      "description": "फोटो, स्थान और कुछ विवरणों के साथ इसमें दो मिनट से भी कम समय लगता है।",
+      "button": "समस्या दर्ज करें"
+    }
   },
-   "issueCategory": {
-    "breadcrumbHome": "होम",
-    "breadcrumbServices": "सेवाएं",
-    "breadcrumbCurrent": "समस्या श्रेणी",
-    "eyebrow": "समस्या दर्ज करें",
-    "heroTitle": "अपनी समस्या दर्ज करने के लिए एक श्रेणी चुनें",
-    "heroLead": "समस्या से सबसे अधिक मेल खाने वाली श्रेणी चुनें, फिर रिपोर्ट सबमिट करने से पहले मार्गदर्शन देखने के लिए विशिष्ट समस्या चुनें।",
+  
+  "Select a category to report your issue": "अपनी समस्या दर्ज करने के लिए श्रेणी चुनें",
+  "Choose the category that best matches the problem, then pick the specific issue to see guidance before you submit your report.": "समस्या से मेल खाने वाली श्रेणी चुनें, फिर रिपोर्ट जमा करने से पहले संबंधित समस्या और उसके लिए मार्गदर्शन देखें।",
+  "Step 1": "चरण 1",
+  "Select the main issue category": "समस्या की मुख्य श्रेणी चुनें",
+  "Road Issues": "सड़क संबंधी समस्याएँ",
+  "Potholes, cracks, and other problems affecting road surfaces.": "सड़क पर गड्ढे, दरारें और सड़क की सतह से जुड़ी अन्य समस्याएँ।",
+  "Road Potholes": "सड़क पर गड्ढे",
+  "Damaged Road": "क्षतिग्रस्त सड़क",
+  "Road Cracks": "सड़क पर दरारें",
+  "Damaged Surface": "क्षतिग्रस्त सड़क की सतह",
+  "Damaged Road Edges": "सड़क के किनारे क्षतिग्रस्त",
+  "Waterlogging": "जलभराव",
+  "Uneven Surface": "असमान सड़क की सतह",
+  "Road Obstruction": "सड़क पर बाधा",
+  "Traffic Obstruction": "यातायात में बाधा",
+  "Accident-Prone Area": "दुर्घटना संभावित क्षेत्र",
+  "Other Road Issue": "सड़क की अन्य समस्या",
+  "Sewerage & Drain Issues": "सीवरेज और नाली संबंधी समस्याएँ",
+  "Blocked drains, sewage overflow, and related infrastructure faults.": "बंद नालियाँ, सीवेज का ओवरफ्लो और संबंधित बुनियादी ढाँचे की खराबियाँ।",
+  "Sewerage Choked": "सीवरेज जाम",
+  "Broken Sewerage": "क्षतिग्रस्त सीवरेज",
+  "Improper Water Flow": "पानी का अनुचित बहाव",
+  "Sewage Overflow": "सीवेज का ओवरफ्लो",
+  "Rainwater Waterlogging": "बारिश के पानी का जमाव",
+  "Drainage Issues": "जल निकासी की समस्या",
+  "Damaged Covers": "क्षतिग्रस्त ढक्कन",
+  "Damaged Culvert": "क्षतिग्रस्त पुलिया",
+  "Leaking Pipeline": "पाइपलाइन में रिसाव",
+  "Cleaning Required": "सफाई आवश्यक",
+  "Bad Odour / Mosquito": "दुर्गंध / मच्छरों की समस्या",
+  "New Drain Required": "नई नाली आवश्यक",
+  "Broken Manhole": "क्षतिग्रस्त मैनहोल",
+  "Drinking Water Issues": "पेयजल संबंधी समस्याएँ",
+  "Supply, quality, and pipeline issues affecting drinking water access.": "पेयजल की उपलब्धता, गुणवत्ता और पाइपलाइन से जुड़ी समस्याएँ।",
+  "Pipeline Leakage": "पाइपलाइन में रिसाव",
+  "New Pipeline": "नई पाइपलाइन",
+  "Low Water Pressure": "पानी का कम दबाव",
+  "Irregular Supply": "अनियमित जल आपूर्ति",
+  "Water Disruption": "जल आपूर्ति बाधित",
+  "Contaminated Water": "दूषित पानी",
+  "Bad Odour": "दुर्गंध",
+  "Broken Pipeline": "टूटी हुई पाइपलाइन",
+  "No Tap Water": "नल से पानी नहीं आ रहा",
+  "Supply Timing": "जल आपूर्ति का समय",
+  "Insufficient Supply": "अपर्याप्त जल आपूर्ति",
+  "New Water Connection": "नया जल कनेक्शन",
+  "Damaged Public Tap": "क्षतिग्रस्त सार्वजनिक नल",
+  "Water Quality Testing": "पानी की गुणवत्ता की जाँच",
+  "Streetlight Issues": "स्ट्रीटलाइट संबंधी समस्याएँ",
+  "Non-functional or damaged streetlights and related electrical faults.": "बंद या क्षतिग्रस्त स्ट्रीटलाइट और उनसे जुड़ी बिजली की खराबियाँ।",
+  "Light Not Working": "लाइट काम नहीं कर रही",
+  "Damaged Pole": "क्षतिग्रस्त खंभा",
+  "Broken Light": "टूटी हुई लाइट",
+  "Missing Streetlight": "स्ट्रीटलाइट उपलब्ध नहीं",
+  "Electrical Issue": "बिजली संबंधी समस्या",
+  "Other Streetlight Issue": "स्ट्रीटलाइट की अन्य समस्या",
+  "Road Safety Issues": "सड़क सुरक्षा संबंधी समस्याएँ",
+  "Signage, markings, and safety hazards along roads.": "सड़क पर संकेतक, निशान और सुरक्षा संबंधी खतरे।",
+  "Damaged Signboards": "क्षतिग्रस्त साइनबोर्ड",
+  "Missing Signboards": "साइनबोर्ड गायब",
+  "Speed Breaker Issues": "स्पीड ब्रेकर संबंधी समस्या",
+  "Road Marking Issues": "सड़क के निशानों की समस्या",
+  "Pedestrian Signage": "पैदल यात्रियों के संकेतक",
+  "Safety Barrier Issues": "सुरक्षा बैरियर संबंधी समस्या",
+  "Dangerous Turn / Curve": "खतरनाक मोड़",
+  "Other Safety Issue": "सुरक्षा संबंधी अन्य समस्या",
+  "Bridge & Culvert Issues": "पुल और पुलिया संबंधी समस्याएँ",
+  "Structural and drainage issues affecting bridges and culverts.": "पुलों और पुलियों की संरचना तथा जल निकासी से जुड़ी समस्याएँ।",
+  "Bridge Damage": "पुल क्षतिग्रस्त",
+  "Culvert Damage": "पुलिया क्षतिग्रस्त",
+  "Damaged Railing": "क्षतिग्रस्त रेलिंग",
+  "Water Flow Issues": "पानी के बहाव की समस्या",
+  "Obstruction Around Bridge/Culvert": "पुल / पुलिया के आसपास बाधा",
+  "Step 2": "चरण 2",
+  "Select a specific issue in {{category}}": "{{category}} में विशिष्ट समस्या चुनें",
+  "Step 3": "चरण 3",
+  "Issue information": "समस्या की जानकारी",
+  "Issue Name": "समस्या का नाम",
+  "Issue Description": "समस्या का विवरण",
+  "Provide a short description of the \"{{issue}}\" problem — what you observed, its extent, and how long it has persisted.": "\"{{issue}}\" समस्या का संक्षिप्त विवरण दें — आपने क्या देखा, समस्या कितनी गंभीर है और यह कितने समय से बनी हुई है।",
+  "Related Guidance": "संबंधित सुझाव",
+  "Add clear photographs from more than one angle": "अलग-अलग कोणों से स्पष्ट तस्वीरें जोड़ें",
+  "Capture GPS location at the exact site": "समस्या के सटीक स्थान का GPS रिकॉर्ड करें",
+  "Mention nearby landmarks for easier identification": "स्थान की पहचान आसान बनाने के लिए आसपास के प्रमुख स्थान बताएँ",
+  "Ready to report \"{{issue}}\"?": "\"{{issue}}\" की रिपोर्ट दर्ज करने के लिए तैयार हैं?",
+  "Confirm the category and issue, then continue to submit your report.": "श्रेणी और समस्या की पुष्टि करें, फिर रिपोर्ट जमा करने के लिए आगे बढ़ें।",
+  "Continue to Report": "रिपोर्ट दर्ज करने के लिए आगे बढ़ें",
 
-    "step1": "चरण 1",
-    "step1Title": "मुख्य समस्या श्रेणी चुनें",
-    "viewSubIssues": "उप-समस्याएं देखें →",
-    "viewingSubIssues": "उप-समस्याएं देख रहे हैं ↓",
 
-    "categories": [
-      {
-        "num": "01",
-        "icon": "🛣️",
-        "title": "सड़क समस्याएं",
-        "summary": "गड्ढे, दरारें और सड़क सतह को प्रभावित करने वाली अन्य समस्याएं।",
-        "issues": [
-          "सड़क में गड्ढे", "क्षतिग्रस्त सड़क", "सड़क में दरारें", "क्षतिग्रस्त सतह",
-          "क्षतिग्रस्त सड़क किनारे", "जलजमाव", "असमान सतह", "सड़क अवरोध",
-          "यातायात अवरोध", "दुर्घटना-प्रवण क्षेत्र", "अन्य सड़क समस्या"
-        ]
+  
+  "Who We Are": "हम कौन हैं",
+  "About MyRoad India": "मायरोड इंडिया के बारे में",
+  "A digital platform built to give citizens a direct voice in the condition of their roads and public infrastructure — connecting reports to real, monitored action.": "एक डिजिटल प्लेटफ़ॉर्म जो नागरिकों को सड़कों और सार्वजनिक बुनियादी ढाँचे की स्थिति के बारे में अपनी बात रखने का अवसर देता है और शिकायतों को वास्तविक, निगरानी वाली कार्रवाई से जोड़ता है।",
+  "Our Mission": "हमारा मिशन",
+  "Closing the gap between a report and a repair": "शिकायत से मरम्मत तक की दूरी कम करना",
+  "Most civic complaints disappear into a register and are never seen again. MyRoad India replaces that register with a system every stakeholder can see into — citizen, staff, verifier, and administrator alike.": "अधिकांश नागरिक शिकायतें रजिस्टर में दर्ज होकर रह जाती हैं और उन पर आगे ध्यान नहीं दिया जाता। मायरोड इंडिया इस व्यवस्था की जगह एक ऐसी प्रणाली लाता है जिसमें नागरिक, कर्मचारी, सत्यापनकर्ता और प्रशासक सभी शिकायत की प्रगति देख सकते हैं।",
+  "Every complaint is logged with a photo, location, and timestamp — nothing gets lost in a register.": "हर शिकायत फोटो, स्थान और समय के साथ दर्ज होती है, इसलिए कोई शिकायत रजिस्टर में खोती नहीं है।",
+  "Field staff and verifiers work off the same live queue, so nothing sits unassigned.": "क्षेत्रीय कर्मचारी और सत्यापनकर्ता एक ही लाइव सूची पर काम करते हैं, जिससे कोई शिकायत बिना जिम्मेदारी के लंबित नहीं रहती।",
+  "Citizens can track their complaint from registration to closure, in real time.": "नागरिक अपनी शिकायत दर्ज होने से लेकर बंद होने तक उसकी स्थिति रियल टाइम में देख सकते हैं।",
+  "Our Foundation": "हमारी नींव",
+  "Why the platform exists, and what it delivers": "यह प्लेटफ़ॉर्म क्यों बनाया गया है और यह क्या सुविधाएँ देता है",
+  "Purpose": "उद्देश्य",
+  "Citizen participation": "नागरिकों की भागीदारी",
+  "Identify issues": "समस्याओं की पहचान",
+  "Improve infrastructure": "बुनियादी ढाँचे में सुधार",
+  "Better planning": "बेहतर योजना",
+  "What We Do": "हम क्या करते हैं",
+  "Complaint Registration": "शिकायत पंजीकरण",
+  "Location Mapping": "स्थान मानचित्रण",
+  "Staff Assignment": "कर्मचारियों को कार्य सौंपना",
+  "Work Monitoring": "कार्य की निगरानी",
+  "Resolution Tracking": "समाधान की ट्रैकिंग",
+  "Key Benefits": "मुख्य लाभ",
+  "Transparency": "पारदर्शिता",
+  "Faster Response": "तेज़ प्रतिक्रिया",
+  "Digital Records": "डिजिटल रिकॉर्ड",
+  "Better Monitoring": "बेहतर निगरानी",
+  "Data & Analytics": "डेटा और विश्लेषण",
+  "How It Works": "यह कैसे काम करता है",
+  "From citizen report to resolved issue": "नागरिक की शिकायत से समस्या के समाधान तक",
+  "Citizen": "नागरिक",
+  "Reports an issue with photo & location": "फोटो और स्थान के साथ समस्या दर्ज करता है",
+  "Panchayat": "पंचायत",
+  "Verifies and prioritizes the complaint": "शिकायत का सत्यापन करके प्राथमिकता तय करती है",
+  "Staff": "कर्मचारी",
+  "Assigned field officer takes action": "नियुक्त क्षेत्रीय अधिकारी कार्रवाई करता है",
+  "Resolution": "समाधान",
+  "Work verified and complaint closed": "कार्य का सत्यापन करके शिकायत बंद की जाती है",
+  "Our Focus Area": "हमारा कार्यक्षेत्र",
+  "Hinjewadi Gram Panchayat at a glance": "हिंजवड़ी ग्राम पंचायत एक नज़र में",
+  "MyRoad India is rooted in Hinjewadi — a fast-growing Gram Panchayat in Mulshi Taluka, Pune District, home to the Rajiv Gandhi Infotech Park.": "मायरोड इंडिया का केंद्र हिंजवड़ी है — पुणे जिले की मुलशी तालुका में स्थित एक तेजी से विकसित होती ग्राम पंचायत, जहाँ राजीव गांधी इन्फोटेक पार्क है।",
+  "Gram Panchayat Profile": "ग्राम पंचायत की जानकारी",
+  "Location": "स्थान",
+  "Hinjewadi, Mulshi Taluka, Pune District, Maharashtra": "हिंजवड़ी, मुलशी तालुका, पुणे जिला, महाराष्ट्र",
+  "PIN Code": "पिन कोड",
+  "Gram Panchayat Established": "ग्राम पंचायत की स्थापना",
+  "Main Economic Activity": "मुख्य आर्थिक गतिविधियाँ",
+  "IT, services, commercial activities and agriculture": "आईटी, सेवा क्षेत्र, व्यावसायिक गतिविधियाँ और कृषि",
+  "Major Development": "प्रमुख विकास परियोजना",
+  "Rajiv Gandhi Infotech Park": "राजीव गांधी इन्फोटेक पार्क",
+  "Main Water Source": "मुख्य जल स्रोत",
+  "Mula River": "मुळा नदी",
+  "Population": "जनसंख्या",
+  "Households": "परिवार",
+  "Companies": "कंपनियाँ",
+  "Reported": "रिपोर्ट के अनुसार",
+  "Floating Population": "अस्थायी आबादी",
+  "Population and household figures are for 2011. Companies and floating population are as reported.": "जनसंख्या और परिवारों के आँकड़े 2011 के हैं। कंपनियों और अस्थायी आबादी के आँकड़े उपलब्ध रिपोर्टों पर आधारित हैं।",
+  "On the Ground": "स्थानीय स्तर पर",
+  "Infrastructure and road connections": "बुनियादी ढाँचा और सड़क संपर्क",
+  "Street Lights": "स्ट्रीटलाइट",
+  "Solar Poles": "सौर ऊर्जा वाले खंभे",
+  "Petrol Pumps": "पेट्रोल पंप",
+  "EV Charging Points": "इलेक्ट्रिक वाहन चार्जिंग पॉइंट",
+  "Garbage Collection Vehicles": "कचरा संग्रहण वाहन",
+  "Major Road Connections": "प्रमुख सड़क संपर्क",
+  "Hinjewadi": "हिंजवड़ी",
+  "Why It Matters": "यह क्यों महत्वपूर्ण है",
+  "Key points for the Road India project": "मायरोड इंडिया परियोजना के मुख्य बिंदु",
+  "Rapid Urbanisation": "तेज़ शहरीकरण",
+  "Hinjewadi has changed from an agricultural village into a major IT and commercial centre.": "हिंजवड़ी एक कृषि प्रधान गाँव से बदलकर एक प्रमुख आईटी और व्यावसायिक केंद्र बन गया है।",
+  "Rajiv Gandhi Infotech Park": "राजीव गांधी इन्फोटेक पार्क",
+  "The IT park is the main driver of economic and infrastructure growth.": "आईटी पार्क आर्थिक विकास और बुनियादी ढाँचे के विस्तार का प्रमुख कारण है।",
+  "Road Connectivity": "सड़क संपर्क",
+  "Important connections lead toward Dange Chowk, Wakad, Maan and Marunji.": "महत्वपूर्ण सड़क संपर्क डांगे चौक, वाकड, मान और मारुंजी की ओर जाते हैं।",
+  "Traffic Pressure": "यातायात का दबाव",
+  "Large numbers of employees, residents and vehicles travel through the area, creating significant demand for road and transport infrastructure.": "इस क्षेत्र से बड़ी संख्या में कर्मचारी, निवासी और वाहन गुजरते हैं, जिससे सड़क और परिवहन सुविधाओं की माँग बढ़ती है।",
+  "Infrastructure Needs": "बुनियादी ढाँचे की आवश्यकताएँ",
+  "The key areas to study are:": "ध्यान देने योग्य प्रमुख क्षेत्र हैं:",
+  "Traffic management": "यातायात प्रबंधन",
+  "Road maintenance": "सड़क रखरखाव",
+  "Pedestrian safety": "पैदल यात्रियों की सुरक्षा",
+  "Public transport": "सार्वजनिक परिवहन",
+  "Parking": "पार्किंग",
+  "Drainage": "जल निकासी",
+  "Future Mobility": "भविष्य का परिवहन",
+  "The presence of 3 reported EV charging points provides a useful point for discussing the transition toward electric transportation.": "रिपोर्ट के अनुसार तीन इलेक्ट्रिक वाहन चार्जिंग पॉइंट उपलब्ध हैं, जो इलेक्ट्रिक परिवहन की ओर बढ़ने पर चर्चा के लिए उपयोगी हैं।",
+  "Our Leadership": "हमारा नेतृत्व",
+  "Gram Panchayat Leaders": "ग्राम पंचायत के नेतृत्वकर्ता",
+  "Our Members": "हमारे सदस्य",
+  "Gram Panchayat Members": "ग्राम पंचायत के सदस्य",
+  "Contact Us": "हमसे संपर्क करें",
+  "Official Contact Details": "आधिकारिक संपर्क विवरण",
+  "If you need official documents, certificates, or recent administrative updates, you can connect directly with the local office.": "यदि आपको आधिकारिक दस्तावेज़, प्रमाणपत्र या नवीनतम प्रशासनिक जानकारी चाहिए, तो आप सीधे स्थानीय कार्यालय से संपर्क कर सकते हैं।",
+  "Office Address": "कार्यालय का पता",
+  "Shri Chhatrapati Shivaji Maharaj Chowk, Hinjawadi, Taluka-Mulshi, District Pune – 411057": "श्री छत्रपति शिवाजी महाराज चौक, हिंजवड़ी, तालुका मुलशी, जिला पुणे – 411057",
+  "Phone Number": "फ़ोन नंबर",
+  "Email Address": "ईमेल पता",
+  "Gram Panchayat Officer (ग्रामपंचायत अधिकारी)": "ग्राम पंचायत अधिकारी",
+  "Sadasya (सदस्य)": "सदस्य",
+  "Sarpanch (सरपंच)": "सरपंच",
+  "Upsarpanch (उपसरपंच)": "उपसरपंच",
+
+  "contact": {
+    "getInTouch": "संपर्क करें",
+    "supportDescription": "आप नीचे दिए गए माध्यमों से हमसे संपर्क कर सकते हैं। हम सभी नागरिकों को समय पर और उपयोगी सहायता प्रदान करने के लिए प्रतिबद्ध हैं।",
+    "officeAddress": "कार्यालय का पता",
+    "phoneNumber": "फोन नंबर",
+    "emailAddress": "ईमेल पता",
+    "sendMessage": "हमें संदेश भेजें",
+    "formDescription": "नीचे दिया गया फॉर्म भरें। हम जल्द ही आपसे संपर्क करेंगे।",
+    "fullName": "पूरा नाम",
+    "email": "ईमेल पता",
+    "mobile": "मोबाइल नंबर",
+    "issue": "समस्या",
+    "selectIssue": "समस्या चुनें",
+    "message": "संदेश",
+    "namePlaceholder": "अपना पूरा नाम दर्ज करें",
+    "emailPlaceholder": "अपना ईमेल पता दर्ज करें",
+    "mobilePlaceholder": "अपना मोबाइल नंबर दर्ज करें",
+    "messagePlaceholder": "अपना संदेश यहाँ लिखें...",
+    "submit": "जमा करें",
+    "responseHelp": "प्रतिक्रिया / सहायता",
+    "thankYou": "संपर्क करने के लिए धन्यवाद। आपका अनुरोध प्राप्त हो गया है। हमारी टीम जल्द ही आपसे संपर्क करेगी।",
+    "sendAnother": "एक और संदेश भेजें",
+    "officeLocation": "हमारे कार्यालय का स्थान",
+    "workingHours": "कार्यालय का समय",
+    "workingDays": "सोमवार – शुक्रवार : सुबह 10:00 बजे – शाम 6:00 बजे",
+    "governmentHolidays": "(सरकारी छुट्टियों में बंद)",
+    "mapTitle": "कार्यालय का स्थान",
+    "issues": {
+      "pothole": "गड्ढा / सड़क की क्षति",
+      "safety": "सड़क सुरक्षा संबंधी समस्या",
+      "waterlogging": "जलभराव / जल निकासी",
+      "streetlight": "स्ट्रीट लाइट की समस्या",
+      "maintenance": "सड़क रखरखाव का अनुरोध",
+      "tracking": "शिकायत की स्थिति / ट्रैकिंग",
+      "project": "सड़क परियोजना की जानकारी",
+      "gis": "GIS मैपिंग / मानचित्र डेटा संबंधी प्रश्न",
+      "technical": "वेबसाइट / तकनीकी सहायता",
+      "other": "अन्य"
+    }
+  },
+
+
+  "blog": {
+    "gallery": {
+      "featuredAlt": "समुदाय में सड़क अवसंरचना",
+      "featuredLabel": "विशेष",
+      "featuredTitle": "बेहतर सड़कें उन समस्याओं को पहचानने और रिपोर्ट करने से शुरू होती हैं",
+      "sectionLabel": "मैदान से",
+      "sectionTitle": "सड़कों, मरम्मत और शिकायतों की झलकियाँ",
+      "snapshotAlt": "MyRoad India की मैदानी तस्वीर {{number}}"
+    },
+    "articles": {
+      "sectionLabel": "नवीनतम लेख",
+      "sectionTitle": "हम किन विषयों पर लिख रहे हैं",
+      "roadHazards": {
+        "tag": "सड़क सुरक्षा",
+        "title": "सड़क के खतरों और क्षति को समझना",
+        "paragraph1": "सड़क पर मौजूद खतरे और क्षति ऐसी विभिन्न स्थितियाँ हैं जो वाहन चालकों और पैदल चलने वालों की सुरक्षा को प्रभावित कर सकती हैं। इनमें गड्ढे, सड़क पर बिखरा मलबा और खराब मौसम जैसी स्थितियाँ शामिल हैं, जो वाहन चलाने को खतरनाक बना सकती हैं। गड्ढों से टायर फटने और वाहन के सस्पेंशन को नुकसान जैसी समस्याएँ हो सकती हैं। उनसे बचने के लिए अचानक दिशा बदलने पर दुर्घटनाएँ भी हो सकती हैं।",
+        "paragraph2": "सड़क पर गिरा मलबा भी एक सामान्य खतरा है। इसमें गिरी हुई शाखाएँ, ढीली बजरी या रास्ता रोकने वाली अन्य वस्तुएँ शामिल हो सकती हैं। उनसे बचने के लिए अचानक प्रतिक्रिया करने पर वाहन का नियंत्रण खो सकता है या अन्य वाहनों से टक्कर हो सकती है। बर्फ, हिमपात और भारी बारिश जैसी स्थितियाँ सड़क को फिसलन भरा बनाती हैं और दृश्यता कम करती हैं, जिससे दुर्घटना और चोट लगने का खतरा बढ़ जाता है।"
       },
-      {
-        "num": "02",
-        "icon": "🚰",
-        "title": "सीवरेज और नाली समस्याएं",
-        "summary": "अवरुद्ध नालियां, सीवेज ओवरफ्लो, और संबंधित अवसंरचना खराबी।",
-        "issues": [
-          "सीवरेज जाम", "टूटा सीवरेज", "अनुचित जल प्रवाह", "सीवेज ओवरफ्लो",
-          "बारिश का जलजमाव", "जल निकासी समस्याएं", "क्षतिग्रस्त कवर", "क्षतिग्रस्त कल्वर्ट",
-          "पाइपलाइन रिसाव", "सफाई आवश्यक", "दुर्गंध / मच्छर",
-          "नई नाली आवश्यक", "टूटा मैनहोल"
-        ]
+      "reportingWebsites": {
+        "tag": "डिजिटल प्लेटफ़ॉर्म",
+        "title": "सड़क संबंधी खतरों की रिपोर्टिंग वेबसाइटें कैसे काम करती हैं",
+        "paragraph1": "सड़क संबंधी खतरों की रिपोर्टिंग वेबसाइटें नागरिकों को सड़क पर मौजूद समस्याओं की जानकारी देने में मदद करती हैं और सार्वजनिक सुरक्षा बढ़ाने का महत्वपूर्ण साधन हैं। सरल इंटरफ़ेस के माध्यम से लोग गड्ढों, सड़क पर गिरे मलबे या खराब ट्रैफिक सिग्नल जैसी समस्याओं की जानकारी दे सकते हैं। ऐसी सुविधाएँ कंप्यूटर और मोबाइल दोनों पर उपलब्ध हो सकती हैं, जिससे अलग-अलग लोग इनका उपयोग कर सकते हैं।",
+        "paragraph2": "इस प्रकार, सड़क संबंधी रिपोर्टिंग वेबसाइटें नागरिकों को सड़क सुरक्षा में भाग लेने का अवसर देती हैं और जनता तथा स्थानीय अधिकारियों के बीच सहयोग बढ़ाती हैं। MyRoad India भी इसी सिद्धांत पर आधारित है — हर नागरिक की रिपोर्ट को दर्ज करके ऐसी शिकायत में बदलना जिस पर कार्रवाई की जा सके और जिसकी स्थिति देखी जा सके।"
       },
-      {
-        "num": "03",
-        "icon": "💧",
-        "title": "पेयजल समस्याएं",
-        "summary": "पेयजल आपूर्ति को प्रभावित करने वाली आपूर्ति, गुणवत्ता और पाइपलाइन समस्याएं।",
-        "issues": [
-          "पाइपलाइन रिसाव", "नई पाइपलाइन", "कम पानी का दबाव", "अनियमित आपूर्ति",
-          "जल आपूर्ति बाधा", "दूषित पानी", "दुर्गंध", "टूटी पाइपलाइन",
-          "नल में पानी नहीं", "आपूर्ति समय", "अपर्याप्त आपूर्ति",
-          "नया जल कनेक्शन", "क्षतिग्रस्त सार्वजनिक नल", "जल गुणवत्ता परीक्षण"
-        ]
+      "communityEngagement": {
+        "tag": "समुदाय",
+        "title": "सड़क सुरक्षा में सामुदायिक भागीदारी का प्रभाव",
+        "paragraph1": "सड़क सुरक्षा बढ़ाने में सामुदायिक भागीदारी की महत्वपूर्ण भूमिका है, खासकर सड़क के खतरों और क्षति की रिपोर्ट करने में। जब स्थानीय निवासी सड़क की समस्याओं को पहचानकर संबंधित अधिकारियों तक पहुँचाते हैं, तो उनका समाधान जल्दी हो सकता है। जागरूक समुदाय अक्सर उन समस्याओं को भी पहचान लेते हैं जो नियमित निरीक्षण के दौरान छूट सकती हैं।",
+        "paragraph2": "सड़क की समस्याओं की समय पर रिपोर्टिंग से मरम्मत जल्दी हो सकती है और खराब सड़क स्थितियों के कारण होने वाली दुर्घटनाओं का जोखिम कम हो सकता है। सामुदायिक भागीदारी से समस्याओं का समाधान तेज होता है और निवासियों में साझा जिम्मेदारी की भावना विकसित होती है।"
       },
-      {
-        "num": "04",
-        "icon": "💡",
-        "title": "स्ट्रीटलाइट समस्याएं",
-        "summary": "काम न करने वाली या क्षतिग्रस्त स्ट्रीटलाइट और संबंधित विद्युत खराबी।",
-        "issues": [
-          "लाइट काम नहीं कर रही", "क्षतिग्रस्त पोल", "टूटी लाइट",
-          "गायब स्ट्रीटलाइट", "विद्युत समस्या", "अन्य स्ट्रीटलाइट समस्या"
-        ]
-      },
-      {
-        "num": "05",
-        "icon": "🚧",
-        "title": "सड़क सुरक्षा समस्याएं",
-        "summary": "सड़कों के किनारे संकेत, चिह्न और सुरक्षा खतरे।",
-        "issues": [
-          "क्षतिग्रस्त साइनबोर्ड", "गायब साइनबोर्ड", "स्पीड ब्रेकर समस्याएं",
-          "सड़क चिह्न समस्याएं", "पैदल यात्री संकेत", "सुरक्षा बैरियर समस्याएं",
-          "खतरनाक मोड़ / वक्र", "दुर्घटना-प्रवण क्षेत्र", "अन्य सुरक्षा समस्या"
-        ]
-      },
-      {
-        "num": "06",
-        "icon": "🌉",
-        "title": "पुल और कल्वर्ट समस्याएं",
-        "summary": "पुलों और कल्वर्ट को प्रभावित करने वाली संरचनात्मक और जल निकासी समस्याएं।",
-        "issues": [
-          "पुल क्षति", "कल्वर्ट क्षति", "क्षतिग्रस्त रेलिंग", "जल प्रवाह समस्याएं",
-          "जल निकासी समस्याएं", "पुल/कल्वर्ट के आसपास अवरोध", "अन्य पुल समस्या"
-        ]
+      "futureTrends": {
+        "tag": "नवाचार",
+        "title": "सड़क संबंधी खतरों की रिपोर्टिंग का भविष्य",
+        "paragraph1": "नई तकनीकों और नवाचारों के कारण सड़क संबंधी खतरों की रिपोर्टिंग में महत्वपूर्ण सुधार होने की संभावना है। इसका एक प्रमुख उदाहरण मोबाइल ऐप हैं, जिनकी मदद से वाहन चालक और पैदल यात्री अपने स्मार्टफोन से सड़क की समस्याओं की रिपोर्ट कर सकते हैं। उपयोगकर्ता आसानी से तस्वीरें, विवरण और समस्या की GPS लोकेशन भेज सकते हैं।",
+        "paragraph2": "इन तकनीकों के विकास से रिपोर्टिंग प्रक्रिया अधिक प्रभावी हो सकती है और अधिकारियों की प्रतिक्रिया का समय कम हो सकता है। स्थानीय एजेंसियों, तकनीकी विशेषज्ञों और समुदाय के सदस्यों के बीच बेहतर सहयोग से सभी के लिए सुरक्षित सड़कें बनाने में मदद मिलेगी। MyRoad India इसी दिशा में काम कर रहा है।"
       }
-    ],
-
-    "step2": "चरण 2",
-    "step2Title": "{{category}} में एक विशिष्ट समस्या चुनें",
-
-    "step3": "चरण 3",
-    "step3Title": "समस्या की जानकारी",
-    "issueNameLabel": "समस्या का नाम",
-    "issueDescLabel": "समस्या विवरण",
-    "issueDescText": "\"{{issue}}\" समस्या का संक्षिप्त विवरण दें — आपने क्या देखा, इसकी सीमा, और यह कितने समय से है।",
-    "guidanceLabel": "संबंधित मार्गदर्शन",
-    "guidance": [
-      "एक से अधिक कोणों से स्पष्ट तस्वीरें जोड़ें",
-      "सटीक स्थान पर जीपीएस स्थान कैप्चर करें",
-      "आसान पहचान के लिए नजदीकी लैंडमार्क का उल्लेख करें"
-    ],
-
-    "ctaTitle": "\"{{issue}}\" दर्ज करने के लिए तैयार हैं?",
-    "ctaDesc": "श्रेणी और समस्या की पुष्टि करें, फिर अपनी रिपोर्ट सबमिट करने के लिए जारी रखें।",
-    "ctaBtn": "रिपोर्ट जारी रखें"
+    },
+    "videos": {
+      "sectionLabel": "देखें और सीखें",
+      "sectionTitle": "वीडियो में MyRoad India",
+      "reportingIssues": "सड़क की समस्याओं की आसान रिपोर्टिंग",
+      "complaintLifecycle": "शिकायत की पूरी प्रक्रिया",
+      "communityStories": "मैदान से समुदाय की कहानियाँ"
+    },
+    "contact": {
+      "address": "पता",
+      "phone": "फोन",
+      "email": "ईमेल"
+    },
+    "cta": {
+      "title": "क्या आपने आज अपनी सड़क पर कोई खतरा देखा?",
+      "description": "MyRoad India पर रिपोर्ट करें — इसमें दो मिनट से भी कम समय लगता है।",
+      "button": "समस्या की रिपोर्ट करें"
+    }
   },
-   "aboutUs": {
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "हमारे बारे में",
-    "eyebrow": "माईरोड इंडिया के बारे में",
-    "heroTitle": "एक डिजिटल सड़क और सार्वजनिक अवसंरचना मंच",
-    "heroLead": "माईरोड इंडिया नागरिकों, पंचायतों और फील्ड स्टाफ को एक पारदर्शी प्रणाली पर जोड़ता है — हर दर्ज समस्या को ट्रैक किए गए, हल किए गए परिणाम में बदलता है।",
 
-    "whoWeAreEyebrow": "हम कौन हैं",
-    "introTitle": "माईरोड इंडिया के बारे में",
-    "introLead": "एक डिजिटल मंच जो नागरिकों को उनकी सड़कों और सार्वजनिक अवसंरचना की स्थिति में सीधी आवाज देने के लिए बनाया गया है — रिपोर्ट को वास्तविक, निगरानी की गई कार्रवाई से जोड़ता है।",
-
-    "foundationEyebrow": "हमारी नींव",
-    "foundationTitle": "यह मंच क्यों मौजूद है, और यह क्या प्रदान करता है",
-    "pillars": [
-      {
-        "num": "01",
-        "icon": "🎯",
-        "title": "उद्देश्य",
-        "items": ["नागरिक भागीदारी", "समस्याओं की पहचान", "अवसंरचना में सुधार", "बेहतर योजना"]
-      },
-      {
-        "num": "02",
-        "icon": "⚙️",
-        "title": "हम क्या करते हैं",
-        "items": ["शिकायत पंजीकरण", "स्थान मानचित्रण", "स्टाफ नियुक्ति", "कार्य निगरानी", "समाधान ट्रैकिंग"]
-      },
-      {
-        "num": "03",
-        "icon": "✅",
-        "title": "मुख्य लाभ",
-        "items": ["पारदर्शिता", "तेज़ प्रतिक्रिया", "डिजिटल रिकॉर्ड", "बेहतर निगरानी", "डेटा और विश्लेषण"]
-      }
-    ],
-
-    "howItWorksEyebrow": "यह कैसे काम करता है",
-    "howItWorksTitle": "नागरिक रिपोर्ट से समाधान तक",
-    "flowSteps": ["नागरिक", "पंचायत", "स्टाफ", "समाधान"],
-
-    "outcomeTitle": "बेहतर सड़क और सार्वजनिक अवसंरचना",
-    "outcomeDesc": "हर शिकायत, हर निरीक्षण, हर समाधान — ऐसी अवसंरचना की ओर निर्माण जिस पर समुदाय भरोसा कर सके।",
-    "ctaBtn": "समस्या दर्ज करें"
-  },
   "helpFaq": {
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "सहायता / प्रश्न",
-    "eyebrow": "सहायता केंद्र",
-    "heroTitle": "अक्सर पूछे जाने वाले प्रश्न",
-    "heroLead": "समस्या दर्ज करने, शिकायतों को ट्रैक करने, और माईरोड इंडिया मोबाइल ऐप का उपयोग करने के बारे में सामान्य प्रश्नों के उत्तर।",
+    "faqHeading": "अक्सर पूछे जाने वाले प्रश्न",
+    "browseByTopic": "विषय के अनुसार देखें",
+    "citizenGuidance": "नागरिक मार्गदर्शन",
+    "quickReference": "प्लेटफ़ॉर्म का उपयोग करने के लिए त्वरित मार्गदर्शिका",
+    "stillNeedHelp": "क्या आपको अभी भी सहायता चाहिए?",
+    "supportDescription": "यहाँ दी गई जानकारी से संबंधित सहायता के लिए हमारी सपोर्ट टीम से संपर्क करें।",
+    "contactUs": "संपर्क करें",
 
-    "faqEyebrow": "अक्सर पूछे जाने वाले प्रश्न",
-    "faqTitle": "विषय के अनुसार ब्राउज़ करें",
+    "categories": {
+      "reportIssue": "समस्या दर्ज करने से जुड़े प्रश्न",
+      "trackComplaint": "शिकायत ट्रैक करने से जुड़े प्रश्न",
+      "mobileApp": "मोबाइल ऐप से जुड़े प्रश्न"
+    },
 
-    "faqCategories": [
-      {
-        "icon": "📝",
-        "title": "समस्या दर्ज करने से जुड़े प्रश्न",
-        "questions": [
-          { "q": "मैं सड़क या अवसंरचना संबंधी समस्या कैसे दर्ज करूं?", "a": "समस्या दर्ज करें अनुभाग खोलें, एक श्रेणी और विशिष्ट समस्या चुनें, विवरण और फोटोग्राफ जोड़ें, फिर सबमिट करें — आपका स्थान स्वचालित रूप से कैप्चर हो जाता है।" },
-          { "q": "क्या मैं बिना अकाउंट बनाए समस्या दर्ज कर सकता हूं?", "a": "आप क्यूआर-कोड या मोबाइल-आधारित पंजीकरण प्रवाह का उपयोग करके शिकायत दर्ज कर सकते हैं; बाद में ट्रैक करने के लिए आपको एक शिकायत नंबर दिया जाता है।" },
-          { "q": "मुझे अपनी रिपोर्ट में क्या विवरण शामिल करना चाहिए?", "a": "एक स्पष्ट विवरण, कम से कम एक फोटोग्राफ शामिल करें, और सुनिश्चित करें कि आपके डिवाइस का स्थान सक्षम है ताकि समस्या मानचित्र पर सटीक रूप से चिह्नित हो।" },
-          { "q": "क्या मैं एक साथ एक से अधिक समस्याएं दर्ज कर सकता हूं?", "a": "हां, प्रत्येक समस्या को एक अलग रिपोर्ट के रूप में सबमिट किया जाना चाहिए ताकि उसे अपना शिकायत नंबर मिले और व्यक्तिगत रूप से ट्रैक किया जा सके।" }
-        ]
+    "questions": {
+      "reportRoadIssue": {
+        "question": "मैं सड़क या बुनियादी ढाँचे की समस्या कैसे दर्ज करूँ?",
+        "answer": "समस्या दर्ज करें अनुभाग खोलें, श्रेणी और संबंधित समस्या चुनें, विवरण और तस्वीरें जोड़ें, फिर सबमिट करें। आपका स्थान अपने आप दर्ज हो जाता है।"
       },
-      {
-        "icon": "🔍",
-        "title": "शिकायत ट्रैकिंग से जुड़े प्रश्न",
-        "questions": [
-          { "q": "मैं अपनी शिकायत की स्थिति कैसे ट्रैक करूं?", "a": "अपनी शिकायत की वर्तमान स्थिति, इतिहास और पूरे जीवनचक्र को देखने के लिए शिकायत ट्रैक करें अनुभाग में अपने शिकायत नंबर का उपयोग करें।" },
-          { "q": "विभिन्न शिकायत स्थितियों का क्या मतलब है?", "a": "शिकायतें दर्ज, सत्यापित, सौंपी गई, कार्रवाई, पूर्ण, और बंद के माध्यम से आगे बढ़ती हैं — हर चरण दर्शाता है कि आपकी शिकायत समाधान प्रक्रिया में कहां है।" },
-          { "q": "क्या मुझे शिकायत की स्थिति बदलने पर सूचित किया जाएगा?", "a": "हां, आपको पंजीकरण, सत्यापन, नियुक्ति के समय, और काम पूरा या हल होने पर सूचनाएं प्राप्त होंगी।" },
-          { "q": "मैं अपनी सभी दर्ज शिकायतें कहां देख सकता हूं?", "a": "आपके द्वारा सबमिट की गई सभी शिकायतें ट्रैकिंग अनुभाग में उनकी वर्तमान स्थिति और स्थान के साथ एक साथ सूचीबद्ध हैं।" }
-        ]
+      "reportWithoutAccount": {
+        "question": "क्या मैं खाता बनाए बिना समस्या दर्ज कर सकता हूँ?",
+        "answer": "आप QR कोड या मोबाइल-आधारित पंजीकरण प्रक्रिया से शिकायत दर्ज कर सकते हैं। इसके बाद शिकायत की स्थिति ट्रैक करने के लिए आपको शिकायत नंबर दिया जाता है।"
       },
-      {
-        "icon": "📱",
-        "title": "मोबाइल ऐप से जुड़े प्रश्न",
-        "questions": [
-          { "q": "क्या माईरोड इंडिया मोबाइल ऐप के रूप में उपलब्ध है?", "a": "हां, वेबसाइट के अलावा मोबाइल-आधारित पंजीकरण प्रवाह के माध्यम से भी समस्याओं को दर्ज और ट्रैक किया जा सकता है।" },
-          { "q": "क्या मैं समस्या दर्ज करने के लिए क्यूआर कोड स्कैन कर सकता हूं?", "a": "हां, क्यूआर-कोड आधारित पंजीकरण आपको समस्या के स्थान पर कोड स्कैन करके जल्दी से समस्या दर्ज करने देता है।" },
-          { "q": "क्या ऐप इंटरनेट कनेक्शन के बिना काम करता है?", "a": "रिपोर्ट सबमिट करने और आपके जीपीएस स्थान और फोटोग्राफ को सटीक रूप से कैप्चर करने के लिए एक सक्रिय कनेक्शन आवश्यक है।" },
-          { "q": "क्या फील्ड स्टाफ शिकायतों को अपडेट करने के लिए उसी ऐप का उपयोग कर सकते हैं?", "a": "फील्ड स्टाफ सौंपी गई शिकायतों को देखने, साइट फोटोग्राफ अपलोड करने, और कार्य स्थिति और टिप्पणियों को अपडेट करने के लिए उसी प्लेटफ़ॉर्म का उपयोग करते हैं।" }
-        ]
+      "reportDetails": {
+        "question": "मुझे अपनी रिपोर्ट में कौन-सी जानकारी देनी चाहिए?",
+        "answer": "समस्या का स्पष्ट विवरण और कम से कम एक तस्वीर जोड़ें। साथ ही, अपने डिवाइस की लोकेशन चालू रखें ताकि समस्या मानचित्र पर सही स्थान पर दिखाई दे।"
+      },
+      "multipleIssues": {
+        "question": "क्या मैं एक बार में एक से अधिक समस्याएँ दर्ज कर सकता हूँ?",
+        "answer": "हाँ, प्रत्येक समस्या के लिए अलग रिपोर्ट दर्ज करें। इससे हर समस्या को अलग शिकायत नंबर मिलेगा और आप उन्हें अलग-अलग ट्रैक कर सकेंगे।"
+      },
+      "trackStatus": {
+        "question": "मैं अपनी शिकायत की स्थिति कैसे ट्रैक करूँ?",
+        "answer": "शिकायत ट्रैक करें अनुभाग में अपना शिकायत नंबर दर्ज करें। वहाँ आप वर्तमान स्थिति, इतिहास और शिकायत की पूरी प्रक्रिया देख सकते हैं।"
+      },
+      "complaintStatuses": {
+        "question": "शिकायत की अलग-अलग स्थितियों का क्या अर्थ है?",
+        "answer": "शिकायत Registered, Verified, Assigned, Action, Completed और Closed चरणों से गुजरती है। हर चरण बताता है कि शिकायत के समाधान की प्रक्रिया कहाँ तक पहुँची है।"
+      },
+      "statusNotifications": {
+        "question": "क्या शिकायत की स्थिति बदलने पर मुझे सूचना मिलेगी?",
+        "answer": "हाँ, शिकायत दर्ज होने, सत्यापन, जिम्मेदारी सौंपे जाने और काम पूरा होने या समाधान होने पर आपको सूचनाएँ मिलेंगी।"
+      },
+      "viewComplaints": {
+        "question": "मैं अपनी सभी दर्ज शिकायतें कहाँ देख सकता हूँ?",
+        "answer": "आपकी सभी दर्ज शिकायतें ट्रैकिंग अनुभाग में उनकी वर्तमान स्थिति और स्थान के साथ दिखाई देती हैं।"
+      },
+      "mobileAvailability": {
+        "question": "क्या MyRoad India मोबाइल ऐप के रूप में उपलब्ध है?",
+        "answer": "हाँ, वेबसाइट के साथ-साथ मोबाइल-आधारित पंजीकरण प्रक्रिया के माध्यम से भी समस्याएँ दर्ज और ट्रैक की जा सकती हैं।"
+      },
+      "scanQrCode": {
+        "question": "क्या मैं समस्या दर्ज करने के लिए QR कोड स्कैन कर सकता हूँ?",
+        "answer": "हाँ, समस्या वाले स्थान पर उपलब्ध QR कोड स्कैन करके आप जल्दी से समस्या दर्ज कर सकते हैं।"
+      },
+      "offlineAccess": {
+        "question": "क्या ऐप इंटरनेट कनेक्शन के बिना काम करता है?",
+        "answer": "रिपोर्ट सबमिट करने और GPS लोकेशन तथा तस्वीरें सही ढंग से दर्ज करने के लिए सक्रिय इंटरनेट कनेक्शन आवश्यक है।"
+      },
+      "fieldStaffUpdates": {
+        "question": "क्या फील्ड कर्मचारी इसी प्लेटफ़ॉर्म पर शिकायत अपडेट कर सकते हैं?",
+        "answer": "फील्ड कर्मचारी इसी प्लेटफ़ॉर्म पर उन्हें सौंपी गई शिकायतें देख सकते हैं, स्थल की तस्वीरें अपलोड कर सकते हैं और कार्य की स्थिति तथा टिप्पणियाँ अपडेट कर सकते हैं।"
       }
-    ],
-
-    "guidanceEyebrow": "नागरिक मार्गदर्शन",
-    "guidanceTitle": "प्लेटफ़ॉर्म का उपयोग करने के लिए त्वरित संदर्भ",
-    "citizenGuidance": [
-      { "num": "01", "icon": "📝", "title": "समस्या कैसे दर्ज करें", "summary": "एक श्रेणी चुनें, विवरण और फोटो जोड़ें, फिर अपनी रिपोर्ट सबमिट करें।" },
-      { "num": "02", "icon": "📊", "title": "शिकायत की स्थिति", "summary": "अपनी शिकायत को दर्ज, सत्यापित, सौंपी गई, कार्रवाई, और बंद के माध्यम से फॉलो करें।" },
-      { "num": "03", "icon": "📍", "title": "स्थान / फोटो", "summary": "जीपीएस सक्षम करें और स्पष्ट फोटोग्राफ संलग्न करें ताकि आपकी समस्या सटीक रूप से चिह्नित हो।" },
-      { "num": "04", "icon": "🔢", "title": "शिकायत नंबर", "summary": "किसी भी समय स्थिति और इतिहास को ट्रैक करने के लिए अपना शिकायत नंबर सहेजें।" }
-    ],
-
-    "stillNeedHelp": "फिर भी सहायता चाहिए?",
-    "stillNeedHelpDesc": "यहां शामिल न होने वाली किसी भी चीज़ के लिए हमारी सहायता टीम से संपर्क करें।",
-    "contactBtn": "संपर्क करें"
-  },
-   "contactUs": {
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "संपर्क करें",
-    "eyebrow": "संपर्क में रहें",
-    "heroTitle": "हम आपकी सहायता के लिए यहां हैं",
-    "heroLead": "प्रश्नों, परियोजना जानकारी, या शिकायत में सहायता के लिए ग्राम पंचायत और माईरोड इंडिया टीम से संपर्क करें।",
-
-    "contactInfoEyebrow": "संपर्क जानकारी",
-    "contactInfoTitle": "अपने प्रश्न के लिए सही कार्यालय तक पहुंचें",
-    "contactDetails": [
-      { "icon": "🏛️", "label": "ग्राम पंचायत", "value": "ग्राम पंचायत कार्यालय, स्थानीय प्रशासन" },
-      { "icon": "🛣️", "label": "माईरोड इंडिया", "value": "डिजिटल सड़क और सार्वजनिक अवसंरचना मंच" },
-      { "icon": "📞", "label": "संपर्क विवरण", "value": "नागरिक सहायता के लिए फोन, ईमेल और कार्यालय समय" }
-    ],
-
-    "supportEyebrow": "नागरिक सहायता",
-    "supportTitle": "हम आपकी किस चीज़ में मदद कर सकते हैं?",
-    "supportOptions": [
-      { "num": "01", "icon": "💬", "title": "सामान्य प्रश्न", "summary": "प्लेटफ़ॉर्म, सेवाओं, या सिस्टम कैसे काम करता है, इस बारे में प्रश्न।" },
-      { "num": "02", "icon": "📋", "title": "परियोजना जानकारी", "summary": "चल रही अवसंरचना परियोजनाओं और उनकी स्थिति का विवरण।" },
-      { "num": "03", "icon": "🛠️", "title": "शिकायत सहायता", "summary": "दर्ज शिकायत की रिपोर्टिंग, ट्रैकिंग या समाधान में मदद।" }
-    ],
-
-    "formEyebrow": "संपर्क / सहायता अनुरोध",
-    "formTitle": "हमें अपना संदेश भेजें",
-
-    "responseTitle": "प्रतिक्रिया / सहायता",
-    "responseMessage": "संपर्क करने के लिए धन्यवाद। आपका अनुरोध प्राप्त हो गया है — हमारी टीम जल्द ही आपसे संपर्क करेगी।",
-    "sendAnotherBtn": "एक और संदेश भेजें",
-
-    "nameLabel": "पूरा नाम",
-    "namePlaceholder": "अपना नाम दर्ज करें",
-    "emailLabel": "ईमेल पता",
-    "emailPlaceholder": "अपना ईमेल दर्ज करें",
-    "subjectLabel": "विषय",
-    "subjectPlaceholder": "यह किस बारे में है?",
-    "messageLabel": "संदेश",
-    "messagePlaceholder": "अपने प्रश्न या अनुरोध का विस्तार से वर्णन करें",
-    "submitBtn": "अनुरोध सबमिट करें"
-  },
-   "dashboard": {
-    "roles": [
-      { "value": "admin", "label": "एडमिन" },
-      { "value": "staff", "label": "स्टाफ" },
-      { "value": "verifier", "label": "सत्यापनकर्ता" },
-      { "value": "citizen", "label": "नागरिक" }
-    ],
-
-    "roleStatsLabels": {
-      "admin": ["कुल शिकायतें", "नई शिकायतें", "लंबित", "सत्यापन में", "कार्रवाई में", "समाधान हुआ", "गंभीर"],
-      "staff": ["मुझे सौंपी गई", "कार्रवाई में", "मेरे द्वारा हल", "गंभीर"],
-      "verifier": ["सत्यापन लंबित", "आज सत्यापित", "वापस भेजी गई", "बढ़ाई गई"],
-      "citizen": ["मेरी शिकायतें", "लंबित", "प्रगति में", "समाधान हुआ"]
     },
 
-    "issueCategoryLabels": ["सड़क समस्याएं", "सीवरेज समस्याएं", "जल समस्याएं", "स्ट्रीटलाइट समस्याएं", "सुरक्षा समस्याएं", "पुल/कल्वर्ट समस्याएं"],
-    "areaLabels": ["वार्ड 1 — उत्तर क्षेत्र", "वार्ड 2 — मार्केट रोड", "वार्ड 3 — रिवरसाइड", "वार्ड 4 — हाईवे बेल्ट", "वार्ड 5 — दक्षिण क्षेत्र"],
-
-    "lifecycleSteps": [
-      { "label": "दर्ज", "state": "done" },
-      { "label": "सत्यापित", "state": "done" },
-      { "label": "सौंपा गया", "state": "done" },
-      { "label": "कार्रवाई", "state": "now" },
-      { "label": "कार्य पूर्ण", "state": "pend" },
-      { "label": "सत्यापित", "state": "pend" },
-      { "label": "बंद", "state": "pend" }
-    ],
-
-    "reportCards": [
-      { "icon": "📅", "title": "दैनिक / साप्ताहिक / मासिक रिपोर्ट", "summary": "सभी वार्डों में शिकायत गतिविधि के निर्धारित स्नैपशॉट।" },
-      { "icon": "📌", "title": "लंबित / समाधान हुआ", "summary": "त्वरित समीक्षा के लिए खुली बनाम बंद शिकायतों का लाइव विभाजन।" },
-      { "icon": "🗂️", "title": "श्रेणी-वार रिपोर्ट", "summary": "समय के साथ समस्या श्रेणी के अनुसार शिकायतों का विश्लेषण।" },
-      { "icon": "📍", "title": "क्षेत्र-वार रिपोर्ट", "summary": "स्थान के अनुसार शिकायत मात्रा और समाधान दर।" },
-      { "icon": "🚦", "title": "प्राथमिकता-वार रिपोर्ट", "summary": "गंभीर, तत्काल, और नियमित शिकायतें अलग-अलग ट्रैक की जाती हैं।" },
-      { "icon": "🛠️", "title": "कार्रवाई / कार्य प्रगति", "summary": "फील्ड स्टाफ गतिविधि और चल रहे मरम्मत कार्य की स्थिति।" }
-    ],
-
-    "roleCopy": {
-      "admin": { "eyebrow": "डैशबोर्ड अवलोकन", "heading": "शिकायत प्रबंधन और विश्लेषण", "lead": "माईरोड इंडिया प्लेटफ़ॉर्म पर हर शिकायत, श्रेणी, और क्षेत्र का रीयल-टाइम दृश्य।", "statsHeading": "एक नज़र में अवलोकन" },
-      "staff": { "eyebrow": "स्टाफ डैशबोर्ड", "heading": "आपको सौंपी गई शिकायतें", "lead": "आपको सौंपी गई शिकायतों को ट्रैक करें, कार्य स्थिति अपडेट करें, और समाधान प्रगति की निगरानी करें।", "statsHeading": "एक नज़र में आपका काम" },
-      "verifier": { "eyebrow": "सत्यापनकर्ता डैशबोर्ड", "heading": "शिकायत सत्यापन कतार", "lead": "नई दर्ज शिकायतों की समीक्षा करें, विवरण सत्यापित करें, और उन्हें नियुक्ति के लिए भेजें।", "statsHeading": "एक नज़र में सत्यापन" },
-      "citizen": { "eyebrow": "नागरिक डैशबोर्ड", "heading": "आपकी दर्ज शिकायतें", "lead": "आपके द्वारा दर्ज की गई हर समस्या की स्थिति को पंजीकरण से समाधान तक ट्रैक करें।", "statsHeading": "एक नज़र में आपकी शिकायतें" }
-    },
-
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "डैशबोर्ड",
-    "loginEyebrow": "लॉगिन",
-    "loginTitle": "माईरोड इंडिया डैशबोर्ड",
-    "loginLead": "अपनी भूमिका से संबंधित शिकायतें, विश्लेषण, और रिपोर्ट देखने के लिए अपने क्रेडेंशियल्स से साइन इन करें।",
-    "loginFormEyebrow": "लॉगिन / प्रमाणीकरण",
-    "loginFormTitle": "जारी रखने के लिए साइन इन करें",
-    "loginAsLabel": "इस रूप में लॉगिन करें",
-    "usernameLabel": "उपयोगकर्ता नाम",
-    "usernamePlaceholder": "अपना उपयोगकर्ता नाम दर्ज करें",
-    "passwordLabel": "पासवर्ड",
-    "passwordPlaceholder": "पासवर्ड दर्ज करें",
-    "logInBtn": "लॉग इन करें",
-    "logOutBtn": "लॉग आउट करें",
-
-    "complaintManagementEyebrow": "शिकायत प्रबंधन",
-    "categoryAnalyticsEyebrow": "समस्या श्रेणी विश्लेषण",
-    "categoryAnalyticsTitle": "श्रेणी के अनुसार शिकायतें",
-    "areaAnalyticsEyebrow": "क्षेत्र / स्थान विश्लेषण",
-    "areaAnalyticsTitle": "क्षेत्र-वार शिकायतें",
-    "mapNote": "📍 शिकायतें लाइव मानचित्र दृश्य पर भी दिखाई जाती हैं",
-
-    "statusMonitoringEyebrow": "शिकायत स्थिति निगरानी",
-    "statusMonitoringTitle": "पूरा जीवनचक्र, अंत तक ट्रैक किया गया",
-
-    "reportsEyebrow": "रिपोर्ट और विश्लेषण",
-    "reportsTitle": "रिपोर्ट जनरेट करें और समीक्षा करें"
+    "guidance": {
+      "reportIssue": {
+        "title": "समस्या कैसे दर्ज करें",
+        "summary": "श्रेणी चुनें, विवरण और तस्वीरें जोड़ें, फिर अपनी रिपोर्ट सबमिट करें।"
+      },
+      "complaintStatus": {
+        "title": "शिकायत की स्थिति",
+        "summary": "अपनी शिकायत को Registered, Verified, Assigned, Action और Closed चरणों में ट्रैक करें।"
+      },
+      "locationPhoto": {
+        "title": "स्थान / तस्वीर",
+        "summary": "GPS चालू करें और स्पष्ट तस्वीरें जोड़ें ताकि समस्या का सही स्थान दर्ज हो सके।"
+      },
+      "complaintNumber": {
+        "title": "शिकायत नंबर",
+        "summary": "स्थिति और इतिहास को कभी भी ट्रैक करने के लिए अपना शिकायत नंबर सुरक्षित रखें।"
+      }
+    }
   },
-  "login": {
-    "roles": [
-      { "value": "citizen", "label": "नागरिक", "icon": "🧑" },
-      { "value": "staff", "label": "स्टाफ", "icon": "🧰" },
-      { "value": "verifier", "label": "सत्यापनकर्ता", "icon": "🔍" },
-      { "value": "admin", "label": "एडमिन", "icon": "🛡️" }
-    ],
-    "authFlowSteps": ["क्रेडेंशियल्स दर्ज करें", "प्रमाणीकरण", "भूमिका जांचें", "डैशबोर्ड"],
-    "stats": [
-      { "value": "17,438", "label": "दर्ज समस्याएं" },
-      { "value": "91.4%", "label": "समाधान दर" },
-      { "value": "4.2 दिन", "label": "औसत समाधान समय" }
-    ],
 
-    "heroHeadline": "हज़ारों नागरिकों से जुड़ें जो अपने वार्ड की सड़कों को सुरक्षित बना रहे हैं — एक बार में एक रिपोर्ट।",
-
-    "loginTab": "लॉगिन",
-    "signupTab": "साइन अप",
-
-    "loginSuccessTitle": "{{role}} के रूप में प्रमाणित",
-    "loginSuccessDesc": "लॉगिन सफल रहा। आपको {{role}} डैशबोर्ड पर रीडायरेक्ट किया जा रहा है...",
-    "backToLoginBtn": "लॉगिन पर वापस जाएं",
-
-    "welcomeBack": "वापसी पर स्वागत है",
-    "loginSubtitle": "सड़क अवसंरचना समस्याओं की रिपोर्ट और ट्रैक करने के लिए लॉगिन करें।",
-    "loginErrorMessage": "गलत उपयोगकर्ता नाम या पासवर्ड। कृपया पुनः प्रयास करें।",
-
-    "loginAsLabel": "इस रूप में लॉगिन करें",
-    "identifierLabel": "उपयोगकर्ता नाम / ईमेल",
-    "identifierPlaceholder": "अपना उपयोगकर्ता नाम या ईमेल दर्ज करें",
-    "passwordLabel": "पासवर्ड",
-    "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
-    "showBtn": "दिखाएं",
-    "hideBtn": "छिपाएं",
-    "logInBtn": "लॉग इन करें",
-
-    "noAccountText": "खाता नहीं है?",
-    "signUpHereBtn": "यहां साइन अप करें",
-
-    "signupSuccessTitle": "{{role}} के रूप में खाता बनाया गया",
-    "signupSuccessDesc": "आपका खाता पंजीकृत हो गया है। अब आप अपने {{role}} डैशबोर्ड तक पहुंचने के लिए लॉगिन कर सकते हैं।",
-    "goToLoginBtn": "लॉगिन पर जाएं",
-
-    "createAccountTitle": "अपना खाता बनाएं",
-    "signupSubtitle": "सड़क अवसंरचना समस्याओं की रिपोर्ट और ट्रैक करने के लिए पंजीकरण करें।",
-    "signupErrorMessage": "कृपया सभी फ़ील्ड सही ढंग से भरें — पासवर्ड मेल खाने चाहिए और कम से कम 4 अक्षरों के होने चाहिए।",
-
-    "registerAsLabel": "इस रूप में पंजीकरण करें",
-    "fullNameLabel": "पूरा नाम",
-    "fullNamePlaceholder": "आपका पूरा नाम",
-    "emailLabel": "ईमेल पता",
-    "emailPlaceholder": "you@example.com",
-    "createPasswordPlaceholder": "एक पासवर्ड बनाएं",
-    "confirmPasswordLabel": "पासवर्ड की पुष्टि करें",
-    "confirmPasswordPlaceholder": "अपना पासवर्ड फिर से दर्ज करें",
-
-    "termsAgree": "मैं सहमत हूं",
-    "termsOfUse": "उपयोग की शर्तों",
-    "and": "और",
-    "privacyPolicy": "गोपनीयता नीति से",
-
-    "createAccountBtn": "खाता बनाएं",
-    "alreadyHaveAccountText": "पहले से खाता है?",
-    "logInHereBtn": "यहां लॉगिन करें",
-
-    "howLoginWorksEyebrow": "लॉगिन कैसे काम करता है",
-    "howLoginWorksTitle": "क्रेडेंशियल्स से आपके डैशबोर्ड तक",
-
-    "failedTitle": "विफल",
-    "failedDesc": "गलत क्रेडेंशियल्स एक त्रुटि संदेश दिखाते हैं ताकि आप फिर से प्रयास कर सकें।",
-    "successTitle": "सफल",
-    "successDesc": "आपकी भूमिका जांची जाती है और आपको सही डैशबोर्ड पर भेजा जाता है।",
-    "dashboardLabel": "डैशबोर्ड"
-  },
   "report": {
-    "breadcrumbHome": "होम",
-    "breadcrumbCurrent": "समस्या दर्ज करें",
-    "eyebrow": "नागरिक रिपोर्टिंग",
-    "heroTitle": "कुछ सरल चरणों में समस्या दर्ज करें",
-    "heroLead": "एक श्रेणी चुनें, समस्या का वर्णन करें, उसका स्थान चिह्नित करें, और एक फोटो संलग्न करें — बाकी हम संभाल लेंगे।",
+    "title": "सड़क सुरक्षा समस्या की रिपोर्ट करें",
+    "subtitle": "आपकी रिपोर्ट सड़कों को सुरक्षित रखने में मदद करती है। आपकी सभी जानकारी गोपनीय रखी जाती है।",
+    "fullName": "पूरा नाम",
+    "namePlaceholder": "अपना नाम दर्ज करें",
+    "mobile": "मोबाइल नंबर दर्ज करें",
+    "mobilePlaceholder": "10 अंकों का मोबाइल नंबर",
+    "email": "ईमेल पता",
+    "emailPlaceholder": "अपना ईमेल पता दर्ज करें",
+    "enterLocationUrl": "स्थान का URL दर्ज करें",
+    "useLiveLocation": "वर्तमान स्थान का उपयोग करें",
+    "locationUrl": "स्थान (URL दर्ज करें)",
+    "locationPlaceholder": "स्थान का URL यहाँ दर्ज करें",
+    "liveLocation": "वर्तमान स्थान",
+    "fetchingLocation": "आपका वर्तमान स्थान प्राप्त किया जा रहा है...",
+    "locationCaptured": "स्थान प्राप्त हो गया",
+    "locationError": "GPS स्थान प्राप्त नहीं हो सका। दोबारा प्रयास करें या URL दर्ज करें।",
+    "issueType": "समस्या का प्रकार",
+    "selectIssueType": "समस्या का प्रकार चुनें",
+    "description": "विवरण",
+    "descriptionPlaceholder": "समस्या के बारे में अधिक जानकारी दें...",
+    "submit": "रिपोर्ट सबमिट करें",
+    "complaintNumber": "शिकायत संख्या",
+    "successMessage": "आपकी शिकायत सफलतापूर्वक दर्ज हो गई है। इसकी स्थिति जानने के लिए इस संख्या को सुरक्षित रखें।",
+    "trackComplaint": "शिकायत ट्रैक करें",
+    "reportAnother": "एक और समस्या की रिपोर्ट करें",
+    "uploadVerifyPhoto": "कृपया कम से कम एक फोटो अपलोड करें और उसका सत्यापन करें।",
+    "captureLocationFirst": "सबमिट करने से पहले कृपया अपना वर्तमान स्थान प्राप्त करें।",
+    "photoRejected": "फोटो अस्वीकार की गई",
+    "submitFailed": "शिकायत सबमिट नहीं हो सकी",
+    "missingComplaintNumber": "सर्वर से शिकायत संख्या प्राप्त नहीं हुई।",
+    "error": "त्रुटि"
+  },
 
-    "stepLabels": ["श्रेणी चुनें", "विवरण", "स्थान", "फोटोग्राफ", "समीक्षा", "सबमिट करें"],
+  "login": {
+    "bannerAlt": "बेहतर सड़कें, मजबूत समुदाय।",
+    "title": "लॉगिन करें",
+    "subtitle": "वापस आने पर आपका स्वागत है! कृपया अपने खाते में लॉगिन करें।",
+    "loginAs": "इस रूप में लॉगिन करें",
+    "roles": {
+      "citizen": "नागरिक",
+      "staff": "कर्मचारी",
+      "verifier": "सत्यापनकर्ता",
+      "admin": "प्रशासक"
+    },
+    "identifierPlaceholder": "ईमेल या मोबाइल नंबर",
+    "passwordPlaceholder": "पासवर्ड",
+    "rememberMe": "मुझे याद रखें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "submit": "लॉगिन करें",
+    "loggingIn": "लॉगिन हो रहा है...",
+    "success": "लॉगिन सफल रहा। आपको दूसरे पृष्ठ पर भेजा जा रहा है...",
+    "or": "या",
+    "continueWithGoogle": "Google के साथ जारी रखें",
+    "noAccount": "क्या आपका खाता नहीं है?",
+    "signUp": "साइन अप करें",
+    "errors": {
+      "invalidCredentials": "ईमेल/मोबाइल नंबर या पासवर्ड गलत है। कृपया फिर से प्रयास करें।",
+      "userNotReturned": "लॉगिन सफल रहा, लेकिन उपयोगकर्ता की जानकारी प्राप्त नहीं हुई।",
+      "serverUnavailable": "सर्वर से संपर्क नहीं हो सका। कृपया फिर से प्रयास करें।"
+    }
+  },
 
-    "categories": [
-      { "title": "सड़क समस्याएं", "icon": "🛣️", "issues": ["सड़क में गड्ढे", "क्षतिग्रस्त सड़क", "सड़क में दरारें", "जलजमाव", "अन्य सड़क समस्या"] },
-      { "title": "सीवरेज और नाली समस्याएं", "icon": "🚰", "issues": ["सीवरेज जाम", "टूटा सीवरेज", "सीवेज ओवरफ्लो", "टूटा मैनहोल"] },
-      { "title": "पेयजल समस्याएं", "icon": "💧", "issues": ["पाइपलाइन रिसाव", "कम पानी का दबाव", "दूषित पानी", "नल में पानी नहीं"] },
-      { "title": "स्ट्रीटलाइट समस्याएं", "icon": "💡", "issues": ["लाइट काम नहीं कर रही", "क्षतिग्रस्त पोल", "टूटी लाइट", "गायब स्ट्रीटलाइट"] },
-      { "title": "सड़क सुरक्षा समस्याएं", "icon": "🚧", "issues": ["क्षतिग्रस्त साइनबोर्ड", "स्पीड ब्रेकर समस्याएं", "खतरनाक मोड़ / वक्र"] },
-      { "title": "पुल और कल्वर्ट समस्याएं", "icon": "🌉", "issues": ["पुल क्षति", "कल्वर्ट क्षति", "क्षतिग्रस्त रेलिंग"] }
-    ],
-
-    "step1Title": "श्रेणी चुनें",
-    "selectIssueSubheading": "विशिष्ट समस्या चुनें",
-
-    "step2Title": "विवरण दर्ज करें",
-    "descriptionLabel": "समस्या का वर्णन करें",
-    "descriptionPlaceholder": "समस्या क्या है, यह कितनी गंभीर है, और यह कितने समय से है?",
-
-    "step3Title": "स्थान कैप्चर करें",
-    "locationNote": "सटीकता के लिए जीपीएस का उपयोग करें, या स्थान मैन्युअल रूप से दर्ज करें।",
-    "captureGpsBtn": "📍 जीपीएस स्थान कैप्चर करें",
-    "locationLoading": "आपका वर्तमान स्थान प्राप्त किया जा रहा है...",
-    "locationCaptured": "स्थान कैप्चर किया गया: {{lat}}, {{lng}}",
-    "locationError": "जीपीएस स्थान प्राप्त नहीं हो सका — कृपया नीचे मैन्युअल रूप से पता दर्ज करें।",
-    "addressLabel": "पता / लैंडमार्क (मैन्युअल प्रविष्टि)",
-    "addressPlaceholder": "जैसे ग्राम पंचायत कार्यालय के पास, मुख्य सड़क",
-
-    "step4Title": "फोटोग्राफ / मीडिया अपलोड करें",
-    "uploadText": "फोटो अपलोड करने के लिए क्लिक करें",
-
-    "step5Title": "शिकायत की समीक्षा करें",
-    "reviewCategoryLabel": "श्रेणी",
-    "reviewIssueLabel": "विशिष्ट समस्या",
-    "reviewDescLabel": "विवरण",
-    "reviewDescEmpty": "कोई विवरण प्रदान नहीं किया गया",
-    "reviewLocationLabel": "स्थान",
-    "reviewLocationEmpty": "प्रदान नहीं किया गया",
-    "reviewPhotosLabel": "फोटोग्राफ",
-    "reviewPhotosCount": "{{count}} फोटो संलग्न",
-    "reviewPhotosEmpty": "कोई संलग्न नहीं",
-
-    "step6Title": "शिकायत सबमिट करें",
-    "step6Note": "सब कुछ ठीक लग रहा है? ट्रैक करने के लिए उपयोग किया जा सकने वाला शिकायत नंबर जनरेट करने के लिए अपनी शिकायत सबमिट करें।",
-    "submitBtn": "शिकायत सबमिट करें",
-
-    "backBtn": "← वापस",
-    "continueBtn": "जारी रखें",
-
-    "complaintNumberLabel": "शिकायत नंबर",
-    "resultNote": "आपकी शिकायत सफलतापूर्वक दर्ज की गई है। इसकी स्थिति को कभी भी ट्रैक करने के लिए यह नंबर सहेजें।",
-    "trackComplaintBtn": "शिकायत ट्रैक करें",
-    "reportAnotherBtn": "एक और समस्या दर्ज करें"
+  "signup": {
+    "bannerAlt": "बेहतर सड़कें, मजबूत समुदाय।",
+    "title": "साइन अप करें",
+    "subtitle": "अपना खाता बनाएं और सुरक्षित एवं मजबूत समुदाय बनाने में योगदान दें।",
+    "registerAs": "इस रूप में पंजीकरण करें",
+    "roles": {
+      "citizen": "नागरिक",
+      "staff": "कर्मचारी",
+      "verifier": "सत्यापनकर्ता",
+      "admin": "प्रशासक"
+    },
+    "namePlaceholder": "पूरा नाम",
+    "emailPlaceholder": "ईमेल पता",
+    "mobilePlaceholder": "मोबाइल नंबर",
+    "mobileTitle": "10 अंकों का मान्य मोबाइल नंबर दर्ज करें",
+    "passwordPlaceholder": "पासवर्ड",
+    "confirmPasswordPlaceholder": "पासवर्ड की पुष्टि करें",
+    "createAccount": "खाता बनाएं",
+    "creatingAccount": "खाता बनाया जा रहा है...",
+    "or": "या",
+    "continueWithGoogle": "Google के साथ जारी रखें",
+    "alreadyHaveAccount": "क्या आपका पहले से खाता है?",
+    "login": "लॉगिन करें",
+    "success": "खाता सफलतापूर्वक बन गया है। आपको लॉगिन पृष्ठ पर भेजा जा रहा है...",
+    "errors": {
+      "invalidMobile": "6, 7, 8 या 9 से शुरू होने वाला 10 अंकों का मान्य मोबाइल नंबर दर्ज करें।",
+      "passwordMismatch": "दोनों पासवर्ड मेल नहीं खाते।",
+      "passwordTooShort": "पासवर्ड कम से कम 4 अक्षरों का होना चाहिए।",
+      "general": "कुछ गलत हो गया। कृपया अपनी जानकारी जांचें और फिर से प्रयास करें।",
+      "serverUnavailable": "सर्वर से संपर्क नहीं हो सका। कृपया फिर से प्रयास करें।"
+    }
   }
+
+
 }

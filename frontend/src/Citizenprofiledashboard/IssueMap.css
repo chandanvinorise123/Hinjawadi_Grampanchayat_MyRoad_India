@@ -1,0 +1,414 @@
+/* ============================================================
+   MYROAD INDIA — ISSUE MAP PAGE STYLES
+   ============================================================ */
+
+.cdp-im-page {
+  --navy-900: #0b2447;
+  --navy-700: #1b4586;
+  --saffron: #ff9933;
+  --white: #ffffff;
+  --surface: #f4f6f9;
+  --surface-2: #eef1f6;
+  --line: #e2e6ee;
+  --ink: #161b26;
+  --ink-soft: #4b5567;
+  --ink-faint: #8a93a6;
+  --red: #d13438;
+  --amber: #e0a800;
+  --green: #128807;
+  --orange: #e8720c;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--surface);
+  padding: 32px clamp(16px, 4vw, 64px);
+}
+
+/* Header */
+.cdp-im-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.cdp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cdp-back-btn:hover {
+  background: var(--surface-2);
+  color: var(--navy-900);
+  border-color: var(--navy-700);
+  transform: translateX(-2px);
+}
+
+.cdp-im-header h1 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(20px, 1.6rem + 0.5vw, 28px);
+  color: var(--navy-900);
+  font-weight: 800;
+  margin: 0;
+}
+
+.cdp-im-subtitle {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+.cdp-im-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ✅ Main Grid Layout (UPDATED: List on left, Map on right, constrained max-width) */
+.cdp-im-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr; /* Fixed width for list, flexible for map */
+  gap: 24px;
+  height: calc(100vh - 180px);
+  min-height: 500px;
+  max-width: 1200px; /* Decreases the overall map size on large screens */
+  margin: 0 auto; /* Centers the layout */
+}
+
+/* Map Container */
+.cdp-im-map-container {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.cdp-im-map-container .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Custom Popup Styles */
+.cdp-im-popup .leaflet-popup-content-wrapper {
+  border-radius: var(--radius-sm);
+  padding: 0;
+  overflow: hidden;
+}
+
+.cdp-im-popup .leaflet-popup-content {
+  margin: 0;
+  width: 240px !important;
+}
+
+.cdp-im-popup-content {
+  padding: 12px;
+}
+
+.cdp-im-popup-content h4 {
+  margin: 8px 0 4px;
+  font-size: 14px;
+  color: var(--navy-900);
+}
+
+.cdp-im-popup-content p {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 4px 0;
+}
+
+.cdp-im-popup-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  background: var(--navy-900);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cdp-im-popup-btn:hover {
+  background: var(--navy-700);
+}
+
+/* List Container */
+.cdp-im-list-container {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cdp-im-list-container h3 {
+  padding: 16px 20px;
+  margin: 0;
+  font-size: 15px;
+  color: var(--navy-900);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.cdp-im-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cdp-im-list-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cdp-im-list-item:hover, .cdp-im-list-item.active {
+  border-color: var(--navy-700);
+  background: #eaf0fb;
+}
+
+.cdp-im-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.cdp-im-list-number {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy-700);
+}
+
+.cdp-im-list-details {
+  margin-bottom: 12px;
+}
+
+.cdp-im-list-issue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 4px 0;
+}
+
+.cdp-im-list-cat {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.cdp-im-list-loc {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+.cdp-im-view-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--navy-900);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cdp-im-view-btn:hover {
+  background: var(--navy-700);
+}
+
+/* Badges */
+.cdp-im-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.cdp-im-badge-red { background: #fbe4e4; color: var(--red); }
+.cdp-im-badge-amber { background: #fff4e0; color: var(--amber); }
+.cdp-im-badge-green { background: #e8f6ec; color: var(--green); }
+.cdp-im-badge-orange { background: #fff1e2; color: var(--orange); }
+
+/* ============================================
+   OVERLAY MODAL STYLES
+   ============================================ */
+.cdp-im-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(11, 36, 71, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: cdpImFadeIn 0.2s ease-out;
+}
+
+@keyframes cdpImFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.cdp-im-modal-content {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px -20px rgba(11, 36, 71, 0.4);
+  animation: cdpImSlideUp 0.3s ease-out;
+}
+
+@keyframes cdpImSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.cdp-im-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  z-index: 10;
+}
+
+.cdp-im-modal-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--navy-700);
+  background: #eaf0fb;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cdp-im-modal-header h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy-900);
+  margin: 0;
+}
+
+.cdp-im-modal-close {
+  background: none; border: none; font-size: 24px; color: var(--ink-faint);
+  cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;
+}
+.cdp-im-modal-close:hover { background: var(--surface); color: var(--red); }
+
+.cdp-im-modal-body { padding: 32px; }
+
+.cdp-im-info-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+  margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--line);
+}
+
+.cdp-im-info-item { display: flex; flex-direction: column; gap: 6px; }
+.cdp-im-info-item span { font-size: 11px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.cdp-im-info-item b { font-size: 15px; color: var(--ink); font-weight: 600; }
+
+.cdp-im-text-red { color: var(--red); }
+.cdp-im-text-amber { color: var(--amber); }
+.cdp-im-text-green { color: var(--green); }
+.cdp-im-text-orange { color: var(--orange); }
+
+.cdp-im-section { margin-bottom: 32px; }
+.cdp-im-section h4 { font-size: 14px; font-weight: 700; color: var(--navy-900); margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; }
+
+.cdp-im-description {
+  font-size: 14px; line-height: 1.6; color: var(--ink); margin: 0;
+  padding: 16px 20px; background: var(--surface); border-radius: var(--radius-sm); border-left: 4px solid var(--saffron);
+}
+
+.cdp-im-photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.cdp-im-photo-card { display: flex; flex-direction: column; gap: 8px; }
+.cdp-im-photo-label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+.cdp-im-photo-placeholder {
+  height: 120px; background: var(--surface); border: 1px dashed var(--line);
+  border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--ink-faint); font-weight: 500;
+}
+
+.cdp-im-timeline { position: relative; padding-left: 24px; }
+.cdp-im-timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 0; width: 2px; background: var(--line); }
+.cdp-im-timeline-item { position: relative; padding-bottom: 24px; }
+.cdp-im-timeline-item:last-child { padding-bottom: 0; }
+.cdp-im-timeline-dot {
+  position: absolute; left: -21px; top: 4px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--navy-700); border: 2px solid var(--white);
+  box-shadow: 0 0 0 2px var(--navy-700); z-index: 2;
+}
+.cdp-im-timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.cdp-im-timeline-action { font-size: 13px; font-weight: 700; color: var(--ink); }
+.cdp-im-timeline-time { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+.cdp-im-timeline-remarks { font-size: 13px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+
+.cdp-im-resolution-section { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 20px; }
+.cdp-im-resolution-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.cdp-im-resolution-grid div { display: flex; flex-direction: column; gap: 4px; }
+.cdp-im-resolution-grid span { font-size: 11px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; }
+.cdp-im-resolution-grid strong { font-size: 14px; color: var(--ink); }
+
+.cdp-im-modal-footer {
+  padding: 16px 32px; border-top: 1px solid var(--line); display: flex;
+  justify-content: flex-end; background: var(--surface); border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.cdp-im-modal-close-btn {
+  padding: 10px 24px; background: var(--navy-900); color: var(--white); border: none;
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.cdp-im-modal-close-btn:hover { background: var(--navy-700); transform: translateY(-1px); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .cdp-im-grid { 
+    grid-template-columns: 1fr; 
+    height: auto; 
+    max-width: 100%;
+  }
+  .cdp-im-map-container { 
+    height: 400px; 
+    order: 2; /* Map below list on mobile */
+  }
+  .cdp-im-list-container { 
+    max-height: 400px; 
+    order: 1; /* List on top on mobile */
+  }
+}
+
+@media (max-width: 768px) {
+  .cdp-im-info-grid, .cdp-im-resolution-grid { grid-template-columns: 1fr; }
+  .cdp-im-modal-header, .cdp-im-modal-body, .cdp-im-modal-footer { padding-left: 20px; padding-right: 20px; }
+}

@@ -1,16 +1,13 @@
 import React, { useState } from "react";
 import "./signup.css";
 import { useNavigate, Link } from "react-router-dom";
-import bannerImage from "../assets/su.png";
+import { useTranslation } from "react-i18next";
+import bannerImageEn from "../assets/su.png";
+import bannerImageHi from "../assets/su-hi.png";
+import bannerImageMr from "../assets/su-mr.png";
 
-const roles = [
-  { value: "citizen", label: "Citizen" },
-  { value: "staff", label: "Staff" },
-  { value: "verifier", label: "Verifier" },
-  { value: "admin", label: "Admin" },
-];
 
-// Base URL for your backend API
+// Base URL for backend API
 const API_BASE_URL = "http://localhost:3200/api/auth";
 
 // Indian mobile number: 10 digits, starting with 6-9
@@ -18,7 +15,19 @@ const MOBILE_REGEX = /^[6-9]\d{9}$/;
 
 const Signup = () => {
   const navigate = useNavigate();
+const { t, i18n } = useTranslation();
 
+const currentLanguage = (
+  i18n.resolvedLanguage || i18n.language || "en"
+).split("-")[0];
+
+const bannerImage =
+  {
+    en: bannerImageEn,
+    hi: bannerImageHi,
+    mr: bannerImageMr,
+  }[currentLanguage] || bannerImageEn;
+  
   const [signupData, setSignupData] = useState({
     role: "citizen",
     name: "",
@@ -33,40 +42,47 @@ const Signup = () => {
   const [signupError, setSignupError] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
 
+  const roles = [
+    { value: "citizen", label: t("signup.roles.citizen") },
+    { value: "staff", label: t("signup.roles.staff") },
+    { value: "verifier", label: t("signup.roles.verifier") },
+    { value: "admin", label: t("signup.roles.admin") },
+  ];
+
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setSignupData((prevData) => ({
       ...prevData,
-      // Mobile field accepts digits only
       [name]: name === "mobile" ? value.replace(/\D/g, "") : value,
     }));
   };
 
+  // Handle signup submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setSignupError("");
     setSignupStatus(null);
 
-    // Mobile validation
+    // Mobile number validation
     if (!MOBILE_REGEX.test(signupData.mobile)) {
-      setSignupError(
-        "Enter a valid 10-digit mobile number starting with 6, 7, 8 or 9."
-      );
+      setSignupError(t("signup.errors.invalidMobile"));
       setSignupStatus("failed");
       return;
     }
 
-    // Password validation
+    // Password match validation
     if (signupData.password !== signupData.confirmPassword) {
-      setSignupError("Passwords do not match.");
+      setSignupError(t("signup.errors.passwordMismatch"));
       setSignupStatus("failed");
       return;
     }
 
+    // Minimum password length validation
     if (signupData.password.length < 4) {
-      setSignupError("Password must be at least 4 characters long.");
+      setSignupError(t("signup.errors.passwordTooShort"));
       setSignupStatus("failed");
       return;
     }
@@ -93,199 +109,197 @@ const Signup = () => {
         }, 1200);
       } else {
         setSignupError(
-          data.message ||
-            "Something went wrong. Please check your details and try again."
+          data.message || t("signup.errors.general")
         );
         setSignupStatus("failed");
       }
     } catch (err) {
-      setSignupError("Unable to reach the server. Please try again.");
+      console.error("Signup error:", err);
+
+      setSignupError(t("signup.errors.serverUnavailable"));
       setSignupStatus("failed");
     } finally {
       setSignupLoading(false);
     }
   };
 
-  // Placeholder for Google OAuth
+  // Google OAuth placeholder
   const handleGoogleSignup = () => {
-    // TODO: integrate Google OAuth
     console.log("Continue with Google clicked");
   };
 
   return (
     <div className="signup-container">
-      {/* ================= SINGLE SIGNUP CARD ================= */}
+      {/* SINGLE SIGNUP CARD */}
       <div className="signup-card">
 
-        {/* ================= LEFT BANNER ================= */}
+        {/* LEFT BANNER */}
         <div className="signup-banner">
           <img
             src={bannerImage}
-            alt="Better Roads. Stronger Communities."
+            alt={t("signup.bannerAlt")}
           />
         </div>
 
-        {/* ================= RIGHT SIGNUP SECTION ================= */}
+        {/* RIGHT SIGNUP SECTION */}
         <div className="signup-section">
           <div className="signup-box">
 
-            <h1>Sign Up</h1>
+            <h1>{t("signup.title")}</h1>
 
             <p className="signup-subtitle">
-              Create your account and be a part of safer and stronger
-              communities.
+              {t("signup.subtitle")}
             </p>
 
-            {/* Error Message */}
+            {/* ERROR MESSAGE */}
             {signupStatus === "failed" && (
-              <div className="error-banner">
-                {signupError ||
-                  "Please fill all fields correctly — passwords must match and be at least 4 characters."}
+              <div className="error-banner" role="alert">
+                {signupError || t("signup.errors.general")}
               </div>
             )}
 
-            {/* Success Message */}
+            {/* SUCCESS MESSAGE */}
             {signupStatus === "success" && (
-              <div className="success-banner">
-                Account created successfully. Redirecting you to login...
+              <div className="success-banner" role="status">
+                {t("signup.success")}
               </div>
             )}
 
+            {/* SIGNUP FORM */}
             <form onSubmit={handleSubmit}>
 
-              {/* ================= ROLE ================= */}
+              {/* ROLE */}
               <div className="input-group">
                 <select
                   name="role"
                   value={signupData.role}
                   onChange={handleChange}
-                  aria-label="Register as"
+                  aria-label={t("signup.registerAs")}
+                  required
                 >
                   {roles.map((role) => (
                     <option key={role.value} value={role.value}>
-                      Register as {role.label}
+                      {t("signup.registerAs")} {role.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* ================= FULL NAME ================= */}
+              {/* FULL NAME */}
               <div className="input-group">
                 <input
                   type="text"
                   name="name"
-                  placeholder="Full Name"
+                  placeholder={t("signup.namePlaceholder")}
                   value={signupData.name}
                   onChange={handleChange}
+                  autoComplete="name"
+                  aria-label={t("signup.namePlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================= EMAIL ================= */}
+              {/* EMAIL */}
               <div className="input-group">
                 <input
                   type="email"
                   name="email"
-                  placeholder="Email Address"
+                  placeholder={t("signup.emailPlaceholder")}
                   value={signupData.email}
                   onChange={handleChange}
+                  autoComplete="email"
+                  aria-label={t("signup.emailPlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================= MOBILE ================= */}
+              {/* MOBILE NUMBER */}
               <div className="input-group">
                 <input
                   type="tel"
                   name="mobile"
-                  placeholder="Mobile Number"
+                  placeholder={t("signup.mobilePlaceholder")}
                   value={signupData.mobile}
                   onChange={handleChange}
                   pattern="[6-9][0-9]{9}"
                   maxLength={10}
                   inputMode="numeric"
                   autoComplete="tel-national"
-                  title="Enter a valid 10-digit mobile number"
+                  title={t("signup.mobileTitle")}
+                  aria-label={t("signup.mobilePlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================= PASSWORD ================= */}
+              {/* PASSWORD */}
               <div className="input-group">
                 <input
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder={t("signup.passwordPlaceholder")}
                   value={signupData.password}
                   onChange={handleChange}
+                  autoComplete="new-password"
+                  aria-label={t("signup.passwordPlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================= CONFIRM PASSWORD ================= */}
+              {/* CONFIRM PASSWORD */}
               <div className="input-group">
                 <input
                   type="password"
                   name="confirmPassword"
-                  placeholder="Confirm Password"
+                  placeholder={t("signup.confirmPasswordPlaceholder")}
                   value={signupData.confirmPassword}
                   onChange={handleChange}
+                  autoComplete="new-password"
+                  aria-label={t("signup.confirmPasswordPlaceholder")}
                   required
                 />
               </div>
 
-              {/* ================= LOCATION ================= */}
-              {/* <div className="input-group">
-                <input
-                  type="text"
-                  name="location"
-                  placeholder="Location (City)"
-                  value={signupData.location}
-                  onChange={handleChange}
-                  required
-                />
-              </div> */}
-
-              {/* ================= CREATE ACCOUNT ================= */}
+              {/* CREATE ACCOUNT */}
               <button
                 type="submit"
                 className="signup-button"
                 disabled={signupLoading}
               >
                 {signupLoading ? (
-                  "Creating account..."
+                  t("signup.creatingAccount")
                 ) : (
                   <>
-                    Create Account <span>→</span>
+                    {t("signup.createAccount")} <span>→</span>
                   </>
                 )}
               </button>
             </form>
 
-            {/* ================= DIVIDER ================= */}
+            {/* DIVIDER */}
             <div className="divider">
-              <span>or</span>
+              <span>{t("signup.or")}</span>
             </div>
 
-            {/* ================= GOOGLE ================= */}
+            {/* GOOGLE SIGNUP */}
             <button
               type="button"
               className="google-button"
               onClick={handleGoogleSignup}
             >
               <span className="google-icon"></span>
-              Continue with Google
+              {t("signup.continueWithGoogle")}
             </button>
 
-            {/* ================= LOGIN ================= */}
+            {/* LOGIN LINK */}
             <p className="login-text">
-              Already have an account?
-              <Link to="/login">Login</Link>
+              {t("signup.alreadyHaveAccount")}{" "}
+              <Link to="/login">
+                {t("signup.login")}
+              </Link>
             </p>
 
           </div>
         </div>
-
       </div>
     </div>
   );

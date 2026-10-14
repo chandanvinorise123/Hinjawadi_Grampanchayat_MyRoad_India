@@ -1,72 +1,42 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import "./helpfaq.css";
-import bannerImage from "../assets/hf.png";
+const CONTACT_ROUTE = "/contactus";
+// import bannerImage from "../assets/hf.png";
+import bannerImageEn from "../assets/hf.png";
+import bannerImageHi from "../assets/hf-hi.png";
+import bannerImageMr from "../assets/hf-mr.jpeg"
 
 const faqCategories = [
   {
+    key: "reportIssue",
     icon: "📝",
-    title: "Report Issue Questions",
     questions: [
-      {
-        q: "How do I report a road or infrastructure issue?",
-        a: "Open the Report Issue section, select a category and specific issue, add a description and photographs, then submit — your location is captured automatically.",
-      },
-      {
-        q: "Can I report an issue without creating an account?",
-        a: "You can register a complaint using the QR-code or mobile-based registration flow; a complaint number is generated for you to track it afterward.",
-      },
-      {
-        q: "What details should I include in my report?",
-        a: "Include a clear description, at least one photograph, and make sure your device location is enabled so the issue is pinned accurately on the map.",
-      },
-      {
-        q: "Can I report more than one issue at a time?",
-        a: "Yes, each issue should be submitted as a separate report so it gets its own complaint number and can be tracked individually.",
-      },
+      { key: "reportRoadIssue" },
+      { key: "reportWithoutAccount" },
+      { key: "reportDetails" },
+      { key: "multipleIssues" },
     ],
   },
   {
-    icon: "",
-    title: "Track Complaint Questions",
+    key: "trackComplaint",
+    icon: "🔍",
     questions: [
-      {
-        q: "How do I track the status of my complaint?",
-        a: "Use your complaint number in the Track Complaint section to view its current status, history, and complete lifecycle.",
-      },
-      {
-        q: "What do the different complaint statuses mean?",
-        a: "Complaints move through Registered, Verified, Assigned, Action, Completed, and Closed — each stage reflects where your complaint is in the resolution process.",
-      },
-      {
-        q: "Will I be notified when my complaint status changes?",
-        a: "Yes, you'll receive notifications at registration, verification, assignment, and when the work is completed or resolved.",
-      },
-      {
-        q: "Where can I see all my registered complaints?",
-        a: "All complaints you've submitted are listed together in the tracking section, along with their current status and location.",
-      },
+      { key: "trackStatus" },
+      { key: "complaintStatuses" },
+      { key: "statusNotifications" },
+      { key: "viewComplaints" },
     ],
   },
   {
-    icon: "",
-    title: "Mobile App Questions",
+    key: "mobileApp",
+    icon: "📱",
     questions: [
-      {
-        q: "Is MyRoad India available as a mobile app?",
-        a: "Yes, issues can be reported and tracked directly through the mobile-based registration flow in addition to the website.",
-      },
-      {
-        q: "Can I scan a QR code to report an issue?",
-        a: "Yes, QR-code-based registration lets you report an issue quickly by scanning a code at the location of the problem.",
-      },
-      {
-        q: "Does the app work without an internet connection?",
-        a: "An active connection is needed to submit a report and capture your GPS location and photographs accurately.",
-      },
-      {
-        q: "Can field staff use the same app to update complaints?",
-        a: "Field staff use the same platform to view assigned complaints, upload site photographs, and update work status and remarks.",
-      },
+      { key: "mobileAvailability" },
+      { key: "scanQrCode" },
+      { key: "offlineAccess" },
+      { key: "fieldStaffUpdates" },
     ],
   },
 ];
@@ -75,30 +45,40 @@ const citizenGuidance = [
   {
     num: "01",
     icon: "📝",
-    title: "How to Report Issue",
-    summary: "Select a category, add a description and photos, then submit your report.",
+    key: "reportIssue",
   },
   {
     num: "02",
     icon: "📊",
-    title: "Complaint Status",
-    summary: "Follow your complaint through Registered, Verified, Assigned, Action, and Closed.",
+    key: "complaintStatus",
   },
   {
     num: "03",
     icon: "📍",
-    title: "Location / Photo",
-    summary: "Enable GPS and attach clear photographs so your issue is pinned accurately.",
+    key: "locationPhoto",
   },
   {
     num: "04",
     icon: "🔢",
-    title: "Complaint Number",
-    summary: "Save your complaint number to track status and history at any time.",
+    key: "complaintNumber",
   },
 ];
 
 const HelpFaq = () => {
+const { t, i18n } = useTranslation();
+const navigate = useNavigate();
+
+const currentLanguage = (
+  i18n.resolvedLanguage || i18n.language || "en"
+).split("-")[0];
+
+const bannerImage =
+  {
+    en: bannerImageEn,
+    hi: bannerImageHi,
+    mr: bannerImageMr,
+  }[currentLanguage] || bannerImageEn;
+
   const [activeCategory, setActiveCategory] = useState(0);
   const [openIndex, setOpenIndex] = useState(0);
 
@@ -108,113 +88,118 @@ const HelpFaq = () => {
   };
 
   const toggleQuestion = (index) => {
-    setOpenIndex(openIndex === index ? -1 : index);
+    setOpenIndex((currentIndex) =>
+      currentIndex === index ? -1 : index
+    );
   };
 
   return (
     <main className="help-page">
       {/* ================= PAGE HERO ================= */}
-      {/* Added backgroundImage style and changed hero-glow to hero-scrim */}
+      <section className="page-hero-section">
+        <div
+          className="page-hero"
+          style={{
+            backgroundImage: `url("${bannerImage}")`,
+          }}
+        >
+          <div className="hero-scrim"></div>
 
-
-  <section className="page-hero-section">
-  <div
-    className="page-hero"
-    style={{
-      backgroundImage: `url("${bannerImage}")`,
-    }}
-  >
-    <div className="hero-scrim"></div>
-
-    <div className="page-hero-inner">
-      {/* <div className="breadcrumb">
-        Home / <b>Help / FAQ</b>
-      </div> */}
-
-      {/* <p className="eyebrow eyebrow-light">Help Center</p>
-      <h1>Frequently asked questions</h1>
-      <p className="hero-lead">
-        Answers to common questions about reporting issues, tracking
-        complaints, and using the MyRoad India mobile app.
-      </p> */}
-    </div>
-  </div>
-</section>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          <div className="page-hero-inner">
+            {/* Existing hero content remains hidden */}
+          </div>
+        </div>
+      </section>
 
       {/* ================= FAQ CATEGORIES ================= */}
       <section className="section">
         <div className="section-heading center">
-          <p className="eyebrow center">Frequently Asked Questions</p>
-          <h2>Browse by topic</h2>
+          <p className="eyebrow center">
+            {t("helpFaq.faqHeading")}
+          </p>
+          <h2>{t("helpFaq.browseByTopic")}</h2>
         </div>
 
         <div className="faq-tabs">
           {faqCategories.map((category, i) => (
             <button
-              key={i}
+              key={category.key}
               type="button"
-              className={`faq-tab ${activeCategory === i ? "active" : ""}`}
+              className={`faq-tab ${
+                activeCategory === i ? "active" : ""
+              }`}
               onClick={() => handleCategorySelect(i)}
             >
-              <span className="faq-tab-icon">{category.icon}</span>
-              {category.title}
+              <span className="faq-tab-icon">
+                {category.icon}
+              </span>
+              {t(`helpFaq.categories.${category.key}`)}
             </button>
           ))}
         </div>
 
         <div className="faq-accordion">
-          {faqCategories[activeCategory].questions.map((item, i) => (
-            <div
-              className={`faq-item ${openIndex === i ? "open" : ""}`}
-              key={i}
-            >
-              <button
-                type="button"
-                className="faq-question"
-                onClick={() => toggleQuestion(i)}
+          {faqCategories[activeCategory].questions.map(
+            (item, i) => (
+              <div
+                className={`faq-item ${
+                  openIndex === i ? "open" : ""
+                }`}
+                key={item.key}
               >
-                {item.q}
-                <span className="faq-toggle">{openIndex === i ? "−" : "+"}</span>
-              </button>
-              {openIndex === i && <p className="faq-answer">{item.a}</p>}
-            </div>
-          ))}
+                <button
+                  type="button"
+                  className="faq-question"
+                  onClick={() => toggleQuestion(i)}
+                  aria-expanded={openIndex === i}
+                >
+                  {t(`helpFaq.questions.${item.key}.question`)}
+
+                  <span className="faq-toggle">
+                    {openIndex === i ? "−" : "+"}
+                  </span>
+                </button>
+
+                {openIndex === i && (
+                  <p className="faq-answer">
+                    {t(`helpFaq.questions.${item.key}.answer`)}
+                  </p>
+                )}
+              </div>
+            )
+          )}
         </div>
       </section>
 
       {/* ================= CITIZEN GUIDANCE ================= */}
       <section className="section surface">
         <div className="section-heading">
-          <p className="eyebrow">Citizen Guidance</p>
-          <h2>Quick reference for using the platform</h2>
+          <p className="eyebrow">
+            {t("helpFaq.citizenGuidance")}
+          </p>
+          <h2>{t("helpFaq.quickReference")}</h2>
         </div>
 
         <div className="guidance-grid">
-          {citizenGuidance.map((item, i) => (
-            <div className="guidance-card" key={i}>
+          {citizenGuidance.map((item) => (
+            <div className="guidance-card" key={item.key}>
               <div className="guidance-top">
-                <span className="guidance-number">{item.num}</span>
-                <span className="guidance-icon">{item.icon}</span>
+                <span className="guidance-number">
+                  {item.num}
+                </span>
+
+                <span className="guidance-icon">
+                  {item.icon}
+                </span>
               </div>
-              <h4>{item.title}</h4>
-              <p>{item.summary}</p>
+
+              <h4>
+                {t(`helpFaq.guidance.${item.key}.title`)}
+              </h4>
+
+              <p>
+                {t(`helpFaq.guidance.${item.key}.summary`)}
+              </p>
             </div>
           ))}
         </div>
@@ -224,11 +209,16 @@ const HelpFaq = () => {
       <section className="section cta-section">
         <div className="cta-shell">
           <div>
-            <h3>Still need help?</h3>
-            <p>Reach out to our support team for anything not covered here.</p>
+            <h3>{t("helpFaq.stillNeedHelp")}</h3>
+            <p>{t("helpFaq.supportDescription")}</p>
           </div>
-          <button className="primary-btn" type="button">
-            Contact Us <span>→</span>
+
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={() => navigate(CONTACT_ROUTE)}
+          >
+            {t("helpFaq.contactUs")} <span>→</span>
           </button>
         </div>
       </section>

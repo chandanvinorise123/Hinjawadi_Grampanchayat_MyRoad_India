@@ -1,73 +1,107 @@
 
-import React, { useState, useEffect } from 'react';
-import './navbar.css';
-import logo from '../assets/logo.jpeg';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect } from "react";
+import "./navbar.css";
+import logo from "../assets/logo.jpeg";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
+const MIN_FONT_SIZE = 80;
+const MAX_FONT_SIZE = 130;
+const FONT_STEP = 10;
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Restore the saved font size
+  const [fontSize, setFontSize] = useState(() => {
+    const savedSize = Number(
+      localStorage.getItem("myroad-font-size")
+    );
+
+    return savedSize >= MIN_FONT_SIZE &&
+      savedSize <= MAX_FONT_SIZE
+      ? savedSize
+      : 100;
+  });
+
+  // Apply font size throughout the application
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${fontSize}%`;
+    localStorage.setItem("myroad-font-size", String(fontSize));
+  }, [fontSize]);
+
+  // Decrease, reset, or increase font size
+  const changeFontSize = (newSize) => {
+    const size = Math.max(
+      MIN_FONT_SIZE,
+      Math.min(MAX_FONT_SIZE, newSize)
+    );
+
+    setFontSize(size);
+  };
 
   // Change language
-  const handleLanguageChange = (langCode) => {
-    i18n.changeLanguage(langCode);
-    setIsLanguageOpen(false);
+  const handleLanguageChange = async (langCode) => {
+    try {
+      await i18n.changeLanguage(langCode);
+      localStorage.setItem("i18nextLng", langCode);
+      setIsLanguageOpen(false);
+    } catch (error) {
+      console.error("Failed to change language:", error);
+    }
   };
 
   // Current language label: EN / HI / MR
-  const currentLangLabel = String(i18n.language || 'en')
-    .split('-')[0]
+  const currentLangLabel = String(
+    i18n.resolvedLanguage || i18n.language || "en"
+  )
+    .split("-")[0]
     .toUpperCase();
 
-  // Track logged-in user
-  const [user, setUser] = useState(null);
-
-  // Load user from localStorage
+  // Load logged-in user
   useEffect(() => {
     const loadUser = () => {
       try {
-        const stored = localStorage.getItem('user');
-
-        if (stored) {
-          setUser(JSON.parse(stored));
-        } else {
-          setUser(null);
-        }
+        const stored = localStorage.getItem("user");
+        setUser(stored ? JSON.parse(stored) : null);
       } catch (error) {
-        console.error('Error reading user from localStorage:', error);
+        console.error(
+          "Error reading user from localStorage:",
+          error
+        );
         setUser(null);
       }
     };
 
     loadUser();
 
-    window.addEventListener('authChange', loadUser);
-    window.addEventListener('storage', loadUser);
+    window.addEventListener("authChange", loadUser);
+    window.addEventListener("storage", loadUser);
 
     return () => {
-      window.removeEventListener('authChange', loadUser);
-      window.removeEventListener('storage', loadUser);
+      window.removeEventListener("authChange", loadUser);
+      window.removeEventListener("storage", loadUser);
     };
   }, [location.pathname]);
 
-  // Maps a logged-in user's role to the route of THEIR dashboard only
+  // Map user role to dashboard
   const roleDashboardPath = (role) => {
-    switch (String(role || '').toLowerCase()) {
-      case 'admin':
-        return '/admindashboard';
-      case 'staff':
-        return '/staffdashboard';
-      case 'verifier':
-        return '/verifierdashboard';
-      case 'citizen':
+    switch (String(role || "").toLowerCase()) {
+      case "admin":
+        return "/admindashboard";
+      case "staff":
+        return "/staffdashboard";
+      case "verifier":
+        return "/verifierdashboard";
+      case "citizen":
       default:
-        return '/citizendashboard';
+        return "/citizendashboard";
     }
   };
 
@@ -80,50 +114,110 @@ const Navbar = () => {
   // Logout
   const handleLogout = () => {
     setIsProfileOpen(false);
-
-    localStorage.removeItem('user');
-
-    window.dispatchEvent(new Event('authChange'));
-
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authChange"));
     setUser(null);
-
-    navigate('/');
+    navigate("/");
   };
 
+  // Translate role names
+  const getTranslatedRole = (role) => {
+    const normalizedRole = String(role || "").toLowerCase();
 
-  
+    const roleKeys = {
+      admin: "navbar.roles.admin",
+      staff: "navbar.roles.staff",
+      verifier: "navbar.roles.verifier",
+      citizen: "navbar.roles.citizen",
+    };
+
+    return roleKeys[normalizedRole]
+      ? t(roleKeys[normalizedRole], {
+          defaultValue: normalizedRole
+            ? normalizedRole.charAt(0).toUpperCase() +
+              normalizedRole.slice(1)
+            : "",
+        })
+      : String(role || "");
+  };
+
   return (
     <>
       {/* Top Bar */}
       <div className="topbar">
         <div className="topbar-inner">
-
           <span>
             <img
               src="https://flagcdn.com/w40/in.png"
               alt="India"
               className="flag-icon"
             />
-            Government Digital Service · Gram Panchayat Portal
+
+            {t("navbar.governmentPortal", {
+              defaultValue:
+                "Government Digital Service · Gram Panchayat Portal",
+            })}
           </span>
 
           <div className="topbar-right">
-
-            <a href="#" className="sr-link">
-              Screen Reader Access
+            <a
+              href="#"
+              className="sr-link"
+              onClick={(event) => event.preventDefault()}
+            >
+              {t("navbar.screenReader", {
+                defaultValue: "Screen Reader Access",
+              })}
             </a>
 
             <span className="sep">·</span>
 
-            <button className="font-btn">A-</button>
-            <button className="font-btn">A</button>
-            <button className="font-btn">A+</button>
+            {/* Decrease font size */}
+            <button
+              type="button"
+              className="font-btn"
+              onClick={() =>
+                changeFontSize(fontSize - FONT_STEP)
+              }
+              disabled={fontSize <= MIN_FONT_SIZE}
+              aria-label="Decrease font size"
+              title="Decrease font size"
+            >
+              A−
+            </button>
+
+            {/* Reset font size */}
+            <button
+              type="button"
+              className="font-btn"
+              onClick={() => changeFontSize(100)}
+              aria-label="Reset font size"
+              title="Reset font size"
+            >
+              A
+            </button>
+
+            {/* Increase font size */}
+            <button
+              type="button"
+              className="font-btn"
+              onClick={() =>
+                changeFontSize(fontSize + FONT_STEP)
+              }
+              disabled={fontSize >= MAX_FONT_SIZE}
+              aria-label="Increase font size"
+              title="Increase font size"
+            >
+              A+
+            </button>
 
             <span className="sep">·</span>
 
             <button
+              type="button"
               className="lang-btn"
-              onClick={() => handleLanguageChange('hi')}
+              onClick={() => handleLanguageChange("hi")}
+              aria-pressed={currentLangLabel === "HI"}
             >
               हिंदी
             </button>
@@ -131,12 +225,13 @@ const Navbar = () => {
             <span className="sep">·</span>
 
             <button
+              type="button"
               className="lang-btn"
-              onClick={() => handleLanguageChange('mr')}
+              onClick={() => handleLanguageChange("mr")}
+              aria-pressed={currentLangLabel === "MR"}
             >
               मराठी
             </button>
-
           </div>
         </div>
       </div>
@@ -144,130 +239,125 @@ const Navbar = () => {
       {/* Main Header / Navbar */}
       <header className="main-header">
         <div className="header-inner">
-
           {/* Brand */}
           <div className="brand">
-
             <div className="brand-logo">
-              <img
-                src={logo}
-                alt="MyRoad India Logo"
-              />
+              <img src={logo} alt="MyRoad India Logo" />
             </div>
 
             <div className="brand-text">
               <b>MyRoad India</b>
-              <span>Report · Track · Resolve</span>
+              <span>
+                {t("navbar.tagline", {
+                  defaultValue: "Report · Track · Resolve",
+                })}
+              </span>
             </div>
-
           </div>
 
           {/* Navigation */}
           <nav className="primary">
-
             <NavLink
               to="/"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Home
+              {t("navbar.home", { defaultValue: "Home" })}
             </NavLink>
 
             <NavLink
               to="/services"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Services
+              {t("navbar.services", {
+                defaultValue: "Services",
+              })}
             </NavLink>
 
             <NavLink
               to="/issues-category"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Issues Category
+              {t("navbar.issuesCategory", {
+                defaultValue: "Issues Category",
+              })}
             </NavLink>
 
             <NavLink
               to="/aboutus"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              About Us
+              {t("navbar.aboutUs", {
+                defaultValue: "About Us",
+              })}
             </NavLink>
 
             <NavLink
               to="/contactus"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Contact Us
+              {t("navbar.contactUs", {
+                defaultValue: "Contact Us",
+              })}
             </NavLink>
 
             <NavLink
               to="/Blog"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Blog
+              {t("navbar.blog", { defaultValue: "Blog" })}
             </NavLink>
 
-            {/* Dashboard only appears once a user is logged in */}
-                                {/* Dashboard - goes to gateway page */}
-                   {user && (
-                       <NavLink
-                   to="/dashboard"
-                   className={({ isActive }) =>
-                      isActive ? 'active' : ''
-                             }
-                             >
-                         Dashboard
-                           </NavLink>
-                          )}
-
-            
-            {/* {user && (
+            {user && (
               <NavLink
-                to={roleDashboardPath(user.role)}
+                to="/dashboard"
                 className={({ isActive }) =>
-                  isActive ? 'active' : ''
+                  isActive ? "active" : ""
                 }
               >
-                Dashboard
+                {t("navbar.dashboard", {
+                  defaultValue: "Dashboard",
+                })}
               </NavLink>
-            )} */}
+            )}
 
             <NavLink
               to="/HelpFaq"
               className={({ isActive }) =>
-                isActive ? 'active' : ''
+                isActive ? "active" : ""
               }
             >
-              Help / FAQ
+              {t("navbar.helpFaq", {
+                defaultValue: "Help / FAQ",
+              })}
             </NavLink>
-
           </nav>
 
           {/* Header Actions */}
           <div className="header-actions">
-
             {/* Language Select */}
             <div className="language-dropdown">
-
               <button
+                type="button"
                 className="lang-select"
                 onClick={() =>
-                  setIsLanguageOpen(!isLanguageOpen)
+                  setIsLanguageOpen((open) => !open)
                 }
+                aria-expanded={isLanguageOpen}
+                aria-label="Select language"
               >
-                {currentLangLabel}{' '}
+                {currentLangLabel}{" "}
 
                 <svg
                   width="10"
@@ -276,74 +366,94 @@ const Navbar = () => {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
+                  aria-hidden="true"
                 >
                   <path d="M6 9l6 6 6-6" />
                 </svg>
-
               </button>
 
               {isLanguageOpen && (
                 <div className="language-menu">
-
                   <button
+                    type="button"
                     onClick={() =>
-                      handleLanguageChange('en')
+                      handleLanguageChange("en")
                     }
                   >
-                    English
+                    {t("navbar.languages.english", {
+                      defaultValue: "English",
+                    })}
                   </button>
 
                   <button
+                    type="button"
                     onClick={() =>
-                      handleLanguageChange('hi')
+                      handleLanguageChange("hi")
                     }
                   >
-                    Hindi
+                    {t("navbar.languages.hindi", {
+                      defaultValue: "Hindi",
+                    })}
                   </button>
 
                   <button
+                    type="button"
                     onClick={() =>
-                      handleLanguageChange('mr')
+                      handleLanguageChange("mr")
                     }
                   >
-                    Marathi
+                    {t("navbar.languages.marathi", {
+                      defaultValue: "Marathi",
+                    })}
                   </button>
-
                 </div>
               )}
-
             </div>
 
-            {/* Login button only when user is NOT logged in */}
+            {/* Login button */}
             {!user && (
               <button
+                type="button"
                 className="btn btn-login"
-                onClick={() => navigate('/Login')}
+                onClick={() => navigate("/Login")}
               >
-                Login
+                {t("navbar.login", {
+                  defaultValue: "Login",
+                })}
               </button>
             )}
 
             {/* Report Issue */}
             <button
+              type="button"
               className="btn btn-primary"
-              onClick={() => navigate('/ReportIssue')}
+              onClick={() => navigate("/ReportIssue")}
             >
-              Report an Issue
+              {t("navbar.reportIssue", {
+                defaultValue: "Report an Issue",
+              })}
             </button>
 
-            {/* Profile only when user is logged in */}
+            {/* Profile dropdown */}
             {user && (
               <div className="profile-dropdown">
-
                 <button
+                  type="button"
                   className="profile-select"
                   onClick={() =>
-                    setIsProfileOpen(!isProfileOpen)
+                    setIsProfileOpen((open) => !open)
                   }
-                  title={user?.name || 'Profile'}
+                  title={
+                    user?.name ||
+                    t("navbar.profile", {
+                      defaultValue: "Profile",
+                    })
+                  }
+                  aria-expanded={isProfileOpen}
+                  aria-label={t("navbar.profile", {
+                    defaultValue: "Profile",
+                  })}
                 >
-
                   <svg
                     width="18"
                     height="18"
@@ -351,6 +461,7 @@ const Navbar = () => {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
+                    aria-hidden="true"
                   >
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
@@ -363,97 +474,93 @@ const Navbar = () => {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="3"
+                    aria-hidden="true"
                   >
                     <path d="M6 9l6 6 6-6" />
                   </svg>
-
                 </button>
 
                 {isProfileOpen && (
                   <div className="profile-menu">
-
-                    {/* User information */}
                     <div className="profile-info">
-
                       <div className="profile-avatar">
                         {user?.name
-                          ? String(user.name).charAt(0).toUpperCase()
-                          : 'U'}
+                          ? String(user.name)
+                              .charAt(0)
+                              .toUpperCase()
+                          : "U"}
                       </div>
 
                       <div className="profile-info-text">
-
                         <span className="profile-name">
-                          {user?.name || 'User'}
+                          {user?.name ||
+                            t("navbar.user", {
+                              defaultValue: "User",
+                            })}
                         </span>
 
                         <span className="profile-email">
-                          {user?.email || ''}
+                          {user?.email || ""}
                         </span>
-
                       </div>
-
                     </div>
 
-                    <div className="profile-menu-divider"></div>
+                    <div className="profile-menu-divider" />
 
                     {/* Dashboard */}
                     <button
-
-
-                       onClick={() => goTo("/dashboard")}
+                      type="button"
+                      onClick={() =>
+                        goTo(roleDashboardPath(user?.role))
+                      }
                     >
                       {user?.role
-                        ? `${String(user.role).charAt(0).toUpperCase()}${String(user.role).slice(1)} Dashboard`
-                        : 'Dashboard'}
-
-
-
+                        ? t("navbar.roleDashboard", {
+                            role: getTranslatedRole(user.role),
+                            defaultValue: `${getTranslatedRole(
+                              user.role
+                            )} Dashboard`,
+                          })
+                        : t("navbar.dashboard", {
+                            defaultValue: "Dashboard",
+                          })}
                     </button>
 
                     {/* Edit Profile */}
                     <button
-                      onClick={() =>
-                        goTo('/EditProfile')
-                      }
+                      type="button"
+                      onClick={() => goTo("/EditProfile")}
                     >
-                      Edit Profile
+                      {t("navbar.editProfile", {
+                        defaultValue: "Edit Profile",
+                      })}
                     </button>
-
-                    {/* Settings */}
-                    {/* <button
-                      onClick={() =>
-                        goTo('/Settings')
-                      }
-                    >
-                      Settings
-                    </button> */}
 
                     {/* Help */}
                     <button
-                      onClick={() =>
-                        goTo('/HelpFaq')
-                      }
+                      type="button"
+                      onClick={() => goTo("/HelpFaq")}
                     >
-                      Help Center
+                      {t("navbar.helpCenter", {
+                        defaultValue: "Help Center",
+                      })}
                     </button>
 
                     {/* Logout */}
                     <button
+                      type="button"
                       className="profile-logout"
                       onClick={handleLogout}
                     >
-                      Logout
+                      {t("navbar.logout", {
+                        defaultValue: "Logout",
+                      })}
                     </button>
-
                   </div>
                 )}
-
               </div>
             )}
-
           </div>
-
         </div>
       </header>
     </>

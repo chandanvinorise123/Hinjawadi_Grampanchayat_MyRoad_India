@@ -1,4 +1,6 @@
+
 import React from "react";
+import { useTranslation } from "react-i18next";
 import "./footer.css";
 import logo from "../assets/logo.jpeg";
 
@@ -67,76 +69,102 @@ const ContactIcon = {
 };
 
 const Footer = () => {
+  const { t } = useTranslation();
+
+  const navColumns = [
+    {
+      title: "footer.citizenServices",
+      links: [
+        ["footer.reportIssue", "#report"],
+        ["footer.trackComplaint", "#track"],
+        ["footer.issuesMap", "#map"],
+        ["footer.roadSafety", "#safety"],
+      ],
+    },
+    {
+      title: "footer.platform",
+      links: [
+        ["footer.about", "#about"],
+        ["footer.howItWorks", "#how-it-works"],
+        ["footer.faq", "#faq"],
+        ["footer.contact", "#contact"],
+      ],
+    },
+    {
+      title: "footer.legal",
+      links: [
+        ["footer.privacyPolicy", "#privacy"],
+        ["footer.accessibility", "#accessibility"],
+        ["footer.termsOfUse", "#terms"],
+      ],
+    },
+    {
+      title: "footer.access",
+      links: [
+        ["footer.systemLogin", "#login"],
+        ["footer.staffPortal", "#staff"],
+        ["footer.adminDashboard", "#admin"],
+      ],
+    },
+  ];
+
   return (
     <footer className="myroad-footer">
       <div className="footer-card">
         <div className="footer-accent"></div>
 
         <div className="footer-main">
-          {/* ---------- Logo ---------- */}
           <div className="footer-logo-wrap">
             <div className="footer-logo-ring">
-              <img src={logo} alt="MyRoad India logo" className="footer-logo-img" />
+              <img
+                src={logo}
+                alt={t("footer.logoAlt", { defaultValue: "MyRoad India logo" })}
+                className="footer-logo-img"
+              />
             </div>
           </div>
 
-          {/* ---------- Content ---------- */}
           <div className="footer-content">
             <h2 className="footer-title">My Road India</h2>
+
             <p className="footer-subtitle">
-              Road Safety • GIS Mapping • Smart Road Management
-            </p>
-            <p className="footer-tagline">
-              Safer Roads • Smarter Communities • A Better India
+              {t("footer.subtitle", {
+                defaultValue: "Road Safety • GIS Mapping • Smart Road Management",
+              })}
             </p>
 
-            {/* ---------- Social ---------- */}
+            <p className="footer-tagline">
+              {t("footer.tagline", {
+                defaultValue: "Safer Roads • Smarter Communities • A Better India",
+              })}
+            </p>
+
             <div className="footer-social">
-              <a
-                href="https://www.instagram.com/myroadindia/"
-                className="social-icon social-instagram"
-                aria-label="Instagram"
-              >
+              <a href="https://www.instagram.com/myroadindia/" className="social-icon social-instagram" aria-label="Instagram">
                 <SocialIcon.Instagram />
               </a>
-              <a
-                href="https://www.linkedin.com/company/my-road-india/"
-                className="social-icon social-linkedin"
-                aria-label="LinkedIn"
-              >
+              <a href="https://www.linkedin.com/company/my-road-india/" className="social-icon social-linkedin" aria-label="LinkedIn">
                 <SocialIcon.LinkedIn />
               </a>
-              <a
-                href="https://www.youtube.com/@MyRoadIndia"
-                className="social-icon social-youtube"
-                aria-label="YouTube"
-              >
+              <a href="https://www.youtube.com/@MyRoadIndia" className="social-icon social-youtube" aria-label="YouTube">
                 <SocialIcon.YouTube />
               </a>
-              <a
-                href="https://wa.me/918956324316"
-                className="social-icon social-whatsapp"
-                aria-label="WhatsApp"
-              >
+              <a href="https://wa.me/918956324316" className="social-icon social-whatsapp" aria-label="WhatsApp">
                 <SocialIcon.WhatsApp />
               </a>
             </div>
 
-            {/* ---------- Contact ---------- */}
             <div className="footer-contact-grid">
               <div className="footer-contact-col">
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Mail />
-                  </span>
+                  <span className="contact-icon-badge"><ContactIcon.Mail /></span>
                   <a href="mailto:contact@myroadindia.com" className="contact-text">
                     contact@myroadindia.com
                   </a>
                 </div>
+
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Globe />
-                  </span>
+                  <span className="contact-icon-badge"><ContactIcon.Globe /></span>
                   <a
                     href="https://www.myroadindia.com"
                     className="contact-text contact-link"
@@ -152,85 +180,59 @@ const Footer = () => {
 
               <div className="footer-contact-col">
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Phone />
-                  </span>
+                  <span className="contact-icon-badge"><ContactIcon.Phone /></span>
                   <a href="tel:+91-9699318163" className="contact-text">
                     +91 9699318163
                   </a>
                 </div>
+
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Pin />
+                  <span className="contact-icon-badge"><ContactIcon.Pin /></span>
+                  <span className="contact-text">
+                    Gera's Imperium Rise, 312, Hinjawadi Phase II, Rajiv Gandhi Infotech Park, Hinjawadi, Pune, Maharashtra 411057
                   </span>
-                  <span className="contact-text">Gera's Imperium Rise, 312, Hinjawadi Phase II, Rajiv Gandhi Infotech Park, Hinjawadi, Pune, Maharashtra 411057</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ---------- Navigation Columns ---------- */}
-
-
-
           <div className="footer-nav">
-            
-            <div className="footer-nav-col">
-              <h3 className="footer-nav-title">CITIZEN SERVICES</h3>
-              <ul className="footer-nav-list">
-                <li><a href="#report" className="footer-nav-link">Report an Issue</a></li>
-                <li><a href="#track" className="footer-nav-link">Track Complaint</a></li>
-                <li><a href="#map" className="footer-nav-link">Issues Map</a></li>
-                <li><a href="#safety" className="footer-nav-link">Road Safety</a></li>
-              </ul>
-            </div>
+            {navColumns.map((column) => (
+              <div className="footer-nav-col" key={column.title}>
+                <h3 className="footer-nav-title">
+                  {t(column.title, {
+                    defaultValue: column.title.split(".")[1],
+                  })}
+                </h3>
 
-            <div className="footer-nav-col">
-              <h3 className="footer-nav-title">PLATFORM</h3>
-              <ul className="footer-nav-list">
-                <li><a href="#about" className="footer-nav-link">About</a></li>
-                <li><a href="#how-it-works" className="footer-nav-link">How It Works</a></li>
-                <li><a href="#faq" className="footer-nav-link">FAQ</a></li>
-                <li><a href="#contact" className="footer-nav-link">Contact</a></li>
-              </ul>
-            </div> 
-
-            <div className="footer-nav-col">
-              <h3 className="footer-nav-title">LEGAL</h3>
-              <ul className="footer-nav-list">
-                <li><a href="#privacy" className="footer-nav-link">Privacy Policy</a></li>
-                <li><a href="#accessibility" className="footer-nav-link">Accessibility</a></li>
-                <li><a href="#terms" className="footer-nav-link">Terms of Use</a></li>
-              </ul>
-            </div>
-
-            <div className="footer-nav-col">
-              <h3 className="footer-nav-title">ACCESS</h3>
-              <ul className="footer-nav-list">
-                <li><a href="#login" className="footer-nav-link">System Login</a></li>
-                <li><a href="#staff" className="footer-nav-link">Staff Portal</a></li>
-                <li><a href="#admin" className="footer-nav-link">Admin Dashboard</a></li>
-              </ul>
-            </div>
-
-
-           </div>
-
+                <ul className="footer-nav-list">
+                  {column.links.map(([key, href]) => (
+                    <li key={key}>
+                      <a href={href} className="footer-nav-link">
+                        {t(key, { defaultValue: key.split(".")[1] })}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* ---------- Bottom Bar ---------- */}
         <div className="footer-bottom-bar">
           <p className="footer-bottom-links">
-            REPORT <span className="dot">|</span> MAP{" "}
-            <span className="dot">|</span> TRACK{" "}
-            <span className="dot">|</span> BUILD SAFER ROADS TOGETHER
+            {t("footer.bottomLinks", {
+              defaultValue: "REPORT | MAP | TRACK | BUILD SAFER ROADS TOGETHER",
+            })}
           </p>
+
           <p className="footer-bottom-tagline">
             <ContactIcon.Leaf />
-            Clean Roads • Safe Lives • Greener Tomorrow
+            {t("footer.bottomTagline", {
+              defaultValue: "Clean Roads • Safe Lives • Greener Tomorrow",
+            })}
           </p>
         </div>
-
       </div>
     </footer>
   );

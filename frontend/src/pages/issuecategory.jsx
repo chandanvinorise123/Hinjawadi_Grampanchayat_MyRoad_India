@@ -1,6 +1,13 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import "./issuecategory.css";
-import bannerImage from "../assets/ic.png";
+const REPORT_ROUTE = "/reportissue";
+
+// Language-specific banner images
+import bannerImageEn from "../assets/ic.png";
+import bannerImageHi from "../assets/ic-hi.png";
+import bannerImageMr from "../assets/ic-mr.jpeg";
 
 // Realistic full-colour icons (emoji style)
 const Emoji = ({ symbol }) => (
@@ -130,8 +137,24 @@ const issueCategories = [
 ];
 
 const IssueCategory = () => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+
   const [activeCategory, setActiveCategory] = useState(0);
   const [activeIssue, setActiveIssue] = useState(0);
+
+  // Detect the currently selected language
+  const currentLanguage = (
+    i18n.resolvedLanguage || i18n.language || "en"
+  ).split("-")[0];
+
+  // Select the corresponding banner
+  const bannerImage =
+    {
+      en: bannerImageEn,
+      hi: bannerImageHi,
+      mr: bannerImageMr,
+    }[currentLanguage] || bannerImageEn;
 
   const handleCategorySelect = (index) => {
     setActiveCategory(index);
@@ -144,58 +167,35 @@ const IssueCategory = () => {
   return (
     <main className="issue-category-page">
       {/* ================= PAGE HERO ================= */}
-         <section className="page-hero-section">
-  <div
-    className="page-hero"
-    style={{
-      backgroundImage: `url("${bannerImage}")`,
-    }}
-  >
-    <div className="hero-scrim"></div>
+      <section className="page-hero-section">
+        <div
+          className="page-hero"
+          style={{
+            backgroundImage: `url("${bannerImage}")`,
+          }}
+        >
+          <div className="hero-scrim"></div>
 
-    <div className="page-hero-inner">
-      {/*
-      <div className="breadcrumb">
-        Home / Services / <b>Issue Category</b>
-      </div>
+          <div className="page-hero-inner">
+            {/* Hidden SEO content */}
+            <h1 className="sr-only">
+              {t("Select a category to report your issue")}
+            </h1>
 
-      <p className="eyebrow eyebrow-light">
-        Report an Issue
-      </p>
-
-      <h1>
-        Select a category to report your issue
-      </h1>
-
-      <p className="hero-lead">
-        Choose the category that best matches the problem, then pick the
-        specific issue to see guidance before you submit your report.
-      </p>
-      */}
-
-      {/* Hidden SEO content */}
-      <h1 className="sr-only">
-        Select a category to report your issue
-      </h1>
-
-      <p className="sr-only">
-        Choose the category that best matches the problem, then pick the
-        specific issue to see guidance before you submit your report.
-      </p>
-    </div>
-  </div>
-</section>
-
-      
-
-
-
+            <p className="sr-only">
+              {t(
+                "Choose the category that best matches the problem, then pick the specific issue to see guidance before you submit your report."
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* ================= CATEGORY GRID ================= */}
       <section className="section">
         <div className="section-heading">
-          <p className="eyebrow">Step 1</p>
-          <h2>Select the main issue category</h2>
+          <p className="eyebrow">{t("Step 1")}</p>
+          <h2>{t("Select the main issue category")}</h2>
         </div>
 
         <div className="category-grid">
@@ -203,18 +203,17 @@ const IssueCategory = () => {
             <button
               key={i}
               type="button"
-              className={`category-card ${activeCategory === i ? "active" : ""}`}
+              className={`category-card ${
+                activeCategory === i ? "active" : ""
+              }`}
               onClick={() => handleCategorySelect(i)}
               aria-pressed={activeCategory === i}
             >
-              {/* Icon */}
               <div className="category-icon">{category.icon}</div>
 
-              {/* Title */}
-              <h4>{category.title}</h4>
+              <h4>{t(category.title)}</h4>
 
-              {/* Description */}
-              <p>{category.summary}</p>
+              <p>{t(category.summary)}</p>
             </button>
           ))}
         </div>
@@ -224,10 +223,17 @@ const IssueCategory = () => {
       <section className="section surface">
         <div className="detail-shell">
           <div className="detail-heading">
-            <span className="category-number lg">{currentCategory.num}</span>
+            <span className="category-number lg">
+              {currentCategory.num}
+            </span>
+
             <div>
-              <p className="eyebrow">Step 2</p>
-              <h3>Select a specific issue in {currentCategory.title}</h3>
+              <p className="eyebrow">{t("Step 2")}</p>
+              <h3>
+                {t("Select a specific issue in {{category}}", {
+                  category: t(currentCategory.title),
+                })}
+              </h3>
             </div>
           </div>
 
@@ -236,11 +242,16 @@ const IssueCategory = () => {
               <button
                 key={i}
                 type="button"
-                className={`issue-chip ${activeIssue === i ? "active" : ""}`}
+                className={`issue-chip ${
+                  activeIssue === i ? "active" : ""
+                }`}
                 onClick={() => setActiveIssue(i)}
+                aria-pressed={activeIssue === i}
               >
-                <span className="check">{activeIssue === i ? "✓" : ""}</span>
-                {issue}
+                <span className="check">
+                  {activeIssue === i ? "✓" : ""}
+                </span>
+                {t(issue)}
               </button>
             ))}
           </div>
@@ -250,28 +261,36 @@ const IssueCategory = () => {
       {/* ================= ISSUE INFORMATION ================= */}
       <section className="section">
         <div className="section-heading">
-          <p className="eyebrow">Step 3</p>
-          <h2>Issue information</h2>
+          <p className="eyebrow">{t("Step 3")}</p>
+          <h2>{t("Issue information")}</h2>
         </div>
 
         <div className="info-shell">
           <div className="info-card">
-            <span className="info-label">Issue Name</span>
-            <h3>{currentIssue}</h3>
+            <span className="info-label">{t("Issue Name")}</span>
+            <h3>{t(currentIssue)}</h3>
           </div>
+
           <div className="info-card">
-            <span className="info-label">Issue Description</span>
+            <span className="info-label">{t("Issue Description")}</span>
             <p>
-              Provide a short description of the “{currentIssue}” problem —
-              what you observed, its extent, and how long it has persisted.
+              {t(
+                'Provide a short description of the "{{issue}}" problem — what you observed, its extent, and how long it has persisted.',
+                { issue: t(currentIssue) }
+              )}
             </p>
           </div>
+
           <div className="info-card">
-            <span className="info-label">Related Guidance</span>
+            <span className="info-label">{t("Related Guidance")}</span>
             <ul className="guidance-list">
-              <li>Add clear photographs from more than one angle</li>
-              <li>Capture GPS location at the exact site</li>
-              <li>Mention nearby landmarks for easier identification</li>
+              <li>
+                {t("Add clear photographs from more than one angle")}
+              </li>
+              <li>{t("Capture GPS location at the exact site")}</li>
+              <li>
+                {t("Mention nearby landmarks for easier identification")}
+              </li>
             </ul>
           </div>
         </div>
@@ -281,11 +300,25 @@ const IssueCategory = () => {
       <section className="section cta-section">
         <div className="cta-shell">
           <div>
-            <h3>Ready to report “{currentIssue}”?</h3>
-            <p>Confirm the category and issue, then continue to submit your report.</p>
+            <h3>
+              {t('Ready to report "{{issue}}"?', {
+                issue: t(currentIssue),
+              })}
+            </h3>
+
+            <p>
+              {t(
+                "Confirm the category and issue, then continue to submit your report."
+              )}
+            </p>
           </div>
-          <button className="primary-btn" type="button">
-            Continue to Report <span>→</span>
+
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={() => navigate(REPORT_ROUTE)}
+          >
+            {t("Continue to Report")} <span>→</span>
           </button>
         </div>
       </section>

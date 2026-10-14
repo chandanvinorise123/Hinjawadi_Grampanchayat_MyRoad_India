@@ -15,13 +15,21 @@ i18n
       hi: { translation: hi },
       mr: { translation: mr },
     },
+
+    // English is the default and fallback language.
     fallbackLng: "en",
+
+    supportedLngs: ["en", "hi", "mr"],
+
+    // Use a saved language when available; otherwise use English.
+    detection: {
+      order: ["localStorage"],
+      lookupLocalStorage: "i18nextLng",
+      caches: ["localStorage"],
+    },
+
     interpolation: {
       escapeValue: false,
-    },
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
     },
   });
 
