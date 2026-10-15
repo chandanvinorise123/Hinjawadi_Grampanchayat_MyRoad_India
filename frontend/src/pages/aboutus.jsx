@@ -277,6 +277,8 @@ const bannerImage =
   return (
     <main className="about-page">
       {/* ================= PAGE HERO ================= */}
+
+
       <section className="page-hero-section">
         <div
           className="page-hero"
@@ -292,6 +294,9 @@ const bannerImage =
           </div>
         </div>
       </section>
+
+
+      
 
       {/* ================= INTRO ================= */}
       <section className="section">

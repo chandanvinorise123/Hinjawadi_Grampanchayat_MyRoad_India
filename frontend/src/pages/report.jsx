@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./report.css";
-import bannerImageEn from "../assets/ri.png";
-import bannerImageHi from "../assets/ri-hi.png";
-import bannerImageMr from "../assets/ri-mr.png";
+// import bannerImageEn from "../assets/ri.png";
+// import bannerImageHi from "../assets/ri-hi.png";
+// import bannerImageMr from "../assets/ri-mr.png";
 import PhotoDetection from "../components/PhotoDetection";
 
 const categories = [
@@ -64,18 +63,21 @@ const categories = [
 ];
 
 const ReportIssue = () => {
-const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-const currentLanguage = (
-  i18n.resolvedLanguage || i18n.language || "en"
-).split("-")[0];
+  /* 
+  // Banner image logic commented out
+  const currentLanguage = (
+    i18n.resolvedLanguage || i18n.language || "en"
+  ).split("-")[0];
 
-const bannerImage =
-  {
-    en: bannerImageEn,
-    hi: bannerImageHi,
-    mr: bannerImageMr,
-  }[currentLanguage] || bannerImageEn;
+  const bannerImage =
+    {
+      en: bannerImageEn,
+      hi: bannerImageHi,
+      mr: bannerImageMr,
+    }[currentLanguage] || bannerImageEn;
+  */
 
   const [complaintNumber, setComplaintNumber] = useState(null);
 
@@ -216,7 +218,7 @@ const bannerImage =
 
   return (
     <main className="report-page">
-      {/* Page banner */}
+      {/* Page banner section commented out 
       <section className="page-hero-section">
         <div
           className="page-hero"
@@ -229,6 +231,7 @@ const bannerImage =
           <div className="page-hero-inner" />
         </div>
       </section>
+      */}
 
       <section className="section">
         {complaintNumber === null ? (

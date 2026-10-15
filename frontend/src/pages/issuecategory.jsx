@@ -166,6 +166,9 @@ const IssueCategory = () => {
 
   return (
     <main className="issue-category-page">
+
+
+
       {/* ================= PAGE HERO ================= */}
       <section className="page-hero-section">
         <div
@@ -190,6 +193,17 @@ const IssueCategory = () => {
           </div>
         </div>
       </section>
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* ================= CATEGORY GRID ================= */}
       <section className="section">

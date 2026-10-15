@@ -171,6 +171,7 @@
 
 /* ============================================================
    HERO / BANNER
+   Base (Desktop > 1100px)
    ============================================================ */
 
 .services-page .page-hero {
@@ -180,9 +181,8 @@
   max-width: 100%;
 
   /*
-     IMPORTANT:
-     Do not use 50vw / 700px here.
-     That was making the banner unnecessarily huge.
+     Desktop banner height.
+     Uses clamp for fluid scaling between large screens.
   */
   height: clamp(420px, 38vw, 620px);
 
@@ -201,7 +201,7 @@
   background-repeat: no-repeat;
 
   /*
-     Keep the complete banner visible.
+     Keep the complete banner visible on desktop.
      This prevents the left/right content from being
      aggressively cropped like background-size: cover.
   */
@@ -793,14 +793,6 @@
   gap: 20px;
 }
 
-@media (max-width: 900px) {
-  .services-page .cta-shell {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-  }
-}
-
 .services-page .cta-shell h3 {
   color: #fff;
 
@@ -816,18 +808,16 @@
 }
 
 
+
 /* ============================================================
-   RESPONSIVE — TABLET
+   RESPONSIVE — LAPTOP / SMALL DESKTOP
+   Screen width: 901px – 1100px
    ============================================================ */
 
 @media (max-width: 1100px) {
 
   .services-page .page-hero {
-    /*
-       Reduce hero height on laptops/tablets.
-    */
     height: clamp(400px, 42vw, 560px);
-
     min-height: 400px;
     max-height: 560px;
   }
@@ -836,116 +826,56 @@
 
 
 /* ============================================================
-   RESPONSIVE — MOBILE
+   RESPONSIVE — TABLET
+   Screen width: 781px – 900px
+   CTA stacks vertically; banner height reduced.
    ============================================================ */
 
-   
-.page-hero-section {
-  width: 100%;
-  overflow: hidden;
-}
+@media (max-width: 900px) {
 
-.page-hero {
-  position: relative;
-  width: 100%;
-  min-height: 300px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.hero-scrim {
-  position: absolute;
-  inset: 0;
-}
-
-.page-hero-inner {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-}
-
-/* Mobile phones: 360px–480px */
-@media screen and (min-width: 360px) and (max-width: 480px) {
-  .page-hero {
-    min-height: 160px;
-    background-position: center;
+  .services-page .cta-shell {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
   }
+
 }
 
-/* Larger mobile phones: 481px–600px */
-@media screen and (min-width: 481px) and (max-width: 600px) {
-  .page-hero {
-    min-height: 190px;
-    background-position: center;
-  }
-}
 
-/* Large phones and small tablets: 601px–800px */
-@media screen and (min-width: 601px) and (max-width: 800px) {
-  .page-hero {
-    min-height: 230px;
-    background-position: center;
-  }
-}
-
-/* Smaller phones below 360px */
-@media screen and (max-width: 359px) {
-  .page-hero {
-    min-height: 140px;
-    background-position: center;
-  }
-}
-
+/* ============================================================
+   RESPONSIVE — LARGE MOBILE / SMALL TABLET
+   Screen width: 601px – 780px
+   Banner switches to cover mode; grids become single-column.
+   ============================================================ */
 
 @media (max-width: 780px) {
 
   .services-page .page-hero {
-    /*
-       Mobile banner should not become extremely tall.
-    */
-    height: 420px;
+    height: clamp(340px, 55vw, 420px);
+    min-height: 340px;
+    max-height: 420px;
 
-    min-height: 420px;
-    max-height: none;
-
-    /*
-       On mobile, keeping the entire wide banner can make
-       text too small. Cover is better for mobile.
-    */
     background-size: cover;
-
-    background-position: center center;
   }
-
 
   .services-page .page-hero-inner {
     max-width: 100%;
-
-    padding:
-      1.5rem;
+    padding: 1.5rem;
   }
-
 
   .services-page .services-grid {
     grid-template-columns: 1fr;
-
     gap: 18px;
   }
-
 
   .services-page .legend-shell {
     grid-template-columns: 1fr;
   }
 
-
   .services-page .detail-heading {
     flex-direction: column;
-
     align-items: flex-start;
   }
-
 
   .services-page .service-card {
     padding: 24px 22px 22px;
@@ -954,21 +884,191 @@
 }
 
 
+
 /* ============================================================
-   SMALL MOBILE
+   RESPONSIVE HERO BANNER
+   Keeps the existing backgroundImage JSX unchanged.
+   Mobile and tablet: up to 800px.
+   Desktop: above 800px remains unchanged.
    ============================================================ */
 
-@media (max-width: 480px) {
+@media screen and (max-width: 800px) {
+  .services-page .page-hero-section {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    line-height: normal;
+  }
 
   .services-page .page-hero {
-    height: 360px;
-    min-height: 360px;
+    display: block;
+    position: relative;
 
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    /* Let the banner use its natural ratio */
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 16 / 6;
+
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+
+    /* Keep the entire background image visible */
+    background-size: contain;
     background-position: center center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+  }
+
+  .services-page .hero-scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   .services-page .page-hero-inner {
+    position: relative;
+    z-index: 1;
+
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-height: 0;
+
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+
+/* ============================================================
+   LARGE PHONES & SMALL TABLETS: 601px–800px
+   ============================================================ */
+
+@media screen and (min-width: 601px) and (max-width: 800px) {
+  .services-page .page-hero {
+    aspect-ratio: 16 / 6;
+    background-size: contain;
+    background-position: center;
+  }
+}
+
+
+/* ============================================================
+   STANDARD MOBILE: 401px–600px
+   ============================================================ */
+
+@media screen and (min-width: 401px) and (max-width: 600px) {
+  .services-page .page-hero {
+    aspect-ratio: 16 / 6;
+    background-size: contain;
+    background-position: center;
+  }
+}
+
+
+/* ============================================================
+   SMALL MOBILE: 360px–400px
+   ============================================================ */
+
+@media screen and (min-width: 360px) and (max-width: 400px) {
+  .services-page .page-hero {
+    aspect-ratio: 16 / 6;
+    background-size: contain;
+    background-position: center;
+  }
+
+  .services-page .page-hero-inner {
+    padding: 0;
+  }
+
+  .services-page .breadcrumb {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  .services-page .service-card {
+    padding: 18px 16px;
+  }
+
+  .services-page .service-card h4 {
+    font-size: 15px;
+  }
+
+  .services-page .service-card p {
+    font-size: 12.5px;
+  }
+
+  .services-page .detail-shell {
     padding: 1rem;
   }
 
+  .services-page .cta-shell h3 {
+    font-size: 17px;
+  }
+
+  .services-page .cta-shell p {
+    font-size: 12.5px;
+  }
+}
+
+
+/* ============================================================
+   EXTRA-SMALL PHONES: BELOW 360px
+   ============================================================ */
+
+@media screen and (max-width: 359px) {
+  .services-page .page-hero {
+    aspect-ratio: 16 / 6;
+    background-size: contain;
+    background-position: center;
+  }
+
+  .services-page .page-hero-inner {
+    padding: 0;
+  }
+
+  .services-page .breadcrumb {
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .services-page .service-card {
+    padding: 14px 12px;
+  }
+
+  .services-page .service-card h4 {
+    font-size: 14px;
+  }
+
+  .services-page .service-card p {
+    font-size: 12px;
+  }
+
+  .services-page .detail-shell {
+    padding: 0.75rem;
+  }
+
+  .services-page .cta-shell h3 {
+    font-size: 16px;
+  }
+
+  .services-page .cta-shell p {
+    font-size: 12px;
+  }
 }
