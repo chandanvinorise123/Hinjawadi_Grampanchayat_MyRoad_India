@@ -10,12 +10,12 @@ import bannerImageHi from "../assets/bl-hi.png";
 import bannerImageMr from "../assets/bl-mr.jpeg";
 
 import blogImage1 from "../assets/r5.jpg";
-import blogImage2 from "../assets/r6.jpg";
-import blogImage3 from "../assets/r7.jpg";
-import blogImage4 from "../assets/r8.jpg";
-import blogImage5 from "../assets/r9.jpg";
-import blogImage6 from "../assets/r10.jpg";
-import blogImage7 from "../assets/r11.jpg";
+import blogImage2 from "../assets/R6.jpg";
+import blogImage3 from "../assets/R7.jpg";
+import blogImage4 from "../assets/R8.jpg";
+import blogImage5 from "../assets/R9.jpg";
+import blogImage6 from "../assets/R10.jpg";
+import blogImage7 from "../assets/R11.jpg";
 
 const articles = [
   {
