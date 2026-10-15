@@ -190,6 +190,10 @@
 
 }
 
+.brand-text {
+  text-decoration: none;
+}
+
 .brand-text b {
 
   font-size: 18px;

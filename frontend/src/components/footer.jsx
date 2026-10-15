@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./footer.css";
 import logo from "../assets/logo.jpeg";
@@ -29,7 +30,12 @@ const SocialIcon = {
   ),
   WhatsApp: () => (
     <svg viewBox="0 0 24 24" fill="#ffffff" stroke="none">
-      <path d="M12 3a9 9 0 00-7.8 13.5L3 21l4.7-1.2A9 9 0 1012 3z" fillOpacity="0" stroke="#ffffff" strokeWidth="1.8" />
+      <path
+        d="M12 3a9 9 0 00-7.8 13.5L3 21l4.7-1.2A9 9 0 1012 3z"
+        fillOpacity="0"
+        stroke="#ffffff"
+        strokeWidth="1.8"
+      />
       <path d="M8.4 7.6c.2-.5.5-.5.7-.5h.5c.2 0 .4 0 .6.4.2.5.7 1.7.7 1.8.1.1.1.3 0 .4-.1.2-.2.3-.3.4l-.4.5c-.1.1-.2.3-.1.5.2.4.8 1.3 1.7 2.1 1.1 1 1.1 1 1.4.9.2 0 .4-.2.5-.3l.5-.6c.2-.2.3-.2.5-.1l1.7.8c.2.1.3.2.4.3.1.2.1 1-.3 1.5-.3.5-1.4 1-2 1-.5 0-1.7-.2-3.5-1.7-2.1-1.8-2.9-3.4-3.1-3.9-.2-.5-.7-1.6-.5-2.6.1-.6.4-1 .6-1.2z" />
     </svg>
   ),
@@ -71,39 +77,40 @@ const ContactIcon = {
 const Footer = () => {
   const { t } = useTranslation();
 
+  /* ================= FOOTER NAVIGATION ================= */
   const navColumns = [
     {
       title: "footer.citizenServices",
       links: [
-        ["footer.reportIssue", "#report"],
-        ["footer.trackComplaint", "#track"],
-        ["footer.issuesMap", "#map"],
-        ["footer.roadSafety", "#safety"],
+        ["footer.reportIssue", "/reportissue"],
+        ["footer.trackComplaint", "/citizendashboard"],
+        ["footer.issuesMap", "/services"],
+        ["footer.roadSafety", "/issues-category"],
       ],
     },
     {
       title: "footer.platform",
       links: [
-        ["footer.about", "#about"],
-        ["footer.howItWorks", "#how-it-works"],
-        ["footer.faq", "#faq"],
-        ["footer.contact", "#contact"],
+        ["footer.about", "/aboutus"],
+        ["footer.howItWorks", "/services"],
+        ["footer.faq", "/helpfaq"],
+        ["footer.contact", "/contactus"],
       ],
     },
     {
       title: "footer.legal",
       links: [
-        ["footer.privacyPolicy", "#privacy"],
-        ["footer.accessibility", "#accessibility"],
-        ["footer.termsOfUse", "#terms"],
+        ["footer.privacyPolicy", "/privacy-policy"],
+        ["footer.accessibility", "/accessibility"],
+        ["footer.termsOfUse", "/terms-of-use"],
       ],
     },
     {
       title: "footer.access",
       links: [
-        ["footer.systemLogin", "#login"],
-        ["footer.staffPortal", "#staff"],
-        ["footer.adminDashboard", "#admin"],
+        ["footer.systemLogin", "/login"],
+        ["footer.staffPortal", "/staffdashboard"],
+        ["footer.adminDashboard", "/admindashboard"],
       ],
     },
   ];
@@ -118,7 +125,9 @@ const Footer = () => {
             <div className="footer-logo-ring">
               <img
                 src={logo}
-                alt={t("footer.logoAlt", { defaultValue: "MyRoad India logo" })}
+                alt={t("footer.logoAlt", {
+                  defaultValue: "MyRoad India logo",
+                })}
                 className="footer-logo-img"
               />
             </div>
@@ -129,27 +138,56 @@ const Footer = () => {
 
             <p className="footer-subtitle">
               {t("footer.subtitle", {
-                defaultValue: "Road Safety • GIS Mapping • Smart Road Management",
+                defaultValue:
+                  "Road Safety • GIS Mapping • Smart Road Management",
               })}
             </p>
 
             <p className="footer-tagline">
               {t("footer.tagline", {
-                defaultValue: "Safer Roads • Smarter Communities • A Better India",
+                defaultValue:
+                  "Safer Roads • Smarter Communities • A Better India",
               })}
             </p>
 
             <div className="footer-social">
-              <a href="https://www.instagram.com/myroadindia/" className="social-icon social-instagram" aria-label="Instagram">
+              <a
+                href="https://www.instagram.com/myroadindia/"
+                className="social-icon social-instagram"
+                aria-label="Instagram"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <SocialIcon.Instagram />
               </a>
-              <a href="https://www.linkedin.com/company/my-road-india/" className="social-icon social-linkedin" aria-label="LinkedIn">
+
+              <a
+                href="https://www.linkedin.com/company/my-road-india/"
+                className="social-icon social-linkedin"
+                aria-label="LinkedIn"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <SocialIcon.LinkedIn />
               </a>
-              <a href="https://www.youtube.com/@MyRoadIndia" className="social-icon social-youtube" aria-label="YouTube">
+
+              <a
+                href="https://www.youtube.com/@MyRoadIndia"
+                className="social-icon social-youtube"
+                aria-label="YouTube"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <SocialIcon.YouTube />
               </a>
-              <a href="https://wa.me/918956324316" className="social-icon social-whatsapp" aria-label="WhatsApp">
+
+              <a
+                href="https://wa.me/918956324316"
+                className="social-icon social-whatsapp"
+                aria-label="WhatsApp"
+                target="_blank"
+                rel="noreferrer"
+              >
                 <SocialIcon.WhatsApp />
               </a>
             </div>
@@ -157,14 +195,21 @@ const Footer = () => {
             <div className="footer-contact-grid">
               <div className="footer-contact-col">
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge"><ContactIcon.Mail /></span>
-                  <a href="mailto:contact@myroadindia.com" className="contact-text">
+                  <span className="contact-icon-badge">
+                    <ContactIcon.Mail />
+                  </span>
+                  <a
+                    href="mailto:contact@myroadindia.com"
+                    className="contact-text"
+                  >
                     contact@myroadindia.com
                   </a>
                 </div>
 
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge"><ContactIcon.Globe /></span>
+                  <span className="contact-icon-badge">
+                    <ContactIcon.Globe />
+                  </span>
                   <a
                     href="https://www.myroadindia.com"
                     className="contact-text contact-link"
@@ -180,22 +225,29 @@ const Footer = () => {
 
               <div className="footer-contact-col">
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge"><ContactIcon.Phone /></span>
+                  <span className="contact-icon-badge">
+                    <ContactIcon.Phone />
+                  </span>
                   <a href="tel:+91-9699318163" className="contact-text">
                     +91 9699318163
                   </a>
                 </div>
 
                 <div className="footer-contact-row">
-                  <span className="contact-icon-badge"><ContactIcon.Pin /></span>
+                  <span className="contact-icon-badge">
+                    <ContactIcon.Pin />
+                  </span>
                   <span className="contact-text">
-                    Gera's Imperium Rise, 312, Hinjawadi Phase II, Rajiv Gandhi Infotech Park, Hinjawadi, Pune, Maharashtra 411057
+                    Gera's Imperium Rise, 312, Hinjawadi Phase II,
+                    Rajiv Gandhi Infotech Park, Hinjawadi, Pune,
+                    Maharashtra 411057
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* ================= FOOTER NAV LINKS ================= */}
           <div className="footer-nav">
             {navColumns.map((column) => (
               <div className="footer-nav-col" key={column.title}>
@@ -206,11 +258,13 @@ const Footer = () => {
                 </h3>
 
                 <ul className="footer-nav-list">
-                  {column.links.map(([key, href]) => (
+                  {column.links.map(([key, path]) => (
                     <li key={key}>
-                      <a href={href} className="footer-nav-link">
-                        {t(key, { defaultValue: key.split(".")[1] })}
-                      </a>
+                      <Link to={path} className="footer-nav-link">
+                        {t(key, {
+                          defaultValue: key.split(".")[1],
+                        })}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -222,14 +276,16 @@ const Footer = () => {
         <div className="footer-bottom-bar">
           <p className="footer-bottom-links">
             {t("footer.bottomLinks", {
-              defaultValue: "REPORT | MAP | TRACK | BUILD SAFER ROADS TOGETHER",
+              defaultValue:
+                "REPORT | MAP | TRACK | BUILD SAFER ROADS TOGETHER",
             })}
           </p>
 
           <p className="footer-bottom-tagline">
             <ContactIcon.Leaf />
             {t("footer.bottomTagline", {
-              defaultValue: "Clean Roads • Safe Lives • Greener Tomorrow",
+              defaultValue:
+                "Clean Roads • Safe Lives • Greener Tomorrow",
             })}
           </p>
         </div>
