@@ -1072,3 +1072,67 @@
     font-size: 12px;
   }
 }
+
+
+
+/* ============================================================
+   MOBILE SERVICES GRID — 3 COLUMNS × 2 ROWS
+   Applies only below 800px
+   ============================================================ */
+
+@media screen and (max-width: 800px) {
+  .services-page .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .services-page .services-grid .service-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: 100%;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+
+  .services-page .services-grid .service-icon {
+    margin-bottom: 8px;
+  }
+
+  .services-page .services-grid .service-card h4 {
+    font-size: 13px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .services-page .services-grid .service-card p {
+    font-size: 11px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Compact phones: below 400px */
+@media screen and (max-width: 400px) {
+  .services-page .services-grid {
+    gap: 8px;
+  }
+
+  .services-page .services-grid .service-card {
+    padding: 10px 5px;
+  }
+
+  .services-page .services-grid .service-card h4 {
+    font-size: 12px;
+  }
+
+  .services-page .services-grid .service-card p {
+    font-size: 10px;
+  }
+}

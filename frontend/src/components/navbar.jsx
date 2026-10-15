@@ -538,6 +538,7 @@ const Navbar = () => {
               onClick={closeMobileMenu}
             >
               <b>My Road India</b>
+              
               <span>
                 {t("navbar.tagline", {
                   defaultValue: "Report · Track · Resolve",

@@ -158,7 +158,7 @@ const Services = () => {
     <main className="services-page">
       {/* ================= PAGE HERO ================= */}
 
-      
+
       <section className="page-hero-section">
         <div
           className="page-hero"
@@ -182,6 +182,8 @@ const Services = () => {
 
 
       {/* ================= SERVICES GRID ================= */}
+
+
       <section className="section">
         <div className="section-heading">
           <p className="eyebrow">
@@ -201,11 +203,18 @@ const Services = () => {
             >
               <div className="service-icon">{service.icon}</div>
               <h4>{t(service.titleKey)}</h4>
-              <p>{t(service.summaryKey)}</p>
+              
             </button>
           ))}
         </div>
+
+
+
       </section>
+
+
+
+
 
       {/* ================= ACTIVE SERVICE DETAIL ================= */}
       <section className="section surface">

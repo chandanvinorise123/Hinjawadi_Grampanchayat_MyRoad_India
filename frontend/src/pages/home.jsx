@@ -493,7 +493,6 @@ const Home = () => {
             <button className="qa-card" key={i} type="button">
               <div className="qa-icon">{item.icon}</div>
               <h4>{t(`home.${item.title}`)}</h4>
-              <p>{t(`home.${item.desc}`)}</p>
             </button>
           ))}
         </div>
@@ -541,17 +540,16 @@ const Home = () => {
               <div className="cat-top">
                 <div className="cat-icon">{cat.icon}</div>
 
-                <span className="cat-count">
+                {/* <span className="cat-count">
                   {cat.count} {t("home.issues")}
-                </span>
+                </span> */}
               </div>
 
               <h4>{t(`home.${cat.title}`)}</h4>
-              <p>{t(`home.${cat.desc}`)}</p>
 
-              <span className="cat-link">
+              {/* <span className="cat-link">
                 {t("home.viewIssues")} →
-              </span>
+              </span> */}
             </div>
           ))}
         </div>
@@ -698,7 +696,7 @@ const Home = () => {
             <div className="trust-card" key={i}>
               <div className="t-ic">{item.icon}</div>
               <h5>{t(`home.${item.title}`)}</h5>
-              <p>{t(`home.${item.desc}`)}</p>
+              {/* <p>{t(`home.${item.desc}`)}</p> */}
             </div>
           ))}
         </div>
