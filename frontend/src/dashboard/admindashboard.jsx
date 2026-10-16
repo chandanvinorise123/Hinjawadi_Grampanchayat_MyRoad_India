@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import "./admindashboard.css";
 // Line 3
-import AdminProfile from "../pages/AdminProfile";
-import AdminManagement from "../pages/AdminManagement";
-import StaffVerifierProfile from "../pages/StaffVerifierProfile"; // ✅ ADD THIS
-import ComplaintManagement from "../pages/ComplaintManagement"; 
-import StaffWorkMonitoring from "../pages/StaffWorkMonitoring";
-import ComplaintVerification from "../pages/ComplaintVerification";
-import ReportsManagement from "../pages/ReportsManagement";
+import AdminProfile from "../adminprofiledashboard/AdminProfile";
+import AdminManagement from "../adminprofiledashboard/AdminManagement";
+import StaffVerifierProfile from "../adminprofiledashboard/StaffVerifierProfile"; 
+import ComplaintManagement from "../adminprofiledashboard/ComplaintManagement"; 
+import StaffWorkMonitoring from "../adminprofiledashboard/StaffWorkMonitoring";
+import ComplaintVerification from "../adminprofiledashboard/ComplaintVerification";
+import ReportsManagement from "../adminprofiledashboard/ReportsManagement";
 import logo from '../assets/logo.jpeg';
-import ComplaintDetails from "../pages/ComplaintDetails";
+import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 
