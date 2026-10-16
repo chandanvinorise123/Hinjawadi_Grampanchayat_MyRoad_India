@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
+import * as turf from "@turf/turf";
+
+import {
+  GoogleMap,
+  Marker,
+  Autocomplete,
+  useJsApiLoader,
+} from "@react-google-maps/api";
+
 import "./report.css";
-// import bannerImageEn from "../assets/ri.png";
-// import bannerImageHi from "../assets/ri-hi.png";
-// import bannerImageMr from "../assets/ri-mr.png";
 import PhotoDetection from "../components/PhotoDetection";
 
 const categories = [
@@ -62,73 +69,459 @@ const categories = [
   },
 ];
 
+const libraries = ["places"];
+
+const mapContainerStyle = {
+  width: "100%",
+  height: "350px",
+};
+
+const defaultCenter = {
+  lat: 18.494,
+  lng: 73.760,
+};
+
+const BOUNDARY_URL = "/boundaries/hinjavadi.geojson";
+
 const ReportIssue = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const location = useLocation();
 
-  /* 
-  // Banner image logic commented out
-  const currentLanguage = (
-    i18n.resolvedLanguage || i18n.language || "en"
-  ).split("-")[0];
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries,
+  });
 
-  const bannerImage =
-    {
-      en: bannerImageEn,
-      hi: bannerImageHi,
-      mr: bannerImageMr,
-    }[currentLanguage] || bannerImageEn;
-  */
-
+  // Complaint state
   const [complaintNumber, setComplaintNumber] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
+  // Hinjawadi boundary state
+  const [boundaryLoading, setBoundaryLoading] = useState(true);
+  const [hinjawadiBoundary, setHinjawadiBoundary] = useState(null);
+  const [boundaryBounds, setBoundaryBounds] = useState(null);
+
+  // Citizen details: email has been removed
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
 
-  const [locationMode, setLocationMode] = useState("url");
-  const [locationUrl, setLocationUrl] = useState("");
+  // Location state: map is open by default
+  const [locationMode, setLocationMode] = useState("map");
+
+  const [selectedLocation, setSelectedLocation] = useState({
+    lat: null,
+    lng: null,
+  });
+
   const [liveLocation, setLiveLocation] = useState({
     lat: "",
     lng: "",
   });
-  const [locationStatus, setLocationStatus] = useState("idle");
 
-  const [issueType, setIssueType] = useState("");
+  const [locationStatus, setLocationStatus] = useState("idle");
+  const [map, setMap] = useState(null);
+  const [autocomplete, setAutocomplete] = useState(null);
+
+  // Issue state
+  const [issueType, setIssueType] = useState(
+    location.state?.issueType || ""
+  );
+
   const [description, setDescription] = useState("");
 
+  // Photo verification state
   const [verifiedPhotosData, setVerifiedPhotosData] = useState([]);
   const [capturedLocation, setCapturedLocation] = useState(null);
 
+  // Load the selected issue type passed through navigation.
+  useEffect(() => {
+    if (location.state?.issueType) {
+      setIssueType(location.state.issueType);
+    }
+  }, [location.state]);
+
+  // Load citizen details from localStorage.
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) return;
+
+      const user = JSON.parse(storedUser);
+
+      setFullName(user.name || "");
+      setMobile(user.mobile || "");
+    } catch (error) {
+      console.error("Unable to read logged-in user:", error);
+    }
+  }, []);
+
+  // Load the Hinjawadi boundary GeoJSON.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadBoundary = async () => {
+      setBoundaryLoading(true);
+
+      try {
+        const response = await fetch(BOUNDARY_URL);
+
+        if (!response.ok) {
+          throw new Error(
+            `Boundary request failed: ${response.status}`
+          );
+        }
+
+        const boundary = await response.json();
+
+        if (
+          boundary?.type !== "FeatureCollection" ||
+          !Array.isArray(boundary.features) ||
+          boundary.features.length === 0
+        ) {
+          throw new Error("Invalid boundary GeoJSON.");
+        }
+
+        const validFeatures = boundary.features.filter(
+          (feature) =>
+            feature?.geometry &&
+            ["Polygon", "MultiPolygon"].includes(
+              feature.geometry.type
+            )
+        );
+
+        if (validFeatures.length === 0) {
+          throw new Error(
+            "GeoJSON has no valid Polygon or MultiPolygon features."
+          );
+        }
+
+        const validatedBoundary = {
+          ...boundary,
+          features: validFeatures,
+        };
+
+        const bbox = turf.bbox(validatedBoundary);
+
+        if (
+          bbox.length !== 4 ||
+          !bbox.every(Number.isFinite) ||
+          bbox[0] > bbox[2] ||
+          bbox[1] > bbox[3]
+        ) {
+          throw new Error("Invalid boundary coordinates.");
+        }
+
+        if (!cancelled) {
+          setHinjawadiBoundary(validatedBoundary);
+          setErrorMessage("");
+        }
+      } catch (error) {
+        console.error("Boundary loading error:", error);
+
+        if (!cancelled) {
+          setHinjawadiBoundary(null);
+          setBoundaryBounds(null);
+          setErrorMessage(
+            "Unable to load the Hinjawadi boundary. Check public/boundaries/hinjavadi.geojson."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setBoundaryLoading(false);
+        }
+      }
+    };
+
+    loadBoundary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Check whether a location is inside the Hinjawadi boundary.
+  const isInsideHinjawadi = useCallback(
+    (lat, lng) => {
+      if (
+        !hinjawadiBoundary ||
+        lat === null ||
+        lng === null ||
+        lat === undefined ||
+        lng === undefined ||
+        lat === "" ||
+        lng === "" ||
+        !Number.isFinite(Number(lat)) ||
+        !Number.isFinite(Number(lng))
+      ) {
+        return false;
+      }
+
+      try {
+        const point = turf.point([
+          Number(lng),
+          Number(lat),
+        ]);
+
+        return hinjawadiBoundary.features.some(
+          (feature) =>
+            feature.geometry &&
+            turf.booleanPointInPolygon(point, feature)
+        );
+      } catch (error) {
+        console.error("Boundary validation error:", error);
+        return false;
+      }
+    },
+    [hinjawadiBoundary]
+  );
+
+  // Save Google Maps instance and initialize its position.
+  const handleMapLoad = (mapInstance) => {
+    setMap(mapInstance);
+
+    if (boundaryBounds) {
+      mapInstance.fitBounds(boundaryBounds, 30);
+    } else {
+      mapInstance.setCenter(defaultCenter);
+      mapInstance.setZoom(14);
+    }
+  };
+
+  const handleMapUnmount = () => {
+    setMap(null);
+  };
+
+  // Draw the boundary when the map and GeoJSON are available.
+  // Transparent fill keeps the map visible beneath the boundary.
+  useEffect(() => {
+    if (!map || !hinjawadiBoundary || !isLoaded) return;
+
+    try {
+      const existingFeatures = [];
+
+      map.data.forEach((feature) => {
+        existingFeatures.push(feature);
+      });
+
+      existingFeatures.forEach((feature) => {
+        map.data.remove(feature);
+      });
+
+      map.data.addGeoJson(hinjawadiBoundary);
+
+      map.data.setStyle({
+        fillOpacity: 0,
+        strokeColor: "#d21919",
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        clickable: false,
+      });
+
+      const [minLng, minLat, maxLng, maxLat] =
+        turf.bbox(hinjawadiBoundary);
+
+      const bounds = new window.google.maps.LatLngBounds(
+        { lat: minLat, lng: minLng },
+        { lat: maxLat, lng: maxLng }
+      );
+
+      setBoundaryBounds(bounds);
+      map.fitBounds(bounds, 30);
+    } catch (error) {
+      console.error("Error drawing boundary:", error);
+
+      setErrorMessage(
+        "The Hinjawadi boundary could not be displayed on the map."
+      );
+    }
+  }, [map, hinjawadiBoundary, isLoaded]);
+
+  // Click the map to select the complaint location.
+  const handleMapClick = (event) => {
+    if (!event.latLng) return;
+
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+
+    if (!isInsideHinjawadi(lat, lng)) {
+      setErrorMessage(
+        "Please select a location within Hinjawadi Gram Panchayat."
+      );
+      return;
+    }
+
+    setSelectedLocation({ lat, lng });
+    setErrorMessage("");
+  };
+
+  // Allow marker dragging only within the boundary.
+  const handleMarkerDragEnd = (event) => {
+    if (!event.latLng) return;
+
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+
+    if (!isInsideHinjawadi(lat, lng)) {
+      setErrorMessage(
+        "The selected location must be within Hinjawadi Gram Panchayat."
+      );
+
+      // Restore the marker to the last valid location.
+      if (map && selectedLocation.lat !== null) {
+        map.panTo(selectedLocation);
+      }
+
+      return;
+    }
+
+    setSelectedLocation({ lat, lng });
+    setErrorMessage("");
+  };
+
+  // Location search autocomplete.
+  const handleAutocompleteLoad = (instance) => {
+    setAutocomplete(instance);
+  };
+
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+
+    if (!place.geometry?.location) {
+      setErrorMessage(
+        "Please select a valid location from the search suggestions."
+      );
+      return;
+    }
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    if (!isInsideHinjawadi(lat, lng)) {
+      setErrorMessage(
+        "That location is outside Hinjawadi Gram Panchayat. Please choose a location inside the boundary."
+      );
+      return;
+    }
+
+    setSelectedLocation({ lat, lng });
+    setErrorMessage("");
+
+    if (map) {
+      map.panTo({ lat, lng });
+      map.setZoom(17);
+    }
+  };
+
+  // Switch back to map selection mode.
+  const handleMapMode = () => {
+    setLocationMode("map");
+    setLocationStatus("idle");
+    setErrorMessage("");
+  };
+
+  // Request the device's live location.
   const handleUseLiveLocation = () => {
     setLocationMode("live");
     setLocationStatus("loading");
+    setErrorMessage("");
+    setLiveLocation({ lat: "", lng: "" });
 
     if (!navigator.geolocation) {
       setLocationStatus("error");
+      setErrorMessage(
+        "Geolocation is not supported by your browser."
+      );
+      return;
+    }
+
+    if (boundaryLoading) {
+      setLocationStatus("error");
+      setErrorMessage(
+        "The Hinjawadi boundary is still loading. Please try again shortly."
+      );
+      return;
+    }
+
+    if (!hinjawadiBoundary) {
+      setLocationStatus("error");
+      setErrorMessage(
+        "The Hinjawadi boundary could not be loaded. Please select a location on the map or refresh the page."
+      );
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const loc = {
-          lat: position.coords.latitude.toFixed(5),
-          lng: position.coords.longitude.toFixed(5),
-        };
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
 
-        setLiveLocation(loc);
+        if (!isInsideHinjawadi(latitude, longitude)) {
+          setLocationStatus("error");
+          setErrorMessage(
+            "Your current location is outside Hinjawadi Gram Panchayat. Please select a location inside the boundary on the map."
+          );
+          return;
+        }
 
-        setCapturedLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
+        setLiveLocation({
+          lat: latitude.toFixed(6),
+          lng: longitude.toFixed(6),
+        });
+
+        setSelectedLocation({
+          lat: latitude,
+          lng: longitude,
         });
 
         setLocationStatus("captured");
+        setErrorMessage("");
+
+        if (map) {
+          map.panTo({
+            lat: latitude,
+            lng: longitude,
+          });
+          map.setZoom(17);
+        }
       },
-      () => setLocationStatus("error")
+      (error) => {
+        console.error("Geolocation error:", error);
+        setLocationStatus("error");
+
+        switch (error.code) {
+          case 1:
+            setErrorMessage(
+              "Location permission denied. Allow location access in your browser settings."
+            );
+            break;
+          case 2:
+            setErrorMessage(
+              "Your current location is unavailable. Check your device location settings."
+            );
+            break;
+          case 3:
+            setErrorMessage(
+              "Getting your location timed out. Please try again."
+            );
+            break;
+          default:
+            setErrorMessage(
+              "Could not fetch your live location. Please try again."
+            );
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      }
     );
   };
 
+  // Photo verification callbacks.
   const handlePhotoVerified = (photoId, aiResult) => {
     console.log("Photo verified:", photoId, aiResult);
   };
@@ -138,36 +531,109 @@ const ReportIssue = () => {
     alert(`${t("report.photoRejected")}: ${reason}`);
   };
 
-  const handleSubmitReport = async (e) => {
-    e.preventDefault();
+  // Submit report.
+  const handleSubmitReport = async (event) => {
+    event.preventDefault();
+    setErrorMessage("");
 
     if (verifiedPhotosData.length === 0) {
       alert(t("report.uploadVerifyPhoto"));
       return;
     }
 
-    if (
-      locationMode === "live" &&
-      locationStatus !== "captured"
-    ) {
-      alert(t("report.captureLocationFirst"));
+    if (!fullName.trim()) {
+      setErrorMessage("Please enter your full name.");
       return;
     }
 
+    if (!/^\d{10}$/.test(mobile)) {
+      setErrorMessage("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (!issueType) {
+      setErrorMessage("Please select an issue type.");
+      return;
+    }
+
+    if (!description.trim()) {
+      setErrorMessage("Please enter a description.");
+      return;
+    }
+
+    if (boundaryLoading || !hinjawadiBoundary) {
+      setErrorMessage(
+        "The Hinjawadi boundary is not available. Please wait and try again."
+      );
+      return;
+    }
+
+    let latitude;
+    let longitude;
+
+    if (locationMode === "map") {
+      if (
+        selectedLocation.lat === null ||
+        selectedLocation.lng === null
+      ) {
+        setErrorMessage(
+          "Please select the issue location on the map."
+        );
+        return;
+      }
+
+      latitude = Number(selectedLocation.lat);
+      longitude = Number(selectedLocation.lng);
+    } else {
+      if (
+        locationStatus !== "captured" ||
+        liveLocation.lat === "" ||
+        liveLocation.lng === ""
+      ) {
+        setErrorMessage(
+          "Please capture your live location or select a location on the map."
+        );
+        return;
+      }
+
+      latitude = Number(liveLocation.lat);
+      longitude = Number(liveLocation.lng);
+    }
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      !isInsideHinjawadi(latitude, longitude)
+    ) {
+      setErrorMessage(
+        "Please select a valid location inside Hinjawadi Gram Panchayat."
+      );
+      return;
+    }
+
+    // Include citizen ID if a logged-in user is available.
+    let user = null;
+
+    try {
+      user = JSON.parse(localStorage.getItem("user") || "null");
+    } catch (error) {
+      console.error("Unable to parse user:", error);
+    }
+
     const complaintData = {
-      fullName,
+      fullName: fullName.trim(),
       mobile,
-      email,
       issueType,
-      description,
-      locationUrl:
-        locationMode === "url"
-          ? locationUrl
-          : "GPS Captured Location",
-      latitude: capturedLocation?.latitude,
-      longitude: capturedLocation?.longitude,
+      description: description.trim(),
+      locationUrl: "Google Maps selected location",
+      latitude,
+      longitude,
+      coordinates: { latitude, longitude },
       photoVerifications: verifiedPhotosData,
+      citizenId: user?.id || user?._id || undefined,
     };
+
+    setLoading(true);
 
     try {
       const response = await fetch(
@@ -181,58 +647,65 @@ const ReportIssue = () => {
         }
       );
 
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
         throw new Error(
-          errorData.message || t("report.submitFailed")
+          data.message || t("report.submitFailed")
         );
       }
 
-      const data = await response.json();
-
       if (!data.complaintNumber) {
-        throw new Error(t("report.missingComplaintNumber"));
+        throw new Error(
+          t("report.missingComplaintNumber")
+        );
       }
 
       setComplaintNumber(data.complaintNumber);
     } catch (error) {
       console.error("Submission error:", error);
-      alert(`${t("report.error")}: ${error.message}`);
+
+      setErrorMessage(
+        `${t("report.error")}: ${error.message}`
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Reset form after successful submission.
   const resetForm = () => {
     setComplaintNumber(null);
     setFullName("");
     setMobile("");
-    setEmail("");
-    setLocationMode("url");
-    setLocationUrl("");
+    setLocationMode("map");
+    setSelectedLocation({ lat: null, lng: null });
     setLiveLocation({ lat: "", lng: "" });
-    setCapturedLocation(null);
     setLocationStatus("idle");
     setIssueType("");
     setDescription("");
     setVerifiedPhotosData([]);
+    setCapturedLocation(null);
+    setErrorMessage("");
+
+    if (map) {
+      if (boundaryBounds) {
+        map.fitBounds(boundaryBounds, 30);
+      } else {
+        map.setCenter(defaultCenter);
+        map.setZoom(14);
+      }
+    }
   };
 
   return (
     <main className="report-page">
-      {/* Page banner section commented out 
-      <section className="page-hero-section">
-        <div
-          className="page-hero"
-          id="home"
-          style={{
-            backgroundImage: `url("${bannerImage}")`,
-          }}
-        >
-          <div className="hero-scrim" />
-          <div className="page-hero-inner" />
-        </div>
-      </section>
-      */}
-
       <section className="section">
         {complaintNumber === null ? (
           <div className="report-shell">
@@ -247,18 +720,21 @@ const ReportIssue = () => {
               className="report-grid"
               onSubmit={handleSubmitReport}
             >
-              {/* Left column */}
+              {/* Left column: citizen details and report information */}
               <div className="report-col">
                 <div className="form-field">
                   <label htmlFor="fullName">
                     {t("report.fullName")}
                   </label>
+
                   <input
                     id="fullName"
                     type="text"
                     placeholder={t("report.namePlaceholder")}
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(event) =>
+                      setFullName(event.target.value)
+                    }
                     required
                   />
                 </div>
@@ -267,6 +743,7 @@ const ReportIssue = () => {
                   <label htmlFor="mobile">
                     {t("report.mobile")}
                   </label>
+
                   <div className="input-with-icon">
                     <input
                       id="mobile"
@@ -275,44 +752,29 @@ const ReportIssue = () => {
                       maxLength={10}
                       pattern="[0-9]{10}"
                       value={mobile}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setMobile(
-                          e.target.value.replace(/\D/g, "")
+                          event.target.value.replace(/\D/g, "")
                         )
                       }
                       required
                     />
+
                     <span className="field-icon">📱</span>
                   </div>
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="email">
-                    {t("report.email")}
-                  </label>
-                  <div className="input-with-icon">
-                    <input
-                      id="email"
-                      type="email"
-                      placeholder={t("report.emailPlaceholder")}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                    <span className="field-icon">✉️</span>
-                  </div>
-                </div>
+                {/* Email field removed */}
 
-                {/* Location mode */}
                 <div className="segmented-toggle">
                   <button
                     type="button"
                     className={
-                      locationMode === "url" ? "active" : ""
+                      locationMode === "map" ? "active" : ""
                     }
-                    onClick={() => setLocationMode("url")}
+                    onClick={handleMapMode}
                   >
-                    {t("report.enterLocationUrl")}
+                    Select on Map
                   </button>
 
                   <button
@@ -321,25 +783,103 @@ const ReportIssue = () => {
                       locationMode === "live" ? "active" : ""
                     }
                     onClick={handleUseLiveLocation}
+                    disabled={boundaryLoading}
                   >
-                    {t("report.useLiveLocation")}
+                    {boundaryLoading
+                      ? "Loading Boundary..."
+                      : "Use Live Location"}
                   </button>
                 </div>
 
-                {locationMode === "url" ? (
+                {/* Google Map */}
+                {locationMode === "map" ? (
                   <div className="form-field">
-                    <label htmlFor="locationUrl">
-                      {t("report.locationUrl")}
-                    </label>
-                    <input
-                      id="locationUrl"
-                      type="text"
-                      placeholder={t("report.locationPlaceholder")}
-                      value={locationUrl}
-                      onChange={(e) =>
-                        setLocationUrl(e.target.value)
-                      }
-                    />
+                    <label>Select Issue Location</label>
+
+                    {loadError && (
+                      <p className="location-status error">
+                        Unable to load Google Maps. Check your API key
+                        and Google Maps API settings.
+                      </p>
+                    )}
+
+                    {!isLoaded && !loadError && (
+                      <p className="location-status">
+                        Loading Google Maps...
+                      </p>
+                    )}
+
+                    {isLoaded && !loadError && (
+                      <>
+                        <Autocomplete
+                          onLoad={handleAutocompleteLoad}
+                          onPlaceChanged={handlePlaceChanged}
+                          options={{
+                            bounds: boundaryBounds || undefined,
+                            strictBounds: Boolean(boundaryBounds),
+                          }}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Search issue location..."
+                            className="map-search-input"
+                          />
+                        </Autocomplete>
+
+                        <div className="google-map-container">
+                          <GoogleMap
+                            mapContainerStyle={mapContainerStyle}
+                            center={
+                              selectedLocation.lat !== null
+                                ? selectedLocation
+                                : defaultCenter
+                            }
+                            zoom={
+                              selectedLocation.lat !== null ? 17 : 14
+                            }
+                            onLoad={handleMapLoad}
+                            onUnmount={handleMapUnmount}
+                            onClick={handleMapClick}
+                            options={{
+                              streetViewControl: false,
+                              mapTypeControl: false,
+                              fullscreenControl: true,
+                            }}
+                          >
+                            {selectedLocation.lat !== null &&
+                              selectedLocation.lng !== null && (
+                                <Marker
+                                  position={selectedLocation}
+                                  draggable
+                                  onDragEnd={handleMarkerDragEnd}
+                                />
+                              )}
+                          </GoogleMap>
+                        </div>
+
+                        {boundaryLoading && (
+                          <p className="location-status">
+                            Loading Hinjawadi boundary...
+                          </p>
+                        )}
+
+                        {selectedLocation.lat !== null &&
+                          selectedLocation.lng !== null && (
+                            <p className="location-status success">
+                              Selected Location:{" "}
+                              {selectedLocation.lat.toFixed(6)},{" "}
+                              {selectedLocation.lng.toFixed(6)}
+                            </p>
+                          )}
+
+                        {selectedLocation.lat === null && (
+                          <p className="location-help">
+                            Search for a location or click inside the
+                            Hinjawadi boundary to place the marker.
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="form-field">
@@ -360,34 +900,55 @@ const ReportIssue = () => {
 
                     {locationStatus === "error" && (
                       <p className="location-status error">
-                        {t("report.locationError")}
+                        {errorMessage || t("report.locationError")}
                       </p>
                     )}
+
+                    {locationStatus !== "captured" && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={handleUseLiveLocation}
+                        disabled={boundaryLoading}
+                      >
+                        Try Live Location Again
+                      </button>
+                    )}
                   </div>
+                )}
+
+                {errorMessage && (
+                  <p className="location-status error" role="alert">
+                    {errorMessage}
+                  </p>
                 )}
 
                 <div className="form-field">
                   <label htmlFor="issueType">
                     {t("report.issueType")}
                   </label>
+
                   <select
                     id="issueType"
                     value={issueType}
-                    onChange={(e) => setIssueType(e.target.value)}
+                    onChange={(event) =>
+                      setIssueType(event.target.value)
+                    }
                     required
                   >
                     <option value="" disabled>
                       {t("report.selectIssueType")}
                     </option>
 
-                    {categories.map((cat) => (
+                    {categories.map((category) => (
                       <optgroup
-                        key={cat.title}
-                        label={t(`issueCategories.${cat.title}`, {
-                          defaultValue: cat.title,
-                        })}
+                        key={category.title}
+                        label={t(
+                          `issueCategories.${category.title}`,
+                          { defaultValue: category.title }
+                        )}
                       >
-                        {cat.issues.map((issue) => (
+                        {category.issues.map((issue) => (
                           <option key={issue} value={issue}>
                             {t(`issueTypes.${issue}`, {
                               defaultValue: issue,
@@ -403,19 +964,21 @@ const ReportIssue = () => {
                   <label htmlFor="description">
                     {t("report.description")}
                   </label>
+
                   <textarea
                     id="description"
                     rows="4"
                     placeholder={t("report.descriptionPlaceholder")}
                     value={description}
-                    onChange={(e) =>
-                      setDescription(e.target.value)
+                    onChange={(event) =>
+                      setDescription(event.target.value)
                     }
+                    required
                   />
                 </div>
               </div>
 
-              {/* Right column: Photo verification */}
+              {/* Right column: existing photo verification */}
               <div className="report-col">
                 <PhotoDetection
                   onPhotoVerified={handlePhotoVerified}
@@ -431,8 +994,16 @@ const ReportIssue = () => {
 
               {/* Submit */}
               <div className="report-submit-row">
-                <button className="primary-btn" type="submit">
-                  {t("report.submit")} <span>→</span>
+                <button
+                  className="primary-btn"
+                  type="submit"
+                  disabled={loading || boundaryLoading}
+                >
+                  {loading
+                    ? "Submitting..."
+                    : t("report.submit")}
+
+                  {!loading && <span> →</span>}
                 </button>
               </div>
             </form>
@@ -463,7 +1034,7 @@ const ReportIssue = () => {
                   )
                 }
               >
-                {t("report.trackComplaint")} <span>→</span>
+                {t("report.trackComplaint")} <span> →</span>
               </button>
 
               <button
