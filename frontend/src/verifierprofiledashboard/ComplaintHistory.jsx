@@ -1,25 +1,36 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import "./ComplaintHistory.css";
 
-const ComplaintHistory = ({ complaints, onBack }) => {
+const ComplaintHistory = ({ complaints = [], onBack }) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLog, setSelectedLog] = useState(null); // State for overlay modal
 
   const selectedItem = complaints.find((c) => c.id === selectedId) || complaints[0];
 
+  useEffect(() => {
+    if (!selectedItem) {
+      setSelectedId(null);
+      return;
+    }
+
+    if (selectedItem.id !== selectedId) {
+      setSelectedId(selectedItem.id);
+    }
+  }, [selectedItem, selectedId]);
+
   // Filter complaints based on search
   const filteredComplaints = useMemo(() => {
     return complaints.filter((c) =>
-      c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.issue.toLowerCase().includes(searchTerm.toLowerCase())
+      String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.issue || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [complaints, searchTerm]);
 
   // Helper to determine timeline event type based on log text
   const getEventType = (text) => {
-    const lowerText = text.toLowerCase();
+    const lowerText = String(text || "").toLowerCase();
     if (lowerText.includes("verified") || lowerText.includes("rejected") || lowerText.includes("approved")) return "verification";
     if (lowerText.includes("staff") || lowerText.includes("completed") || lowerText.includes("action")) return "action";
     if (lowerText.includes("status") || lowerText.includes("routed") || lowerText.includes("assigned")) return "status";
@@ -33,7 +44,11 @@ const ComplaintHistory = ({ complaints, onBack }) => {
 
   // Prepare all log entries (including the origin) for the table
   const allLogEntries = useMemo(() => {
-    const entries = selectedItem.log ? [...selectedItem.log].reverse() : []; // Show newest first
+    if (!selectedItem) return [];
+
+    const entries = Array.isArray(selectedItem.log)
+      ? [...selectedItem.log].reverse()
+      : []; // Show newest first
     entries.push({
       time: "Initial Submission",
       text: `Complaint ${selectedItem.complaintNumber} was submitted by ${selectedItem.citizenName}.`,
@@ -97,7 +112,7 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                 <div className="ch-summary-header">
                   <h3>{selectedItem.complaintNumber}</h3>
                   <span className={`ch-main-status ch-status-${getStatusTone(selectedItem.status)}`}>
-                    {selectedItem.status.toUpperCase()}
+                    {String(selectedItem.status || "pending").toUpperCase()}
                   </span>
                 </div>
                 <div className="ch-summary-grid">

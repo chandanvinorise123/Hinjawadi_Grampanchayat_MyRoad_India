@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./StaffVerifierProfile.css";
-
-const API_BASE_URL = "http://localhost:3200/api";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
 const StaffVerifierProfile = ({ userId, role, onBack }) => {
   const [profile, setProfile] = useState(null);

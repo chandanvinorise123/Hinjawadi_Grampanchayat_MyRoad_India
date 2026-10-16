@@ -1,77 +1,6 @@
 import React, { useState, useMemo } from "react";
 import "./ComplaintsDetails.css";
 
-// ✅ HARDCODED MOCK DATA WITH FULL DETAILS
-const mockComplaintDetails = [
-  {
-    id: "1",
-    complaintNumber: "MRI-882910",
-    category: "Road Issues",
-    issue: "Large Pothole",
-    date: "2026-10-01",
-    location: "Camp Road Bus Stop",
-    priority: "High",
-    status: "Work Completed",
-    description: "A massive pothole near the bus stop is causing traffic jams and damaging vehicles during the monsoon.",
-    photos: { before: "pothole-before.jpg", after: "pothole-after.jpg", site: "pothole-site.jpg" },
-    history: [
-      { time: "Oct 01, 10:00 AM", action: "Complaint Registered", remarks: "Submitted by citizen via portal." },
-      { time: "Oct 01, 02:30 PM", action: "Complaint Verified", remarks: "Verified by ward supervisor. Approved for action." },
-      { time: "Oct 02, 09:00 AM", action: "Assigned to Staff", remarks: "Assigned to Field Officer R. Deshmukh." },
-      { time: "Oct 03, 11:15 AM", action: "Work Completed", remarks: "Pothole filled with cold mix asphalt." }
-    ],
-    resolutionDetails: {
-      resolvedBy: "R. Deshmukh (Field Officer)",
-      resolutionDate: "2026-10-03",
-      remarks: "Successfully repaired. Traffic flow restored. Awaiting final verification."
-    }
-  },
-  {
-    id: "2",
-    complaintNumber: "MRI-773820",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    date: "2026-09-25",
-    location: "Market Yard Junction",
-    priority: "Medium",
-    status: "Complaint Closed",
-    description: "Community bin overflowing for three days, needs urgent clearing. Bad smell affecting nearby shops.",
-    photos: { before: "bin-before.jpg", after: "bin-after.jpg", site: "bin-site.jpg" },
-    history: [
-      { time: "Sep 25, 08:00 AM", action: "Complaint Registered", remarks: "Submitted by citizen." },
-      { time: "Sep 25, 04:00 PM", action: "Action Initiated", remarks: "Sanitation crew dispatched." },
-      { time: "Sep 26, 10:00 AM", action: "Work Completed", remarks: "Bin cleared and area hosed down." },
-      { time: "Sep 26, 02:00 PM", action: "Complaint Closed", remarks: "Verified by supervisor. Citizen notified." }
-    ],
-    resolutionDetails: {
-      resolvedBy: "Sanitation Dept. Team B",
-      resolutionDate: "2026-09-26",
-      remarks: "Extra pickup scheduled twice a week for this junction to prevent future overflow."
-    }
-  },
-  {
-    id: "3",
-    complaintNumber: "MRI-119283",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    date: "2026-09-15",
-    location: "Riverside Ward Pipeline",
-    priority: "High",
-    status: "Verification",
-    description: "Water leaking continuously from an underground pipeline joint, wasting resources.",
-    photos: { before: "leak-before.jpg", after: "leak-after.jpg" },
-    history: [
-      { time: "Sep 15, 09:30 AM", action: "Complaint Registered", remarks: "Submitted by citizen." },
-      { time: "Sep 15, 01:00 PM", action: "Action Initiated", remarks: "Water supply temporarily halted for repair." },
-      { time: "Sep 16, 11:00 AM", action: "Work Completed", remarks: "Joint resealed and pressure tested." }
-    ],
-    resolutionDetails: {
-      resolvedBy: "Water Works Engineer",
-      resolutionDate: "2026-09-16",
-      remarks: "Leak fixed. Pressure normalized. Ready for verifier inspection."
-    }
-  }
-];
 
 const priorityTone = { High: "red", Medium: "amber", Low: "green" };
 const statusToneMap = {
@@ -84,17 +13,28 @@ const statusToneMap = {
   "Complaint Closed": "green"
 };
 
-const ComplaintsDetails = ({ onBack }) => {
+const ComplaintsDetails = ({ onBack, complaints = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const complaintDetails = complaints.map((complaint) => ({
+    ...complaint,
+    photos: complaint.photos && typeof complaint.photos === "object"
+      ? complaint.photos
+      : { before: complaint.images?.[0] || "", after: complaint.images?.[1] || "" },
+    history: (complaint.statusHistory || []).map((entry) => ({
+      time: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
+      action: entry.status,
+      remarks: entry.remarks || "",
+    })),
+  }));
 
   const filteredComplaints = useMemo(() => {
-    return mockComplaintDetails.filter((c) =>
+    return complaintDetails.filter((c) =>
       c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.location.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [complaints, searchTerm]);
 
   // Close modal on Escape key
   React.useEffect(() => {
@@ -215,7 +155,9 @@ const ComplaintsDetails = ({ onBack }) => {
                     height="100%" 
                     frameBorder="0" 
                     scrolling="no" 
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=73.70%2C18.55%2C73.80%2C18.65&layer=mapnik&marker=18.5912%2C73.7389"
+                    src={selectedComplaint.coordinates
+                      ? `https://www.openstreetmap.org/export/embed.html?bbox=${selectedComplaint.coordinates.longitude - 0.02}%2C${selectedComplaint.coordinates.latitude - 0.02}%2C${selectedComplaint.coordinates.longitude + 0.02}%2C${selectedComplaint.coordinates.latitude + 0.02}&layer=mapnik&marker=${selectedComplaint.coordinates.latitude}%2C${selectedComplaint.coordinates.longitude}`
+                      : undefined}
                     title="Complaint Location Map"
                   ></iframe>
                 </div>

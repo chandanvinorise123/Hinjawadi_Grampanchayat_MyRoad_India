@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MyProfile.css";
+import { API_BASE_URL, toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
 
-const API_URL = "http://localhost:3200/api/auth/users";
+const API_URL = `${API_BASE_URL}/auth/users`;
 const MOBILE_REGEX = /^[6-9]\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,12 +20,13 @@ const MyProfile = ({ onBack }) => {
   });
 
   const [profile, setProfile] = useState({
-    name: storedUser.name || "Citizen User",
+    name: storedUser.name || "",
     email: storedUser.email || "",
     mobile: storedUser.mobile || "",
+    profilePhoto: storedUser.profilePhoto || "",
     userId: storedUser.userId || storedUser.id || "N/A",
-    ward: storedUser.location || "Ward 3 — Riverside",
-    memberSince: "March 2026",
+    ward: storedUser.location || "",
+    memberSince: storedUser.createdAt ? new Date(storedUser.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "",
   });
 
   const [form, setForm] = useState({
@@ -84,11 +86,12 @@ const MyProfile = ({ onBack }) => {
             name: u.name,
             email: u.email,
             mobile: u.mobile || "",
+            profilePhoto: toMediaUrl(u.profilePhoto),
             userId: u.userId || u.id,
-            ward: u.location || "Ward 3 — Riverside",
+            ward: u.location || "",
             memberSince: u.createdAt
               ? new Date(u.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
-              : "March 2026",
+              : "",
           };
           setProfile(loaded);
           setForm({ name: loaded.name, email: loaded.email, mobile: loaded.mobile, ward: loaded.ward });
@@ -111,6 +114,24 @@ const MyProfile = ({ onBack }) => {
       ...prev,
       [name]: name === "mobile" ? value.replace(/\D/g, "") : value,
     }));
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadProfilePhoto(file, storedUser.id, "citizen");
+      setProfile((current) => ({ ...current, profilePhoto: toMediaUrl(data.profilePhoto) }));
+      const current = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
+      setStoredUser((user) => ({ ...user, profilePhoto: data.profilePhoto }));
+      window.dispatchEvent(new Event("authChange"));
+      setNotice({ type: "success", text: "Profile photo uploaded successfully." });
+    } catch (error) {
+      setNotice({ type: "error", text: error.message || "Failed to upload profile photo." });
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -246,7 +267,13 @@ const MyProfile = ({ onBack }) => {
 
         <div className="cdp-profile-grid">
           <div className="cdp-panel cdp-profile-card cdp-sticky-card">
-            <div className="cdp-profile-avatar">{initials}</div>
+            <div className="cdp-profile-avatar">
+              {profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : initials}
+            </div>
+            <label className="cdp-btn-primary small">
+              Upload Photo
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} hidden />
+            </label>
             <h3>{profile.name}</h3>
             <p>Citizen Account</p>
             <dl className="cdp-kv">
@@ -381,5 +408,3 @@ const MyProfile = ({ onBack }) => {
 };
 
 export default MyProfile;
-
-

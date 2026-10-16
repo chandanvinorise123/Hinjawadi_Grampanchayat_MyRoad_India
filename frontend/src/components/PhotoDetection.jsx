@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./PhotoDetection.css";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
 const PhotoDetection = ({
   onPhotoVerified,
@@ -94,7 +95,7 @@ const PhotoDetection = ({
   };
 
   // Verify image with AI backend
-  const verifyImageWithAI = async (photoId, file) => {
+  const verifyImageWithAI = async (photoId, file, capturedLocation = location) => {
     setIsProcessing(true);
     setVerificationStatus((prev) => ({
       ...prev,
@@ -107,13 +108,13 @@ const PhotoDetection = ({
       if (category) formData.append("category", category);
 
       // ✅ Send location data to backend
-      if (location) {
-        formData.append("latitude", location.latitude);
-        formData.append("longitude", location.longitude);
-        formData.append("accuracy", location.accuracy);
+      if (capturedLocation) {
+        formData.append("latitude", capturedLocation.latitude);
+        formData.append("longitude", capturedLocation.longitude);
+        formData.append("accuracy", capturedLocation.accuracy);
       }
 
-      const response = await fetch("http://localhost:3200/api/photos/verify-image", {
+      const response = await fetch(`${API_BASE_URL}/photos/verify-image`, {
         method: "POST",
         body: formData,
       });
@@ -131,7 +132,10 @@ const PhotoDetection = ({
         }));
       };
 
-      if (result.confidence >= 80 && result.roadRelated) {
+      if (result.requiresReview) {
+        updateStatus("review", true, result.message || "Image requires manual review");
+        onPhotoVerified && onPhotoVerified(photoId, { ...result, requiresReview: true });
+      } else if (result.confidence >= 80 && result.roadRelated) {
         updateStatus("verified", true, result.message || "Image verified successfully");
         onPhotoVerified && onPhotoVerified(photoId, result);
       } else if (result.confidence >= 50 && result.roadRelated) {
@@ -199,6 +203,7 @@ const PhotoDetection = ({
       type: file.type,
       isExisting: false,
       verified: false,
+      location: currentLocation || null,
       // ✅ ADDED: Geo-Tag Data attached to the photo
       geoData: {
         companyName: "MyRoad India",
@@ -211,7 +216,7 @@ const PhotoDetection = ({
 
     // Add to state and verify
     setPhotos((prev) => [...prev, photo]);
-    await verifyImageWithAI(photoId, file);
+    await     verifyImageWithAI(photoId, file, currentLocation);
     e.target.value = "";
   };
 
@@ -253,7 +258,8 @@ const PhotoDetection = ({
         publicUrl: status?.publicUrl || photo.preview,
         verified: photo.isExisting || (status?.status === "verified" && status.roadRelated),
         requiresReview: status?.status === "review",
-        aiResult: status || null, location: location || null,
+        aiResult: status || null,
+        location: photo.location || location || null,
       };
     });
   };

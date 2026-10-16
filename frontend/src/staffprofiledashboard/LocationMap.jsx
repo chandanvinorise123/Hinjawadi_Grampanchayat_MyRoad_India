@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import './LocationMap.css';
 
-const LocationMap = ({ complaints, onBack }) => {
+const LocationMap = ({ complaints, ward = "", onBack }) => {
     const [selectedLocationData, setSelectedLocationData] = useState(null);
     const [filterCategory, setFilterCategory] = useState('All');
 
@@ -46,6 +46,13 @@ const LocationMap = ({ complaints, onBack }) => {
     const allCategories = useMemo(() => {
         return ['All', ...new Set(complaints.map(c => c.category))];
     }, [complaints]);
+
+    const mapComplaint = complaints.find(
+        (complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined
+    );
+    const mapUrl = mapComplaint
+        ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapComplaint.coordinates.longitude - 0.02}%2C${mapComplaint.coordinates.latitude - 0.02}%2C${mapComplaint.coordinates.longitude + 0.02}%2C${mapComplaint.coordinates.latitude + 0.02}&layer=mapnik&marker=${mapComplaint.coordinates.latitude}%2C${mapComplaint.coordinates.longitude}`
+        : "";
 
     const handleLocationClick = (locData) => {
         setSelectedLocationData(locData);
@@ -133,7 +140,7 @@ const LocationMap = ({ complaints, onBack }) => {
                     <div className="lm-map-section">
                         <div className="lm-map-header">
                             <h3>Live Location View</h3>
-                            <span className="lm-map-subtitle">Ward 3 — Riverside Area</span>
+                            <span className="lm-map-subtitle">{ward}</span>
                         </div>
                         <div className="lm-map-container">
                             {/* OpenStreetMap Embed */}
@@ -144,7 +151,7 @@ const LocationMap = ({ complaints, onBack }) => {
                                 scrolling="no" 
                                 marginHeight="0" 
                                 marginWidth="0" 
-                                src="https://www.openstreetmap.org/export/embed.html?bbox=73.70%2C18.55%2C73.80%2C18.65&layer=mapnik&marker=18.5912%2C73.7389"
+                                src={mapUrl || undefined}
                                 title="Live Location Map"
                             ></iframe>
                             <div className="lm-map-overlay-info">
@@ -186,7 +193,7 @@ const LocationMap = ({ complaints, onBack }) => {
                                     <div key={c.id} className="lm-complaint-item">
                                         <div className="lm-comp-header">
                                             <span className="lm-comp-number">{c.complaintNumber}</span>
-                                            <span className={`lm-comp-status lm-status-${c.priority.toLowerCase()}`}>{c.priority}</span>
+                                            <span className={`lm-comp-status lm-status-${String(c.priority || "normal").toLowerCase()}`}>{c.priority || "Normal"}</span>
                                         </div>
                                         <div className="lm-comp-details">
                                             <div className="lm-detail-row">

@@ -1,41 +1,33 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./ComplaintVerification.css";
+import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
 
 // ==========================================
-// 1. HARDCODED MOCK DATA
 // ==========================================
-const MOCK_VERIFICATION_QUEUE = [
-  {
-    id: "V1", complaintNumber: "MRI-849201", issue: "Large Pothole Repair", location: "Hinjawadi Phase 2",
-    staffName: "Shiv Kumar", assignedDate: "2023-10-26", currentStep: 3, // 1:Work Started, 2:Under Working, 3:Under Verification, 4:Verified, 5:Completed
-    workDetails: "Excavated the damaged area, filled with cold mix asphalt, and compacted using a roller. Barricades removed.",
-    photos: ["https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=400&q=80"],
-    remarks: ""
-  },
-  {
-    id: "V2", complaintNumber: "MRI-849204", issue: "Cracked Road Sealing", location: "Pirangut Road",
-    staffName: "Anil Patil", assignedDate: "2023-10-24", currentStep: 4,
-    workDetails: "Cracks sealed with bituminous emulsion. Road markings repainted.",
-    photos: [],
-    remarks: "Work looks good, ready for final closure."
-  },
-  {
-    id: "V3", complaintNumber: "MRI-849208", issue: "Street Light Replacement", location: "Marunji Road",
-    staffName: "Ramesh Yadav", assignedDate: "2023-10-27", currentStep: 2,
-    workDetails: "Waiting for new LED bulb delivery. Temporary light installed.",
-    photos: [],
-    remarks: ""
-  }
-];
 
 const WORKFLOW_STEPS = ["Work Started", "Under Working", "Under Verification", "Verified", "Work Completed"];
 
 const ComplaintVerification = ({ onBack }) => {
-  const [complaints, setComplaints] = useState(MOCK_VERIFICATION_QUEUE);
+  const [complaints, setComplaints] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [verifierRemarks, setVerifierRemarks] = useState("");
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  useEffect(() => {
+    fetchDashboard("admin", getUserId(getStoredUser()))
+      .then(({ complaints: loaded = [] }) => setComplaints(loaded
+        .filter((complaint) => ["Under Verification", "Verified", "Resolved", "Closed", "Rejected"].includes(complaint.status))
+        .map((complaint) => ({
+          ...complaint,
+          currentStep: { "Under Action": 1, "Under Verification": 3, Verified: 4, Resolved: 5, Closed: 5, Rejected: 2 }[complaint.status] || 0,
+          issue: complaint.issue || complaint.issueType,
+          staffName: complaint.assignedStaff || "Unassigned",
+          workDetails: complaint.description,
+          photos: complaint.images || [],
+        }))))
+      .catch((error) => console.error("Failed to load verification queue:", error));
+  }, []);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -47,7 +39,7 @@ const ComplaintVerification = ({ onBack }) => {
     pending: complaints.filter(c => c.currentStep === 3).length,
     verified: complaints.filter(c => c.currentStep === 4).length,
     completed: complaints.filter(c => c.currentStep === 5).length,
-    returned: 1 // Mock data for returned
+    returned: complaints.filter(c => c.status === "Rejected" || c.status === "Under Action").length
   }), [complaints]);
 
   const openVerificationModal = (complaint) => {
@@ -57,9 +49,15 @@ const ComplaintVerification = ({ onBack }) => {
   };
 
   // Action: Verify and Close
-  const handleVerifyAndClose = () => {
+  const handleVerifyAndClose = async () => {
     if (!verifierRemarks.trim()) {
       showMessage("error", "Please add closure remarks before verifying.");
+      return;
+    }
+    try {
+      await updateDashboardComplaint(selectedComplaint.id, { status: "Closed", remarks: verifierRemarks });
+    } catch (error) {
+      console.error("Failed to close complaint:", error);
       return;
     }
     const updated = complaints.map(c => 
@@ -73,9 +71,15 @@ const ComplaintVerification = ({ onBack }) => {
   };
 
   // Action: Return for Additional Action
-  const handleReturnForAction = () => {
+  const handleReturnForAction = async () => {
     if (!verifierRemarks.trim()) {
       showMessage("error", "Please add remarks explaining why it's being returned.");
+      return;
+    }
+    try {
+      await updateDashboardComplaint(selectedComplaint.id, { status: "Under Action", remarks: verifierRemarks });
+    } catch (error) {
+      console.error("Failed to return complaint:", error);
       return;
     }
     const updated = complaints.map(c => 

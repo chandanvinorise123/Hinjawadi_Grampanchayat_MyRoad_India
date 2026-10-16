@@ -15,6 +15,7 @@ const publicUser = (u) => ({
     name: u.name,
     email: u.email,
     mobile: u.mobile,
+    profilePhoto: u.profilePhoto || "",
     location: u.location,
     createdAt: u.createdAt
 });
@@ -77,7 +78,8 @@ router.post("/signup", async (req, res) => {
                 role: newUser.role,
                 name: newUser.name,
                 email: newUser.email,
-                mobile: newUser.mobile
+                mobile: newUser.mobile,
+                profilePhoto: newUser.profilePhoto || ""
             }
         });
 
@@ -133,7 +135,8 @@ router.post("/login", async (req, res) => {
                 role: user.role,
                 name: user.name,
                 email: user.email,
-                mobile: user.mobile
+                mobile: user.mobile,
+                profilePhoto: user.profilePhoto || ""
             }
         });
 
@@ -229,7 +232,7 @@ router.put("/users/:id", async (req, res) => {
         const user = await User.findByIdAndUpdate(
             req.params.id,
             { name, mobile, location },
-            { new: true, runValidators: true }
+            { returnDocument: "after", runValidators: true }
         );
  
         if (!user) {
@@ -305,4 +308,3 @@ router.delete("/users/:id", async (req, res) => {
  
 module.exports = router;
  
-

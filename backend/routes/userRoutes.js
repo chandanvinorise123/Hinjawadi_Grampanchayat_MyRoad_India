@@ -166,7 +166,7 @@ router.put("/users/:id", async (req, res) => {
       req.params.id,
       updates,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     ).select("-password");
@@ -236,7 +236,7 @@ router.put("/profile/:id", async (req, res) => {
       userId,
       updateData,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     ).select("-password");

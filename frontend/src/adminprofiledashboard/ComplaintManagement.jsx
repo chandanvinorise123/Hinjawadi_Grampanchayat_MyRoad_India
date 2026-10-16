@@ -1,62 +1,70 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./ComplaintManagement.css";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
 
 // ==========================================
-// 1. HARDCODED MOCK DATA (Will be replaced by API later)
 // ==========================================
-const MOCK_COMPLAINTS = [
-  {
-    id: "1", complaintNumber: "MRI-849201", category: "Road Damage", issue: "Large Pothole",
-    location: "Hinjawadi Phase 2, Near Wipro Gate", citizenName: "Rahul Sharma",
-    description: "A massive pothole has formed near the Wipro gate, causing traffic jams and vehicle damage.",
-    photos: 3, priority: "Critical", status: "New", assignedStaff: "", assignedVerifier: "", date: "2023-10-25",
-    photoUrls: ["https://via.placeholder.com/150", "https://via.placeholder.com/150"]
-  },
-  {
-    id: "2", complaintNumber: "MRI-849202", category: "Street Light", issue: "Light Not Working",
-    location: "Hinjewadi Rajiv Gandhi IT Park Road", citizenName: "Priya Desai",
-    description: "Street lights are not working for the last 3 days. Very unsafe for night commuters.",
-    photos: 1, priority: "Urgent", status: "Under Action", assignedStaff: "Shiv Kumar", assignedVerifier: "", date: "2023-10-24",
-    photoUrls: []
-  },
-  {
-    id: "3", complaintNumber: "MRI-849203", category: "Water Logging", issue: "Drainage Blockage",
-    location: "Marunji Road, Near Bus Stop", citizenName: "Amit Patel",
-    description: "Water logging is severe due to blocked drainage. Pedestrians cannot walk.",
-    photos: 2, priority: "Normal", status: "Under Verification", assignedStaff: "Ramesh Yadav", assignedVerifier: "Sarpanch Ji", date: "2023-10-22",
-    photoUrls: []
-  },
-  {
-    id: "4", complaintNumber: "MRI-849204", category: "Road Damage", issue: "Cracked Road",
-    location: "Pirangut Road", citizenName: "Sneha Kulkarni",
-    description: "Road has developed deep cracks after recent rains.",
-    photos: 4, priority: "Normal", status: "Resolved", assignedStaff: "Shiv Kumar", assignedVerifier: "Sarpanch Ji", date: "2023-10-20",
-    photoUrls: []
-  }
-];
 
-const STAFF_LIST = ["Shiv Kumar", "Ramesh Yadav", "Vikram Singh", "Anil Patil"];
-const VERIFIER_LIST = ["Sarpanch Ji", "Deputy Sarpanch", "Ward Officer 1"];
 const STATUS_OPTIONS = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
 const PRIORITY_OPTIONS = ["Critical", "Urgent", "Normal"];
 
 const ComplaintManagement = ({ onBack }) => {
   // State
-  const [complaints, setComplaints] = useState(MOCK_COMPLAINTS);
+  const [complaints, setComplaints] = useState([]);
+  const [staffOptions, setStaffOptions] = useState([]);
+  const [verifierOptions, setVerifierOptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saving, setSaving] = useState(false);
   
   // Modal State
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError("");
+    Promise.all([
+      fetchDashboard("admin", getUserId(getStoredUser())),
+      fetch(`${API_BASE_URL}/users?role=staff,verifier`).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || "Failed to load staff and verifier users");
+        }
+        return data;
+      }),
+    ])
+      .then(([dashboard, usersResult]) => {
+        if (!active) return;
+        setComplaints(dashboard.complaints || []);
+        const users = usersResult.users || [];
+        setStaffOptions(users.filter((user) => user.role === "staff"));
+        setVerifierOptions(users.filter((user) => user.role === "verifier"));
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load complaints:", error);
+        setLoadError(error.message || "Failed to load complaints");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // Filter Logic
   const filteredComplaints = useMemo(() => {
     return complaints.filter(c => {
-      const matchesSearch = c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            c.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            c.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = String(c.complaintNumber || "").toLowerCase().includes(search) ||
+                            String(c.issue || "").toLowerCase().includes(search) ||
+                            String(c.location || "").toLowerCase().includes(search);
       const matchesStatus = filterStatus === "All" || c.status === filterStatus;
       const matchesPriority = filterPriority === "All" || c.priority === filterPriority;
       return matchesSearch && matchesStatus && matchesPriority;
@@ -73,16 +81,43 @@ const ComplaintManagement = ({ onBack }) => {
 
   // --- Actions (Currently updates local state, will be API calls later) ---
   const handleOpenDetails = (complaint) => {
-    setSelectedComplaint({ ...complaint });
+    setSelectedComplaint({
+      ...complaint,
+      complaintNumber: complaint.complaintNumber || complaint.id || "Complaint",
+      citizenName: complaint.citizenName || "Not available",
+      category: complaint.category || "Not available",
+      location: complaint.location || "Location pending",
+      description: complaint.description || "No description provided",
+      photos: Array.isArray(complaint.citizenPhotos || complaint.photos)
+        ? (complaint.citizenPhotos || complaint.photos).length
+        : complaint.photos || "None",
+      priority: complaint.priority || "Normal",
+      status: complaint.status || "New",
+      assignedStaff: complaint.assignedStaff || "",
+      assignedVerifier: complaint.assignedVerifier || "",
+    });
     setShowModal(true);
   };
 
-  const handleSaveChanges = () => {
-    // Update the local state array
-    setComplaints(complaints.map(c => c.id === selectedComplaint.id ? selectedComplaint : c));
-    setShowModal(false);
-    setSelectedComplaint(null);
-    // TODO: Later, add fetch() API call here to update backend
+  const handleSaveChanges = async () => {
+    if (!selectedComplaint?.id) return;
+    try {
+      setSaving(true);
+      const data = await updateDashboardComplaint(selectedComplaint.id, {
+        status: selectedComplaint.status,
+        priority: selectedComplaint.priority,
+        assignedStaff: selectedComplaint.assignedStaff,
+        assignedVerifier: selectedComplaint.assignedVerifier,
+      });
+      setComplaints((current) => current.map(c => c.id === selectedComplaint.id ? data.complaint : c));
+      setShowModal(false);
+      setSelectedComplaint(null);
+    } catch (error) {
+      console.error("Failed to save complaint changes:", error);
+      setLoadError(error.message || "Failed to save complaint changes");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -137,6 +172,10 @@ const ComplaintManagement = ({ onBack }) => {
 
       {/* Complaints Table */}
       <div className="cm-table-container">
+        {loadError && <div className="cm-error" role="alert">{loadError}</div>}
+        {loading ? (
+          <div className="cm-empty">Loading complaints...</div>
+        ) : (
         <table className="cm-table">
           <thead>
             <tr>
@@ -171,6 +210,7 @@ const ComplaintManagement = ({ onBack }) => {
             )}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* Details & Action Modal */}
@@ -215,7 +255,7 @@ const ComplaintManagement = ({ onBack }) => {
                   <label>Assign / Reassign Staff</label>
                   <select value={selectedComplaint.assignedStaff} onChange={(e) => setSelectedComplaint({...selectedComplaint, assignedStaff: e.target.value})}>
                     <option value="">-- Unassigned --</option>
-                    {STAFF_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                    {staffOptions.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
 
@@ -223,7 +263,7 @@ const ComplaintManagement = ({ onBack }) => {
                   <label>Assign Verifier</label>
                   <select value={selectedComplaint.assignedVerifier} onChange={(e) => setSelectedComplaint({...selectedComplaint, assignedVerifier: e.target.value})}>
                     <option value="">-- Unassigned --</option>
-                    {VERIFIER_LIST.map(v => <option key={v} value={v}>{v}</option>)}
+                    {verifierOptions.map(v => <option key={v._id} value={v.name}>{v.name}</option>)}
                   </select>
                 </div>
               </div>
@@ -231,7 +271,9 @@ const ComplaintManagement = ({ onBack }) => {
 
             <div className="cm-modal-footer">
               <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="cm-btn-save" onClick={handleSaveChanges}>💾 Save Changes</button>
+              <button className="cm-btn-save" onClick={handleSaveChanges} disabled={saving}>
+                {saving ? "Saving..." : "💾 Save Changes"}
+              </button>
             </div>
           </div>
         </div>

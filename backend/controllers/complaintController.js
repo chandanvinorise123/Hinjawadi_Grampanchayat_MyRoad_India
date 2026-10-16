@@ -1,7 +1,9 @@
 
 const mongoose = require("mongoose");
 const Complaint = require("../models/Complaint");
+const Notification = require("../models/Notification");
 const departmentMapping = require("../constants/departmentMapping");
+const { isInsideHinjawadiBoundary } = require("../utils/boundaryValidator");
 
 // ==========================================
 // HELPER: VALIDATE MONGODB OBJECT ID
@@ -9,6 +11,8 @@ const departmentMapping = require("../constants/departmentMapping");
 const isValidObjectId = (id) => {
   return mongoose.Types.ObjectId.isValid(id);
 };
+
+const PHOTO_LOCATION_TOLERANCE = 0.001;
 
 // ==========================================
 // HELPER: CHECK IF COMPLAINT CAN BE EDITED
@@ -31,6 +35,7 @@ const createComplaint = async (req, res) => {
   try {
     const {
       citizenId,
+      citizenName,
       category,
       issueType,
       description,
@@ -44,6 +49,7 @@ const createComplaint = async (req, res) => {
     // ------------------------------------------
     if (
       !citizenId ||
+      !citizenName ||
       !category ||
       !issueType ||
       !description
@@ -136,18 +142,83 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    if (!isInsideHinjawadiBoundary(latitude, longitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "The complaint location must be inside Hinjawadi Gram Panchayat.",
+      });
+    }
+
     // ------------------------------------------
     // Get uploaded image paths
     // ------------------------------------------
-    const images = (req.files || []).map(
+    let photoVerifications = req.body.photoVerifications || [];
+    if (typeof photoVerifications === "string") {
+      try {
+        photoVerifications = JSON.parse(photoVerifications);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid photo verification data",
+        });
+      }
+    }
+
+    if (!Array.isArray(photoVerifications)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid photo verification data",
+      });
+    }
+
+    const hasUploadedImages = Array.isArray(req.files) && req.files.length > 0;
+    if (!hasUploadedImages && photoVerifications.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one verified complaint photo is required",
+      });
+    }
+
+    for (const photo of photoVerifications) {
+      const photoLatitude = Number(photo?.location?.latitude);
+      const photoLongitude = Number(photo?.location?.longitude);
+      if (!Number.isFinite(photoLatitude) || !Number.isFinite(photoLongitude)) {
+        return res.status(400).json({
+          success: false,
+          message: "Each complaint photo must include GPS coordinates",
+        });
+      }
+      if (!isInsideHinjawadiBoundary(photoLatitude, photoLongitude)) {
+        return res.status(400).json({
+          success: false,
+          message: "The complaint photo location must be inside Hinjawadi Gram Panchayat.",
+        });
+      }
+      if (
+        Math.abs(photoLatitude - latitude) > PHOTO_LOCATION_TOLERANCE ||
+        Math.abs(photoLongitude - longitude) > PHOTO_LOCATION_TOLERANCE
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "The complaint photo must be captured at the selected complaint location.",
+        });
+      }
+    }
+
+    const uploadedImages = (req.files || []).map(
       (file) => `/uploads/${file.filename}`
     );
+    const verifiedImages = photoVerifications
+      .map((photo) => photo.publicUrl)
+      .filter((url) => typeof url === "string" && url.trim());
+    const images = [...uploadedImages, ...verifiedImages].slice(0, 5);
 
     // ------------------------------------------
     // Create complaint
     // ------------------------------------------
     const complaint = await Complaint.create({
       citizenId,
+      citizenName,
       category,
       issueType,
       description,
@@ -161,6 +232,21 @@ const createComplaint = async (req, res) => {
       images,
       photos: images.length,
     });
+
+    await Notification.insertMany([
+      {
+        role: "admin",
+        complaintId: complaint._id,
+        type: "Complaint Registered",
+        message: `${complaint.complaintNumber} was registered and is ready for review.`,
+      },
+      {
+        role: "verifier",
+        complaintId: complaint._id,
+        type: "Complaint Registered",
+        message: `${complaint.complaintNumber} is ready for verification.`,
+      },
+    ]);
 
     return res.status(201).json({
       success: true,

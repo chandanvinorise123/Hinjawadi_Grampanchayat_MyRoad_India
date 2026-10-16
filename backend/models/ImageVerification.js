@@ -16,7 +16,7 @@ const imageVerificationSchema = new mongoose.Schema(
       roadRelated: { type: Boolean, default: false },
       confidence: { type: Number, default: 0 },
       detectedIssue: { type: String, default: null },
-      modelVersion: { type: String, default: "mock-v1.0" },
+      modelVersion: { type: String, default: "google-vision-label-detection" },
       checkedAt: { type: Date, default: Date.now }
     },
     imageHash: { type: String, default: null },

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./adminprofile.css";
-
-const API_BASE_URL = "http://localhost:3200/api";
+import { API_BASE_URL, toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
 
 // ✅ HELPER: Safely extract address string whether it's an object or plain string
 const getAddressString = (addr) => {
@@ -12,7 +11,7 @@ const getAddressString = (addr) => {
   return String(addr);
 };
 
-const AdminProfile = ({ adminId = "ADM001", onBack }) => {
+const AdminProfile = ({ adminId = "", onBack }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
@@ -52,6 +51,11 @@ const AdminProfile = ({ adminId = "ADM001", onBack }) => {
   // ==========================================
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!adminId) {
+        setLoading(false);
+        showMessage("error", "Admin identity was not found. Please sign in again.");
+        return;
+      }
       try {
         setLoading(true);
         const response = await fetch(`${API_BASE_URL}/admin/profile/${adminId}`);
@@ -64,7 +68,7 @@ const AdminProfile = ({ adminId = "ADM001", onBack }) => {
             email: admin.email || "",
             contact: admin.contact || "",
             gender: admin.gender || "",
-            profilePhoto: admin.profilePhoto || "",
+            profilePhoto: toMediaUrl(admin.profilePhoto),
             // ✅ FIX: Safely extract address string to prevent object crash
             address: getAddressString(admin.address || admin.location),
           });
@@ -142,17 +146,22 @@ const AdminProfile = ({ adminId = "ADM001", onBack }) => {
     }
   };
 
-  // ==========================================
-  // HANDLE PHOTO UPLOAD (Base64 for simplicity)
-  // ==========================================
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, profilePhoto: reader.result });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const data = await uploadProfilePhoto(file, adminId, "admin");
+      setFormData((current) => ({ ...current, profilePhoto: toMediaUrl(data.profilePhoto) }));
+      setProfile((current) => ({ ...current, profilePhoto: toMediaUrl(data.profilePhoto) }));
+      const current = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
+      window.dispatchEvent(new Event("authChange"));
+      showMessage("success", "Profile photo uploaded successfully.");
+    } catch (error) {
+      console.error("Failed to upload admin profile photo:", error);
+      showMessage("error", error.message || "Failed to upload profile photo");
+    } finally {
+      e.target.value = "";
     }
   };
 
@@ -340,7 +349,7 @@ const AdminProfile = ({ adminId = "ADM001", onBack }) => {
         <div className="ap-info-grid">
           <div className="ap-info-item">
             <span className="ap-info-label">Admin ID</span>
-            <b className="ap-info-value">{profile?.adminId || "ADM001"}</b>
+            <b className="ap-info-value">{profile?.adminId || ""}</b>
           </div>
           <div className="ap-info-item">
             <span className="ap-info-label">Role</span>

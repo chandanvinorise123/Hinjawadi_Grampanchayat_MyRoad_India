@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./verifierdashboard.css";
+import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead } from "../utils/dashboardApi";
 
 import MyProfile from "../verifierprofiledashboard/MyProfile";
 import NewComplaints from "../verifierprofiledashboard/NewComplaints";
@@ -44,6 +46,16 @@ const statusLabel = {
   rejected: "Sent Back for Action",
 };
 
+const normalizeVerifierStatus = (status) => {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (["resolved", "closed"].includes(normalized)) return "resolved";
+  if (["verified", "approved"].includes(normalized)) return "verified";
+  if (["rejected", "sent back for action"].includes(normalized)) return "rejected";
+  if (["under verification", "in review", "in_review"].includes(normalized)) return "in_review";
+  if (["notified", "citizen notified"].includes(normalized)) return "notified";
+  return "pending";
+};
+
 const queueTone = { "New Complaints": "navy", "Completed Work": "orange", "Re-verification": "red", "Resolution Requests": "amber" };
 
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
@@ -53,124 +65,25 @@ const colorForCategory = (category) => {
   return mapColors[Math.abs(hash) % mapColors.length];
 };
 
-const seedQueue = [
-  {
-    id: 1,
-    complaintNumber: "MRI-482913",
-    category: "Road Issues",
-    issue: "Road Potholes",
-    location: "Camp Road Bus Stop",
-    citizenName: "R. Deshmukh",
-    citizenContact: "+91 90000 11122",
-    description: "Large pothole near the bus stop causing traffic slowdown.",
-    queue: "Completed Work",
-    status: "pending",
-    photos: { before: "before-482913.jpg", site: "site-482913.jpg", after: "after-482913.jpg" },
-    remarks: "",
-    log: [{ text: "Staff marked work as completed", time: "5 hours ago" }],
-  },
-  {
-    id: 2,
-    complaintNumber: "MRI-661120",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    location: "Riverside Ward Pipeline",
-    citizenName: "A. Joshi",
-    citizenContact: "+91 90000 55566",
-    description: "Water leaking continuously from an underground pipeline joint.",
-    queue: "New Complaints",
-    status: "pending",
-    photos: { before: "before-661120.jpg", site: "site-661120.jpg", after: "after-661120.jpg" },
-    remarks: "",
-    log: [{ text: "Complaint routed to verifier", time: "1 day ago" }],
-  },
-  {
-    id: 3,
-    complaintNumber: "MRI-104488",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    location: "Market Yard Junction",
-    citizenName: "P. Naik",
-    citizenContact: "+91 90000 77788",
-    description: "Community bin overflowing for three days, needs urgent clearing.",
-    queue: "Re-verification",
-    status: "rejected",
-    photos: { before: "before-104488.jpg", site: "site-104488.jpg", after: "after-104488-v1.jpg" },
-    remarks: "After-repair photo showed bin still partly full — sent back for a second pickup.",
-    log: [
-      { text: "Verification rejected — work not satisfactory", time: "2 days ago" },
-      { text: "Staff scheduled a second pickup", time: "1 day ago" },
-    ],
-  },
-  {
-    id: 4,
-    complaintNumber: "MRI-291045",
-    category: "Streetlight Issues",
-    issue: "Light Not Working",
-    location: "House No. 21, Riverside Lane",
-    citizenName: "S. Kulkarni",
-    citizenContact: "+91 90000 33344",
-    description: "Streetlight outside house no. 21 has been off for a week.",
-    queue: "Resolution Requests",
-    status: "verified",
-    photos: { before: "before-291045.jpg", site: "site-291045.jpg", after: "after-291045.jpg" },
-    remarks: "New bulb and wiring confirmed working on-site.",
-    log: [{ text: "Verified — work satisfies the reported issue", time: "3 hours ago" }],
-  },
-];
 
-const mockNotifications = [
-  {
-    id: 1,
-    category: "Work Submitted",
-    complaintNumber: "MRI-482913",
-    title: "Work Submitted for Verification",
-    message: "Staff has marked the work for 'Road Potholes' at Camp Road Bus Stop as completed. Please review the before/after photos and verify.",
-    time: "2 hours ago",
-    isRead: false
-  },
-  {
-    id: 2,
-    category: "Verification Required",
-    complaintNumber: "MRI-661120",
-    title: "Verification Required: Pipeline Leakage",
-    message: "The completed work for the pipeline leakage at Riverside Ward Pipeline is awaiting your physical verification. Action needed within 24 hours.",
-    time: "5 hours ago",
-    isRead: false
-  },
-  {
-    id: 3,
-    category: "Reassignment",
-    complaintNumber: "MRI-104488",
-    title: "Complaint Reassigned for Re-verification",
-    message: "Complaint MRI-104488 (Overflowing Garbage Bin) has been updated by the staff with new after-repair photos. It is now back in your queue for re-verification.",
-    time: "1 day ago",
-    isRead: true
-  },
-  {
-    id: 4,
-    category: "Pending Reminder",
-    complaintNumber: "MRI-291045",
-    title: "Pending Verification Reminder",
-    message: "Reminder: Complaint MRI-291045 (Light Not Working) has been pending verification for over 48 hours. Please prioritize this review.",
-    time: "2 days ago",
-    isRead: true
-  }
-];
 
 const VerifierDashboard = () => {
-  const [verifier] = useState({
-    name: "Ward Verifier",
-    role: "Verification Officer — Public Works",
-    contact: "+91 98222 44556",
-    ward: "Ward 3 — Riverside",
-    staffId: "VER-0087",
+  const location = useLocation();
+  const navigate = useNavigate();
+  const storedUser = getStoredUser();
+  const [verifier, setVerifier] = useState({
+    name: storedUser.name || "",
+    role: storedUser.designation || storedUser.role || "",
+    contact: storedUser.contact || storedUser.mobile || "",
+    ward: storedUser.assignedArea || "",
+    staffId: storedUser.verifierId || storedUser.staffId || "",
+    profilePhoto: storedUser.profilePhoto || "",
   });
 
 
 
-  const [items, setItems] = useState(seedQueue);
-  const [selectedId, setSelectedId] = useState(seedQueue[0].id);
+  const [items, setItems] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
   const [remarksDraft, setRemarksDraft] = useState("");
   const [showProfile, setShowProfile] = useState(false);
@@ -180,12 +93,68 @@ const VerifierDashboard = () => {
   const [showPhysicalVerification, setShowPhysicalVerification] = useState(false);
   const [showComplaintHistory, setShowComplaintHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [showViewLocation, setShowViewLocation] = useState(false);
 
+  const openView = (setter) => {
+    setShowProfile(false);
+    setShowNewComplaints(false);
+    setShowCompletedWork(false);
+    setShowReverification(false);
+    setShowPhysicalVerification(false);
+    setShowComplaintHistory(false);
+    setShowNotifications(false);
+    setShowViewLocation(false);
+    setter(true);
+  };
+
+  useEffect(() => {
+    if (!location.state?.openProfile) return;
+    openView(setShowProfile);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
 
 
-  const selected = items.find((c) => c.id === selectedId) || items[0];
+
+  const selected = items.find((c) => c.id === selectedId) || items[0] || {
+    id: null, complaintNumber: "", category: "", issue: "", location: "",
+    citizenName: "", citizenContact: "", description: "", status: "pending",
+    queue: "New Complaints", photos: {}, log: [],
+  };
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const user = getStoredUser();
+        const data = await fetchDashboard("verifier", getUserId(user));
+        if (data.profile) {
+          setVerifier((current) => ({
+            ...current,
+            ...data.profile,
+            contact: data.profile.contact || data.profile.mobile || current.contact,
+            staffId: data.profile.verifierId || data.profile.staffId || current.staffId,
+            role: data.profile.designation || data.profile.role || current.role,
+            ward: data.profile.assignedArea || current.ward,
+          }));
+        }
+        const mapped = (data.complaints || []).map((complaint) => ({
+          ...complaint,
+          status: normalizeVerifierStatus(complaint.status),
+          queue: complaint.queue || (
+            normalizeVerifierStatus(complaint.status) === "in_review"
+              ? "Completed Work"
+              : "New Complaints"
+          ),
+        }));
+        setItems(mapped);
+        setSelectedId(mapped[0]?.id || null);
+        setNotifications(data.notifications || []);
+      } catch (error) {
+        console.error("Failed to load verifier dashboard:", error);
+      }
+    };
+    loadDashboard();
+  }, []);
 
   // ✅ PREVIOUS 5 CARDS (First Grid Row)
   const previousStats = [
@@ -222,13 +191,29 @@ const VerifierDashboard = () => {
     scrollTo("verification-panel");
   };
 
-  const handleUpdateProfile = (updatedVerifier) => {
-    // In a real app, you would send this to your backend API
-    console.log("Profile updated:", updatedVerifier);
+  const handleUpdateProfile = async (updatedVerifier) => {
+    try {
+      const data = await updateDashboardProfile(getUserId(storedUser), {
+        name: updatedVerifier.name,
+        designation: updatedVerifier.role,
+        assignedArea: updatedVerifier.ward,
+        contact: updatedVerifier.contact,
+        email: updatedVerifier.email,
+      });
+      setVerifier((current) => ({ ...current, ...updatedVerifier, ...(data.user || {}) }));
+    } catch (error) {
+      console.error("Failed to update verifier profile:", error);
+    }
   };
 
   // ✅ Handler for Completed Work Verification
-  const handleCompletedWorkVerify = (id, action, remarks, dateTime) => {
+  const handleCompletedWorkVerify = async (id, action, remarks, dateTime) => {
+    try {
+      await updateDashboardComplaint(id, { status: action === "approve" ? "Verified" : "Rejected", remarks });
+    } catch (error) {
+      console.error("Failed to save verification:", error);
+      return;
+    }
     setItems(
       items.map((c) => {
         if (c.id === id) {
@@ -259,18 +244,27 @@ const VerifierDashboard = () => {
 
 
 
-  const handleMarkNotifAsRead = (id) => {
+  const handleMarkNotifAsRead = async (id) => {
+    await markDashboardNotificationRead(id).catch((error) => console.error("Failed to mark notification read:", error));
     setNotifications(notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
-  const handleMarkAllNotifsRead = () => {
+  const handleMarkAllNotifsRead = async () => {
+    await Promise.all(notifications.filter((notification) => !notification.isRead).map((notification) => markDashboardNotificationRead(notification.id)))
+      .catch((error) => console.error("Failed to mark notifications read:", error));
     setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
   };
 
 
 
   // ✅ Handler for Physical Verification Submission
-  const handlePhysicalVerificationSubmit = (id, decision, remarks, dateTime) => {
+  const handlePhysicalVerificationSubmit = async (id, decision, remarks, dateTime) => {
+    try {
+      await updateDashboardComplaint(id, { status: decision === "approve" ? "Verified" : "Rejected", remarks });
+    } catch (error) {
+      console.error("Failed to save physical verification:", error);
+      return;
+    }
     setItems(
       items.map((c) => {
         if (c.id === id) {
@@ -352,7 +346,13 @@ const VerifierDashboard = () => {
   };
 
   // ---------------- PHYSICAL VERIFICATION: compare, then approve or reject ----------------
-  const approveWork = (id) => {
+  const approveWork = async (id) => {
+    try {
+      await updateDashboardComplaint(id, { status: "Verified", remarks: remarksDraft });
+    } catch (error) {
+      console.error("Failed to approve work:", error);
+      return;
+    }
     setItems(
       items.map((c) =>
         c.id === id
@@ -362,8 +362,14 @@ const VerifierDashboard = () => {
     );
   };
 
-  const rejectWork = (id) => {
+  const rejectWork = async (id) => {
     if (!remarksDraft.trim()) return;
+    try {
+      await updateDashboardComplaint(id, { status: "Rejected", remarks: remarksDraft });
+    } catch (error) {
+      console.error("Failed to reject work:", error);
+      return;
+    }
     setItems(
       items.map((c) =>
         c.id === id
@@ -380,7 +386,13 @@ const VerifierDashboard = () => {
   };
 
   // ---------------- Staff completes further action -> back into review ----------------
-  const sendForReverification = (id) => {
+  const sendForReverification = async (id) => {
+    try {
+      await updateDashboardComplaint(id, { status: "Under Verification", remarks: "Sent for re-verification" });
+    } catch (error) {
+      console.error("Failed to send complaint for re-verification:", error);
+      return;
+    }
     setItems(
       items.map((c) =>
         c.id === id
@@ -391,7 +403,13 @@ const VerifierDashboard = () => {
   };
 
   // ---------------- UPDATE status as Verified -> Resolved/Closed -> Notify citizen ----------------
-  const markResolved = (id) => {
+  const markResolved = async (id) => {
+    try {
+      await updateDashboardComplaint(id, { status: "Resolved" });
+    } catch (error) {
+      console.error("Failed to mark complaint resolved:", error);
+      return;
+    }
     setItems(
       items.map((c) => (c.id === id ? { ...c, status: "resolved", log: addLog(c.log, "Marked as Resolved / Closed") } : c))
     );
@@ -514,7 +532,7 @@ const VerifierDashboard = () => {
             📊 Dashboard
           </button>
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowProfile(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowProfile)}>
             👤 My Profile
           </button>
 
@@ -525,19 +543,19 @@ const VerifierDashboard = () => {
         <nav className="vd-sb-nav">
 
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowNewComplaints(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowNewComplaints)}>
             🆕New Complaints
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
           </button>
 
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowCompletedWork(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowCompletedWork)}>
             🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
 
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowReverification(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowReverification)}>
             🛠️Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
@@ -551,15 +569,15 @@ const VerifierDashboard = () => {
         <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowPhysicalVerification(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowPhysicalVerification)}>
             🔍 Physical Verification
           </button>
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowComplaintHistory(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowComplaintHistory)}>
             📜 Complaint History
           </button>
 
-          <button type="button" className="vd-sb-link" onClick={() => setShowNotifications(true)}>
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowNotifications)}>
             🔔 Notifications
             <span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span>
           </button>
@@ -567,7 +585,7 @@ const VerifierDashboard = () => {
           <button
             type="button"
             className="vd-sb-link"
-            onClick={() => setShowViewLocation(true)}
+            onClick={() => openView(setShowViewLocation)}
           >
             🗺️ View Location
           </button>
@@ -592,7 +610,9 @@ const VerifierDashboard = () => {
 
         <div className="vd-sb-footer">
           <div className="vd-sb-user">
-            <div className="vd-sb-avatar">{initials}</div>
+            <div className="vd-sb-avatar">
+              {verifier.profilePhoto ? <img src={verifier.profilePhoto} alt="Profile" /> : initials}
+            </div>
             <div className="vd-sb-user-info">
               <b>{verifier.name}</b>
               <span>{verifier.staffId}</span>
@@ -613,7 +633,9 @@ const VerifierDashboard = () => {
           </div>
           <div className="vd-tb-actions">
             <div className="vd-tb-user" id="vd-profile">
-              <div className="vd-tb-avatar">{initials}</div>
+              <div className="vd-tb-avatar">
+                {verifier.profilePhoto ? <img src={verifier.profilePhoto} alt="Profile" /> : initials}
+              </div>
               <div>
                 <b>{verifier.name}</b>
                 <span>{verifier.role}</span>

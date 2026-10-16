@@ -5,6 +5,7 @@ import "./navbarresponsive.css";
 import logo from "../assets/logo.jpeg";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toMediaUrl } from "../utils/dashboardApi";
 
 const MIN_FONT_SIZE = 80;
 const MAX_FONT_SIZE = 130;
@@ -115,11 +116,11 @@ const Navbar = () => {
   };
 
   // Navigate and close menus
-  const goTo = (path) => {
+  const goTo = (path, state) => {
     setIsProfileOpen(false);
     setIsLanguageOpen(false);
     setIsMobileMenuOpen(false);
-    navigate(path);
+    navigate(path, state ? { state } : undefined);
   };
 
   // Logout
@@ -208,7 +209,7 @@ const Navbar = () => {
       </NavLink>
 
       <NavLink
-        to="/Blog"
+        to="/blog"
         onClick={closeMobileMenu}
         className={({ isActive }) => isActive ? "active" : ""}
       >
@@ -226,7 +227,7 @@ const Navbar = () => {
       )}
 
       <NavLink
-        to="/HelpFaq"
+        to="/helpfaq"
         onClick={closeMobileMenu}
         className={({ isActive }) => isActive ? "active" : ""}
       >
@@ -298,7 +299,7 @@ const Navbar = () => {
         <button
           type="button"
           className="btn btn-login"
-          onClick={() => goTo("/Login")}
+          onClick={() => goTo("/login")}
         >
           {t("navbar.login", { defaultValue: "Login" })}
         </button>
@@ -308,7 +309,7 @@ const Navbar = () => {
       <button
         type="button"
         className="btn btn-primary"
-        onClick={() => goTo("/ReportIssue")}
+        onClick={() => goTo("/reportissue")}
       >
         {t("navbar.reportIssue", {
           defaultValue: "Report an Issue",
@@ -361,9 +362,13 @@ const Navbar = () => {
             <div className="profile-menu">
               <div className="profile-info">
                 <div className="profile-avatar">
-                  {user?.name
-                    ? String(user.name).charAt(0).toUpperCase()
-                    : "U"}
+                  {user?.profilePhoto ? (
+                    <img src={toMediaUrl(user.profilePhoto)} alt="Profile" />
+                  ) : (
+                    user?.name
+                      ? String(user.name).charAt(0).toUpperCase()
+                      : "U"
+                  )}
                 </div>
 
                 <div className="profile-info-text">
@@ -398,7 +403,7 @@ const Navbar = () => {
               {/* Edit Profile */}
               <button
                 type="button"
-                onClick={() => goTo("/EditProfile")}
+                onClick={() => goTo(roleDashboardPath(user?.role), { openProfile: true })}
               >
                 {t("navbar.editProfile", {
                   defaultValue: "Edit Profile",
@@ -408,7 +413,7 @@ const Navbar = () => {
               {/* Help */}
               <button
                 type="button"
-                onClick={() => goTo("/HelpFaq")}
+                onClick={() => goTo("/helpfaq")}
               >
                 {t("navbar.helpCenter", {
                   defaultValue: "Help Center",

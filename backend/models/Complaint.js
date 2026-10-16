@@ -7,7 +7,6 @@ const complaintSchema = new mongoose.Schema(
     // ==========================================
 
     // Unique identifier for the complaint
-    // Example: "MRI-482913"
     complaintNumber: {
       type: String,
       unique: true,
@@ -171,6 +170,15 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+
+    inspection: {
+      inspectionDate: { type: String, default: "" },
+      completionDate: { type: String, default: "" },
+      remarks: { type: String, default: "" },
+      actionTaken: { type: String, default: "" },
+      sitePhoto: { type: String, default: "" },
+      completionPhoto: { type: String, default: "" },
     },
 
     // ==========================================

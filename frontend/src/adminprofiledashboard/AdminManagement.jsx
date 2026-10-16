@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AdminManagement.css";
-
-const API_BASE_URL = "http://localhost:3200/api";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
 const AdminManagement = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState("overview");

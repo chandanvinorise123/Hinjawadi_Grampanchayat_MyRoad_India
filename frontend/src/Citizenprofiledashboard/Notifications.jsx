@@ -1,75 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./Notifications.css";
-
-// ✅ HARDCODED MOCK DATA COVERING ALL 6 REQUIRED NOTIFICATION STAGES + PHOTOS
-const mockNotifications = [
-  {
-    id: "1",
-    type: "Registered",
-    complaintNumber: "MRI-882910",
-    title: "Complaint Registered Successfully",
-    message: "Your complaint regarding 'Large Pothole' at Camp Road Bus Stop has been successfully registered and is awaiting verification.",
-    date: "Oct 01, 2026, 10:00 AM",
-    isRead: false,
-    details: { category: "Road Issues", location: "Camp Road Bus Stop", issue: "Large Pothole" },
-    photos: { before: "pothole-before.jpg", site: "pothole-site.jpg" }
-  },
-  {
-    id: "2",
-    type: "Verified",
-    complaintNumber: "MRI-882910",
-    title: "Complaint Verified",
-    message: "Your complaint has been verified by the ward supervisor and approved for immediate action.",
-    date: "Oct 01, 2026, 02:30 PM",
-    isRead: false,
-    details: { category: "Road Issues", location: "Camp Road Bus Stop", issue: "Large Pothole" },
-    photos: { before: "pothole-before.jpg", site: "pothole-site.jpg" }
-  },
-  {
-    id: "3",
-    type: "Assigned",
-    complaintNumber: "MRI-773820",
-    title: "Complaint Assigned to Staff",
-    message: "Your complaint regarding 'Overflowing Garbage Bin' has been assigned to Field Officer R. Deshmukh.",
-    date: "Sep 25, 2026, 04:00 PM",
-    isRead: true,
-    details: { category: "Sanitation", location: "Market Yard Junction", issue: "Overflowing Garbage Bin" },
-    photos: { before: "bin-before.jpg" }
-  },
-  {
-    id: "4",
-    type: "Action Initiated",
-    complaintNumber: "MRI-119283",
-    title: "Action Initiated",
-    message: "Work has been initiated on your complaint regarding 'Pipeline Leakage'. Water supply may be temporarily halted for repairs.",
-    date: "Sep 15, 2026, 01:00 PM",
-    isRead: true,
-    details: { category: "Drinking Water Issues", location: "Riverside Ward Pipeline", issue: "Pipeline Leakage" },
-    photos: { before: "leak-before.jpg", site: "leak-site.jpg" }
-  },
-  {
-    id: "5",
-    type: "Work Completed",
-    complaintNumber: "MRI-119283",
-    title: "Work Completed",
-    message: "The repair work for your complaint has been completed by the Water Works Engineer. It is now pending final verification.",
-    date: "Sep 16, 2026, 11:00 AM",
-    isRead: true,
-    details: { category: "Drinking Water Issues", location: "Riverside Ward Pipeline", issue: "Pipeline Leakage" },
-    photos: { before: "leak-before.jpg", after: "leak-after.jpg", site: "leak-site.jpg" }
-  },
-  {
-    id: "6",
-    type: "Resolved/Closed",
-    complaintNumber: "MRI-773820",
-    title: "Complaint Resolved & Closed",
-    message: "Your complaint has been successfully resolved and closed. The area has been cleaned and verified. Thank you for using MyRoad India!",
-    date: "Sep 26, 2026, 02:00 PM",
-    isRead: true,
-    details: { category: "Sanitation", location: "Market Yard Junction", issue: "Overflowing Garbage Bin" },
-    photos: { before: "bin-before.jpg", after: "bin-after.jpg", site: "bin-site.jpg" }
-  }
-];
+import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
 const typeBadgeMap = {
   "Registered": "navy",
@@ -84,9 +15,21 @@ const Notifications = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    fetchDashboard("citizen", getUserId(getStoredUser()))
+      .then(({ notifications: loaded = [] }) => setNotifications(loaded.map((notification) => ({
+        ...notification,
+        complaintNumber: notification.complaintNumber || "",
+        title: notification.title || notification.type,
+        date: notification.createdAt ? new Date(notification.createdAt).toLocaleString() : notification.time,
+      }))))
+      .catch((error) => console.error("Failed to load citizen notifications:", error));
+  }, []);
 
   const filteredNotifications = useMemo(() => {
-    return mockNotifications.filter((n) => {
+    return notifications.filter((n) => {
       const matchesSearch =
         n.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,7 +38,7 @@ const Notifications = ({ onBack }) => {
       const matchesType = filterType === "All" || n.type === filterType;
       return matchesSearch && matchesType;
     });
-  }, [searchTerm, filterType]);
+  }, [notifications, searchTerm, filterType]);
 
   // Close modal on Escape key
   useEffect(() => {
@@ -112,7 +55,7 @@ const Notifications = ({ onBack }) => {
     };
   }, [selectedNotification]);
 
-  const unreadCount = mockNotifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <div className="cdp-notif-page">

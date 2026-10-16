@@ -124,7 +124,7 @@ router.put("/:id", async (req, res) => {
       complaintId,
       updateData,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     );

@@ -124,7 +124,7 @@ router.patch("/:id/location", async (req, res) => {
         },
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     );

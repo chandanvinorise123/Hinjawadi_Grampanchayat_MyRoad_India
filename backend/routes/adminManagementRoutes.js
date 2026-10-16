@@ -105,7 +105,7 @@ router.post("/categories", async (req, res) => {
 
 router.put("/categories/:id", async (req, res) => {
   try {
-    const updated = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Category.findByIdAndUpdate(req.params.id, req.body, { returnDocument: "after" });
     if (!updated) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
@@ -193,7 +193,7 @@ router.post("/qrcodes", async (req, res) => {
 
 router.put("/qrcodes/:id", async (req, res) => {
   try {
-    const updated = await QRCode.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await QRCode.findByIdAndUpdate(req.params.id, req.body, { returnDocument: "after" });
     if (!updated) {
       return res.status(404).json({ success: false, message: "QR Code not found" });
     }

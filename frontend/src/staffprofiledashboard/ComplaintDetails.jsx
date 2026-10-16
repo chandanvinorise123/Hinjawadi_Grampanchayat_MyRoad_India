@@ -23,9 +23,8 @@ const ComplaintDetails = ({ complaint, onBack }) => {
     return mapColors[Math.abs(hash) % mapColors.length];
   };
 
-  // Fallback coordinates for the map if not explicitly provided
-  const mapLat = complaint.lat || 18.5912;
-  const mapLng = complaint.lng || 73.7389;
+  const mapLat = complaint.coordinates?.latitude ?? complaint.lat;
+  const mapLng = complaint.coordinates?.longitude ?? complaint.lng;
 
   return (
     <div className="cd-shell">
@@ -107,7 +106,9 @@ const ComplaintDetails = ({ complaint, onBack }) => {
                   scrolling="no" 
                   marginHeight="0" 
                   marginWidth="0" 
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=73.70%2C18.55%2C73.80%2C18.65&layer=mapnik&marker=${mapLat},${mapLng}`}
+                  src={mapLat !== undefined && mapLng !== undefined
+                    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapLng - 0.02}%2C${mapLat - 0.02}%2C${mapLng + 0.02}%2C${mapLat + 0.02}&layer=mapnik&marker=${mapLat},${mapLng}`
+                    : undefined}
                   title="Complaint Location Map"
                 ></iframe>
               </div>

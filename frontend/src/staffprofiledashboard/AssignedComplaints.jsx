@@ -1,71 +1,8 @@
 import React, { useState } from "react";
 import "./AssignedComplaints.css";
 
-// ✅ HARDCODED MOCK DATA
-const seedAssigned = [
-  {
-    id: 1,
-    complaintNumber: "MRI-482913",
-    category: "Road Issues",
-    issue: "Road Potholes",
-    location: "Camp Road Bus Stop",
-    citizenName: "R. Deshmukh",
-    citizenContact: "+91 90000 11122",
-    description: "Large pothole near the bus stop causing traffic slowdown.",
-    priority: "High",
-    dueDate: "2026-09-10",
-    stage: 2,
-    assignedStaffId: "STF-0142",
-    citizenPhotos: ["citizen-photo-1.jpg", "citizen-photo-2.jpg"],
-  },
-  {
-    id: 2,
-    complaintNumber: "MRI-291045",
-    category: "Streetlight Issues",
-    issue: "Light Not Working",
-    location: "House No. 21, Riverside Lane",
-    citizenName: "S. Kulkarni",
-    citizenContact: "+91 90000 33344",
-    description: "Streetlight outside house no. 21 has been off for a week.",
-    priority: "Medium",
-    dueDate: "2026-09-14",
-    stage: 0,
-    assignedStaffId: "STF-0142",
-    citizenPhotos: [],
-  },
-  {
-    id: 3,
-    complaintNumber: "MRI-661120",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    location: "Riverside Ward Pipeline",
-    citizenName: "A. Joshi",
-    citizenContact: "+91 90000 55566",
-    description: "Water leaking continuously from an underground pipeline joint.",
-    priority: "High",
-    dueDate: "2026-09-08",
-    stage: 4,
-    assignedStaffId: "STF-0999",
-    citizenPhotos: ["leak-photo.jpg"],
-  },
-  {
-    id: 4,
-    complaintNumber: "MRI-104488",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    location: "Market Yard Junction",
-    citizenName: "P. Naik",
-    citizenContact: "+91 90000 77788",
-    description: "Community bin overflowing for three days, needs urgent clearing.",
-    priority: "Low",
-    dueDate: "2026-09-12",
-    stage: 5,
-    assignedStaffId: "STF-0142",
-    citizenPhotos: ["bin-photo.jpg"],
-  },
-];
 
-const AssignedComplaints = ({ complaints = seedAssigned, staffId = "STF-0142", onBack }) => {
+const AssignedComplaints = ({ complaints = [], staffId = "", onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -74,7 +11,7 @@ const AssignedComplaints = ({ complaints = seedAssigned, staffId = "STF-0142", o
 
   // ✅ 1. FILTER: Only keep complaints assigned to this specific staff member
   const myAssignedComplaints = complaints.filter(
-    (c) => c.assignedStaffId === staffId
+    (c) => !staffId || c.assignedStaffId === staffId || c.assignedStaff === staffId
   );
 
   // Helper to map status string to stage number
@@ -102,9 +39,9 @@ const AssignedComplaints = ({ complaints = seedAssigned, staffId = "STF-0142", o
   // ✅ 2. FILTER: Apply search and dropdown filters
   const filteredComplaints = myAssignedComplaints.filter((c) => {
     const matchesSearch =
-      c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location.toLowerCase().includes(searchTerm.toLowerCase());
+      String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.issue || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.location || "").toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesPriority = filterPriority === "All" || c.priority === filterPriority;
     const matchesStatus = filterStatus === "All" || c.stage === getStageValue(filterStatus);

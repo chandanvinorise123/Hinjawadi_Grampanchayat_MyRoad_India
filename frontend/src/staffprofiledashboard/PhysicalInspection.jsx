@@ -1,10 +1,24 @@
 import React, { useState, useEffect } from "react";
 import "./PhysicalInspection.css";
 
+const EMPTY_COMPLAINT = {
+  id: "",
+  complaintNumber: "",
+  stage: 0,
+  inspection: {
+    inspectionDate: "",
+    completionDate: "",
+    remarks: "",
+    actionTaken: "",
+    sitePhoto: "",
+    completionPhoto: "",
+  },
+};
+
 const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }) => {
   // Find the currently selected complaint or default to the first one
   const [currentComplaintId, setCurrentComplaintId] = useState(selectedId || complaints[0]?.id);
-  const currentComplaint = complaints.find((c) => c.id === currentComplaintId) || complaints[0];
+  const currentComplaint = complaints.find((c) => String(c.id) === String(currentComplaintId)) || complaints[0] || EMPTY_COMPLAINT;
 
   // Local state for the inspection form
   const [formData, setFormData] = useState({
@@ -74,7 +88,7 @@ const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }
           <select 
             id="complaint-select" 
             value={currentComplaintId} 
-            onChange={(e) => setCurrentComplaintId(Number(e.target.value))}
+            onChange={(e) => setCurrentComplaintId(e.target.value)}
           >
             {complaints.map((c) => (
               <option key={c.id} value={c.id}>

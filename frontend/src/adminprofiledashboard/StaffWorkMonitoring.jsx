@@ -1,29 +1,35 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./StaffWorkMonitoring.css";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
 
 // ==========================================
-// 1. HARDCODED MOCK DATA (Will be replaced by API later)
 // ==========================================
-const MOCK_STAFF = [
-  { id: "S1", name: "Shiv Kumar", contact: "+91 98765 43210", status: "Active", assigned: 3, pending: 1, completed: 12 },
-  { id: "S2", name: "Ramesh Yadav", contact: "+91 91234 56789", status: "Active", assigned: 2, pending: 2, completed: 8 },
-  { id: "S3", name: "Vikram Singh", contact: "+91 99887 76655", status: "On Leave", assigned: 0, pending: 0, completed: 15 },
-  { id: "S4", name: "Anil Patil", contact: "+91 90000 11111", status: "Active", assigned: 4, pending: 3, completed: 5 },
-];
-
-const MOCK_COMPLAINTS = [
-  { id: "C1", complaintNumber: "MRI-849201", issue: "Large Pothole", location: "Hinjawadi Phase 2", priority: "Critical", status: "Under Action", assignedTo: "S1" },
-  { id: "C2", complaintNumber: "MRI-849202", issue: "Street Light Down", location: "Rajiv Gandhi IT Park", priority: "Urgent", status: "Pending", assignedTo: "S1" },
-  { id: "C3", complaintNumber: "MRI-849203", issue: "Drainage Blockage", location: "Marunji Road", priority: "Normal", status: "Resolved", assignedTo: "S2" },
-  { id: "C4", complaintNumber: "MRI-849204", issue: "Cracked Road", location: "Pirangut Road", priority: "Normal", status: "Under Action", assignedTo: "S4" },
-  { id: "C5", complaintNumber: "MRI-849205", issue: "Garbage Dump", location: "Tathawade Center", priority: "Urgent", status: "Pending", assignedTo: null }, // Unassigned
-];
-
 const StaffWorkMonitoring = ({ onBack }) => {
-  const [staffList] = useState(MOCK_STAFF);
-  const [complaints, setComplaints] = useState(MOCK_COMPLAINTS);
-  const [selectedStaffId, setSelectedStaffId] = useState(MOCK_STAFF[0].id);
+  const [staffList, setStaffList] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [selectedStaffId, setSelectedStaffId] = useState("");
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  useEffect(() => {
+    Promise.all([
+      fetchDashboard("admin", getUserId(getStoredUser())),
+      fetch(`${API_BASE_URL}/users?role=staff`).then((response) => response.json()),
+    ])
+      .then(([dashboard, usersResult]) => {
+        const users = (usersResult.users || []).map((user) => ({
+          ...user,
+          id: user._id,
+          status: user.currentWorkStatus || "Active",
+        }));
+        setStaffList(users);
+        setSelectedStaffId(users[0]?.id || "");
+        setComplaints((dashboard.complaints || []).map((complaint) => ({
+          ...complaint,
+          assignedTo: users.find((user) => user.name === complaint.assignedStaff)?.id || "",
+        })));
+      })
+      .catch((error) => console.error("Failed to load staff monitoring data:", error));
+  }, []);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -49,14 +55,28 @@ const StaffWorkMonitoring = ({ onBack }) => {
   const unassignedComplaints = complaints.filter(c => !c.assignedTo || c.status === "Pending");
 
   // --- Actions ---
-  const handleAssign = (complaintId, staffId) => {
+  const handleAssign = async (complaintId, staffId) => {
+    const staff = staffList.find((item) => item.id === staffId);
+    try {
+      await updateDashboardComplaint(complaintId, { assignedStaff: staff?.name || staffId, status: "Under Action" });
+    } catch (error) {
+      console.error("Failed to assign complaint:", error);
+      return;
+    }
     setComplaints(complaints.map(c => 
       c.id === complaintId ? { ...c, assignedTo: staffId, status: "Under Action" } : c
     ));
     showMessage("success", `Complaint assigned successfully!`);
   };
 
-  const handleReassign = (complaintId, newStaffId) => {
+  const handleReassign = async (complaintId, newStaffId) => {
+    const staff = staffList.find((item) => item.id === newStaffId);
+    try {
+      await updateDashboardComplaint(complaintId, { assignedStaff: staff?.name || newStaffId });
+    } catch (error) {
+      console.error("Failed to reassign complaint:", error);
+      return;
+    }
     setComplaints(complaints.map(c => 
       c.id === complaintId ? { ...c, assignedTo: newStaffId } : c
     ));

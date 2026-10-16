@@ -1,83 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import "./IssueMap.css";
 
-// ✅ Fix for default Leaflet marker icons in React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-// Helper component to fly to a marker when clicked from the list
-function FlyToLocation({ position }) {
-  const map = useMap();
-  if (position) {
-    map.flyTo(position, 15, { duration: 1.5 });
-  }
-  return null;
-}
-
-// ✅ HARDCODED MOCK DATA WITH COORDINATES
-const mockMapComplaints = [
-  {
-    id: "1",
-    complaintNumber: "MRI-882910",
-    category: "Road Issues",
-    issue: "Large Pothole",
-    date: "2026-10-01",
-    location: "Camp Road Bus Stop",
-    status: "Work Completed",
-    lat: 18.5127,
-    lng: 73.8700,
-    description: "A massive pothole near the bus stop is causing traffic jams and damaging vehicles.",
-    photos: { before: "pothole-before.jpg", after: "pothole-after.jpg", site: "pothole-site.jpg" },
-    history: [
-      { time: "Oct 01, 10:00 AM", action: "Complaint Registered", remarks: "Submitted by citizen." },
-      { time: "Oct 03, 11:15 AM", action: "Work Completed", remarks: "Pothole filled with cold mix asphalt." }
-    ],
-    resolutionDetails: { resolvedBy: "R. Deshmukh", resolutionDate: "2026-10-03", remarks: "Successfully repaired." }
-  },
-  {
-    id: "2",
-    complaintNumber: "MRI-773820",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    date: "2026-09-25",
-    location: "Market Yard Junction",
-    status: "Complaint Closed",
-    lat: 18.5074,
-    lng: 73.8760,
-    description: "Community bin overflowing for three days, needs urgent clearing.",
-    photos: { before: "bin-before.jpg", after: "bin-after.jpg" },
-    history: [
-      { time: "Sep 25, 08:00 AM", action: "Complaint Registered", remarks: "Submitted by citizen." },
-      { time: "Sep 26, 02:00 PM", action: "Complaint Closed", remarks: "Verified by supervisor." }
-    ],
-    resolutionDetails: { resolvedBy: "Sanitation Dept.", resolutionDate: "2026-09-26", remarks: "Bin cleared and area hosed down." }
-  },
-  {
-    id: "3",
-    complaintNumber: "MRI-119283",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    date: "2026-09-15",
-    location: "Riverside Ward Pipeline",
-    status: "Verification",
-    lat: 18.5350,
-    lng: 73.8400,
-    description: "Water leaking continuously from an underground pipeline joint.",
-    photos: { before: "leak-before.jpg", after: "leak-after.jpg" },
-    history: [
-      { time: "Sep 15, 09:30 AM", action: "Complaint Registered", remarks: "Submitted by citizen." },
-      { time: "Sep 16, 11:00 AM", action: "Work Completed", remarks: "Joint resealed and pressure tested." }
-    ],
-    resolutionDetails: { resolvedBy: "Water Works Engineer", resolutionDate: "2026-09-16", remarks: "Leak fixed. Ready for verifier inspection." }
-  }
-];
+const GOOGLE_MAPS_LIBRARIES = ["places"];
 
 const statusToneMap = {
   "Complaint Registered": "amber",
@@ -89,9 +14,23 @@ const statusToneMap = {
   "Complaint Closed": "green"
 };
 
-const IssueMap = ({ onBack }) => {
+const IssueMap = ({ onBack, complaints = [] }) => {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
   const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [activeMarker, setActiveMarker] = useState(null);
+  const mapComplaints = complaints
+    .filter((complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined)
+    .map((complaint) => ({
+      ...complaint,
+      lat: complaint.coordinates.latitude,
+      lng: complaint.coordinates.longitude,
+    }));
+  const mapCenter = mapComplaints.length
+    ? [mapComplaints[0].lat, mapComplaints[0].lng]
+    : [20, 0];
 
   // Close modal on Escape key
   useEffect(() => {
@@ -109,7 +48,6 @@ const IssueMap = ({ onBack }) => {
   }, [selectedComplaint]);
 
   const handleMarkerClick = (complaint) => {
-    setActiveMarker([complaint.lat, complaint.lng]);
     setSelectedComplaint(complaint);
   };
 
@@ -127,9 +65,9 @@ const IssueMap = ({ onBack }) => {
         <div className="cdp-im-grid">
           {/* ✅ 1. Complaint List Sidebar (NOW ON THE LEFT) */}
           <div className="cdp-im-list-container">
-            <h3>Reported Issues ({mockMapComplaints.length})</h3>
+            <h3>Reported Issues ({mapComplaints.length})</h3>
             <div className="cdp-im-list">
-              {mockMapComplaints.map((c) => (
+              {mapComplaints.map((c) => (
                 <div 
                   key={c.id} 
                   className={`cdp-im-list-item ${selectedComplaint?.id === c.id ? "active" : ""}`}
@@ -153,35 +91,23 @@ const IssueMap = ({ onBack }) => {
 
           {/* ✅ 2. Interactive Map (NOW ON THE RIGHT) */}
           <div className="cdp-im-map-container">
-            <MapContainer center={[18.5204, 73.8567]} zoom={13} scrollWheelZoom={true}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {activeMarker && <FlyToLocation position={activeMarker} />}
-              
-              {mockMapComplaints.map((c) => (
-                <Marker 
-                  key={c.id} 
-                  position={[c.lat, c.lng]}
-                  eventHandlers={{
-                    click: () => handleMarkerClick(c),
-                  }}
-                >
-                  <Popup className="cdp-im-popup">
+            {loadError ? <div>Google Maps could not be loaded.</div> : !isLoaded ? <div>Loading map...</div> : mapComplaints.length === 0 ? <div>No complaint coordinates are available.</div> : (
+              <GoogleMap mapContainerStyle={{ width: "100%", height: "100%" }} center={{ lat: mapCenter[0], lng: mapCenter[1] }} zoom={13}>
+                {mapComplaints.map((c) => (
+                  <Marker key={c.id} position={{ lat: c.lat, lng: c.lng }} onClick={() => handleMarkerClick(c)} />
+                ))}
+                {selectedComplaint && (
+                  <InfoWindow position={{ lat: selectedComplaint.lat, lng: selectedComplaint.lng }} onCloseClick={() => setSelectedComplaint(null)}>
                     <div className="cdp-im-popup-content">
-                      <span className={`cdp-im-badge cdp-im-badge-${statusToneMap[c.status]}`}>{c.status}</span>
-                      <h4>{c.complaintNumber}</h4>
-                      <p><strong>{c.category}:</strong> {c.issue}</p>
-                      <p>📍 {c.location}</p>
-                      <button className="cdp-im-popup-btn" onClick={() => handleMarkerClick(c)}>
-                        View Full Details
-                      </button>
+                      <span className={`cdp-im-badge cdp-im-badge-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</span>
+                      <h4>{selectedComplaint.complaintNumber}</h4>
+                      <p><strong>{selectedComplaint.category}:</strong> {selectedComplaint.issue}</p>
+                      <p>📍 {selectedComplaint.location}</p>
                     </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+                  </InfoWindow>
+                )}
+              </GoogleMap>
+            )}
           </div>
         </div>
       </div>

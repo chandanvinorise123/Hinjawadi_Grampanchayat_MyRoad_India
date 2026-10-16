@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./MyProfile.css";
+import { uploadProfilePhoto } from "../utils/dashboardApi";
 
 const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(initialStaff);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setFormData(initialStaff);
+  }, [initialStaff]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -13,13 +18,28 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    // Simulate API save delay
-    setTimeout(() => {
-      onUpdate(formData);
-      setIsEditing(false);
-      setMessage("✅ Profile updated successfully!");
-      setTimeout(() => setMessage(""), 3000);
-    }, 500);
+    onUpdate(formData);
+    setIsEditing(false);
+    setMessage("✅ Profile updated successfully!");
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadProfilePhoto(file, formData._id || formData.id, "staff");
+      setFormData((current) => ({ ...current, profilePhoto: data.profilePhoto }));
+      onUpdate({ ...formData, profilePhoto: data.profilePhoto });
+      const current = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
+      window.dispatchEvent(new Event("authChange"));
+      setMessage("✅ Profile photo uploaded successfully!");
+    } catch (error) {
+      setMessage(error.message || "Profile photo upload failed.");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleCancel = () => {
@@ -50,7 +70,13 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
         {/* ✅ LEFT SIDE: Profile Summary Card */}
         <div className="mp-sidebar">
           <div className="mp-profile-card">
-            <div className="mp-avatar-large">{initials}</div>
+            <div className="mp-avatar-large">
+              {formData.profilePhoto ? <img src={formData.profilePhoto} alt="Profile" /> : initials}
+            </div>
+            <label className="mp-edit-btn">
+              Upload Photo
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} hidden />
+            </label>
             <div className="mp-profile-info">
               <h3>{formData.name}</h3>
               <p className="mp-role">{formData.role}</p>

@@ -11,8 +11,9 @@ import ComplaintsDetails from "../Citizenprofiledashboard/ComplaintsDetails";
 import IssueMap from "../Citizenprofiledashboard/IssueMap";
 import Notifications from "../Citizenprofiledashboard/Notifications";
 import RecentActivity from "../Citizenprofiledashboard/RecentActivity";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
-const API_URL = "http://localhost:3200/api/complaints";
+const API_URL = `${API_BASE_URL}/complaints`;
 
 /*
  * ✅ SINGLE SOURCE OF TRUTH for the Report page route.
@@ -40,12 +41,6 @@ const colorForCategory = (category = "") => {
   }
   return mapColors[Math.abs(hash) % mapColors.length];
 };
-
-const notifications = [
-  { text: "Complaint MRI-482913 has moved to Work Completed", time: "2 hours ago" },
-  { text: "Complaint MRI-291045 was assigned to a field officer", time: "1 day ago" },
-  { text: "Complaint MRI-773820 has been registered", time: "3 days ago" },
-];
 
 const stageTone = ["amber", "amber", "orange", "orange", "orange", "amber", "green"];
 
@@ -199,14 +194,16 @@ const CitizenDashboard = () => {
   const stored = getStoredUser();
 
   // ---------------- STATE VARIABLES ----------------
-  const [profile] = useState({
-    name: stored.name || "Citizen User",
-    mobile: stored.mobile ? `+91 ${stored.mobile}` : "+91 98765 43210",
-    memberSince: "March 2026",
-    ward: stored.location || "Ward 3 — Riverside",
+  const [profile, setProfile] = useState({
+    name: stored.name || "",
+    mobile: stored.mobile ? `+91 ${stored.mobile}` : "",
+    memberSince: stored.createdAt ? new Date(stored.createdAt).toLocaleDateString() : "",
+    ward: stored.location || stored.address || "",
+    profilePhoto: stored.profilePhoto || "",
   });
 
   const [complaints, setComplaints] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
@@ -234,6 +231,17 @@ const CitizenDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRecentActivity, setShowRecentActivity] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
+
+  const openView = (setter) => {
+    setShowProfile(false);
+    setShowMyComplaints(false);
+    setShowTrackComplaint(false);
+    setShowComplaintDetails(false);
+    setShowIssueMap(false);
+    setShowNotifications(false);
+    setShowRecentActivity(false);
+    setter(true);
+  };
 
   // ---------------- HANDLERS ----------------
   const goToReportIssue = () => {
@@ -337,27 +345,38 @@ const CitizenDashboard = () => {
     }
   };
 
-  const handleCreateComplaint = (e) => {
+  const handleCreateComplaint = async (e) => {
     e.preventDefault();
     if (!newComplaint.category.trim() || !newComplaint.description.trim()) return;
 
-    const complaint = {
-      id: String(Date.now()),
-      complaintNumber: `MRI-${Math.floor(100000 + Math.random() * 900000)}`,
-      category: newComplaint.category,
-      issue: newComplaint.issue || "General Issue",
-      location: newComplaint.location || "Location pending",
-      description: newComplaint.description,
-      photo: newComplaint.photo,
-      gps: newComplaint.gps,
-      date: new Date().toISOString().slice(0, 10),
-      stage: 0,
-    };
+    const citizenId = getCitizenId(getStoredUser());
+    const [latitude, longitude] = newComplaint.gps.split(",").map(Number);
+    if (!citizenId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      alert("Capture your location before submitting the complaint.");
+      return;
+    }
 
-    setComplaints((prev) => [complaint, ...prev]);
-    setSelectedId(complaint.id);
-    setNewComplaint({ category: "", issue: "", location: "", description: "", photo: "", gps: "" });
-    setShowNewForm(false);
+    try {
+      const body = new FormData();
+      body.append("citizenId", citizenId);
+      body.append("category", newComplaint.category.trim());
+      body.append("issueType", newComplaint.issue.trim() || "General Issue");
+      body.append("description", newComplaint.description.trim());
+      body.append("location", newComplaint.location.trim());
+      body.append("coordinates", JSON.stringify({ latitude, longitude }));
+      if (newComplaint.photo) body.append("images", newComplaint.photo);
+
+      const response = await fetch(API_URL, { method: "POST", body });
+      const result = await readJsonResponse(response);
+      if (!response.ok || !result.success) throw new Error(result.message || "Failed to register complaint");
+
+      await fetchMyComplaints();
+      setNewComplaint({ category: "", issue: "", location: "", description: "", photo: "", gps: "" });
+      setShowNewForm(false);
+    } catch (error) {
+      console.error("Create complaint error:", error);
+      alert(error.message || "Unable to register complaint.");
+    }
   };
 
   const captureGps = () => {
@@ -453,6 +472,26 @@ const CitizenDashboard = () => {
   }, []);
 
   useEffect(() => {
+    const citizenId = getCitizenId(getStoredUser());
+    if (!citizenId) return;
+    fetch(`${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`)
+      .then((response) => response.json())
+      .then((result) => {
+        setNotifications(result.notifications || []);
+        if (result.profile) {
+          setProfile((current) => ({
+            ...current,
+            ...result.profile,
+            mobile: result.profile.mobile ? `+91 ${result.profile.mobile}` : current.mobile,
+            ward: result.profile.location || result.profile.address || current.ward,
+            profilePhoto: result.profile.profilePhoto || current.profilePhoto,
+          }));
+        }
+      })
+      .catch((error) => console.error("Fetch citizen notifications error:", error));
+  }, []);
+
+  useEffect(() => {
     const s = location.state;
     if (!s) return;
     if (s.openForm) setShowNewForm(true);
@@ -486,8 +525,8 @@ const CitizenDashboard = () => {
   if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
   if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} />;
   if (showTrackComplaint) return <TrackComplaint onBack={() => setShowTrackComplaint(false)} />;
-  if (showComplaintDetails) return <ComplaintsDetails onBack={() => setShowComplaintDetails(false)} />;
-  if (showIssueMap) return <IssueMap onBack={() => setShowIssueMap(false)} />;
+  if (showComplaintDetails) return <ComplaintsDetails complaints={complaints} onBack={() => setShowComplaintDetails(false)} />;
+  if (showIssueMap) return <IssueMap complaints={complaints} onBack={() => setShowIssueMap(false)} />;
   if (showNotifications) return <Notifications onBack={() => setShowNotifications(false)} />;
   if (showRecentActivity) return <RecentActivity onBack={() => setShowRecentActivity(false)} />;
 
@@ -520,7 +559,7 @@ const CitizenDashboard = () => {
           <button type="button" className="cdp-sb-link active" onClick={() => scrollTo("cdp-top")}>
             <Icons.Dashboard /> Dashboard
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowProfile(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowProfile)}>
             <Icons.Profile /> My Profile
           </button>
         </nav>
@@ -530,28 +569,28 @@ const CitizenDashboard = () => {
           <button type="button" className="cdp-sb-link" onClick={goToReportIssue}>
             <Icons.Report /> Report an Issue
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowMyComplaints(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowMyComplaints)}>
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowTrackComplaint(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowTrackComplaint)}>
             <Icons.Track /> Track Complaint
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowComplaintDetails(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowComplaintDetails)}>
             <Icons.Details /> Complaint Details
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowIssueMap(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowIssueMap)}>
             <Icons.Map /> Issues Map
           </button>
         </nav>
 
         <div className="cdp-sb-label">Activity</div>
         <nav className="cdp-sb-nav">
-          <button type="button" className="cdp-sb-link" onClick={() => setShowNotifications(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowNotifications)}>
             <Icons.Bell /> Notifications
             <span className="cdp-sb-badge">{notifications.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => setShowRecentActivity(true)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowRecentActivity)}>
             <Icons.Clock /> Recent Activity
           </button>
           {/* ✅ FIXED: Proper Logout Button */}
@@ -567,7 +606,9 @@ const CitizenDashboard = () => {
 
         <div className="cdp-sb-footer">
           <div className="cdp-sb-user">
-            <div className="cdp-sb-avatar">{initials}</div>
+            <div className="cdp-sb-avatar">
+              {profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : initials}
+            </div>
             <div className="cdp-sb-user-info">
               <b>{profile.name}</b>
               <span>{profile.mobile}</span>
@@ -592,13 +633,15 @@ const CitizenDashboard = () => {
               type="button"
               className="cdp-icon-btn"
               aria-label="Notifications"
-              onClick={() => setShowNotifications(true)}
+              onClick={() => openView(setShowNotifications)}
             >
               <Icons.Bell />
               <span className="cdp-tb-dot"></span>
             </button>
-            <div className="cdp-tb-user" onClick={() => setShowProfile(true)}>
-              <div className="cdp-tb-avatar">{initials}</div>
+            <div className="cdp-tb-user" onClick={() => openView(setShowProfile)}>
+              <div className="cdp-tb-avatar">
+                {profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : initials}
+              </div>
               <div>
                 <b>{profile.name}</b>
                 <span>Citizen Account</span>
@@ -879,8 +922,8 @@ const CitizenDashboard = () => {
                 <div className="cdp-field">
                   <label htmlFor="new-photo">Upload Photo</label>
                   <label className="cdp-photo-upload">
-                    {newComplaint.photo ? `📷 ${newComplaint.photo}` : "📷 Click to attach a photo"}
-                    <input id="new-photo" type="file" accept="image/*" onChange={(e) => setNewComplaint({ ...newComplaint, photo: e.target.files?.[0]?.name || "" })} />
+                    {newComplaint.photo ? `📷 ${newComplaint.photo.name}` : "📷 Click to attach a photo"}
+                    <input id="new-photo" type="file" accept="image/*" onChange={(e) => setNewComplaint({ ...newComplaint, photo: e.target.files?.[0] || "" })} />
                   </label>
                 </div>
                 <div className="cdp-form-actions">

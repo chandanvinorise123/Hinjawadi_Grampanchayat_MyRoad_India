@@ -22,68 +22,9 @@ const colorForCategory = (category = "") => {
   return mapColors[Math.abs(hash) % mapColors.length];
 };
 
-// ✅ HARDCODED MOCK DATA FOR TESTING
-const mockComplaints = [
-  {
-    id: "1",
-    complaintNumber: "MRI-882910",
-    category: "Road Issues",
-    issue: "Large Pothole",
-    date: "2026-10-01",
-    location: "Camp Road Bus Stop",
-    stage: 1,
-    description: "A massive pothole near the bus stop is causing traffic jams and damaging vehicles during the monsoon.",
-    photos: { before: "pothole-before.jpg", site: "pothole-site.jpg" }
-  },
-  {
-    id: "2",
-    complaintNumber: "MRI-441029",
-    category: "Streetlight Issues",
-    issue: "Light Not Working",
-    date: "2026-09-28",
-    location: "House No. 21, Riverside Lane",
-    stage: 3,
-    description: "The streetlight outside my house has been off for a week. It's very dark and unsafe at night.",
-    photos: { before: "light-before.jpg" }
-  },
-  {
-    id: "3",
-    complaintNumber: "MRI-773820",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    date: "2026-09-25",
-    location: "Market Yard Junction",
-    stage: 5,
-    description: "Community bin overflowing for three days, needs urgent clearing. Bad smell affecting nearby shops.",
-    photos: { before: "bin-before.jpg", after: "bin-after.jpg", site: "bin-site.jpg" }
-  },
-  {
-    id: "4",
-    complaintNumber: "MRI-119283",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    date: "2026-09-15",
-    location: "Riverside Ward Pipeline",
-    stage: 6,
-    description: "Water leaking continuously from an underground pipeline joint. Fixed and verified by the officer.",
-    photos: { before: "leak-before.jpg", after: "leak-after.jpg" }
-  },
-  {
-    id: "5",
-    complaintNumber: "MRI-550192",
-    category: "Road Issues",
-    issue: "Broken Footpath",
-    date: "2026-10-05",
-    location: "Near City Hospital Gate",
-    stage: 0,
-    description: "The footpath tiles are broken, making it difficult for elderly people to walk safely.",
-    photos: {}
-  }
-];
-
 const MyComplaints = ({ complaints, onBack, onDelete }) => {
   // ✅ Use local state to handle deletions dynamically
-  const initialData = (complaints && complaints.length > 0) ? complaints : mockComplaints;
+  const initialData = complaints || [];
   const [localComplaints, setLocalComplaints] = useState(initialData);
 
   const [searchTerm, setSearchTerm] = useState("");

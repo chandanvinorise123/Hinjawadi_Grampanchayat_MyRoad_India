@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "./ComplaintStatus.css";
 
+const EMPTY_COMPLAINT = { id: "", complaintNumber: "", issue: "", stage: 0 };
+
 const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => {
   const [currentComplaintId, setCurrentComplaintId] = useState(selectedId || complaints[0]?.id);
-  const currentComplaint = complaints.find((c) => c.id === currentComplaintId) || complaints[0];
+  const currentComplaint = complaints.find((c) => String(c.id) === String(currentComplaintId)) || complaints[0] || EMPTY_COMPLAINT;
 
   const [newStage, setNewStage] = useState(currentComplaint.stage);
   const [updateMessage, setUpdateMessage] = useState("");
@@ -58,7 +60,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
           <select 
             id="complaint-select" 
             value={currentComplaintId} 
-            onChange={(e) => setCurrentComplaintId(Number(e.target.value))}
+            onChange={(e) => setCurrentComplaintId(e.target.value)}
           >
             {complaints.map((c) => (
               <option key={c.id} value={c.id}>

@@ -18,6 +18,7 @@ const adminProfileRoutes = require("./routes/adminProfileRoutes");
 const photoRoutes = require("./routes/photoRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 const adminManagementRoutes = require("./routes/adminManagementRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 // =====================================================
 // APP
@@ -49,11 +50,12 @@ app.use(
 // BODY PARSER
 // =====================================================
 
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 app.use(
   express.urlencoded({
     extended: true,
+    limit: "2mb",
   })
 );
 
@@ -112,6 +114,8 @@ app.use("/api/admin", adminManagementRoutes);
 
 app.use("/api/photos", photoRoutes);
 
+app.use("/api/dashboard", dashboardRoutes);
+
 // =====================================================
 // STATIC UPLOADS
 // =====================================================
@@ -145,6 +149,13 @@ app.use("/api", (req, res) => {
 
 app.use((error, req, res, next) => {
   console.error("Global server error:", error);
+
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({
+      success: false,
+      message: "Request is too large. Please upload smaller images.",
+    });
+  }
 
   res.status(error.status || 500).json({
     success: false,

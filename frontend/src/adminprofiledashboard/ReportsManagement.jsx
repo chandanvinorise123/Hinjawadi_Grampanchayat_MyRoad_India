@@ -1,26 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./ReportsManagement.css";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
 // ==========================================
-// 1. HARDCODED MOCK DATA
 // ==========================================
-const MOCK_REPORTS = {
-  complaints: [
-    { id: "MRI-849201", date: "2023-10-25", category: "Road Damage", area: "Hinjawadi Phase 2", priority: "Critical", status: "Resolved", staff: "Shiv Kumar" },
-    { id: "MRI-849202", date: "2023-10-26", category: "Street Light", area: "IT Park Road", priority: "Urgent", status: "Pending", staff: "Unassigned" },
-    { id: "MRI-849203", date: "2023-10-27", category: "Water Logging", area: "Marunji Road", priority: "Normal", status: "Resolved", staff: "Ramesh Yadav" },
-    { id: "MRI-849204", date: "2023-10-28", category: "Road Damage", area: "Pirangut Road", priority: "Normal", status: "Pending", staff: "Anil Patil" },
-    { id: "MRI-849205", date: "2023-10-29", category: "Garbage Dump", area: "Tathawade", priority: "Urgent", status: "Resolved", staff: "Shiv Kumar" },
-  ],
-  staff: [
-    { name: "Shiv Kumar", assigned: 12, completed: 10, pending: 2, progress: "83%" },
-    { name: "Ramesh Yadav", assigned: 8, completed: 8, pending: 0, progress: "100%" },
-    { name: "Anil Patil", assigned: 15, completed: 9, pending: 6, progress: "60%" },
-  ]
-};
-
 const REPORT_TYPES = [
   { id: "daily", title: " Daily Report", desc: "Generate a summary of today's complaints.", icon: "" },
   { id: "weekly", title: "🗓️ Weekly/Monthly Report", desc: "Analyze trends over a specific period.", icon: "🗓️" },
@@ -30,9 +15,44 @@ const REPORT_TYPES = [
 ];
 
 const ReportsManagement = ({ onBack }) => {
+  const [reports, setReports] = useState({ complaints: [], staff: [] });
   const [selectedReport, setSelectedReport] = useState(null);
   const [filterValue, setFilterValue] = useState("");
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  useEffect(() => {
+    Promise.all([
+      fetchDashboard("admin", getUserId(getStoredUser())),
+      fetch(`${API_BASE_URL}/users?role=staff`).then((response) => response.json()),
+    ])
+      .then(([dashboard, usersResult]) => {
+        const complaints = dashboard.complaints || [];
+        const staff = (usersResult.users || []).map((user) => {
+          const assigned = complaints.filter((complaint) => complaint.assignedStaff === user.name);
+          const completed = assigned.filter((complaint) => ["Resolved", "Closed"].includes(complaint.status)).length;
+          return {
+            name: user.name,
+            assigned: assigned.length,
+            completed,
+            pending: assigned.length - completed,
+            progress: assigned.length ? `${Math.round((completed / assigned.length) * 100)}%` : "0%",
+          };
+        });
+        setReports({
+          complaints: complaints.map((complaint) => ({
+            id: complaint.complaintNumber,
+            date: complaint.date,
+            category: complaint.category,
+            area: complaint.location,
+            priority: complaint.priority,
+            status: complaint.status,
+            staff: complaint.assignedStaff || "Unassigned",
+          })),
+          staff,
+        });
+      })
+      .catch((error) => console.error("Failed to load reports:", error));
+  }, []);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -69,8 +89,8 @@ const ReportsManagement = ({ onBack }) => {
     yPos += 10;
 
     // Colorful Summary Boxes
-    const total = MOCK_REPORTS.complaints.length;
-    const resolved = MOCK_REPORTS.complaints.filter(c => c.status === "Resolved").length;
+    const total = reports.complaints.length;
+    const resolved = reports.complaints.filter(c => ["Resolved", "Closed"].includes(c.status)).length;
     const pending = total - resolved;
 
     const drawBox = (x, y, label, value, color) => {
@@ -95,10 +115,10 @@ const ReportsManagement = ({ onBack }) => {
 
     if (type === "staff") {
       head = [["Staff Name", "Assigned", "Completed", "Pending", "Progress"]];
-      body = MOCK_REPORTS.staff.map(s => [s.name, s.assigned, s.completed, s.pending, s.progress]);
+      body = reports.staff.map(s => [s.name, s.assigned, s.completed, s.pending, s.progress]);
     } else {
       head = [["Complaint ID", "Date", "Category", "Area", "Priority", "Status", "Staff"]];
-      body = MOCK_REPORTS.complaints.map(c => [c.id, c.date, c.category, c.area, c.priority, c.status, c.staff]);
+      body = reports.complaints.map(c => [c.id, c.date, c.category, c.area, c.priority, c.status, c.staff]);
     }
 
     // --- Generate Beautiful Table ---
@@ -189,11 +209,11 @@ const ReportsManagement = ({ onBack }) => {
               </thead>
               <tbody>
                 {selectedReport === "staff" 
-                  ? MOCK_REPORTS.staff.map((s, i) => (
+                  ? reports.staff.map((s, i) => (
                       <tr key={i}><td>{s.name}</td><td>{s.assigned}</td><td>{s.completed}</td><td>{s.pending}</td><td><span className="rm-progress">{s.progress}</span></td></tr>
                     ))
-                  : MOCK_REPORTS.complaints.map((c, i) => (
-                      <tr key={i}><td>{c.id}</td><td>{c.date}</td><td>{c.category}</td><td>{c.area}</td><td><span className={`rm-badge rm-p-${c.priority.toLowerCase()}`}>{c.priority}</span></td><td><span className={`rm-badge rm-s-${c.status.toLowerCase()}`}>{c.status}</span></td></tr>
+                  : reports.complaints.map((c, i) => (
+                      <tr key={i}><td>{c.id}</td><td>{c.date}</td><td>{c.category}</td><td>{c.area}</td><td><span className={`rm-badge rm-p-${String(c.priority || "normal").toLowerCase()}`}>{c.priority || "Normal"}</span></td><td><span className={`rm-badge rm-s-${String(c.status || "new").toLowerCase()}`}>{c.status || "New"}</span></td></tr>
                     ))
                 }
               </tbody>

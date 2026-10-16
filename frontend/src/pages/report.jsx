@@ -12,6 +12,7 @@ import {
 
 import "./report.css";
 import PhotoDetection from "../components/PhotoDetection";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
 const categories = [
   {
@@ -88,6 +89,7 @@ const ReportIssue = () => {
   const location = useLocation();
 
   const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries,
   });
@@ -101,6 +103,7 @@ const ReportIssue = () => {
   const [boundaryLoading, setBoundaryLoading] = useState(true);
   const [hinjawadiBoundary, setHinjawadiBoundary] = useState(null);
   const [boundaryBounds, setBoundaryBounds] = useState(null);
+  const [mapBounds, setMapBounds] = useState(null);
 
   // Citizen details: email has been removed
   const [fullName, setFullName] = useState("");
@@ -214,6 +217,7 @@ const ReportIssue = () => {
 
         if (!cancelled) {
           setHinjawadiBoundary(validatedBoundary);
+          setBoundaryBounds(bbox);
           setErrorMessage("");
         }
       } catch (error) {
@@ -280,8 +284,8 @@ const ReportIssue = () => {
   const handleMapLoad = (mapInstance) => {
     setMap(mapInstance);
 
-    if (boundaryBounds) {
-      mapInstance.fitBounds(boundaryBounds, 30);
+    if (mapBounds) {
+      mapInstance.fitBounds(mapBounds, 30);
     } else {
       mapInstance.setCenter(defaultCenter);
       mapInstance.setZoom(14);
@@ -326,7 +330,7 @@ const ReportIssue = () => {
         { lat: maxLat, lng: maxLng }
       );
 
-      setBoundaryBounds(bounds);
+      setMapBounds(bounds);
       map.fitBounds(bounds, 30);
     } catch (error) {
       console.error("Error drawing boundary:", error);
@@ -611,6 +615,24 @@ const ReportIssue = () => {
       return;
     }
 
+    const photoLocationsValid = verifiedPhotosData.every((photo) => {
+      const photoLocation = photo.location;
+      if (
+        !photoLocation ||
+        !Number.isFinite(Number(photoLocation.latitude)) ||
+        !Number.isFinite(Number(photoLocation.longitude))
+      ) {
+        return false;
+      }
+      const latitudeDifference = Math.abs(Number(photoLocation.latitude) - latitude);
+      const longitudeDifference = Math.abs(Number(photoLocation.longitude) - longitude);
+      return latitudeDifference <= 0.001 && longitudeDifference <= 0.001;
+    });
+    if (!photoLocationsValid) {
+      setErrorMessage("Capture the complaint photo at the same location selected on the map.");
+      return;
+    }
+
     // Include citizen ID if a logged-in user is available.
     let user = null;
 
@@ -621,15 +643,27 @@ const ReportIssue = () => {
     }
 
     const complaintData = {
+      category: categories.find((category) => category.issues.includes(issueType))?.title || "",
       fullName: fullName.trim(),
+      citizenName: fullName.trim(),
       mobile,
       issueType,
       description: description.trim(),
+      location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
       locationUrl: "Google Maps selected location",
       latitude,
       longitude,
       coordinates: { latitude, longitude },
-      photoVerifications: verifiedPhotosData,
+      photoVerifications: verifiedPhotosData
+        .filter((photo) => photo.verified || photo.requiresReview)
+        .map(({ publicUrl, verificationId, verified, requiresReview, location }) => ({
+          publicUrl,
+          verificationId,
+          verified,
+          requiresReview,
+          location,
+        }))
+        .filter((photo) => photo.publicUrl),
       citizenId: user?.id || user?._id || undefined,
     };
 
@@ -637,7 +671,7 @@ const ReportIssue = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:3200/api/complaints",
+        `${API_BASE_URL}/complaints`,
         {
           method: "POST",
           headers: {
@@ -661,13 +695,14 @@ const ReportIssue = () => {
         );
       }
 
-      if (!data.complaintNumber) {
+      const submittedComplaintNumber = data.complaintNumber || data.data?.complaintNumber;
+      if (!submittedComplaintNumber) {
         throw new Error(
           t("report.missingComplaintNumber")
         );
       }
 
-      setComplaintNumber(data.complaintNumber);
+      setComplaintNumber(submittedComplaintNumber);
     } catch (error) {
       console.error("Submission error:", error);
 
@@ -695,8 +730,17 @@ const ReportIssue = () => {
     setErrorMessage("");
 
     if (map) {
-      if (boundaryBounds) {
-        map.fitBounds(boundaryBounds, 30);
+      if (mapBounds) {
+        map.fitBounds(mapBounds, 30);
+      } else if (boundaryBounds) {
+        const [minLng, minLat, maxLng, maxLat] = boundaryBounds;
+        map.fitBounds(
+          new window.google.maps.LatLngBounds(
+            { lat: minLat, lng: minLng },
+            { lat: maxLat, lng: maxLng }
+          ),
+          30
+        );
       } else {
         map.setCenter(defaultCenter);
         map.setZoom(14);
@@ -815,8 +859,8 @@ const ReportIssue = () => {
                           onLoad={handleAutocompleteLoad}
                           onPlaceChanged={handlePlaceChanged}
                           options={{
-                            bounds: boundaryBounds || undefined,
-                            strictBounds: Boolean(boundaryBounds),
+                            bounds: mapBounds || undefined,
+                            strictBounds: Boolean(mapBounds),
                           }}
                         >
                           <input
@@ -832,7 +876,12 @@ const ReportIssue = () => {
                             center={
                               selectedLocation.lat !== null
                                 ? selectedLocation
-                                : defaultCenter
+                                : boundaryBounds
+                                  ? {
+                                      lat: (boundaryBounds[1] + boundaryBounds[3]) / 2,
+                                      lng: (boundaryBounds[0] + boundaryBounds[2]) / 2,
+                                    }
+                                  : defaultCenter
                             }
                             zoom={
                               selectedLocation.lat !== null ? 17 : 14

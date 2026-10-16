@@ -1,58 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ComplaintDetails.css";
+import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
-// ==========================================
-// 1. HARDCODED MOCK DATA (Will be replaced by API later)
-// ==========================================
-const MOCK_DETAILS = {
-  id: "1",
-  complaintNumber: "MRI-849201",
-  date: "2023-10-25",
-  priority: "Critical",
-  status: "Under Action",
-  
-  // 1 & 2. Citizen, Complaint, Category & Description
-  citizen: { name: "Rahul Sharma", contact: "+91 98765 43210", email: "rahul.s@example.com" },
-  category: "Road Damage",
-  issue: "Large Pothole",
-  description: "A massive pothole has formed near the Wipro gate, causing traffic jams and vehicle damage. It is especially dangerous during the monsoon season.",
-  
-  // 3. Initial Photographs
-  photos: [
-    "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=400&q=80",
-    "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=400&q=80",
-    "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=400&q=80"
-  ],
-
-  // 4. Location
-  location: { address: "Hinjawadi Phase 2, Near Wipro Gate, Pune", lat: 18.5912, lng: 73.7389 },
-
-  // 5. Inspection & Action Details
+const toDetailData = (complaint) => ({
+  ...complaint,
+  citizen: { name: complaint.citizenName, contact: complaint.citizenContact || "", email: "" },
+  photos: complaint.images || complaint.citizenPhotos || [],
+  location: typeof complaint.location === "object"
+    ? complaint.location
+    : { address: complaint.location || "", ...complaint.coordinates },
   inspection: {
-    assignedStaff: "Shiv Kumar",
-    staffContact: "+91 99887 76655",
-    assignedDate: "2023-10-26",
-    actionTaken: "Barricades placed around the pothole. Cold mix asphalt ordered for permanent repair.",
-    expectedCompletion: "2023-10-28"
+    assignedStaff: complaint.assignedStaff,
+    actionTaken: complaint.inspection?.actionTaken || "",
+    expectedCompletion: complaint.inspection?.completionDate || "",
   },
-
-  // 6. Before & After Photographs
   beforeAfter: {
-    before: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80",
-    after: "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=600&q=80"
+    before: complaint.images?.[0] || "",
+    after: complaint.images?.[1] || "",
   },
+  history: complaint.statusHistory || complaint.log || [],
+});
 
-  // 7. History & Remarks
-  history: [
-    { date: "2023-10-25 09:15 AM", user: "Rahul Sharma (Citizen)", status: "Registered", remark: "Complaint submitted via web portal." },
-    { date: "2023-10-25 11:30 AM", user: "Admin User", status: "Verified", remark: "Verified the issue. Marked as Critical priority." },
-    { date: "2023-10-26 10:00 AM", user: "Admin User", status: "Assigned", remark: "Assigned to staff member Shiv Kumar." },
-    { date: "2023-10-26 02:45 PM", user: "Shiv Kumar (Staff)", status: "Under Action", remark: "Reached location. Barricades placed." }
-  ]
-};
+const ComplaintDetails = ({ onBack, complaint: initialComplaint }) => {
+  const [data, setData] = useState(initialComplaint ? toDetailData(initialComplaint) : null);
 
-const ComplaintDetails = ({ onBack }) => {
-  const [data] = useState(MOCK_DETAILS);
+  useEffect(() => {
+    if (initialComplaint) {
+      setData(toDetailData(initialComplaint));
+      return;
+    }
+    fetchDashboard("admin", getUserId(getStoredUser()))
+      .then(({ complaints = [] }) => {
+        const complaint = complaints[0];
+        if (complaint) {
+          setData(toDetailData(complaint));
+        }
+      })
+      .catch((error) => console.error("Failed to load complaint details:", error));
+  }, [initialComplaint]);
+
+  if (!data) {
+    return <div className="cd-shell"><button className="cd-back-btn" onClick={onBack}>← Back to Dashboard</button><p>Loading complaint details...</p></div>;
+  }
 
   const getStatusColor = (status) => {
     const colors = { "Registered": "navy", "Verified": "amber", "Assigned": "orange", "Under Action": "orange", "Resolved": "green" };
@@ -67,7 +56,7 @@ const ComplaintDetails = ({ onBack }) => {
         <div className="cd-header-info">
           <h2>Complaint Details: {data.complaintNumber}</h2>
           <div className="cd-header-badges">
-            <span className={`cd-badge cd-priority-${data.priority.toLowerCase()}`}>{data.priority}</span>
+            <span className={`cd-badge cd-priority-${String(data.priority || "Normal").toLowerCase()}`}>{data.priority || "Normal"}</span>
             <span className={`cd-badge cd-status-${getStatusColor(data.status).toLowerCase()}`}>{data.status}</span>
           </div>
         </div>
@@ -127,7 +116,6 @@ const ComplaintDetails = ({ onBack }) => {
           <h3 className="cd-card-title">📍 Complaint Location</h3>
           <p className="cd-address">{data.location.address}</p>
           <div className="cd-map-container">
-            {/* Using OpenStreetMap iframe for a real map view without needing an API key for the mockup */}
             <iframe 
               title="Complaint Location Map"
               width="100%" 
@@ -136,7 +124,9 @@ const ComplaintDetails = ({ onBack }) => {
               scrolling="no" 
               marginHeight="0" 
               marginWidth="0" 
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${data.location.lng - 0.01}%2C${data.location.lat - 0.01}%2C${data.location.lng + 0.01}%2C${data.location.lat + 0.01}&layer=mapnik&marker=${data.location.lat}%2C${data.location.lng}`}
+              src={data.location.lat !== undefined && data.location.lng !== undefined
+                ? `https://www.openstreetmap.org/export/embed.html?bbox=${data.location.lng - 0.01}%2C${data.location.lat - 0.01}%2C${data.location.lng + 0.01}%2C${data.location.lat + 0.01}&layer=mapnik&marker=${data.location.lat}%2C${data.location.lng}`
+                : undefined}
             ></iframe>
           </div>
         </div>

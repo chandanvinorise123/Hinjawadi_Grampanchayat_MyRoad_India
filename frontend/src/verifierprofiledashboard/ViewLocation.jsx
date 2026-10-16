@@ -1,7 +1,15 @@
 import React, { useState, useMemo } from "react";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./ViewLocation.css";
 
+const GOOGLE_MAPS_LIBRARIES = ["places"];
+
 const ViewLocation = ({ complaints, onBack }) => {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -10,27 +18,18 @@ const ViewLocation = ({ complaints, onBack }) => {
   // Filter complaints based on search
   const filteredComplaints = useMemo(() => {
     return complaints.filter((c) =>
-      c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.location.toLowerCase().includes(searchTerm.toLowerCase())
+      String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.location || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [complaints, searchTerm]);
 
-  // Mock coordinates generator based on location string (In production, this comes from the backend)
-  const getCoords = (location) => {
-    const lowerLoc = location.toLowerCase();
-    if (lowerLoc.includes("camp road")) return { lat: 18.5204, lng: 73.8567 };
-    if (lowerLoc.includes("riverside")) return { lat: 18.5912, lng: 73.7389 };
-    if (lowerLoc.includes("market yard")) return { lat: 18.5074, lng: 73.8760 };
-    return { lat: 18.5204, lng: 73.8567 }; // Default Pune coordinates
-  };
-
-  const coords = selectedItem ? getCoords(selectedItem.location) : { lat: 18.5204, lng: 73.8567 };
+  const coords = selectedItem?.coordinates
+    ? { lat: selectedItem.coordinates.latitude, lng: selectedItem.coordinates.longitude }
+    : null;
   
-  // OpenStreetMap embed URL
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.02}%2C${coords.lat - 0.02}%2C${coords.lng + 0.02}%2C${coords.lat + 0.02}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`;
-  
-  // External Google Maps URL for navigation
-  const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
+  const externalMapUrl = coords
+    ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+    : "";
 
   return (
     <div className="vl-shell">
@@ -88,16 +87,11 @@ const ViewLocation = ({ complaints, onBack }) => {
                   </a>
                 </div>
                 <div className="vl-map-container">
-                  <iframe 
-                    width="100%" 
-                    height="100%" 
-                    frameBorder="0" 
-                    scrolling="no" 
-                    marginHeight="0" 
-                    marginWidth="0" 
-                    src={mapUrl}
-                    title="Complaint Location Map"
-                  ></iframe>
+                  {loadError ? <div>Google Maps could not be loaded.</div> : !isLoaded ? <div>Loading map...</div> : coords ? (
+                    <GoogleMap mapContainerStyle={{ width: "100%", height: "100%" }} center={coords} zoom={15}>
+                      <Marker position={coords} title={selectedItem.complaintNumber} />
+                    </GoogleMap>
+                  ) : <div>No coordinates available for this complaint.</div>}
                 </div>
               </div>
 

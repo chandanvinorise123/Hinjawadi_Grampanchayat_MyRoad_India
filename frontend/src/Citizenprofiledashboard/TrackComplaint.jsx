@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./TrackComplaint.css";
+import { API_BASE_URL } from "../utils/dashboardApi";
 
 const lifecycleStages = [
   "Registered",
@@ -13,73 +14,25 @@ const lifecycleStages = [
 
 const stageTone = ["amber", "amber", "orange", "orange", "orange", "amber", "green"];
 
-// ✅ HARDCODED MOCK DATA FOR TRACKING
-const mockTrackData = [
-  {
-    id: "1",
-    complaintNumber: "MRI-882910",
-    category: "Road Issues",
-    issue: "Large Pothole",
-    date: "2026-10-01",
-    location: "Camp Road Bus Stop",
-    stage: 3, // Action Initiated
-    description: "A massive pothole near the bus stop is causing traffic jams.",
-    updates: [
-      { time: "2 hours ago", text: "Staff has initiated repair work and requested asphalt materials." },
-      { time: "1 day ago", text: "Complaint assigned to Field Officer R. Deshmukh." },
-      { time: "2 days ago", text: "Complaint verified by the ward supervisor." },
-    ],
-  },
-  {
-    id: "2",
-    complaintNumber: "MRI-773820",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    date: "2026-09-25",
-    location: "Market Yard Junction",
-    stage: 5, // Verification
-    description: "Community bin overflowing for three days.",
-    updates: [
-      { time: "5 hours ago", text: "Work completed. Awaiting verifier approval." },
-      { time: "1 day ago", text: "Extra pickup scheduled twice a week for this junction." },
-    ],
-  },
-  {
-    id: "3",
-    complaintNumber: "MRI-119283",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    date: "2026-09-15",
-    location: "Riverside Ward Pipeline",
-    stage: 6, // Closed
-    description: "Water leaking continuously from an underground pipeline joint.",
-    updates: [
-      { time: "2 days ago", text: "Complaint successfully closed. Citizen notified." },
-      { time: "3 days ago", text: "Verifier approved the completed repair work." },
-    ],
-  },
-];
-
 const TrackComplaint = ({ onBack }) => {
   const [trackId, setTrackId] = useState("");
   const [trackedComplaint, setTrackedComplaint] = useState(null);
   const [error, setError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
 
-  const handleTrack = (e) => {
+  const handleTrack = async (e) => {
     e.preventDefault();
     setError("");
     setTrackedComplaint(null);
     setShowDetails(false);
 
-    const found = mockTrackData.find(
-      (c) => c.complaintNumber.toLowerCase() === trackId.trim().toLowerCase()
-    );
-
-    if (found) {
-      setTrackedComplaint(found);
-    } else {
-      setError("Complaint not found. Please check the ID and try again.");
+    try {
+      const response = await fetch(`${API_BASE_URL}/complaints/track/${encodeURIComponent(trackId.trim())}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || "Complaint not found");
+      setTrackedComplaint(result.data);
+    } catch (trackError) {
+      setError(trackError.message || "Complaint not found. Please check the ID and try again.");
     }
   };
 
@@ -119,7 +72,7 @@ const TrackComplaint = ({ onBack }) => {
             <span className="cdp-tc-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Enter Complaint ID (e.g., MRI-882910)"
+              placeholder="Enter complaint ID"
               value={trackId}
               onChange={(e) => setTrackId(e.target.value)}
               required

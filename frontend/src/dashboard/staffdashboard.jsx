@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
+import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 // ✅ Import all full-page components
 import MyProfile from "../staffprofiledashboard/MyProfile";
@@ -38,146 +41,40 @@ const colorForCategory = (category) => {
 };
 
 const priorityTone = { High: "red", Medium: "amber", Low: "green" };
+const staffMapContainerStyle = { width: "100%", height: "400px", borderRadius: "8px" };
+const GOOGLE_MAPS_LIBRARIES = ["places"];
 
-/* ============================================
-   MOCK DATA
-   ============================================ */
-const seedAssigned = [
-  {
-    id: 1,
-    complaintNumber: "MRI-482913",
-    category: "Road Issues",
-    issue: "Road Potholes",
-    location: "Camp Road Bus Stop",
-    citizenName: "R. Deshmukh",
-    citizenContact: "+91 90000 11122",
-    description: "Large pothole near the bus stop causing traffic slowdown.",
-    priority: "High",
-    dueDate: "2026-09-10",
-    stage: 2,
-    assignedStaffId: "STF-0142",
-    inspection: {
-      remarks: "Pothole confirmed, approx 2ft wide. Marked for patch repair.",
-      sitePhoto: "site-482913.jpg",
-      actionTaken: "Requested asphalt patch crew for the location.",
-      completionPhoto: "repair-482913.jpg",
-      inspectionDate: "2026-09-05T10:30",
-      completionDate: "",
-    },
-    citizenPhotos: ["citizen-photo-1.jpg", "citizen-photo-2.jpg"],
-    isDraft: false,
-  },
-  {
-    id: 2,
-    complaintNumber: "MRI-291045",
-    category: "Streetlight Issues",
-    issue: "Light Not Working",
-    location: "House No. 21, Riverside Lane",
-    citizenName: "S. Kulkarni",
-    citizenContact: "+91 90000 33344",
-    description: "Streetlight outside house no. 21 has been off for a week.",
-    priority: "Medium",
-    dueDate: "2026-09-14",
-    stage: 0,
-    assignedStaffId: "STF-0142",
-    inspection: {
-      remarks: "",
-      sitePhoto: "",
-      actionTaken: "",
-      completionPhoto: "",
-      inspectionDate: "",
-      completionDate: "",
-    },
-    citizenPhotos: [],
-    isDraft: true,
-  },
-  {
-    id: 3,
-    complaintNumber: "MRI-661120",
-    category: "Drinking Water Issues",
-    issue: "Pipeline Leakage",
-    location: "Riverside Ward Pipeline",
-    citizenName: "A. Joshi",
-    citizenContact: "+91 90000 55566",
-    description: "Water leaking continuously from an underground pipeline joint.",
-    priority: "High",
-    dueDate: "2026-09-08",
-    stage: 4,
-    assignedStaffId: "STF-0142",
-    inspection: {
-      remarks: "Leak confirmed at joint near junction box 4.",
-      sitePhoto: "site-661120.jpg",
-      actionTaken: "Joint resealed, pressure tested for 24 hours.",
-      completionPhoto: "repair-661120.jpg",
-      inspectionDate: "2026-09-06T14:15",
-      completionDate: "2026-09-07T16:45",
-    },
-    citizenPhotos: ["leak-photo.jpg"],
-    isDraft: false,
-  },
-  {
-    id: 4,
-    complaintNumber: "MRI-104488",
-    category: "Sanitation",
-    issue: "Overflowing Garbage Bin",
-    location: "Market Yard Junction",
-    citizenName: "P. Naik",
-    citizenContact: "+91 90000 77788",
-    description: "Community bin overflowing for three days, needs urgent clearing.",
-    priority: "Low",
-    dueDate: "2026-09-12",
-    stage: 5,
-    assignedStaffId: "STF-0142",
-    inspection: {
-      remarks: "Bin cleared and area hosed down.",
-      sitePhoto: "site-104488.jpg",
-      actionTaken: "Extra pickup scheduled twice a week for this junction.",
-      completionPhoto: "repair-104488.jpg",
-      inspectionDate: "2026-09-04T09:00",
-      completionDate: "2026-09-04T11:30",
-    },
-    citizenPhotos: ["bin-photo.jpg"],
-    isDraft: false,
-  },
-];
-
-const mockNotifications = [
-  { id: 1, type: "New Assignment", text: "New complaint MRI-291045 (Light Not Working) has been assigned to you.", time: "10 mins ago", isRead: false, complaintNumber: "MRI-291045" },
-  { id: 2, type: "Critical Priority", text: "️ Complaint MRI-661120 (Pipeline Leakage) has been marked as HIGH priority. Immediate attention required.", time: "2 hours ago", isRead: false, complaintNumber: "MRI-661120" },
-  { id: 3, type: "Verification Required", text: "Your completed work on MRI-104488 (Garbage Bin) is pending verifier approval.", time: "Yesterday", isRead: true, complaintNumber: "MRI-104488" },
-  { id: 4, type: "Pending Reminder", text: "⏰ Reminder: Action pending on MRI-482913 (Road Potholes). Due date approaching in 2 days.", time: "Yesterday", isRead: true, complaintNumber: "MRI-482913" },
-  { id: 5, type: "Reassignment", text: "Complaint MRI-551234 has been reassigned from Staff STF-0099 to you due to workload balancing.", time: "2 days ago", isRead: true, complaintNumber: "MRI-551234" },
-  { id: 6, type: "Critical Priority", text: "🚨 URGENT: Bridge damage reported in MRI-778899. Safety hazard identified.", time: "3 days ago", isRead: true, complaintNumber: "MRI-778899" },
-  { id: 7, type: "New Assignment", text: "New complaint MRI-334455 (Waterlogging) assigned to your ward.", time: "4 days ago", isRead: true, complaintNumber: "MRI-334455" },
-  { id: 8, type: "Pending Reminder", text: "⏰ Follow-up required: MRI-221100 inspection report overdue by 1 day.", time: "5 days ago", isRead: true, complaintNumber: "MRI-221100" },
-];
-
-const workHistory = [
-  { text: "Marked MRI-661120 as Verification pending", time: "3 hours ago" },
-  { text: "Uploaded after-repair photo for MRI-104488", time: "yesterday" },
-  { text: "Started inspection on MRI-482913", time: "2 days ago" },
-];
+const workHistory = [];
 
 /* ============================================
    MAIN COMPONENT
    ============================================ */
 const StaffDashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isLoaded: isStaffMapLoaded, loadError: staffMapError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
   // ✅ Staff Information
-  const [staff] = useState({
-    name: "Field Officer",
-    role: "Junior Engineer — Public Works",
-    contact: "+91 98111 22334",
-    ward: "Ward 3 — Riverside",
-    staffId: "STF-0142",
-    department: "Public Works Department (PWD)",
-    email: "field.officer@myroadindia.gov.in",
-    joinDate: "2024-01-15",
+  const storedUser = getStoredUser();
+  const [staff, setStaff] = useState({
+    name: storedUser.name || "",
+    role: storedUser.designation || storedUser.role || "",
+    contact: storedUser.contact || storedUser.mobile || "",
+    ward: storedUser.assignedArea || "",
+    staffId: storedUser.staffId || "",
+    department: storedUser.department || "",
+    email: storedUser.email || "",
+    joinDate: storedUser.joiningDate || "",
+    profilePhoto: storedUser.profilePhoto || "",
   });
 
   // ✅ State Management
-  const [complaints, setComplaints] = useState(seedAssigned);
-  const [notifications, setNotifications] = useState(mockNotifications);
-  const [selectedId, setSelectedId] = useState(seedAssigned[0].id);
+  const [complaints, setComplaints] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMapView, setShowMapView] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -194,7 +91,64 @@ const StaffDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
 
-  const selected = complaints.find((c) => c.id === selectedId) || complaints[0];
+  const openView = (setter) => {
+    setShowProfile(false);
+    setShowAssignedComplaints(false);
+    setShowComplaintDetails(false);
+    setShowPhysicalInspection(false);
+    setShowActionWorkManagement(false);
+    setShowComplaintStatus(false);
+    setShowComplaintHistory(false);
+    setShowNotifications(false);
+    setShowLocationMap(false);
+    setter(true);
+  };
+
+  useEffect(() => {
+    if (!location.state?.openProfile) return;
+    openView(setShowProfile);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
+
+  const selected = complaints.find((c) => c.id === selectedId) || complaints[0] || {
+    id: null, complaintNumber: "", category: "", issue: "", location: "",
+    priority: "", dueDate: "", stage: 0, citizenName: "", citizenContact: "",
+    description: "", citizenPhotos: [], inspection: { remarks: "", sitePhoto: "", actionTaken: "", completionPhoto: "" },
+  };
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const user = getStoredUser();
+        const data = await fetchDashboard("staff", getUserId(user));
+        if (data.profile) {
+          setStaff((current) => ({
+            ...current,
+            ...data.profile,
+            contact: data.profile.contact || data.profile.mobile || current.contact,
+            staffId: data.profile.staffId || current.staffId,
+            role: data.profile.designation || data.profile.role || current.role,
+            ward: data.profile.assignedArea || current.ward,
+            joinDate: data.profile.joiningDate || current.joinDate,
+          }));
+        }
+        const mapped = (data.complaints || []).map((complaint) => ({
+          ...complaint,
+          stage: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved", "Closed"].indexOf(complaint.status),
+          inspection: complaint.inspection || {
+            remarks: "", sitePhoto: complaint.images?.[0] || "", actionTaken: "",
+            completionPhoto: complaint.images?.[1] || "", inspectionDate: "", completionDate: "",
+          },
+        }));
+        setComplaints(mapped);
+        setSelectedId(mapped[0]?.id || null);
+        setNotifications(data.notifications || []);
+      } catch (error) {
+        console.error("Failed to load staff dashboard:", error);
+      }
+    };
+    loadDashboard();
+  }, []);
 
   // ✅ Helper Functions
   const scrollTo = (id) => {
@@ -228,12 +182,19 @@ const StaffDashboard = () => {
     groups[key].push(c);
     return groups;
   }, {});
+  const mapComplaint = complaints.find(
+    (complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined
+  );
+  const staffMapCenter = mapComplaint
+    ? { lat: mapComplaint.coordinates.latitude, lng: mapComplaint.coordinates.longitude }
+    : null;
 
   // ✅ Filter complaints for search
+  const normalizedSearchTerm = searchTerm.toLowerCase();
   const filteredComplaints = complaints.filter((c) =>
-    c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.location.toLowerCase().includes(searchTerm.toLowerCase())
+    String(c.complaintNumber || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.issue || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.location || "").toLowerCase().includes(normalizedSearchTerm)
   );
 
   // ✅ Handler Functions
@@ -250,14 +211,35 @@ const StaffDashboard = () => {
     });
   };
 
-  const saveInspection = (e) => {
+  const saveInspection = async (e) => {
     e.preventDefault();
     if (!inspectionDraft) return;
+    try {
+      await updateDashboardComplaint(inspectionDraft.id, {
+        status: inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
+          ? "Under Verification"
+          : "Under Action",
+        inspection: {
+          remarks: inspectionDraft.remarks,
+          sitePhoto: inspectionDraft.sitePhoto,
+          actionTaken: inspectionDraft.actionTaken,
+          completionPhoto: inspectionDraft.completionPhoto,
+          inspectionDate: inspectionDraft.inspectionDate,
+          completionDate: inspectionDraft.completionDate,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save inspection:", error);
+      return;
+    }
     setComplaints(
       complaints.map((c) =>
         c.id === inspectionDraft.id
           ? {
               ...c,
+              status: inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
+                ? "Under Verification"
+                : "Under Action",
               isDraft: false,
               inspection: {
                 remarks: inspectionDraft.remarks,
@@ -274,11 +256,28 @@ const StaffDashboard = () => {
     setInspectionDraft(null);
   };
 
-  const attachPhoto = (field, fileName) => {
-    setInspectionDraft((prev) => ({ ...prev, [field]: fileName }));
+  const attachPhoto = async (field, file) => {
+    if (!file) return;
+    try {
+      const uploaded = await uploadDashboardPhoto(file);
+      setInspectionDraft((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
+    } catch (error) {
+      console.error("Failed to upload inspection photo:", error);
+    }
   };
 
-  const advanceStage = (id) => {
+  const advanceStage = async (id) => {
+    const complaint = complaints.find((item) => item.id === id);
+    const nextStage = (complaint?.stage || 0) + 1;
+    const nextStatus = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][nextStage];
+    if (nextStatus) {
+      try {
+        await updateDashboardComplaint(id, { status: nextStatus });
+      } catch (error) {
+        console.error("Failed to advance complaint:", error);
+        return;
+      }
+    }
     setComplaints(
       complaints.map((c) =>
         c.id === id && c.stage < lifecycleStages.length - 1
@@ -288,7 +287,18 @@ const StaffDashboard = () => {
     );
   };
 
-  const revertStage = (id) => {
+  const revertStage = async (id) => {
+    const complaint = complaints.find((item) => item.id === id);
+    const previousStage = (complaint?.stage || 0) - 1;
+    const previousStatus = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][previousStage];
+    if (previousStatus) {
+      try {
+        await updateDashboardComplaint(id, { status: previousStatus });
+      } catch (error) {
+        console.error("Failed to revert complaint:", error);
+        return;
+      }
+    }
     setComplaints(
       complaints.map((c) => (c.id === id && c.stage > 0 ? { ...c, stage: c.stage - 1 } : c))
     );
@@ -311,11 +321,39 @@ const StaffDashboard = () => {
     }
   };
 
-  const handleUpdateProfile = (updatedStaff) => {
-    console.log("Profile updated:", updatedStaff);
+  const handleUpdateProfile = async (updatedStaff) => {
+    try {
+      const data = await updateDashboardProfile(getUserId(storedUser), {
+        name: updatedStaff.name,
+        designation: updatedStaff.role,
+        department: updatedStaff.department,
+        assignedArea: updatedStaff.ward,
+        contact: updatedStaff.contact,
+        email: updatedStaff.email,
+      });
+      setStaff((current) => ({ ...current, ...updatedStaff, ...(data.user || {}) }));
+    } catch (error) {
+      console.error("Failed to update staff profile:", error);
+    }
   };
 
-  const handleSaveInspection = (complaintId, formData) => {
+  const handleSaveInspection = async (complaintId, formData) => {
+    try {
+      await updateDashboardComplaint(complaintId, {
+        status: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][formData.newStage],
+        inspection: {
+          inspectionDate: formData.inspectionDate,
+          completionDate: formData.completionDate,
+          remarks: formData.remarks,
+          actionTaken: formData.actionTaken,
+          sitePhoto: formData.sitePhoto,
+          completionPhoto: formData.completionPhoto,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save physical inspection:", error);
+      return;
+    }
     setComplaints(
       complaints.map((c) =>
         c.id === complaintId
@@ -336,7 +374,23 @@ const StaffDashboard = () => {
     );
   };
 
-  const handleUpdateWork = (complaintId, formData) => {
+  const handleUpdateWork = async (complaintId, formData) => {
+    try {
+      await updateDashboardComplaint(complaintId, {
+        status: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][formData.newStage],
+        inspection: {
+          inspectionDate: formData.inspectionDate || "",
+          completionDate: formData.completionDateTime,
+          remarks: formData.remarks,
+          actionTaken: formData.actionTaken,
+          sitePhoto: formData.beforePhoto,
+          completionPhoto: formData.afterPhoto,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save work update:", error);
+      return;
+    }
     setComplaints(
       complaints.map((c) =>
         c.id === complaintId
@@ -357,17 +411,27 @@ const StaffDashboard = () => {
     );
   };
 
-  const handleMarkAsRead = (id) => {
+  const handleMarkAsRead = async (id) => {
+    await markDashboardNotificationRead(id).catch((error) => console.error("Failed to mark notification read:", error));
     setNotifications(
       notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
+    await Promise.all(notifications.filter((notification) => !notification.isRead).map((notification) => markDashboardNotificationRead(notification.id)))
+      .catch((error) => console.error("Failed to mark notifications read:", error));
     setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
   };
 
-  const handleStatusUpdate = (complaintId, newStage) => {
+  const handleStatusUpdate = async (complaintId, newStage) => {
+    const status = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][newStage] || "New";
+    try {
+      await updateDashboardComplaint(complaintId, { status });
+    } catch (error) {
+      console.error("Failed to update complaint status:", error);
+      return;
+    }
     setComplaints(
       complaints.map((c) => (c.id === complaintId ? { ...c, stage: newStage } : c))
     );
@@ -464,6 +528,7 @@ const StaffDashboard = () => {
     return (
       <LocationMap
         complaints={complaints}
+        ward={staff.ward}
         onBack={() => setShowLocationMap(false)}
       />
     );
@@ -495,7 +560,7 @@ const StaffDashboard = () => {
           <button type="button" className="sd-sb-link active" onClick={() => scrollTo("sd-top")}>
             📊 Dashboard
           </button>
-          <button type="button" className="sd-sb-link" onClick={() => setShowProfile(true)}>
+          <button type="button" className="sd-sb-link" onClick={() => openView(setShowProfile)}>
             👤 My Profile
           </button>
         </nav>
@@ -505,7 +570,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowAssignedComplaints(true)}
+            onClick={() => openView(setShowAssignedComplaints)}
           >
             🗂️ Assigned Complaints
             <span className="sd-sb-badge">
@@ -515,28 +580,28 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowComplaintDetails(true)}
+            onClick={() => openView(setShowComplaintDetails)}
           >
             📋 Complaint Details
           </button>
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowPhysicalInspection(true)}
+            onClick={() => openView(setShowPhysicalInspection)}
           >
             🔎 Physical Inspection
           </button>
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowActionWorkManagement(true)}
+            onClick={() => openView(setShowActionWorkManagement)}
           >
             ⚙️Action/Work Management
           </button>
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowComplaintStatus(true)}
+            onClick={() => openView(setShowComplaintStatus)}
           >
             ⚙️ Complaint Status Update
           </button>
@@ -547,14 +612,14 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowComplaintHistory(true)}
+            onClick={() => openView(setShowComplaintHistory)}
           >
             🕘 Complaint History
           </button>
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowNotifications(true)}
+            onClick={() => openView(setShowNotifications)}
           >
             🔔 Notifications
             <span className="sd-sb-badge">
@@ -564,7 +629,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => setShowLocationMap(true)}
+            onClick={() => openView(setShowLocationMap)}
           >
             🗺️ View Location on Map
           </button>
@@ -580,7 +645,9 @@ const StaffDashboard = () => {
 
         <div className="sd-sb-footer">
           <div className="sd-sb-user">
-            <div className="sd-sb-avatar">{initials}</div>
+            <div className="sd-sb-avatar">
+              {staff.profilePhoto ? <img src={staff.profilePhoto} alt="Profile" /> : initials}
+            </div>
             <div className="sd-sb-user-info">
               <b>{staff.name}</b>
               <span>{staff.staffId}</span>
@@ -614,7 +681,9 @@ const StaffDashboard = () => {
               🔔<span className="sd-tb-dot"></span>
             </button>
             <div className="sd-tb-user" id="sd-profile">
-              <div className="sd-tb-avatar">{initials}</div>
+              <div className="sd-tb-avatar">
+                {staff.profilePhoto ? <img src={staff.profilePhoto} alt="Profile" /> : initials}
+              </div>
               <div>
                 <b>{staff.name}</b>
                 <span>{staff.role}</span>
@@ -973,7 +1042,7 @@ const StaffDashboard = () => {
                         id="insp-site-photo"
                         type="file"
                         accept="image/*"
-                        onChange={(e) => attachPhoto("sitePhoto", e.target.files?.[0]?.name || "")}
+                        onChange={(e) => attachPhoto("sitePhoto", e.target.files?.[0])}
                       />
                     </label>
                   </div>
@@ -990,7 +1059,7 @@ const StaffDashboard = () => {
                         type="file"
                         accept="image/*"
                         onChange={(e) =>
-                          attachPhoto("completionPhoto", e.target.files?.[0]?.name || "")
+                          attachPhoto("completionPhoto", e.target.files?.[0])
                         }
                       />
                     </label>
@@ -1076,11 +1145,11 @@ const StaffDashboard = () => {
             <div className="sd-panel-head">
               <h3>🔔 Notifications & Alerts</h3>
               <span className="sd-panel-link">
-                {mockNotifications.filter((n) => !n.isRead).length} Unread
+                {notifications.filter((n) => !n.isRead).length} Unread
               </span>
             </div>
             <div className="sd-notif-list">
-              {mockNotifications.map((note) => (
+              {notifications.map((note) => (
                 <div
                   className="sd-notif-item"
                   key={note.id}
@@ -1172,16 +1241,25 @@ const StaffDashboard = () => {
                   border: "1px solid #e2e6ee",
                 }}
               >
-                <iframe
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  scrolling="no"
-                  marginHeight="0"
-                  marginWidth="0"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=73.70%2C18.55%2C73.80%2C18.65&layer=mapnik&marker=18.5912%2C73.7389"
-                  title="Live Location Map"
-                ></iframe>
+                {staffMapError ? (
+                  <div className="sd-empty-note">Google Maps could not be loaded.</div>
+                ) : !isStaffMapLoaded ? (
+                  <div className="sd-empty-note">Loading map...</div>
+                ) : !staffMapCenter ? (
+                  <div className="sd-empty-note">No complaint coordinates are available.</div>
+                ) : (
+                  <GoogleMap mapContainerStyle={staffMapContainerStyle} center={staffMapCenter} zoom={13}>
+                    {complaints
+                      .filter((complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined)
+                      .map((complaint) => (
+                        <Marker
+                          key={complaint.id}
+                          position={{ lat: complaint.coordinates.latitude, lng: complaint.coordinates.longitude }}
+                          title={`${complaint.complaintNumber} - ${complaint.issue}`}
+                        />
+                      ))}
+                  </GoogleMap>
+                )}
               </div>
               <div className="sd-map-grid">
                 {Object.entries(mapGroups).map(([location, items]) => (

@@ -15,9 +15,9 @@ const NewComplaints = ({ complaints, onBack }) => {
   const filteredComplaints = useMemo(() => {
     return newComplaints.filter((c) => {
       const matchesSearch =
-        c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.location.toLowerCase().includes(searchTerm.toLowerCase());
+        String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(c.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(c.location || "").toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesPriority = filterPriority === "All" || c.priority === filterPriority;
       

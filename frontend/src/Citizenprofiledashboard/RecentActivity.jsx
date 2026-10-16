@@ -1,69 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./RecentActivity.css";
-
-// ✅ HARDCODED MOCK DATA: CITIZEN-SIDE ACTIVITIES
-const mockActivities = [
-  {
-    id: "1",
-    timestamp: "Oct 05, 2026, 09:15 AM",
-    action: "Complaint Registered",
-    category: "Complaints",
-    complaintNumber: "MRI-550192",
-    description: "Successfully submitted a new complaint regarding 'Broken Footpath' near City Hospital Gate with 1 attached photo.",
-    device: "Chrome on Windows",
-    status: "Success"
-  },
-  {
-    id: "2",
-    timestamp: "Oct 04, 2026, 03:30 PM",
-    action: "Profile Updated",
-    category: "Account",
-    complaintNumber: null,
-    description: "Updated mobile number from +91 98765 43210 to +91 98765 43211 and changed location to 'Ward 3 — Riverside'.",
-    device: "Safari on macOS",
-    status: "Success"
-  },
-  {
-    id: "3",
-    timestamp: "Oct 03, 2026, 11:00 AM",
-    action: "Complaint Tracked",
-    category: "Tracking",
-    complaintNumber: "MRI-773820",
-    description: "Checked the real-time status of complaint regarding 'Overflowing Garbage Bin'. Status was 'Complaint Closed'.",
-    device: "Chrome on Android",
-    status: "Success"
-  },
-  {
-    id: "4",
-    timestamp: "Oct 02, 2026, 04:45 PM",
-    action: "Viewed Complaint Details",
-    category: "Complaints",
-    complaintNumber: "MRI-882910",
-    description: "Opened the detailed view of the 'Large Pothole' complaint to review the resolution remarks and after-repair photos.",
-    device: "Chrome on Windows",
-    status: "Success"
-  },
-  {
-    id: "5",
-    timestamp: "Oct 01, 2026, 10:00 AM",
-    action: "Password Changed",
-    category: "Security",
-    complaintNumber: null,
-    description: "Successfully updated the account password. A confirmation email was sent to the registered email address.",
-    device: "Chrome on Windows",
-    status: "Success"
-  },
-  {
-    id: "6",
-    timestamp: "Oct 01, 2026, 09:50 AM",
-    action: "Account Login",
-    category: "Security",
-    complaintNumber: null,
-    description: "Successful login to the Citizen Portal from a recognized device.",
-    device: "Chrome on Windows",
-    status: "Success"
-  }
-];
+import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
 const categoryBadgeMap = {
   "Complaints": "navy",
@@ -76,9 +13,27 @@ const RecentActivity = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [activities, setActivities] = useState([]);
+
+  useEffect(() => {
+    fetchDashboard("citizen", getUserId(getStoredUser()))
+      .then(({ complaints = [] }) => setActivities(complaints.flatMap((complaint) =>
+        (complaint.statusHistory || []).map((entry) => ({
+          id: `${complaint.id}-${entry.updatedAt}`,
+          timestamp: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
+          action: entry.status,
+          category: "Complaints",
+          complaintNumber: complaint.complaintNumber,
+          description: entry.remarks || `Complaint status changed to ${entry.status}`,
+          device: "MyRoad India",
+          status: "Success",
+        }))
+      )))
+      .catch((error) => console.error("Failed to load citizen activity:", error));
+  }, []);
 
   const filteredActivities = useMemo(() => {
-    return mockActivities.filter((a) => {
+    return activities.filter((a) => {
       const matchesSearch =
         a.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,7 +42,7 @@ const RecentActivity = ({ onBack }) => {
       const matchesCategory = filterCategory === "All" || a.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, filterCategory]);
+  }, [activities, searchTerm, filterCategory]);
 
   // Close modal on Escape key
   useEffect(() => {

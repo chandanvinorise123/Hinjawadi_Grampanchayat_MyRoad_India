@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./admindashboard.css";
 // Line 3
 import AdminProfile from "../adminprofiledashboard/AdminProfile";
@@ -12,6 +13,7 @@ import logo from '../assets/logo.jpeg';
 import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import VisitorsOverview from "../components/dashboard/VisitorsOverview";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
 /* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
@@ -51,7 +53,6 @@ const notifTone = {
 };
 
 // Backend API base URL
-const API_BASE_URL = "http://localhost:3200/api";
 
 // Normalize MongoDB _id to id
 const normalizeId = (doc) => ({ ...doc, id: doc.id || doc._id });
@@ -70,15 +71,12 @@ const mapContainerStyle = {
   borderRadius: "8px",
 };
 
-const defaultCenter = {
-  lat: 18.5912,
-  lng: 73.7389,
-};
+const defaultCenter = null;
 
 // ✅ Constants outside component so Google Maps script is NOT reloaded on every render
-const GOOGLE_MAPS_LIBRARIES = [];
+const GOOGLE_MAPS_LIBRARIES = ["places"];
 const GOOGLE_MAPS_API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyAnuZzrLyiyyaHEMSXlpQBvqYd19drIYwc";
+  import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const mapOptions = {
   styles: [
     { featureType: "poi", stylers: [{ visibility: "off" }] },
@@ -116,6 +114,8 @@ const markerIcons = {
 };
 
 const AdminDashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   // ✅ Load Google Maps script once (fast reload, no repeated script download)
   const { isLoaded: isMapLoaded, loadError: mapLoadError } = useJsApiLoader({
     id: "google-map-script",
@@ -123,12 +123,34 @@ const AdminDashboard = () => {
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  const [admin] = useState({
-    name: "Admin User",
-    role: "System Administrator",
-    contact: "+91 99000 00011",
-    staffId: "ADM-0001",
+  const storedAdmin = getStoredUser();
+  const [admin, setAdmin] = useState({
+    name: storedAdmin.name || "",
+    role: storedAdmin.designation || storedAdmin.role || "",
+    contact: storedAdmin.contact || storedAdmin.mobile || "",
+    staffId: storedAdmin.adminId || storedAdmin.staffId || getUserId(storedAdmin) || "",
+    profilePhoto: storedAdmin.profilePhoto || "",
   });
+
+  useEffect(() => {
+    const loadAdminProfile = async () => {
+      try {
+        const data = await fetchDashboard("admin", getUserId(storedAdmin));
+        if (data.profile) {
+          setAdmin((current) => ({
+            ...current,
+            ...data.profile,
+            staffId: data.profile.adminId || data.profile.staffId || current.staffId,
+            role: data.profile.designation || data.profile.role || current.role,
+            contact: data.profile.contact || data.profile.mobile || current.contact,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load admin dashboard profile:", error);
+      }
+    };
+    loadAdminProfile();
+  }, []);
 
   // ---------------- USERS (Staff & Verifiers) ----------------
   const [users, setUsers] = useState([]);
@@ -198,6 +220,23 @@ const AdminDashboard = () => {
   const [newPassword, setNewPassword] = useState("");
 
   const [showProfile, setShowProfile] = useState(false); // ✅ ADD THIS LINE
+
+  const openView = (setter) => {
+    setShowProfile(false);
+    setShowAdminManagement(false);
+    setShowComplaintManagement(false);
+    setShowComplaintVerification(false);
+    setShowComplaintDetails(false);
+    setShowStaffMonitoring(false);
+    setShowReports(false);
+    setter(true);
+  };
+
+  useEffect(() => {
+    if (!location.state?.openProfile) return;
+    openView(setShowProfile);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
   const [showStaffVerifierProfile, setShowStaffVerifierProfile] = useState(false);
     const [showComplaintVerification, setShowComplaintVerification] = useState(false);
   const [showStaffMonitoring, setShowStaffMonitoring] = useState(false);
@@ -283,7 +322,11 @@ const AdminDashboard = () => {
         const response = await fetch(`${API_BASE_URL}/complaints`);
         const data = await response.json();
         if (response.ok && data.success) {
-          const normalized = data.complaints.map(normalizeId);
+          const normalized = data.complaints.map((complaint) => ({
+            ...normalizeId(complaint),
+            lat: complaint.lat ?? complaint.coordinates?.latitude,
+            lng: complaint.lng ?? complaint.coordinates?.longitude,
+          }));
           setComplaints(normalized);
           if (normalized.length > 0) setSelectedId(normalized[0].id);
         }
@@ -597,11 +640,12 @@ const AdminDashboard = () => {
   // ---------------- COMPLAINT FILTERING ----------------
   const filteredComplaints = complaints.filter((c) => {
     const locStr = getLocationString(c.location).toLowerCase();
+    const normalizedSearchTerm = searchTerm.toLowerCase();
     const matchesSearch =
       !searchTerm.trim() ||
-      c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      locStr.includes(searchTerm.toLowerCase());
+      String(c.complaintNumber || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(c.issue || "").toLowerCase().includes(normalizedSearchTerm) ||
+      locStr.includes(normalizedSearchTerm);
     const matchesCategory = categoryFilter === "All" || c.category === categoryFilter;
     const matchesPriority = priorityFilter === "All" || c.priority === priorityFilter;
     return matchesSearch && matchesCategory && matchesPriority;
@@ -718,7 +762,7 @@ const AdminDashboard = () => {
   <>
     {showProfile ? (
       <AdminProfile
-        adminId={admin.staffId}
+        adminId={admin.staffId || getUserId(storedAdmin)}
         onBack={() => setShowProfile(false)}
       />
     ) :showComplaintManagement ? (
@@ -726,7 +770,10 @@ const AdminDashboard = () => {
      ): showComplaintVerification ? ( // ✅ ADD THIS BLOCK
         <ComplaintVerification onBack={() => setShowComplaintVerification(false)} />
       ): showComplaintDetails ? ( // ✅ ADD THIS BLOCK
-        <ComplaintDetails onBack={() => setShowComplaintDetails(false)} />
+        <ComplaintDetails
+          complaint={complaints.find((complaint) => complaint.id === selectedId)}
+          onBack={() => setShowComplaintDetails(false)}
+        />
        ): showStaffMonitoring ? ( // ✅ ADD THIS BLOCK
         <StaffWorkMonitoring onBack={() => setShowStaffMonitoring(false)} />
 
@@ -790,7 +837,7 @@ const AdminDashboard = () => {
                 📊 System Overview
               </button>
 
-              <button type="button" className="ad-sb-link" onClick={() => setShowProfile(true)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowProfile)}>
                 👤 My Profile
               </button>
             </nav>
@@ -816,29 +863,29 @@ const AdminDashboard = () => {
   <span className="ad-sb-badge">{users.length}</span>
 </button>
 
-              <button type="button" className="ad-sb-link" onClick={() => setShowAdminManagement(true)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowAdminManagement)}>
                 ⚙️ Admin Management
                 <span className="ad-sb-badge">{admins.length}</span>
               </button>
 
 
 
-              <button type="button" className="ad-sb-link" onClick={() => setShowComplaintManagement(true)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintManagement)}>
                 📋Complaint Management
                 <span className="ad-sb-badge">{complaints.length}</span>
               </button>
 
 
-              <button type="button" className="ad-sb-link" onClick={() => setShowComplaintDetails(true)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintDetails)}>
                📋Complaint Details
               </button>
 
-             <button type="button" className="ad-sb-link" onClick={() => setShowStaffMonitoring(true)}>
+             <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
                 🧑‍🔧 Staff & Work Monitoring
               </button>
 
 
-          <button type="button" className="ad-sb-link" onClick={() => setShowComplaintVerification(true)}>
+          <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
                 📈 Complaint Verification
               </button>
 
@@ -888,7 +935,7 @@ const AdminDashboard = () => {
             <nav className="ad-sb-nav">
 
 
-          <button type="button" className="ad-sb-link" onClick={() => setShowReports(true)}>
+          <button type="button" className="ad-sb-link" onClick={() => openView(setShowReports)}>
                  Reports Management
               </button>
 
@@ -921,7 +968,9 @@ const AdminDashboard = () => {
 
             <div className="ad-sb-footer">
               <div className="ad-sb-user">
-                <div className="ad-sb-avatar">{initials}</div>
+                <div className="ad-sb-avatar">
+                  {admin.profilePhoto ? <img src={admin.profilePhoto} alt="Profile" /> : initials}
+                </div>
                 <div className="ad-sb-user-info">
                   <b>{admin.name}</b>
                   <span>{admin.staffId}</span>
@@ -952,7 +1001,9 @@ const AdminDashboard = () => {
                   + Add Staff/Verifier
                 </button> */}
                 <div className="ad-tb-user" id="ad-profile">
-                  <div className="ad-tb-avatar">{initials}</div>
+                  <div className="ad-tb-avatar">
+                    {admin.profilePhoto ? <img src={admin.profilePhoto} alt="Profile" /> : initials}
+                  </div>
                   <div>
                     <b>{admin.name}</b>
                     <span>{admin.role}</span>
@@ -1760,6 +1811,8 @@ const AdminDashboard = () => {
                   <div className="ad-loading">Failed to load Google Maps. Please check your API key / internet connection.</div>
                 ) : !isMapLoaded ? (
                   <div className="ad-loading">Loading map...</div>
+                ) : !mapCenter ? (
+                  <div className="ad-loading">No complaint coordinates are available yet.</div>
                 ) : (
                   <GoogleMap
                     mapContainerStyle={mapContainerStyle}
