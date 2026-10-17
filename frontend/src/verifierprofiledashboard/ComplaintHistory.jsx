@@ -1,32 +1,31 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import "./ComplaintHistory.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const ComplaintHistory = ({ complaints = [], onBack }) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLog, setSelectedLog] = useState(null); // State for overlay modal
 
-  const selectedItem = complaints.find((c) => c.id === selectedId) || complaints[0];
-
-  useEffect(() => {
-    if (!selectedItem) {
-      setSelectedId(null);
-      return;
-    }
-
-    if (selectedItem.id !== selectedId) {
-      setSelectedId(selectedItem.id);
-    }
-  }, [selectedItem, selectedId]);
-
   // Filter complaints based on search
   const filteredComplaints = useMemo(() => {
-    return complaints.filter((c) =>
-      String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(c.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(c.issue || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const query = searchTerm.trim().toLowerCase();
+    return complaints.filter((complaint) => [
+      complaint.complaintNumber,
+      complaint.category,
+      complaint.issue,
+      complaint.location,
+      complaint.citizenName,
+      complaint.citizenContact,
+      complaint.status,
+      complaint.assignedStaff,
+      complaint.assignedVerifier,
+    ].some((value) => String(value || "").toLowerCase().includes(query)));
   }, [complaints, searchTerm]);
+
+  const selectedItem = filteredComplaints.find((complaint) => complaint.id === selectedId)
+    || filteredComplaints[0];
 
   // Helper to determine timeline event type based on log text
   const getEventType = (text) => {
@@ -46,12 +45,16 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
   const allLogEntries = useMemo(() => {
     if (!selectedItem) return [];
 
-    const entries = Array.isArray(selectedItem.log)
-      ? [...selectedItem.log].reverse()
-      : []; // Show newest first
+    const entries = (Array.isArray(selectedItem.log) ? selectedItem.log : [])
+      .map((entry) => ({
+        ...entry,
+        time: entry.time ? new Date(entry.time).toLocaleString() : "Time not recorded",
+      }))
+      .reverse();
     entries.push({
-      time: "Initial Submission",
-      text: `Complaint ${selectedItem.complaintNumber} was submitted by ${selectedItem.citizenName}.`,
+      time: selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString() : "Time not recorded",
+      text: `Complaint ${selectedItem.complaintNumber} was submitted by ${selectedItem.citizenName || "the citizen"}.`,
+      actor: "Citizen",
       eventType: "origin",
       isOrigin: true
     });
@@ -134,6 +137,7 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                   </div>
                 </div>
               </div>
+              <VerifierComplaintDetails complaint={selectedItem} />
 
               {/* 2. Log Table */}
               <div className="ch-table-section">
@@ -146,6 +150,7 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                     <thead>
                       <tr>
                         <th>Date & Time</th>
+                        <th>Updated By</th>
                         <th>Event Type</th>
                         <th>Description</th>
                         <th>Action</th>
@@ -157,6 +162,7 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                         return (
                           <tr key={index} className="ch-table-row" onClick={() => setSelectedLog({ ...entry, type })}>
                             <td className="ch-mono">{entry.time}</td>
+                            <td>{entry.actor || "Dashboard"}</td>
                             <td>
                               <span className={`ch-event-type-badge type-${type}`}>
                                 {type.toUpperCase()}
@@ -214,20 +220,43 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                   <div className="ch-detail-grid-modal">
                     <div className="ch-mini-card">
                       <span>Staff Remarks</span>
-                      <p>{selectedItem.remarks || "No remarks provided by staff."}</p>
+                      <p>{selectedItem.inspection?.remarks || selectedItem.remarks || "No remarks provided by staff."}</p>
                     </div>
                     <div className="ch-mini-card">
                       <span>Verifier Remarks</span>
-                      <p>{selectedItem.verifierRemarks || "Pending verification."}</p>
+                      <p>{selectedItem.verifierRemarks || selectedItem.previousRemarks || "Pending verification."}</p>
+                    </div>
+                    <div className="ch-mini-card">
+                      <span>Assigned Staff / Verifier</span>
+                      <p>{selectedItem.assignedStaff || "No staff assigned"} / {selectedItem.assignedVerifier || "No verifier assigned"}</p>
+                    </div>
+                    <div className="ch-mini-card">
+                      <span>Work Taken</span>
+                      <p>{selectedItem.inspection?.actionTaken || "No work action recorded."}</p>
                     </div>
                   </div>
                   
                   <div className="ch-photos-modal">
                     <span className="ch-photos-label">Attached Evidence:</span>
                     <div className="ch-photo-badges">
-                      {selectedItem.photos?.before && <div className="ch-photo-badge">📷 Before Repair</div>}
-                      {selectedItem.photos?.site && <div className="ch-photo-badge">📷 Site Photo</div>}
-                      {selectedItem.photos?.after && <div className="ch-photo-badge">📷 After Repair</div>}
+                      {selectedItem.photos?.before && (
+                        <div className="ch-photo-badge">
+                          <span>Before Repair</span>
+                          <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                        </div>
+                      )}
+                      {selectedItem.photos?.site && (
+                        <div className="ch-photo-badge">
+                          <span>Site Photo</span>
+                          <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                        </div>
+                      )}
+                      {selectedItem.photos?.after && (
+                        <div className="ch-photo-badge">
+                          <span>After Repair</span>
+                          <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                        </div>
+                      )}
                       {!selectedItem.photos?.before && !selectedItem.photos?.site && !selectedItem.photos?.after && (
                         <span className="ch-empty-text">No photos attached.</span>
                       )}

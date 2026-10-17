@@ -209,6 +209,11 @@ const complaintSchema = new mongoose.Schema(
           required: true,
         },
 
+        actor: {
+          type: String,
+          default: "Dashboard",
+        },
+
         remarks: {
           type: String,
           default: "",
@@ -218,6 +223,14 @@ const complaintSchema = new mongoose.Schema(
           type: Date,
           default: Date.now,
         },
+      },
+    ],
+
+    activityLog: [
+      {
+        actor: { type: String, default: "Dashboard" },
+        message: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
   },

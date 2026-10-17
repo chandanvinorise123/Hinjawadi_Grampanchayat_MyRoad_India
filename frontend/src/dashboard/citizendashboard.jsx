@@ -367,10 +367,20 @@ const CitizenDashboard = () => {
     e.preventDefault();
     if (!newComplaint.category.trim() || !newComplaint.description.trim()) return;
 
-    const citizenId = getCitizenId(getStoredUser());
-    const citizenName = getStoredUser().name;
+    const user = getStoredUser();
+    const citizenId = getCitizenId(user);
+    const citizenName = user.name;
+    const mobile = String(user.mobile || user.contact || "").replace(/\D/g, "").slice(-10);
     const [latitude, longitude] = newComplaint.gps.split(",").map(Number);
-    if (!citizenId || !citizenName || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!citizenId || !citizenName) {
+      alert("Please log in again before submitting a complaint.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      alert("Add a valid mobile number to your citizen profile before submitting.");
+      return;
+    }
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       alert("Capture your location before submitting the complaint.");
       return;
     }
@@ -383,10 +393,14 @@ const CitizenDashboard = () => {
       const body = new FormData();
       body.append("citizenId", citizenId);
       body.append("citizenName", citizenName);
+      body.append("mobile", mobile);
       body.append("category", newComplaint.category.trim());
       body.append("issueType", newComplaint.issue.trim() || "General Issue");
       body.append("description", newComplaint.description.trim());
-      body.append("location", newComplaint.location.trim());
+      body.append(
+        "location",
+        newComplaint.location.trim() || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+      );
       body.append("coordinates", JSON.stringify({ latitude, longitude }));
       if (newComplaint.photo) body.append("images", newComplaint.photo);
 
@@ -960,7 +974,15 @@ const CitizenDashboard = () => {
                 <div className="cdp-form-row">
                   <div className="cdp-field">
                     <label htmlFor="new-category">Category</label>
-                    <input id="new-category" type="text" placeholder="e.g. Road Issues" value={newComplaint.category} onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })} required />
+                    <select id="new-category" value={newComplaint.category} onChange={(e) => setNewComplaint({ ...newComplaint, category: e.target.value })} required>
+                      <option value="">Select a category</option>
+                      <option value="Road Issues">Road Issues</option>
+                      <option value="Sewerage & Drain Issues">Sewerage &amp; Drain Issues</option>
+                      <option value="Drinking Water Issues">Drinking Water Issues</option>
+                      <option value="Streetlight Issues">Streetlight Issues</option>
+                      <option value="Road Safety Issues">Road Safety Issues</option>
+                      <option value="Bridge & Culvert Issues">Bridge &amp; Culvert Issues</option>
+                    </select>
                   </div>
                   <div className="cdp-field">
                     <label htmlFor="new-issue">Specific Issue</label>

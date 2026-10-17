@@ -377,24 +377,17 @@
   color: var(--ink-soft);
 }
 
-.cdp-notif-photo-placeholder {
-  height: 100px;
-  background: var(--surface);
-  border: 1px dashed var(--line);
+.cdp-notif-photo-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  color: var(--ink-faint);
-  font-weight: 500;
   transition: all 0.2s ease;
 }
 
-.cdp-notif-photo-placeholder:hover {
+.cdp-notif-photo-image:hover {
   border-color: var(--saffron);
-  background: #fff6ea;
-  color: var(--saffron-dark);
 }
 
 

@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./Notifications.css";
+import StaffComplaintDetails from "./StaffComplaintDetails";
 
-const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) => {
+const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead }) => {
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedNotif, setSelectedNotif] = useState(null);
+  const [actionError, setActionError] = useState("");
   const modalRef = useRef(null);
 
   // Notification Type Config
@@ -14,6 +16,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
     "Reassignment": { icon: "🔄", color: "notif-purple", label: "REASSIGNMENT" },
     "Pending Reminder": { icon: "⏰", color: "notif-amber", label: "PENDING REMINDER" },
     "Verification Required": { icon: "✅", color: "notif-green", label: "VERIFICATION REQUIRED" },
+    "Verification Rejected": { icon: "❌", color: "notif-red", label: "CORRECTION REQUESTED" },
   };
 
   // Close modal on Escape key
@@ -58,13 +61,28 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
     });
   }, [notifications, filterType, filterStatus]);
 
-  const handleMarkRead = (id) => {
-    if (onMarkAsRead) onMarkAsRead(id);
-    setSelectedNotif(null);
+  const notificationTypes = useMemo(
+    () => ["All", ...new Set(notifications.map((notification) => notification.type).filter(Boolean))],
+    [notifications]
+  );
+
+  const handleMarkRead = async (id) => {
+    setActionError("");
+    try {
+      await onMarkAsRead?.(id);
+      setSelectedNotif(null);
+    } catch (error) {
+      setActionError(error.message || "Unable to update notification.");
+    }
   };
 
-  const handleMarkAllRead = () => {
-    if (onMarkAllRead) onMarkAllRead();
+  const handleMarkAllRead = async () => {
+    setActionError("");
+    try {
+      await onMarkAllRead?.();
+    } catch (error) {
+      setActionError(error.message || "Unable to update notifications.");
+    }
   };
 
   return (
@@ -78,6 +96,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
       </div>
 
       <div className="nt-container">
+        {actionError && <p role="alert" className="nt-action-error">{actionError}</p>}
         {/* 1. Stats Row */}
         <div className="nt-stats-row">
           <div className="nt-stat-card nt-stat-navy">
@@ -115,7 +134,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
           <div className="nt-filter-group">
             <span className="nt-filter-label">Type:</span>
             <div className="nt-filter-buttons">
-              {["All", "New Assignment", "Critical Priority", "Reassignment", "Pending Reminder", "Verification Required"].map((type) => (
+              {notificationTypes.map((type) => (
                 <button
                   key={type}
                   className={`nt-filter-btn ${filterType === type ? "active" : ""}`}
@@ -176,7 +195,11 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                 </thead>
                 <tbody>
                   {filteredNotifications.map((notif) => {
-                    const config = typeConfig[notif.type] || typeConfig["New Assignment"];
+                    const config = typeConfig[notif.type] || {
+                      icon: "📋",
+                      color: "notif-navy",
+                      label: String(notif.type || "NOTIFICATION").toUpperCase(),
+                    };
                     return (
                       <tr
                         key={notif.id}
@@ -231,7 +254,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                   <span className="nt-modal-type-icon">
                     {typeConfig[selectedNotif.type]?.icon || "📋"}
                   </span>
-                  {typeConfig[selectedNotif.type]?.label || "NOTIFICATION"}
+                  {typeConfig[selectedNotif.type]?.label || String(selectedNotif.type || "NOTIFICATION").toUpperCase()}
                 </span>
               </div>
               <button
@@ -275,6 +298,11 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                   {selectedNotif.text}
                 </div>
               </div>
+              {selectedNotif.complaint && (
+                <div className="nt-linked-complaint">
+                  <StaffComplaintDetails complaint={selectedNotif.complaint} />
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}

@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from "react";
 import "./CompletedWork.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const CompletedWork = ({ complaints, onBack, onVerify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [verifierRemarks, setVerifierRemarks] = useState("");
   const [verificationDateTime, setVerificationDateTime] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // 1. Filter only "Completed Work" items
   const completedItems = useMemo(() => {
@@ -26,7 +30,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
   };
 
   // 2. Handle Approval / Rejection
-  const handleAction = (action) => {
+  const handleAction = async (action) => {
     if (!verifierRemarks.trim()) {
       alert("Please add verification remarks before taking action.");
       return;
@@ -36,13 +40,17 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
       return;
     }
 
-    if (onVerify) {
-      onVerify(selectedItem.id, action, verifierRemarks, verificationDateTime);
+    setSaving(true);
+    setError("");
+    try {
+      await onVerify(selectedItem.id, action, verifierRemarks, verificationDateTime);
+      setSelectedItem(null);
+      setVerifierRemarks("");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save the verification decision.");
+    } finally {
+      setSaving(false);
     }
-    
-    // Clear selection after action
-    setSelectedItem(null);
-    setVerifierRemarks("");
   };
 
   const getStatusTone = (status) => {
@@ -102,6 +110,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                   <h3>Verification Details: {selectedItem.complaintNumber}</h3>
                   <span className="cw-category-tag">{selectedItem.category}</span>
                 </div>
+                <VerifierComplaintDetails complaint={selectedItem} />
 
                 {/* Requirement 1, 2, 3: View & Compare Photos */}
                 <div className="cw-section">
@@ -110,21 +119,27 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                     <div className="cw-photo-card cw-photo-before">
                       <span className="cw-photo-label">Before Repair</span>
                       <div className="cw-photo-placeholder">
-                        {selectedItem.photos?.before ? `📷 ${selectedItem.photos.before}` : "No photo available"}
+                        {selectedItem.photos?.before
+                          ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                          : "No photo available"}
                       </div>
                     </div>
                     <div className="cw-photo-arrow">️</div>
                     <div className="cw-photo-card cw-photo-after">
                       <span className="cw-photo-label">After Repair</span>
                       <div className="cw-photo-placeholder">
-                        {selectedItem.photos?.after ? `📷 ${selectedItem.photos.after}` : "No photo available"}
+                        {selectedItem.photos?.after
+                          ? <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                          : "No photo available"}
                       </div>
                     </div>
                   </div>
                   {selectedItem.photos?.site && (
                     <div className="cw-site-photo">
                       <span className="cw-photo-label">Site Inspection Photo</span>
-                      <div className="cw-photo-placeholder-small">📷 {selectedItem.photos.site}</div>
+                      <div className="cw-photo-placeholder-small">
+                        <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -155,6 +170,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
 
                 {/* Requirement 5 & 6: Add Remarks & Record Date/Time */}
                 <div className="cw-section cw-verification-form">
+                  {error && <p className="cw-save-error" role="alert">{error}</p>}
                   <h4>✅ Verifier Action</h4>
                   
                   <div className="cw-form-group">
@@ -179,10 +195,10 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                   </div>
 
                   <div className="cw-action-buttons">
-                    <button className="cw-btn cw-btn-reject" onClick={() => handleAction("reject")}>
+                    <button className="cw-btn cw-btn-reject" disabled={saving} onClick={() => handleAction("reject")}>
                       ❌ Work Not Satisfied (Reject)
                     </button>
-                    <button className="cw-btn cw-btn-approve" onClick={() => handleAction("approve")}>
+                    <button className="cw-btn cw-btn-approve" disabled={saving} onClick={() => handleAction("approve")}>
                       ✅ Work Satisfied (Approve)
                     </button>
                   </div>

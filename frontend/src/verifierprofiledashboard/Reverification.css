@@ -266,7 +266,25 @@
   color: var(--ink-soft);
 }
 
+.rv-photo-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.rv-save-error {
+  color: #b91c1c;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
 .rv-photo-arrow { font-size: 24px; color: var(--ink-faint); }
+
+.rv-site-photo {
+  max-width: 50%;
+  margin-top: 16px;
+}
 
 /* Staff Log */
 .rv-log-list {

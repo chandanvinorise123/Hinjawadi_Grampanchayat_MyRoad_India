@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import './LocationMap.css';
+import StaffComplaintDetails from "./StaffComplaintDetails";
 
 const LocationMap = ({ complaints, ward = "", onBack }) => {
     const [selectedLocationData, setSelectedLocationData] = useState(null);
+    const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
     const [filterCategory, setFilterCategory] = useState('All');
 
     // 1. Process Data: Group complaints by Location
@@ -47,15 +49,19 @@ const LocationMap = ({ complaints, ward = "", onBack }) => {
         return ['All', ...new Set(complaints.map(c => c.category))];
     }, [complaints]);
 
-    const mapComplaint = complaints.find(
-        (complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined
-    );
-    const mapUrl = mapComplaint
-        ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapComplaint.coordinates.longitude - 0.02}%2C${mapComplaint.coordinates.latitude - 0.02}%2C${mapComplaint.coordinates.longitude + 0.02}%2C${mapComplaint.coordinates.latitude + 0.02}&layer=mapnik&marker=${mapComplaint.coordinates.latitude}%2C${mapComplaint.coordinates.longitude}`
+    const validCoordinates = (complaint) => {
+        const { latitude, longitude } = complaint.coordinates || {};
+        return latitude !== null && latitude !== undefined && latitude !== "" && longitude !== null && longitude !== undefined && longitude !== ""
+            && Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude));
+    };
+    const mapComplaint = selectedMapComplaint || complaints.find(validCoordinates);
+    const mapUrl = mapComplaint && validCoordinates(mapComplaint)
+        ? `https://www.openstreetmap.org/export/embed.html?bbox=${Number(mapComplaint.coordinates.longitude) - 0.02}%2C${Number(mapComplaint.coordinates.latitude) - 0.02}%2C${Number(mapComplaint.coordinates.longitude) + 0.02}%2C${Number(mapComplaint.coordinates.latitude) + 0.02}&layer=mapnik&marker=${mapComplaint.coordinates.latitude}%2C${mapComplaint.coordinates.longitude}`
         : "";
 
     const handleLocationClick = (locData) => {
         setSelectedLocationData(locData);
+        setSelectedMapComplaint(locData.complaints.find(validCoordinates) || {});
     };
 
     const closeModal = () => {
@@ -154,10 +160,11 @@ const LocationMap = ({ complaints, ward = "", onBack }) => {
                                 src={mapUrl || undefined}
                                 title="Live Location Map"
                             ></iframe>
-                            <div className="lm-map-overlay-info">
-                                <p>📍 Interactive Map View</p>
-                                <small>Click on locations to view details</small>
-                            </div>
+                            {mapUrl && <div className="lm-map-overlay-info">
+                                <p>📍 {mapComplaint.complaintNumber || "Complaint location"}</p>
+                                <small>{mapComplaint.location || "Selected complaint coordinates"}</small>
+                            </div>}
+                            {!mapUrl && <div className="lm-map-no-coordinates">No GPS coordinates are available for this complaint location.</div>}
                         </div>
                     </div>
                 </div>
@@ -209,6 +216,7 @@ const LocationMap = ({ complaints, ward = "", onBack }) => {
                                                 <span className="lm-value lm-desc">{c.description}</span>
                                             </div>
                                         </div>
+                                        <StaffComplaintDetails complaint={c} showMap={false} />
                                     </div>
                                 ))}
                             </div>

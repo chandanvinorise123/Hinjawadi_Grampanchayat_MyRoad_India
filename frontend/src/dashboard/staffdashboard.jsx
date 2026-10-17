@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
-import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto } from "../utils/dashboardApi";
+import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto, toMediaUrl } from "../utils/dashboardApi";
 
 // ✅ Import all full-page components
 import MyProfile from "../staffprofiledashboard/MyProfile";
@@ -40,11 +40,36 @@ const colorForCategory = (category) => {
   return mapColors[Math.abs(hash) % mapColors.length];
 };
 
-const priorityTone = { High: "red", Medium: "amber", Low: "green" };
+const priorityTone = { Critical: "red", Urgent: "amber", Normal: "green", High: "red", Medium: "amber", Low: "green" };
 const staffMapContainerStyle = { width: "100%", height: "400px", borderRadius: "8px" };
 const GOOGLE_MAPS_LIBRARIES = ["places"];
 
-const workHistory = [];
+const stageForComplaintStatus = (status) => {
+  const normalized = String(status || "").toLowerCase();
+  if (["under verification", "under review", "verified"].includes(normalized)) return 4;
+  if (["resolved", "closed"].includes(normalized)) return 5;
+  if (normalized === "assigned") return 1;
+  if (normalized === "under action") return 2;
+  if (normalized === "in progress") return 3;
+  if (normalized === "rejected") return 1;
+  return 0;
+};
+
+const mapStaffComplaint = (complaint) => ({
+  ...complaint,
+  stage: stageForComplaintStatus(complaint.status),
+  verifierRemarks: [...(complaint.statusHistory || [])]
+    .reverse()
+    .find((entry) => entry.status === "Rejected")?.remarks || complaint.verifierRemarks || "",
+  inspection: complaint.inspection || {
+    remarks: "",
+    sitePhoto: complaint.images?.[0] || "",
+    actionTaken: "",
+    completionPhoto: complaint.images?.[1] || "",
+    inspectionDate: "",
+    completionDate: "",
+  },
+});
 
 /* ============================================
    MAIN COMPONENT
@@ -79,6 +104,7 @@ const StaffDashboard = () => {
   const [showMapView, setShowMapView] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [inspectionDraft, setInspectionDraft] = useState(null);
+  const [inspectionError, setInspectionError] = useState("");
 
   // ✅ Full Page Navigation States
   const [showProfile, setShowProfile] = useState(false);
@@ -117,10 +143,12 @@ const StaffDashboard = () => {
   };
 
   useEffect(() => {
+    let active = true;
     const loadDashboard = async () => {
       try {
         const user = getStoredUser();
         const data = await fetchDashboard("staff", getUserId(user));
+        if (!active) return;
         if (data.profile) {
           setStaff((current) => ({
             ...current,
@@ -132,22 +160,30 @@ const StaffDashboard = () => {
             joinDate: data.profile.joiningDate || current.joinDate,
           }));
         }
-        const mapped = (data.complaints || []).map((complaint) => ({
-          ...complaint,
-          stage: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved", "Closed"].indexOf(complaint.status),
-          inspection: complaint.inspection || {
-            remarks: "", sitePhoto: complaint.images?.[0] || "", actionTaken: "",
-            completionPhoto: complaint.images?.[1] || "", inspectionDate: "", completionDate: "",
-          },
-        }));
-        setComplaints(mapped);
-        setSelectedId(mapped[0]?.id || null);
+        const mapped = (data.complaints || []).map(mapStaffComplaint);
+        setComplaints((current) => {
+          const existing = new Map(current.map((complaint) => [complaint.id, complaint]));
+          return mapped.map((complaint) => {
+            const previous = existing.get(complaint.id);
+            return previous && JSON.stringify(previous) === JSON.stringify(complaint)
+              ? previous
+              : complaint;
+          });
+        });
+        setSelectedId((currentId) => mapped.some((complaint) => complaint.id === currentId)
+          ? currentId
+          : mapped[0]?.id || null);
         setNotifications(data.notifications || []);
       } catch (error) {
-        console.error("Failed to load staff dashboard:", error);
+        if (active) console.error("Failed to load staff dashboard:", error);
       }
     };
     loadDashboard();
+    const refreshTimer = window.setInterval(loadDashboard, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   // ✅ Helper Functions
@@ -166,13 +202,18 @@ const StaffDashboard = () => {
     .toUpperCase();
 
   // ✅ Dashboard Stats
+  const assignedComplaints = complaints.filter(
+    (complaint) => [staff.name, staff.staffId].some(
+      (identifier) => identifier && String(complaint.assignedStaff || "").trim().toLowerCase() === String(identifier).trim().toLowerCase()
+    )
+  );
   const overviewStats = [
-    { label: "Total Assigned", value: complaints.length, icon: "🗂️", tone: "navy" },
-    { label: "New Assigned", value: complaints.filter((c) => c.stage === 0).length, icon: "🆕", tone: "navy" },
-    { label: "Under Inspection", value: complaints.filter((c) => c.stage === 1).length, icon: "🔍", tone: "amber" },
-    { label: "Under Action", value: complaints.filter((c) => c.stage === 2 || c.stage === 3).length, icon: "️", tone: "orange" },
-    { label: "Pending Verification", value: complaints.filter((c) => c.stage === 4).length, icon: "⏳", tone: "amber" },
-    { label: "Completed Work", value: complaints.filter((c) => c.stage === 5).length, icon: "✅", tone: "green" },
+    { label: "All Complaints", value: complaints.length, icon: "🗂️", tone: "navy" },
+    { label: "Assigned to Me", value: assignedComplaints.length, icon: "🆕", tone: "navy" },
+    { label: "Under Inspection", value: complaints.filter((c) => ["Assigned", "Under Action"].includes(c.status)).length, icon: "🔍", tone: "amber" },
+    { label: "Work in Progress", value: complaints.filter((c) => c.status === "In Progress").length, icon: "️", tone: "orange" },
+    { label: "Pending Verification", value: complaints.filter((c) => c.status === "Under Verification").length, icon: "⏳", tone: "amber" },
+    { label: "Completed Work", value: complaints.filter((c) => ["Verified", "Resolved", "Closed"].includes(c.status)).length, icon: "✅", tone: "green" },
   ];
 
   // ✅ Group complaints by location for map
@@ -182,9 +223,13 @@ const StaffDashboard = () => {
     groups[key].push(c);
     return groups;
   }, {});
-  const mapComplaint = complaints.find(
-    (complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined
-  );
+  const hasCoordinates = (complaint) => complaint.coordinates?.latitude !== null
+    && complaint.coordinates?.latitude !== undefined
+    && complaint.coordinates?.longitude !== null
+    && complaint.coordinates?.longitude !== undefined
+    && Number.isFinite(Number(complaint.coordinates.latitude))
+    && Number.isFinite(Number(complaint.coordinates.longitude));
+  const mapComplaint = complaints.find(hasCoordinates);
   const staffMapCenter = mapComplaint
     ? { lat: mapComplaint.coordinates.latitude, lng: mapComplaint.coordinates.longitude }
     : null;
@@ -194,12 +239,25 @@ const StaffDashboard = () => {
   const filteredComplaints = complaints.filter((c) =>
     String(c.complaintNumber || "").toLowerCase().includes(normalizedSearchTerm) ||
     String(c.issue || "").toLowerCase().includes(normalizedSearchTerm) ||
-    String(c.location || "").toLowerCase().includes(normalizedSearchTerm)
+    String(c.location || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.citizenName || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.assignedStaff || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.assignedVerifier || "").toLowerCase().includes(normalizedSearchTerm) ||
+    String(c.status || "").toLowerCase().includes(normalizedSearchTerm)
   );
 
   // ✅ Handler Functions
+  const applyComplaintUpdate = (id, updatedComplaint) => {
+    if (!updatedComplaint) return;
+    const mappedComplaint = mapStaffComplaint(updatedComplaint);
+    setComplaints((current) => current.map((complaint) => (
+      complaint.id === id ? { ...complaint, ...mappedComplaint } : complaint
+    )));
+  };
+
   const startInspection = (c) => {
     setSelectedId(c.id);
+    setInspectionError("");
     setInspectionDraft({
       id: c.id,
       remarks: c.inspection.remarks,
@@ -214,11 +272,13 @@ const StaffDashboard = () => {
   const saveInspection = async (e) => {
     e.preventDefault();
     if (!inspectionDraft) return;
+    const nextStatus = inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
+      ? "Under Verification"
+      : "Under Action";
+    setInspectionError("");
     try {
-      await updateDashboardComplaint(inspectionDraft.id, {
-        status: inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
-          ? "Under Verification"
-          : "Under Action",
+      const result = await updateDashboardComplaint(inspectionDraft.id, {
+        status: nextStatus,
         inspection: {
           remarks: inspectionDraft.remarks,
           sitePhoto: inspectionDraft.sitePhoto,
@@ -228,31 +288,12 @@ const StaffDashboard = () => {
           completionDate: inspectionDraft.completionDate,
         },
       });
+      applyComplaintUpdate(inspectionDraft.id, result.complaint);
     } catch (error) {
       console.error("Failed to save inspection:", error);
+      setInspectionError(error.message || "Unable to save the inspection record.");
       return;
     }
-    setComplaints(
-      complaints.map((c) =>
-        c.id === inspectionDraft.id
-          ? {
-              ...c,
-              status: inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
-                ? "Under Verification"
-                : "Under Action",
-              isDraft: false,
-              inspection: {
-                remarks: inspectionDraft.remarks,
-                sitePhoto: inspectionDraft.sitePhoto,
-                actionTaken: inspectionDraft.actionTaken,
-                completionPhoto: inspectionDraft.completionPhoto,
-                inspectionDate: inspectionDraft.inspectionDate,
-                completionDate: inspectionDraft.completionDate,
-              },
-            }
-          : c
-      )
-    );
     setInspectionDraft(null);
   };
 
@@ -263,6 +304,7 @@ const StaffDashboard = () => {
       setInspectionDraft((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
     } catch (error) {
       console.error("Failed to upload inspection photo:", error);
+      setInspectionError(error.message || "Unable to upload the inspection photo.");
     }
   };
 
@@ -272,19 +314,13 @@ const StaffDashboard = () => {
     const nextStatus = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][nextStage];
     if (nextStatus) {
       try {
-        await updateDashboardComplaint(id, { status: nextStatus });
+        const result = await updateDashboardComplaint(id, { status: nextStatus });
+        applyComplaintUpdate(id, result.complaint);
       } catch (error) {
         console.error("Failed to advance complaint:", error);
         return;
       }
     }
-    setComplaints(
-      complaints.map((c) =>
-        c.id === id && c.stage < lifecycleStages.length - 1
-          ? { ...c, stage: c.stage + 1, isDraft: false }
-          : c
-      )
-    );
   };
 
   const revertStage = async (id) => {
@@ -293,15 +329,13 @@ const StaffDashboard = () => {
     const previousStatus = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][previousStage];
     if (previousStatus) {
       try {
-        await updateDashboardComplaint(id, { status: previousStatus });
+        const result = await updateDashboardComplaint(id, { status: previousStatus });
+        applyComplaintUpdate(id, result.complaint);
       } catch (error) {
         console.error("Failed to revert complaint:", error);
         return;
       }
     }
-    setComplaints(
-      complaints.map((c) => (c.id === id && c.stage > 0 ? { ...c, stage: c.stage - 1 } : c))
-    );
   };
 
   const handleDeleteDraft = (id) => {
@@ -339,7 +373,7 @@ const StaffDashboard = () => {
 
   const handleSaveInspection = async (complaintId, formData) => {
     try {
-      await updateDashboardComplaint(complaintId, {
+      const result = await updateDashboardComplaint(complaintId, {
         status: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][formData.newStage],
         inspection: {
           inspectionDate: formData.inspectionDate,
@@ -350,33 +384,17 @@ const StaffDashboard = () => {
           completionPhoto: formData.completionPhoto,
         },
       });
+      applyComplaintUpdate(complaintId, result.complaint);
+      return result;
     } catch (error) {
       console.error("Failed to save physical inspection:", error);
-      return;
+      throw error;
     }
-    setComplaints(
-      complaints.map((c) =>
-        c.id === complaintId
-          ? {
-              ...c,
-              stage: formData.newStage,
-              inspection: {
-                inspectionDate: formData.inspectionDate,
-                completionDate: formData.completionDate,
-                remarks: formData.remarks,
-                actionTaken: formData.actionTaken,
-                sitePhoto: formData.sitePhoto,
-                completionPhoto: formData.completionPhoto,
-              },
-            }
-          : c
-      )
-    );
   };
 
   const handleUpdateWork = async (complaintId, formData) => {
     try {
-      await updateDashboardComplaint(complaintId, {
+      const result = await updateDashboardComplaint(complaintId, {
         status: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][formData.newStage],
         inspection: {
           inspectionDate: formData.inspectionDate || "",
@@ -387,54 +405,49 @@ const StaffDashboard = () => {
           completionPhoto: formData.afterPhoto,
         },
       });
+      applyComplaintUpdate(complaintId, result.complaint);
+      return result;
     } catch (error) {
       console.error("Failed to save work update:", error);
-      return;
+      throw error;
     }
-    setComplaints(
-      complaints.map((c) =>
-        c.id === complaintId
-          ? {
-              ...c,
-              stage: formData.newStage,
-              inspection: {
-                ...c.inspection,
-                actionTaken: formData.actionTaken,
-                remarks: formData.remarks,
-                sitePhoto: formData.beforePhoto,
-                completionPhoto: formData.afterPhoto,
-                completionDate: formData.completionDateTime,
-              },
-            }
-          : c
-      )
-    );
   };
 
   const handleMarkAsRead = async (id) => {
-    await markDashboardNotificationRead(id).catch((error) => console.error("Failed to mark notification read:", error));
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    await markDashboardNotificationRead(id);
+    setNotifications((current) => current.map((notification) => (
+      notification.id === id ? { ...notification, isRead: true } : notification
+    )));
   };
 
   const handleMarkAllRead = async () => {
-    await Promise.all(notifications.filter((notification) => !notification.isRead).map((notification) => markDashboardNotificationRead(notification.id)))
-      .catch((error) => console.error("Failed to mark notifications read:", error));
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+    const unread = notifications.filter((notification) => !notification.isRead);
+    const results = await Promise.allSettled(
+      unread.map((notification) => markDashboardNotificationRead(notification.id))
+    );
+    const successfulIds = new Set(
+      results.flatMap((result, index) => result.status === "fulfilled" ? [unread[index].id] : [])
+    );
+    setNotifications((current) => current.map((notification) => (
+      successfulIds.has(notification.id) ? { ...notification, isRead: true } : notification
+    )));
+    const failures = results.filter((result) => result.status === "rejected");
+    if (failures.length) {
+      console.error("Failed to mark some staff notifications as read:", failures);
+      throw new Error(`Could not update ${failures.length} notification(s). Please retry.`);
+    }
   };
 
   const handleStatusUpdate = async (complaintId, newStage) => {
     const status = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][newStage] || "New";
     try {
-      await updateDashboardComplaint(complaintId, { status });
+      const result = await updateDashboardComplaint(complaintId, { status });
+      applyComplaintUpdate(complaintId, result.complaint);
+      return result;
     } catch (error) {
       console.error("Failed to update complaint status:", error);
-      return;
+      throw error;
     }
-    setComplaints(
-      complaints.map((c) => (c.id === complaintId ? { ...c, stage: newStage } : c))
-    );
   };
 
   /* ============================================
@@ -456,6 +469,7 @@ const StaffDashboard = () => {
       <AssignedComplaints
         complaints={complaints}
         staffId={staff.staffId}
+        staffName={staff.name}
         onBack={() => setShowAssignedComplaints(false)}
       />
     );
@@ -572,9 +586,9 @@ const StaffDashboard = () => {
             className="sd-sb-link"
             onClick={() => openView(setShowAssignedComplaints)}
           >
-            🗂️ Assigned Complaints
+            🗂️ Complaint Register
             <span className="sd-sb-badge">
-              {complaints.filter((c) => c.assignedStaffId === staff.staffId).length}
+              {complaints.length}
             </span>
           </button>
           <button
@@ -666,7 +680,7 @@ const StaffDashboard = () => {
           <div className="sd-search">
             <input
               type="text"
-              placeholder="Search assigned complaints..."
+              placeholder="Search all complaints..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -717,7 +731,7 @@ const StaffDashboard = () => {
           {/* FULL WIDTH: ASSIGNED WORK TABLE */}
           <div className="sd-panel" id="assigned-work" style={{ marginBottom: "24px" }}>
             <div className="sd-panel-head">
-              <h3>Assigned Complaints</h3>
+              <h3>All Complaints</h3>
               <span className="sd-panel-link">{filteredComplaints.length} total</span>
             </div>
             <div className="sd-table-wrap">
@@ -729,7 +743,7 @@ const StaffDashboard = () => {
                     <th style={{ minWidth: "200px" }}>Location</th>
                     <th style={{ minWidth: "100px" }}>Priority</th>
                     <th style={{ minWidth: "160px" }}>Status</th>
-                    <th style={{ minWidth: "120px" }}>Due</th>
+                    <th style={{ minWidth: "150px" }}>Assigned Staff</th>
                     <th style={{ width: "80px" }}></th>
                   </tr>
                 </thead>
@@ -757,11 +771,11 @@ const StaffDashboard = () => {
                           </span>
                         </td>
                         <td>
-                          <span className={`sd-badge sd-badge-${stageTone[c.stage]}`}>
-                            {lifecycleStages[c.stage]}
+                          <span className={`sd-badge sd-badge-${stageTone[c.stage] || "navy"}`}>
+                            {c.status || lifecycleStages[c.stage] || "Unknown"}
                           </span>
                         </td>
-                        <td className="sd-mono">{c.dueDate}</td>
+                        <td>{c.assignedStaff || "Not assigned"}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="sd-row-actions">
                             <button
@@ -868,15 +882,16 @@ const StaffDashboard = () => {
                   <h3>Work History</h3>
                 </div>
                 <div className="sd-notif-list">
-                  {workHistory.map((note, i) => (
-                    <div className="sd-notif-item" key={i}>
+                  {[...(selected.log || [])].reverse().map((note, i) => (
+                    <div className="sd-notif-item" key={`${note.time || "activity"}-${i}`}>
                       <span className="sd-notif-dot"></span>
                       <div>
-                        <b>{note.text}</b>
-                        <span>{note.time}</span>
+                        <b>{note.actor || "Dashboard"}: {note.text}</b>
+                        <span>{note.time && !Number.isNaN(new Date(note.time).getTime()) ? new Date(note.time).toLocaleString() : "Time not recorded"}</span>
                       </div>
                     </div>
                   ))}
+                  {!selected.log?.length && <p className="sd-empty-note">No activity has been recorded for this complaint yet.</p>}
                 </div>
               </div>
             </div>
@@ -901,8 +916,24 @@ const StaffDashboard = () => {
                   <b>{selected.priority}</b>
                 </div>
                 <div className="sd-detail-item">
-                  <span>Due Date</span>
-                  <b>{selected.dueDate}</b>
+                  <span>Submitted</span>
+                  <b>{selected.createdAt ? new Date(selected.createdAt).toLocaleString() : selected.date || "Not recorded"}</b>
+                </div>
+                <div className="sd-detail-item">
+                  <span>Current Status</span>
+                  <b>{selected.status || "Not recorded"}</b>
+                </div>
+                <div className="sd-detail-item">
+                  <span>Assigned Staff</span>
+                  <b>{selected.assignedStaff || "Not assigned"}</b>
+                </div>
+                <div className="sd-detail-item">
+                  <span>Assigned Verifier</span>
+                  <b>{selected.assignedVerifier || "Not assigned"}</b>
+                </div>
+                <div className="sd-detail-item">
+                  <span>Department</span>
+                  <b>{selected.department || "Not recorded"}</b>
                 </div>
                 <div className="sd-detail-item">
                   <span>Citizen</span>
@@ -916,34 +947,51 @@ const StaffDashboard = () => {
                   <span>Description</span>
                   <b>{selected.description}</b>
                 </div>
+                {selected.verifierRemarks && (
+                  <div className="sd-verifier-feedback">
+                    <b>Verifier requested correction</b>
+                    <p>{selected.verifierRemarks}</p>
+                  </div>
+                )}
                 <div className="sd-detail-item sd-detail-wide">
                   <span>Citizen Uploaded Photos</span>
                   <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     {selected.citizenPhotos && selected.citizenPhotos.length > 0 ? (
                       selected.citizenPhotos.map((photo, idx) => (
-                        <div
+                        <a
                           key={idx}
-                          style={{
-                            width: "60px",
-                            height: "60px",
-                            background: "#eef1f6",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            color: "#666",
-                            border: "1px solid #e2e6ee",
-                          }}
+                          href={toMediaUrl(photo)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: "block", width: "96px", height: "76px", borderRadius: "8px", border: "1px solid #e2e6ee", overflow: "hidden" }}
                         >
-                          📷 {photo}
-                        </div>
+                          <img src={toMediaUrl(photo)} alt={`Citizen evidence ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        </a>
                       ))
                     ) : (
                       <span style={{ color: "#888", fontSize: "13px" }}>
                         No photos uploaded by citizen.
                       </span>
                     )}
+                  </div>
+                </div>
+                <div className="sd-detail-item sd-detail-wide">
+                  <span>Before & After Work Photos</span>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+                    {[
+                      ["Before / Site", selected.inspection?.sitePhoto],
+                      ["After Work", selected.inspection?.completionPhoto],
+                    ].filter(([, photo]) => photo).length ? (
+                      [
+                        ["Before / Site", selected.inspection?.sitePhoto],
+                        ["After Work", selected.inspection?.completionPhoto],
+                      ].filter(([, photo]) => photo).map(([label, photo]) => (
+                        <a key={label} href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" style={{ width: "120px", color: "#1b4586", fontSize: "12px" }}>
+                          <img src={toMediaUrl(photo)} alt={`${label} work photo`} style={{ width: "120px", height: "84px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e6ee" }} />
+                          <span>{label}</span>
+                        </a>
+                      ))
+                    ) : <span style={{ color: "#888", fontSize: "13px" }}>No staff work photos attached.</span>}
                   </div>
                 </div>
                 <div className="sd-detail-item sd-detail-wide" style={{ alignItems: "center" }}>
@@ -990,6 +1038,7 @@ const StaffDashboard = () => {
                 </button>
               )}
             </div>
+            {inspectionError && <p className="sd-empty-note" role="alert">{inspectionError}</p>}
 
             {inspectionDraft && inspectionDraft.id === selected.id ? (
               <form className="sd-new-form" onSubmit={saveInspection}>
@@ -1036,7 +1085,7 @@ const StaffDashboard = () => {
                     <label htmlFor="insp-site-photo">Before-Work / Site Photograph</label>
                     <label className="sd-photo-upload">
                       {inspectionDraft.sitePhoto
-                        ? `📷 ${inspectionDraft.sitePhoto}`
+                        ? "Replace site photo"
                         : " Click to attach site photo"}
                       <input
                         id="insp-site-photo"
@@ -1045,6 +1094,7 @@ const StaffDashboard = () => {
                         onChange={(e) => attachPhoto("sitePhoto", e.target.files?.[0])}
                       />
                     </label>
+                    {inspectionDraft.sitePhoto && <img className="sd-inspection-preview" src={toMediaUrl(inspectionDraft.sitePhoto)} alt="Before-work site evidence preview" />}
                   </div>
                   <div className="sd-field">
                     <label htmlFor="insp-completion-photo">
@@ -1052,7 +1102,7 @@ const StaffDashboard = () => {
                     </label>
                     <label className="sd-photo-upload">
                       {inspectionDraft.completionPhoto
-                        ? `📷 ${inspectionDraft.completionPhoto}`
+                        ? "Replace after-repair photo"
                         : "📷 Click to attach after-repair photo"}
                       <input
                         id="insp-completion-photo"
@@ -1063,6 +1113,7 @@ const StaffDashboard = () => {
                         }
                       />
                     </label>
+                    {inspectionDraft.completionPhoto && <img className="sd-inspection-preview" src={toMediaUrl(inspectionDraft.completionPhoto)} alt="After-work completion evidence preview" />}
                   </div>
                 </div>
                 <div className="sd-field">
@@ -1092,7 +1143,7 @@ const StaffDashboard = () => {
               </form>
             ) : (
               <div className="sd-inspection-view">
-                {selected.inspection.remarks ? (
+                {selected.inspection.remarks || selected.inspection.sitePhoto || selected.inspection.completionPhoto || selected.inspection.actionTaken ? (
                   <>
                     <div className="sd-detail-grid" style={{ marginBottom: "16px" }}>
                       <div className="sd-detail-item">
@@ -1118,11 +1169,15 @@ const StaffDashboard = () => {
                     </div>
                     <div className="sd-detail-item">
                       <span>Before-Work Photo</span>
-                      <b>{selected.inspection.sitePhoto || "Not attached"}</b>
+                      {selected.inspection.sitePhoto
+                        ? <img className="sd-inspection-preview" src={toMediaUrl(selected.inspection.sitePhoto)} alt="Before-work site evidence" />
+                        : <b>Not attached</b>}
                     </div>
                     <div className="sd-detail-item">
                       <span>After-Work Photo</span>
-                      <b>{selected.inspection.completionPhoto || "Not attached"}</b>
+                      {selected.inspection.completionPhoto
+                        ? <img className="sd-inspection-preview" src={toMediaUrl(selected.inspection.completionPhoto)} alt="After-work completion evidence" />
+                        : <b>Not attached</b>}
                     </div>
                     <div className="sd-detail-item sd-detail-wide">
                       <span>Action Taken</span>
@@ -1250,12 +1305,13 @@ const StaffDashboard = () => {
                 ) : (
                   <GoogleMap mapContainerStyle={staffMapContainerStyle} center={staffMapCenter} zoom={13}>
                     {complaints
-                      .filter((complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined)
+                      .filter(hasCoordinates)
                       .map((complaint) => (
                         <Marker
                           key={complaint.id}
-                          position={{ lat: complaint.coordinates.latitude, lng: complaint.coordinates.longitude }}
+                          position={{ lat: Number(complaint.coordinates.latitude), lng: Number(complaint.coordinates.longitude) }}
                           title={`${complaint.complaintNumber} - ${complaint.issue}`}
+                          onClick={() => setSelectedId(complaint.id)}
                         />
                       ))}
                   </GoogleMap>
@@ -1278,7 +1334,7 @@ const StaffDashboard = () => {
                       ))}
                     </div>
                     <span className="sd-map-ward-count">
-                      {items.length} issue{items.length !== 1 ? "s" : ""} assigned
+                      {items.length} complaint{items.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                 ))}
@@ -1295,8 +1351,8 @@ const StaffDashboard = () => {
             >
               <div className="sd-quick-ic navy">🗂️</div>
               <div>
-                <h5>View Assigned Complaints</h5>
-                <p>Priority, location & due status</p>
+                <h5>View All Complaints</h5>
+                <p>Citizen reports, assignments, evidence & status</p>
               </div>
             </button>
             <button

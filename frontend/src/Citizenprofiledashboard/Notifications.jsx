@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./Notifications.css";
-import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
+import { fetchDashboard, getStoredUser, getUserId, toMediaUrl } from "../utils/dashboardApi";
 
 const typeBadgeMap = {
   "Registered": "navy",
@@ -11,6 +11,7 @@ const typeBadgeMap = {
   "Staff Assigned": "orange",
   "Action Initiated": "orange",
   "Work Completed": "amber",
+  "Complaint Status Updated": "orange",
   "Resolved/Closed": "green",
   "Complaint Resolved": "green",
 };
@@ -21,6 +22,7 @@ const typeFilterMap = {
   Assigned: ["Assigned", "Staff Assigned"],
   "Action Initiated": ["Action Initiated"],
   "Work Completed": ["Work Completed"],
+  "Status Updated": ["Complaint Status Updated"],
   "Resolved/Closed": ["Resolved/Closed", "Complaint Resolved"],
 };
 
@@ -105,6 +107,7 @@ const Notifications = ({ onBack }) => {
               <option value="Assigned">Assigned</option>
               <option value="Action Initiated">Action Initiated</option>
               <option value="Work Completed">Work Completed</option>
+              <option value="Status Updated">Status Updated</option>
               <option value="Resolved/Closed">Resolved/Closed</option>
             </select>
           </div>
@@ -211,19 +214,19 @@ const Notifications = ({ onBack }) => {
                     {selectedNotification.photos.before && (
                       <div className="cdp-notif-photo-card">
                         <span className="cdp-notif-photo-label">Before Repair</span>
-                        <div className="cdp-notif-photo-placeholder">📷 {selectedNotification.photos.before}</div>
+                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.before)} alt="Initial complaint evidence" />
                       </div>
                     )}
                     {selectedNotification.photos.site && (
                       <div className="cdp-notif-photo-card">
                         <span className="cdp-notif-photo-label">After Repair</span>
-                        <div className="cdp-notif-photo-placeholder">📷 {selectedNotification.photos.site}</div>
+                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.site)} alt="Before-work site evidence" />
                       </div>
                     )}
                     {selectedNotification.photos.after && (
                       <div className="cdp-notif-photo-card">
                         <span className="cdp-notif-photo-label">After Repair</span>
-                        <div className="cdp-notif-photo-placeholder">📷 {selectedNotification.photos.after}</div>
+                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.after)} alt="After-work completion evidence" />
                       </div>
                     )}
                   </div>

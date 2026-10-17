@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from "react";
 import "./Reverification.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const Reverification = ({ complaints, onBack, onReverify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [dateTime, setDateTime] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // 1. Filter only "Re-verification" items
   const reverifyQueue = useMemo(() => {
@@ -21,7 +25,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
   };
 
   // 2. Handle Approve or Reject Again
-  const handleAction = (action) => {
+  const handleAction = async (action) => {
     if (!remarks.trim()) {
       alert("Please add re-verification remarks before taking action.");
       return;
@@ -31,10 +35,16 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
       return;
     }
 
-    if (onReverify) {
-      onReverify(selectedItem.id, action, remarks, dateTime);
+    setSaving(true);
+    setError("");
+    try {
+      await onReverify(selectedItem.id, action, remarks, dateTime);
+      setSelectedItem(null);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save the re-verification decision.");
+    } finally {
+      setSaving(false);
     }
-    setSelectedItem(null);
   };
 
   return (
@@ -87,6 +97,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                   <h3>Re-verifying: {selectedItem.complaintNumber}</h3>
                   <span className="rv-category-tag">{selectedItem.category}</span>
                 </div>
+                <VerifierComplaintDetails complaint={selectedItem} />
 
                 {/* Requirement 2: View Previous Rejection Remarks */}
                 <div className="rv-section rv-alert-box">
@@ -104,16 +115,28 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                     <div className="rv-photo-card">
                       <span className="rv-photo-label">Before Repair (Original)</span>
                       <div className="rv-photo-placeholder">
-                        {selectedItem.photos?.before ? `📷 ${selectedItem.photos.before}` : "No photo"}
+                        {selectedItem.photos?.before
+                          ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Original before-repair evidence" />
+                          : "No photo"}
                       </div>
                     </div>
                     <div className="rv-photo-arrow">➡️</div>
                     <div className="rv-photo-card rv-photo-updated">
                       <span className="rv-photo-label">Updated After Repair (Resubmitted)</span>
                       <div className="rv-photo-placeholder">
-                        {selectedItem.photos?.after ? `📷 ${selectedItem.photos.after}` : "No photo"}
+                        {selectedItem.photos?.after
+                          ? <img src={toMediaUrl(selectedItem.photos.after)} alt="Resubmitted after-repair evidence" />
+                          : "No photo"}
                       </div>
                     </div>
+                    {selectedItem.photos?.site && (
+                      <div className="rv-site-photo">
+                        <span className="rv-photo-label">Site Inspection Photo</span>
+                        <div className="rv-photo-placeholder">
+                          <img src={toMediaUrl(selectedItem.photos.site)} alt="Resubmitted site inspection evidence" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -132,6 +155,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
 
                 {/* Requirement 6, 7, 8: Action Form (Remarks, Date, Approve/Reject) */}
                 <div className="rv-section rv-action-form">
+                  {error && <p className="rv-save-error" role="alert">{error}</p>}
                   <h4>✅ Re-verification Decision</h4>
                   
                   <div className="rv-form-group">
@@ -156,10 +180,10 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                   </div>
 
                   <div className="rv-action-buttons">
-                    <button className="rv-btn rv-btn-reject-again" onClick={() => handleAction("reject_again")}>
+                    <button className="rv-btn rv-btn-reject-again" disabled={saving} onClick={() => handleAction("reject_again")}>
                       ❌ Reject Again (Further Action Required)
                     </button>
-                    <button className="rv-btn rv-btn-approve" onClick={() => handleAction("approve")}>
+                    <button className="rv-btn rv-btn-approve" disabled={saving} onClick={() => handleAction("approve")}>
                       ✅ Approve Corrected Work
                     </button>
                   </div>

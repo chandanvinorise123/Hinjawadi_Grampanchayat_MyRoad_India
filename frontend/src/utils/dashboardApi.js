@@ -26,11 +26,14 @@ const request = async (path, options = {}) => {
 export const fetchDashboard = (role, userId) =>
   request(`/dashboard/${role}${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`);
 
-export const updateDashboardComplaint = (id, updates) =>
-  request(`/dashboard/complaints/${encodeURIComponent(id)}`, {
+export const updateDashboardComplaint = (id, updates) => {
+  const role = String(getStoredUser()?.role || "").toLowerCase();
+  const actorRole = ["admin", "staff", "verifier"].includes(role) ? role : undefined;
+  return request(`/dashboard/complaints/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    body: JSON.stringify(updates),
+    body: JSON.stringify({ ...updates, ...(actorRole ? { actorRole } : {}) }),
   });
+};
 
 export const markDashboardNotificationRead = (id) =>
   request(`/dashboard/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH" });

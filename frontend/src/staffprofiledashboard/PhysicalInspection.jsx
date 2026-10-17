@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./PhysicalInspection.css";
+import StaffComplaintDetails from "./StaffComplaintDetails";
+import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 const EMPTY_COMPLAINT = {
   id: "",
@@ -30,6 +32,9 @@ const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }
     completionPhoto: "",
     newStage: currentComplaint.stage,
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState("");
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Reset form when complaint changes
   useEffect(() => {
@@ -58,17 +63,34 @@ const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePhotoChange = (field, e) => {
-    const fileName = e.target.files?.[0]?.name || "";
-    setFormData((prev) => ({ ...prev, [field]: fileName }));
+  const handlePhotoChange = async (field, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormError("");
+    setUploadingPhoto(field);
+    try {
+      const uploaded = await uploadDashboardPhoto(file);
+      setFormData((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
+    } catch (error) {
+      setFormError(error.message || "Unable to upload the inspection photograph.");
+    } finally {
+      setUploadingPhoto("");
+      e.target.value = "";
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onSaveInspection) {
-      onSaveInspection(currentComplaintId, formData);
+    setSaving(true);
+    setFormError("");
+    try {
+      await onSaveInspection?.(currentComplaintId, formData);
+      setFormError("");
+    } catch (error) {
+      setFormError(error.message || "Unable to save the inspection record.");
+    } finally {
+      setSaving(false);
     }
-    alert(`Inspection for ${currentComplaint.complaintNumber} saved successfully!`);
   };
 
   return (
@@ -97,6 +119,8 @@ const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }
             ))}
           </select>
         </div>
+        <StaffComplaintDetails complaint={currentComplaint} />
+        {formError && <p className="pi-form-error" role="alert">{formError}</p>}
 
         {/* Inspection Form */}
         <form className="pi-form-card" onSubmit={handleSubmit}>
@@ -178,32 +202,36 @@ const PhysicalInspection = ({ complaints, selectedId, onBack, onSaveInspection }
             <div className="pi-field">
               <label>Before-Work / Site Photograph</label>
               <div className="pi-photo-upload">
-                <span>{formData.sitePhoto ? `📷 ${formData.sitePhoto}` : "Click to upload site photo"}</span>
+                <span>{uploadingPhoto === "sitePhoto" ? "Uploading..." : formData.sitePhoto ? "Replace site photo" : "Click to upload site photo"}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
+                  disabled={Boolean(uploadingPhoto)}
                   onChange={(e) => handlePhotoChange("sitePhoto", e)} 
                 />
               </div>
+              {formData.sitePhoto && <img className="pi-photo-preview" src={toMediaUrl(formData.sitePhoto)} alt="Before-work site evidence" />}
             </div>
 
             <div className="pi-field">
               <label>After-Work / Completion Photograph</label>
               <div className="pi-photo-upload">
-                <span>{formData.completionPhoto ? ` ${formData.completionPhoto}` : "Click to upload after-repair photo"}</span>
+                <span>{uploadingPhoto === "completionPhoto" ? "Uploading..." : formData.completionPhoto ? "Replace completion photo" : "Click to upload after-repair photo"}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
+                  disabled={Boolean(uploadingPhoto)}
                   onChange={(e) => handlePhotoChange("completionPhoto", e)} 
                 />
               </div>
+              {formData.completionPhoto && <img className="pi-photo-preview" src={toMediaUrl(formData.completionPhoto)} alt="After-work completion evidence" />}
             </div>
           </div>
 
           {/* Form Actions */}
           <div className="pi-form-actions">
             <button type="button" className="pi-btn-outline" onClick={onBack}>Cancel</button>
-            <button type="submit" className="pi-btn-primary">💾 Save Inspection Record</button>
+            <button type="submit" className="pi-btn-primary" disabled={saving || Boolean(uploadingPhoto)}>{saving ? "Saving..." : "💾 Save Inspection Record"}</button>
           </div>
         </form>
       </div>

@@ -161,6 +161,17 @@
   border: none;
 }
 
+.lm-map-no-coordinates {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--ink-soft);
+  text-align: center;
+  pointer-events: none;
+}
+
 .lm-map-overlay-info {
   position: absolute;
   bottom: 20px;

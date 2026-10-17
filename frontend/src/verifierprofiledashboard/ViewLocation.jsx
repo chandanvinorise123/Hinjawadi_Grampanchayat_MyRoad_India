@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./ViewLocation.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const GOOGLE_MAPS_LIBRARIES = ["places"];
+const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 const ViewLocation = ({ complaints, onBack }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
@@ -23,8 +26,14 @@ const ViewLocation = ({ complaints, onBack }) => {
     );
   }, [complaints, searchTerm]);
 
-  const coords = selectedItem?.coordinates
-    ? { lat: selectedItem.coordinates.latitude, lng: selectedItem.coordinates.longitude }
+  const latitudeValue = selectedItem?.coordinates?.latitude;
+  const longitudeValue = selectedItem?.coordinates?.longitude;
+  const latitude = Number(latitudeValue);
+  const longitude = Number(longitudeValue);
+  const coords = latitudeValue !== null && latitudeValue !== "" &&
+    longitudeValue !== null && longitudeValue !== "" &&
+    Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? { lat: latitude, lng: longitude }
     : null;
   
   const externalMapUrl = coords
@@ -77,17 +86,21 @@ const ViewLocation = ({ complaints, onBack }) => {
               <div className="vl-map-section">
                 <div className="vl-map-header">
                   <h3>Interactive Map View</h3>
-                  <a 
-                    href={externalMapUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="vl-external-map-btn"
-                  >
-                    📍 Open in Google Maps
-                  </a>
+                  {externalMapUrl ? (
+                    <a
+                      href={externalMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="vl-external-map-btn"
+                    >
+                      📍 Open in Google Maps
+                    </a>
+                  ) : (
+                    <span className="vl-external-map-btn vl-map-unavailable">No map coordinates</span>
+                  )}
                 </div>
                 <div className="vl-map-container">
-                  {loadError ? <div>Google Maps could not be loaded.</div> : !isLoaded ? <div>Loading map...</div> : coords ? (
+                  {loadError ? <div>Google Maps could not be loaded.</div> : !googleMapsApiKey ? <div>Interactive map is not configured. Use Open in Google Maps to view this location.</div> : !isLoaded ? <div>Loading map...</div> : coords ? (
                     <GoogleMap mapContainerStyle={{ width: "100%", height: "100%" }} center={coords} zoom={15}>
                       <Marker position={coords} title={selectedItem.complaintNumber} />
                     </GoogleMap>
@@ -106,11 +119,11 @@ const ViewLocation = ({ complaints, onBack }) => {
                   </div>
                   <div className="vl-detail-row">
                     <span>Latitude:</span>
-                    <b className="vl-mono">{coords.lat.toFixed(6)}</b>
+                    <b className="vl-mono">{coords ? coords.lat.toFixed(6) : "Not available"}</b>
                   </div>
                   <div className="vl-detail-row">
                     <span>Longitude:</span>
-                    <b className="vl-mono">{coords.lng.toFixed(6)}</b>
+                    <b className="vl-mono">{coords ? coords.lng.toFixed(6) : "Not available"}</b>
                   </div>
                   <div className="vl-detail-row">
                     <span>Nearby Landmarks:</span>
@@ -141,6 +154,24 @@ const ViewLocation = ({ complaints, onBack }) => {
                       Review the photos in the dashboard to ensure the background, landmarks, and issue match the mapped coordinates.
                     </p>
                   </div>
+                </div>
+              </div>
+              <VerifierComplaintDetails complaint={selectedItem} />
+              <div className="vl-card vl-evidence-card">
+                <h4>Complaint & Work Evidence</h4>
+                <div className="vl-evidence-grid">
+                  {[
+                    ["Before Repair", selectedItem.photos?.before],
+                    ["Site Inspection", selectedItem.photos?.site],
+                    ["After Repair", selectedItem.photos?.after],
+                  ].map(([label, photo]) => (
+                    <div className="vl-evidence-item" key={label}>
+                      <span>{label}</span>
+                      {photo
+                        ? <img src={toMediaUrl(photo)} alt={`${label} photograph`} />
+                        : <p>Not available</p>}
+                    </div>
+                  ))}
                 </div>
               </div>
             </>

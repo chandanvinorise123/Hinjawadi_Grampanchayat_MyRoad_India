@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./NewComplaints.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const NewComplaints = ({ complaints, onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,8 +29,8 @@ const NewComplaints = ({ complaints, onBack }) => {
 
   // Helper for badge colors
   const getPriorityTone = (priority) => {
-    if (priority === "High") return "red";
-    if (priority === "Medium") return "amber";
+    if (priority === "High" || priority === "Critical") return "red";
+    if (priority === "Medium" || priority === "Urgent") return "amber";
     return "green";
   };
 
@@ -105,9 +107,9 @@ const NewComplaints = ({ complaints, onBack }) => {
             <label>Priority:</label>
             <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
               <option value="All">All Priorities</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="Critical">Critical</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Normal">Normal</option>
             </select>
           </div>
         </div>
@@ -218,6 +220,7 @@ const NewComplaints = ({ complaints, onBack }) => {
                 <h4>📝 Description</h4>
                 <p className="nc-description">{selectedComplaint.description}</p>
               </div>
+              <VerifierComplaintDetails complaint={selectedComplaint} />
 
               {/* Photos */}
               <div className="nc-modal-section">
@@ -226,19 +229,28 @@ const NewComplaints = ({ complaints, onBack }) => {
                   {selectedComplaint.photos?.before && (
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">Before Repair</span>
-                      <div className="nc-photo-placeholder">📷 {selectedComplaint.photos.before}</div>
+                      <div className="nc-photo-placeholder">
+                        <img src={toMediaUrl(selectedComplaint.photos.before)} alt="Before repair evidence" />
+                      </div>
                     </div>
+                  )}
+                  {!selectedComplaint.photos?.before && !selectedComplaint.photos?.site && !selectedComplaint.photos?.after && (
+                    <p>No photographs were attached to this complaint.</p>
                   )}
                   {selectedComplaint.photos?.site && (
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">Site Photo</span>
-                      <div className="nc-photo-placeholder">📷 {selectedComplaint.photos.site}</div>
+                      <div className="nc-photo-placeholder">
+                        <img src={toMediaUrl(selectedComplaint.photos.site)} alt="Site inspection evidence" />
+                      </div>
                     </div>
                   )}
                   {selectedComplaint.photos?.after && (
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">After Repair</span>
-                      <div className="nc-photo-placeholder">📷 {selectedComplaint.photos.after}</div>
+                      <div className="nc-photo-placeholder">
+                        <img src={toMediaUrl(selectedComplaint.photos.after)} alt="After repair evidence" />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -261,7 +273,8 @@ const NewComplaints = ({ complaints, onBack }) => {
 const getCategoryColor = (category) => {
   const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
   let hash = 0;
-  for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  const value = String(category || "");
+  for (let i = 0; i < value.length; i++) hash = value.charCodeAt(i) + ((hash << 5) - hash);
   return mapColors[Math.abs(hash) % mapColors.length];
 };
 

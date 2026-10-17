@@ -1,13 +1,27 @@
 import React, { useState, useMemo } from "react";
 import "./Notifications.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
+
+const displayCategory = (category) => {
+  const normalized = String(category || "").trim().toLowerCase();
+  if (normalized.includes("work completed") || normalized.includes("work submitted")) return "Work Submitted";
+  if (normalized.includes("verification")) return "Verification Required";
+  if (normalized.includes("assigned") || normalized.includes("reassignment")) return "Reassignment";
+  if (normalized.includes("reminder")) return "Pending Reminder";
+  if (normalized.includes("resolved") || normalized.includes("status")) return "Status Update";
+  return category || "Other";
+};
 
 const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) => {
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [filterCategory, setFilterCategory] = useState("All");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Helper to get badge colors based on category
   const getCategoryStyle = (category) => {
-    switch (category) {
+    switch (displayCategory(category)) {
       case "Work Submitted": return "type-submitted";
       case "Verification Required": return "type-verification";
       case "Reassignment": return "type-reassignment";
@@ -16,15 +30,47 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
     }
   };
 
+  const normalizedNotifications = useMemo(
+    () => notifications.map((notification) => ({
+      ...notification,
+      category: displayCategory(notification.category || notification.type),
+    })),
+    [notifications]
+  );
+  const categories = useMemo(
+    () => ["All", ...new Set(normalizedNotifications.map((notification) => notification.category))],
+    [normalizedNotifications]
+  );
+
   // Filter notifications
   const filteredNotifications = useMemo(() => {
-    if (filterCategory === "All") return notifications;
-    return notifications.filter((n) => n.category === filterCategory);
-  }, [notifications, filterCategory]);
+    if (filterCategory === "All") return normalizedNotifications;
+    return normalizedNotifications.filter((n) => n.category === filterCategory);
+  }, [normalizedNotifications, filterCategory]);
 
-  const handleMarkRead = (id) => {
-    if (onMarkAsRead) onMarkAsRead(id);
-    setSelectedNotif(null);
+  const handleMarkRead = async (id) => {
+    setSaving(true);
+    setError("");
+    try {
+      await onMarkAsRead(id);
+      setSelectedNotif(null);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to mark the notification as read.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await onMarkAllRead();
+    } catch (saveError) {
+      setError(saveError.message || "Unable to mark all notifications as read.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -36,6 +82,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
       </div>
 
       <div className="notif-container">
+        {error && <div className="notif-error" role="alert">{error}</div>}
         {/* Summary Stats */}
         <div className="notif-stats">
           <div className="notif-stat-card">
@@ -43,18 +90,18 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
             <span className="notif-stat-label">Unread</span>
           </div>
           <div className="notif-stat-card">
-            <span className="notif-stat-num">{notifications.filter((n) => n.category === "Work Submitted").length}</span>
+            <span className="notif-stat-num">{normalizedNotifications.filter((n) => n.category === "Work Submitted").length}</span>
             <span className="notif-stat-label">Work Submitted</span>
           </div>
           <div className="notif-stat-card">
-            <span className="notif-stat-num">{notifications.filter((n) => n.category === "Pending Reminder").length}</span>
+            <span className="notif-stat-num">{normalizedNotifications.filter((n) => n.category === "Pending Reminder").length}</span>
             <span className="notif-stat-label">Pending Reminders</span>
           </div>
         </div>
 
         {/* Filters */}
         <div className="notif-filters">
-          {["All", "Work Submitted", "Verification Required", "Reassignment", "Pending Reminder"].map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               className={`notif-filter-btn ${filterCategory === cat ? "active" : ""}`}
@@ -63,7 +110,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
               {cat}
             </button>
           ))}
-          <button className="notif-mark-all-btn" onClick={onMarkAllRead}>
+          <button className="notif-mark-all-btn" disabled={saving} onClick={handleMarkAllRead}>
             ✓ Mark All as Read
           </button>
         </div>
@@ -99,7 +146,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                     <td>
                       {!notif.isRead && <span className="notif-unread-dot"></span>}
                     </td>
-                    <td className="notif-mono">{notif.time}</td>
+                    <td className="notif-mono">{notif.time && !Number.isNaN(new Date(notif.time).getTime()) ? new Date(notif.time).toLocaleString() : "—"}</td>
                     <td>
                       <span className={`notif-type-badge ${getCategoryStyle(notif.category)}`}>
                         {notif.category}
@@ -147,7 +194,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                 </div>
                 <div className="notif-info-item">
                   <span>Received At</span>
-                  <b>{selectedNotif.time}</b>
+                  <b>{selectedNotif.time && !Number.isNaN(new Date(selectedNotif.time).getTime()) ? new Date(selectedNotif.time).toLocaleString() : "—"}</b>
                 </div>
                 <div className="notif-info-item">
                   <span>Read Status</span>
@@ -159,11 +206,28 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                 <span className="notif-section-label">Full Message</span>
                 <p className="notif-modal-message">{selectedNotif.message}</p>
               </div>
+              {selectedNotif.complaint && (
+                <>
+                  <VerifierComplaintDetails complaint={selectedNotif.complaint} />
+                  <div className="notif-evidence-grid">
+                    {[
+                      ["Before Repair", selectedNotif.complaint.photos?.before],
+                      ["Site Inspection", selectedNotif.complaint.photos?.site],
+                      ["After Repair", selectedNotif.complaint.photos?.after],
+                    ].map(([label, photo]) => photo && (
+                      <div key={label}>
+                        <span>{label}</span>
+                        <img src={toMediaUrl(photo)} alt={`${label} evidence`} />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="notif-modal-footer">
               {!selectedNotif.isRead && (
-                <button className="notif-modal-action-btn" onClick={() => handleMarkRead(selectedNotif.id)}>
+                <button className="notif-modal-action-btn" disabled={saving} onClick={() => handleMarkRead(selectedNotif.id)}>
                   ✓ Mark as Read
                 </button>
               )}

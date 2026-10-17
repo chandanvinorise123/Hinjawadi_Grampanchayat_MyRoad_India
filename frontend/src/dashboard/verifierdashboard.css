@@ -132,6 +132,16 @@
 .vd-tb-user span { font-size: 11px; color: var(--ink-faint); }
 
 .vd-content { padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 32px) 50px; flex: 1; }
+.vd-error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  color: #b91c1c;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
 .vd-title-row { margin-bottom: 24px; }
 .vd-title-row h1 { font-size: clamp(20px, 1.6rem + 0.5vw, 24px); margin-bottom: 4px; }
 .vd-title-row p { color: var(--ink-soft); font-size: 13.5px; }
@@ -216,6 +226,7 @@
   width: 100%; height: 90px; border-radius: 8px; background: var(--surface-2); border: 1px dashed var(--line);
   display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 4px; color: var(--ink-faint);
 }
+.vd-photo-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .vd-photo-card span { font-size: 11px; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
 .vd-photo-card b { font-size: 12.5px; color: var(--ink); font-weight: 600; }
 
@@ -253,6 +264,177 @@
 .vd-quick-card h5 { font-size: 14px; margin-bottom: 3px; }
 .vd-quick-card p { font-size: 12px; color: var(--ink-faint); }
 
+/* ============ NEW TABLE FORMATS (Added for Details, Photos, and Verification) ============ */
+
+/* Citizen, Assignment & Work Details Table */
+.vd-detail-table-grid {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vd-detail-table-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--surface-2);
+}
+.vd-detail-table-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.vd-detail-table-row.vd-full-width {
+  grid-template-columns: 1fr;
+}
+.vd-detail-table-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.vd-detail-label {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.vd-detail-value {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.vd-detail-value.vd-description {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 400;
+  background: var(--surface);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--saffron);
+}
+
+/* Photos Table Format */
+.vd-photo-table {
+  padding: 20px 22px;
+  overflow-x: auto;
+}
+.vd-photo-table table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+.vd-photo-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--line);
+}
+.vd-photo-table td {
+  padding: 16px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--surface-2);
+}
+.vd-photo-table-img {
+  width: 100%;
+  max-width: 200px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+.vd-photo-placeholder {
+  width: 100%;
+  max-width: 200px;
+  height: 140px;
+  background: var(--surface);
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Physical Verification Table Format */
+.vd-verification-table {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.vd-verification-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  align-items: flex-start;
+}
+@media (max-width: 768px) {
+  .vd-verification-row {
+    grid-template-columns: 1fr;
+  }
+}
+.vd-verification-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  padding-top: 10px;
+}
+.vd-verification-value {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vd-verification-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+.vd-verification-textarea:focus {
+  outline: none;
+  border-color: var(--navy-700);
+  box-shadow: 0 0 0 3px rgba(27, 69, 134, 0.1);
+}
+.vd-verification-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.vd-verification-info {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+  background: #fff1e2;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--orange);
+}
+.vd-verification-success {
+  font-size: 13px;
+  color: var(--resolved);
+  font-weight: 600;
+  background: #e8f6ec;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--resolved);
+}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 1024px) { .vd-dash-grid { grid-template-columns: 1fr; } }
 
@@ -269,4 +451,259 @@
 @media (max-width: 480px) {
   .vd-tb-user { display: none; }
   .vd-search { max-width: none; }
+}
+
+/* View Details Button */
+.vd-view-details-btn {
+  background: var(--saffron);
+  color: #3a1e00;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.vd-view-details-btn:hover {
+  background: var(--saffron-dark);
+}
+
+/* Complaint Details Section Spacing */
+#complaint-details-section {
+  margin-top: 24px;
+}
+
+/* Ensure detail sections have proper spacing */
+#complaint-details-section .vd-panel {
+  margin-bottom: 24px;
+}
+
+/* ============ VERIFY & ACTIVITY COLUMN BUTTONS ============ */
+.vd-verify-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--saffron);
+  color: #3a1e00;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.vd-verify-btn:hover {
+  background: var(--saffron-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 153, 51, 0.3);
+}
+
+.vd-activity-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  color: var(--navy-900);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.vd-activity-btn:hover {
+  background: #eaf0fb;
+  border-color: var(--navy-700);
+  color: var(--navy-700);
+  transform: translateY(-1px);
+}
+
+/* ============ ACTIVITY LOG MODAL ============ */
+.vd-activity-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(11, 36, 71, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: vdFadeIn 0.2s ease-out;
+}
+
+@keyframes vdFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vd-activity-modal {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px -20px rgba(11, 36, 71, 0.4);
+  animation: vdSlideUp 0.3s ease-out;
+}
+
+@keyframes vdSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.vd-activity-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  z-index: 10;
+}
+
+.vd-activity-modal-header h3 {
+  font-size: 16px;
+  margin: 0 0 4px 0;
+  color: var(--navy-900);
+}
+
+.vd-activity-modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.vd-activity-modal-close:hover {
+  background: var(--surface);
+  color: var(--red);
+}
+
+.vd-activity-modal-body {
+  padding: 24px;
+}
+
+.vd-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vd-activity-item {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+.vd-activity-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.vd-activity-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--saffron);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.vd-activity-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vd-activity-content b {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.vd-activity-content span {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.vd-activity-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-faint);
+}
+
+.vd-activity-empty p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.vd-activity-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  background: var(--surface);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+/* ============ FULL-WIDTH TABLE LAYOUT ============ */
+.vd-panel#queue-panel {
+  margin-bottom: 24px;
+}
+
+.vd-panel#queue-panel .vd-table-wrap {
+  width: 100%;
+}
+
+.vd-panel#queue-panel table {
+  min-width: 900px;
+}
+
+.vd-panel#queue-panel th,
+.vd-panel#queue-panel td {
+  padding: 14px 16px;
+}
+
+/* Responsive adjustments for new columns */
+@media (max-width: 1024px) {
+  .vd-verify-btn,
+  .vd-activity-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .vd-verify-btn span,
+  .vd-activity-btn span {
+    display: none;
+  }
+  .vd-verify-btn::after {
+    content: "✅";
+  }
+  .vd-activity-btn::after {
+    content: "📜";
+  }
 }

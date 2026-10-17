@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from "react";
 import "./PhysicalVerification.css";
+import { toMediaUrl } from "../utils/dashboardApi";
+import VerifierComplaintDetails from "./VerifierComplaintDetails";
 
 const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [decision, setDecision] = useState("approve"); // 'approve' or 'reject'
   const [remarks, setRemarks] = useState("");
   const [dateTime, setDateTime] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // 1. Filter items ready for Physical Verification
   const verificationQueue = useMemo(() => {
@@ -23,7 +27,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
   };
 
   // 2. Submit Verification Result
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!remarks.trim()) {
       alert("Verification remarks are mandatory before submitting.");
       return;
@@ -33,10 +37,16 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
       return;
     }
 
-    if (onSubmitVerification) {
-      onSubmitVerification(selectedItem.id, decision, remarks, dateTime);
+    setSaving(true);
+    setError("");
+    try {
+      await onSubmitVerification(selectedItem.id, decision, remarks, dateTime);
+      setSelectedItem(null);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save the verification decision.");
+    } finally {
+      setSaving(false);
     }
-    setSelectedItem(null);
   };
 
   return (
@@ -91,6 +101,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                     <p className="pv-subtitle">{selectedItem.category} • {selectedItem.citizenName}</p>
                   </div>
                 </div>
+                <VerifierComplaintDetails complaint={selectedItem} />
 
                 {/* Quick Info & Photos */}
                 <div className="pv-info-grid">
@@ -107,11 +118,27 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                     <div className="pv-photo-row">
                       <div className="pv-mini-photo">
                         <span>Before</span>
-                        <div>{selectedItem.photos?.before ? "📷" : "N/A"}</div>
+                        <div>
+                          {selectedItem.photos?.before
+                            ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                            : "N/A"}
+                        </div>
                       </div>
                       <div className="pv-mini-photo">
                         <span>After</span>
-                        <div>{selectedItem.photos?.after ? "📷" : "N/A"}</div>
+                        <div>
+                          {selectedItem.photos?.after
+                            ? <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                            : "N/A"}
+                        </div>
+                      </div>
+                      <div className="pv-mini-photo">
+                        <span>Site</span>
+                        <div>
+                          {selectedItem.photos?.site
+                            ? <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                            : "N/A"}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -119,6 +146,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
 
                 {/* Verification Action Form */}
                 <div className="pv-action-form">
+                  {error && <p className="pv-save-error" role="alert">{error}</p>}
                   <h4>Submit Verification Result</h4>
                   
                   {/* Decision Toggle */}
@@ -163,8 +191,8 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                   </div>
 
                   {/* Submit Button */}
-                  <button className="pv-submit-btn" onClick={handleSubmit}>
-                    {decision === 'approve' ? '✅ Submit Verification (Approve)' : '❌ Submit Verification (Reject)'}
+                  <button className="pv-submit-btn" disabled={saving} onClick={handleSubmit}>
+                    {saving ? "Saving..." : decision === 'approve' ? '✅ Submit Verification (Approve)' : '❌ Submit Verification (Reject)'}
                   </button>
                 </div>
               </>

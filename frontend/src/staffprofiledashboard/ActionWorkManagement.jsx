@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./ActionWorkManagement.css";
+import StaffComplaintDetails from "./StaffComplaintDetails";
+import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 const EMPTY_COMPLAINT = {
   id: "",
@@ -28,6 +30,9 @@ const ActionWorkManagement = ({ complaints, selectedId, onBack, onUpdateWork }) 
     afterPhoto: "",
     completionDateTime: "",
   });
+  const [uploadingPhoto, setUploadingPhoto] = useState("");
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Reset form when complaint changes
   useEffect(() => {
@@ -55,17 +60,33 @@ const ActionWorkManagement = ({ complaints, selectedId, onBack, onUpdateWork }) 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePhotoChange = (field, e) => {
-    const fileName = e.target.files?.[0]?.name || "";
-    setFormData((prev) => ({ ...prev, [field]: fileName }));
+  const handlePhotoChange = async (field, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormError("");
+    setUploadingPhoto(field);
+    try {
+      const uploaded = await uploadDashboardPhoto(file);
+      setFormData((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
+    } catch (error) {
+      setFormError(error.message || "Unable to upload the work photograph.");
+    } finally {
+      setUploadingPhoto("");
+      e.target.value = "";
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onUpdateWork) {
-      onUpdateWork(currentComplaintId, formData);
+    setSaving(true);
+    setFormError("");
+    try {
+      await onUpdateWork?.(currentComplaintId, formData);
+    } catch (error) {
+      setFormError(error.message || "Unable to save the work update.");
+    } finally {
+      setSaving(false);
     }
-    alert(`Work update for ${currentComplaint.complaintNumber} saved successfully!`);
   };
 
   return (
@@ -94,6 +115,8 @@ const ActionWorkManagement = ({ complaints, selectedId, onBack, onUpdateWork }) 
             ))}
           </select>
         </div>
+        <StaffComplaintDetails complaint={currentComplaint} />
+        {formError && <p className="awm-form-error" role="alert">{formError}</p>}
 
         {/* Work Management Form */}
         <form className="awm-form-card" onSubmit={handleSubmit}>
@@ -163,32 +186,36 @@ const ActionWorkManagement = ({ complaints, selectedId, onBack, onUpdateWork }) 
             <div className="awm-field">
               <label>Upload Before-Work Photograph</label>
               <div className="awm-photo-upload">
-                <span>{formData.beforePhoto ? `📷 ${formData.beforePhoto}` : "Click to upload before-work photo"}</span>
+                <span>{uploadingPhoto === "beforePhoto" ? "Uploading..." : formData.beforePhoto ? "Replace before-work photo" : "Click to upload before-work photo"}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
+                  disabled={Boolean(uploadingPhoto)}
                   onChange={(e) => handlePhotoChange("beforePhoto", e)} 
                 />
               </div>
+              {formData.beforePhoto && <img className="awm-photo-preview" src={toMediaUrl(formData.beforePhoto)} alt="Before-work evidence" />}
             </div>
 
             <div className="awm-field">
               <label>Upload Work Completion / After-Work Photograph</label>
               <div className="awm-photo-upload">
-                <span>{formData.afterPhoto ? `📷 ${formData.afterPhoto}` : "Click to upload after-work photo"}</span>
+                <span>{uploadingPhoto === "afterPhoto" ? "Uploading..." : formData.afterPhoto ? "Replace after-work photo" : "Click to upload after-work photo"}</span>
                 <input 
                   type="file" 
                   accept="image/*" 
+                  disabled={Boolean(uploadingPhoto)}
                   onChange={(e) => handlePhotoChange("afterPhoto", e)} 
                 />
               </div>
+              {formData.afterPhoto && <img className="awm-photo-preview" src={toMediaUrl(formData.afterPhoto)} alt="After-work evidence" />}
             </div>
           </div>
 
           {/* Form Actions */}
           <div className="awm-form-actions">
             <button type="button" className="awm-btn-outline" onClick={onBack}>Cancel</button>
-            <button type="submit" className="awm-btn-primary">💾 Save Work Update</button>
+            <button type="submit" className="awm-btn-primary" disabled={saving || Boolean(uploadingPhoto)}>{saving ? "Saving..." : "💾 Save Work Update"}</button>
           </div>
         </form>
       </div>

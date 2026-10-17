@@ -1,15 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./ComplaintHistory.css";
+import StaffComplaintDetails from "./StaffComplaintDetails";
 
 const ComplaintHistory = ({ complaints, onBack }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filterType, setFilterType] = useState("All");
   const modalRef = useRef(null);
-
-  const stageLabels = [
-    "Action Initiated", "Work In Progress", "Work Completed",
-    "After-Repair Upload", "Verification", "Work Resolved / Closed",
-  ];
 
   // Close modal on Escape key
   useEffect(() => {
@@ -45,57 +41,45 @@ const ComplaintHistory = ({ complaints, onBack }) => {
   const historyLog = useMemo(() => {
     const log = [];
     complaints.forEach((c) => {
-      log.push({
-        id: `${c.id}-assign`,
-        complaintNumber: c.complaintNumber,
-        issue: c.issue,
-        type: "Assignment",
-        date: "Initial",
-        description: `Complaint assigned for ${c.location}.`,
-        photos: [],
-        complaintRef: c
+      const events = Array.isArray(c.log) ? c.log : [];
+      if (!events.length) {
+        log.push({
+          id: `${c.id}-submitted`,
+          complaintNumber: c.complaintNumber,
+          issue: c.issue,
+          type: "Submitted",
+          date: c.createdAt ? new Date(c.createdAt).toLocaleString() : "Time not recorded",
+          timestamp: c.createdAt ? new Date(c.createdAt).getTime() : 0,
+          description: `Complaint submitted for ${c.location || "the recorded location"}.`,
+          complaintRef: c,
+        });
+        return;
+      }
+      events.forEach((event, index) => {
+        const actor = String(event.actor || "Dashboard");
+        const normalizedActor = actor.toLowerCase();
+        const type = normalizedActor.includes("admin")
+          ? "Admin Update"
+          : normalizedActor.includes("verifier")
+            ? "Verification"
+            : normalizedActor.includes("staff")
+              ? "Work Update"
+              : "Status Change";
+        const timestamp = event.time ? new Date(event.time).getTime() : 0;
+        log.push({
+          id: `${c.id}-event-${index}`,
+          complaintNumber: c.complaintNumber,
+          issue: c.issue,
+          actor,
+          type,
+          date: timestamp ? new Date(timestamp).toLocaleString() : "Time not recorded",
+          timestamp,
+          description: event.text || "Complaint activity updated.",
+          complaintRef: c,
+        });
       });
-
-      if (c.stage >= 0) {
-        log.push({
-          id: `${c.id}-status`,
-          complaintNumber: c.complaintNumber,
-          issue: c.issue,
-          type: "Status Change",
-          date: "Recent",
-          description: `Status updated to: ${stageLabels[c.stage]}`,
-          photos: [],
-          complaintRef: c
-        });
-      }
-
-      if (c.inspection?.remarks) {
-        log.push({
-          id: `${c.id}-inspect`,
-          complaintNumber: c.complaintNumber,
-          issue: c.issue,
-          type: "Inspection",
-          date: c.inspection.inspectionDate ? new Date(c.inspection.inspectionDate).toLocaleDateString() : "Recent",
-          description: c.inspection.remarks,
-          photos: c.inspection.sitePhoto ? [c.inspection.sitePhoto] : [],
-          complaintRef: c
-        });
-      }
-
-      if (c.inspection?.actionTaken) {
-        log.push({
-          id: `${c.id}-action`,
-          complaintNumber: c.complaintNumber,
-          issue: c.issue,
-          type: "Action Taken",
-          date: c.inspection.completionDate ? new Date(c.inspection.completionDate).toLocaleDateString() : "Recent",
-          description: c.inspection.actionTaken,
-          photos: c.inspection.completionPhoto ? [c.inspection.completionPhoto] : [],
-          complaintRef: c
-        });
-      }
     });
-    return log.sort((a, b) => (a.date === "Initial" ? -1 : 1));
+    return log.sort((a, b) => b.timestamp - a.timestamp);
   }, [complaints]);
 
   const filteredLog = filterType === "All" 
@@ -105,6 +89,10 @@ const ComplaintHistory = ({ complaints, onBack }) => {
   const getTypeBadgeClass = (type) => {
     switch (type) {
       case "Assignment": return "ch-badge-navy";
+      case "Admin Update": return "ch-badge-navy";
+      case "Verification": return "ch-badge-red";
+      case "Work Update": return "ch-badge-blue";
+      case "Submitted": return "ch-badge-navy";
       case "Status Change": return "ch-badge-amber";
       case "Inspection": return "ch-badge-blue";
       case "Action Taken": return "ch-badge-green";
@@ -146,7 +134,7 @@ const ComplaintHistory = ({ complaints, onBack }) => {
           <div className="ch-table-header">
             <h3>Activity History Log</h3>
             <div className="ch-filters">
-              {["All", "Status Change", "Inspection", "Action Taken"].map((type) => (
+              {["All", "Submitted", "Admin Update", "Status Change", "Work Update", "Verification"].map((type) => (
                 <button
                   key={type}
                   className={`ch-filter-btn ${filterType === type ? "active" : ""}`}
@@ -165,8 +153,8 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                   <th>Date</th>
                   <th>Complaint No.</th>
                   <th>Update Type</th>
+                  <th>Updated By</th>
                   <th>Description / Remarks</th>
-                  <th>Photos</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -180,14 +168,8 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                         {event.type}
                       </span>
                     </td>
+                    <td>{event.actor || "Dashboard"}</td>
                     <td className="ch-desc">{event.description}</td>
-                    <td>
-                      {event.photos.length > 0 ? (
-                        <span className="ch-photo-count">📷 {event.photos.length}</span>
-                      ) : (
-                        <span className="ch-empty-text">-</span>
-                      )}
-                    </td>
                     <td>
                       <button 
                         className="ch-view-btn"
@@ -239,7 +221,7 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                 </div>
                 <div className="ch-modal-info-item">
                   <span className="ch-modal-label">Current Status</span>
-                  <b>{stageLabels[selectedEvent.complaintRef.stage]}</b>
+                  <b>{selectedEvent.complaintRef.status || "Not recorded"}</b>
                 </div>
               </div>
 
@@ -249,72 +231,10 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                 <p className="ch-modal-description">{selectedEvent.description}</p>
               </div>
 
-              {/* Inspection Specifics */}
-              {selectedEvent.type === "Inspection" && selectedEvent.complaintRef.inspection && (
-                <div className="ch-modal-section">
-                  <span className="ch-modal-section-label">Inspection Details</span>
-                  <div className="ch-modal-info-row">
-                    <div className="ch-modal-info-item">
-                      <span className="ch-modal-label">Inspection Date</span>
-                      <b>{selectedEvent.complaintRef.inspection.inspectionDate 
-                        ? new Date(selectedEvent.complaintRef.inspection.inspectionDate).toLocaleString() 
-                        : "N/A"}</b>
-                    </div>
-                    <div className="ch-modal-info-item">
-                      <span className="ch-modal-label">Inspector</span>
-                      <b>Field Staff (You)</b>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Specifics */}
-              {selectedEvent.type === "Action Taken" && selectedEvent.complaintRef.inspection && (
-                <div className="ch-modal-section">
-                  <span className="ch-modal-section-label">Action Details</span>
-                  <div className="ch-modal-info-row">
-                    <div className="ch-modal-info-item">
-                      <span className="ch-modal-label">Completion Date</span>
-                      <b>{selectedEvent.complaintRef.inspection.completionDate 
-                        ? new Date(selectedEvent.complaintRef.inspection.completionDate).toLocaleString() 
-                        : "N/A"}</b>
-                    </div>
-                  </div>
-                  <p className="ch-modal-description" style={{ marginTop: "12px" }}>
-                    {selectedEvent.complaintRef.inspection.actionTaken}
-                  </p>
-                </div>
-              )}
-
-              {/* Uploaded Photographs */}
               <div className="ch-modal-section">
-                <span className="ch-modal-section-label">Uploaded Photographs</span>
-                {selectedEvent.photos.length > 0 ? (
-                  <div className="ch-photos-grid">
-                    {selectedEvent.photos.map((photo, idx) => (
-                      <div key={idx} className="ch-photo-box">
-                        📷 {photo}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="ch-modal-empty">No photographs attached for this update.</p>
-                )}
+                <span className="ch-modal-section-label">Complete Complaint Record</span>
+                <StaffComplaintDetails complaint={selectedEvent.complaintRef} />
               </div>
-
-              {/* Citizen Uploaded Photos (for Assignment events) */}
-              {selectedEvent.type === "Assignment" && selectedEvent.complaintRef.citizenPhotos?.length > 0 && (
-                <div className="ch-modal-section">
-                  <span className="ch-modal-section-label">Citizen Uploaded:</span>
-                  <div className="ch-photos-grid">
-                    {selectedEvent.complaintRef.citizenPhotos.map((photo, idx) => (
-                      <div key={`cit-${idx}`} className="ch-photo-box ch-photo-citizen">
-                        👤 {photo}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}

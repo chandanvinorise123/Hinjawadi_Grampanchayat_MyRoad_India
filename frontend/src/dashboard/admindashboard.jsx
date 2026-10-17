@@ -661,31 +661,6 @@ const AdminDashboard = () => {
   }, {});
 
   // ---------------- COMPLAINT CRUD ----------------
-  const patchComplaint = async (id, patch, successMsg) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(), // ✅ UPDATED
-        body: JSON.stringify(patch),
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setComplaints(complaints.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-        if (successMsg) showMessage("success", successMsg);
-      } else {
-        showMessage("error", data.message || "Failed to update complaint.");
-      }
-    } catch (err) {
-      console.error("Failed to update complaint:", err);
-      showMessage("error", "Unable to reach the server.");
-    }
-  };
-
-  const updateStatus = (id, status) => patchComplaint(id, { status });
-  const updatePriority = (id, priority) => patchComplaint(id, { priority });
-  const assignStaff = (id, assignedStaff) => patchComplaint(id, { assignedStaff });
-  const assignVerifier = (id, assignedVerifier) => patchComplaint(id, { assignedVerifier });
-
   const deleteComplaint = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {

@@ -71,6 +71,24 @@
   gap: 24px;
 }
 
+.nt-action-error {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #f1b8b8;
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #9c2626;
+  font-size: 13px;
+}
+
+.nt-linked-complaint {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
 /* 1. Stats Row */
 .nt-stats-row {
   display: grid;

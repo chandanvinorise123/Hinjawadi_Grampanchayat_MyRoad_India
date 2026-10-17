@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from "react";
 import "./MyProfile.css";
-import { uploadProfilePhoto } from "../utils/dashboardApi";
+import { toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
+
+const createFormData = (profile = {}) => ({
+  ...profile,
+  name: profile.name || "",
+  role: profile.role || "",
+  department: profile.department || "",
+  ward: profile.ward || "",
+  contact: profile.contact || "",
+  email: profile.email || "",
+  staffId: profile.staffId || profile.verifierId || "",
+});
 
 const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(initialVerifier);
+  const [formData, setFormData] = useState(() => createFormData(initialVerifier));
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [messageType, setMessageType] = useState("success");
 
   useEffect(() => {
-    setFormData(initialVerifier);
+    setFormData(createFormData(initialVerifier));
   }, [initialVerifier]);
 
   const handleChange = (e) => {
@@ -16,28 +29,43 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    onUpdate(formData);
-    setIsEditing(false);
-    setMessage("✅ Profile updated successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    setIsSaving(true);
+    setMessage("");
+    try {
+      const result = await onUpdate(formData);
+      if (!result?.success) throw new Error("The profile update was not confirmed by the server.");
+      setIsEditing(false);
+      setMessageType("success");
+      setMessage("✅ Profile updated successfully!");
+    } catch (error) {
+      setMessageType("error");
+      setMessage(error.message || "Profile update failed.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsSaving(true);
     try {
       const data = await uploadProfilePhoto(file, formData._id || formData.id, "verifier");
       setFormData((current) => ({ ...current, profilePhoto: data.profilePhoto }));
-      onUpdate({ ...formData, profilePhoto: data.profilePhoto });
+      const result = await onUpdate({ ...formData, profilePhoto: data.profilePhoto });
+      if (!result?.success) throw new Error("The profile photo was uploaded but could not be synchronized.");
       const current = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
       window.dispatchEvent(new Event("authChange"));
+      setMessageType("success");
       setMessage("✅ Profile photo uploaded successfully!");
     } catch (error) {
+      setMessageType("error");
       setMessage(error.message || "Profile photo upload failed.");
     } finally {
+      setIsSaving(false);
       e.target.value = "";
     }
   };
@@ -47,7 +75,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
     setIsEditing(false);
   };
 
-  const initials = formData.name
+  const initials = String(formData.name || "")
     .split(" ")
     .map((w) => w[0])
     .join("")
@@ -64,18 +92,18 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
         <h2>My Profile</h2>
       </div>
 
-      {message && <div className="mp-success-message">{message}</div>}
+      {message && <div className={`mp-success-message ${messageType === "error" ? "mp-error-message" : ""}`} role={messageType === "error" ? "alert" : "status"}>{message}</div>}
 
       <div className="mp-container">
         {/* ✅ LEFT SIDE: Profile Summary Card */}
         <div className="mp-sidebar">
           <div className="mp-profile-card">
             <div className="mp-avatar-large">
-              {formData.profilePhoto ? <img src={formData.profilePhoto} alt="Profile" /> : initials}
+              {formData.profilePhoto ? <img src={toMediaUrl(formData.profilePhoto)} alt="Profile" /> : initials}
             </div>
             <label className="mp-edit-btn">
               Upload Photo
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} hidden />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} disabled={isSaving} hidden />
             </label>
             <div className="mp-profile-info">
               <h3>{formData.name}</h3>
@@ -89,7 +117,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   ✏️ Edit Profile
                 </button>
               ) : (
-                <button className="mp-cancel-btn" onClick={handleCancel}>
+                <button className="mp-cancel-btn" disabled={isSaving} onClick={handleCancel}>
                   Cancel Changes
                 </button>
               )}
@@ -181,11 +209,11 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
 
               {isEditing && (
                 <div className="mp-form-actions">
-                  <button type="button" className="mp-btn-outline" onClick={handleCancel}>
+                  <button type="button" className="mp-btn-outline" disabled={isSaving} onClick={handleCancel}>
                     Cancel
                   </button>
-                  <button type="submit" className="mp-btn-primary">
-                    Save Changes
+                  <button type="submit" className="mp-btn-primary" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               )}

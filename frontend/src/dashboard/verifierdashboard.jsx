@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./verifierdashboard.css";
-import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead } from "../utils/dashboardApi";
+import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
 
 import MyProfile from "../verifierprofiledashboard/MyProfile";
 import NewComplaints from "../verifierprofiledashboard/NewComplaints";
@@ -10,7 +10,8 @@ import Reverification from "../verifierprofiledashboard/Reverification";
 import PhysicalVerification from "../verifierprofiledashboard/PhysicalVerification";
 import ComplaintHistory from "../verifierprofiledashboard/ComplaintHistory";
 import Notifications from "../verifierprofiledashboard/Notifications";
-import ViewLocation from "../verifierprofiledashboard/ViewLocation"; // Adjust path if 
+import ViewLocation from "../verifierprofiledashboard/ViewLocation";
+
 const lifecycleStages = [
   "Completed Work Received",
   "Physical Verification",
@@ -21,15 +22,17 @@ const lifecycleStages = [
 
 const statusToStageIndex = {
   pending: 0,
+  in_action: 1,
   in_review: 1,
   verified: 2,
   resolved: 3,
   notified: 4,
-  rejected: 1, // sent back mid Physical Verification
+  rejected: 1,
 };
 
 const statusTone = {
   pending: "amber",
+  in_action: "orange",
   in_review: "orange",
   verified: "green",
   resolved: "green",
@@ -39,6 +42,7 @@ const statusTone = {
 
 const statusLabel = {
   pending: "Pending Verification",
+  in_action: "Staff Work in Progress",
   in_review: "Physical Verification",
   verified: "Verified",
   resolved: "Resolved / Closed",
@@ -48,15 +52,52 @@ const statusLabel = {
 
 const normalizeVerifierStatus = (status) => {
   const normalized = String(status || "").trim().toLowerCase();
-  if (["resolved", "closed"].includes(normalized)) return "resolved";
+  if (normalized === "closed") return "notified";
+  if (normalized === "resolved") return "resolved";
   if (["verified", "approved"].includes(normalized)) return "verified";
   if (["rejected", "sent back for action"].includes(normalized)) return "rejected";
-  if (["under verification", "in review", "in_review"].includes(normalized)) return "in_review";
+  if (["assigned", "under action", "in progress"].includes(normalized)) return "in_action";
+  if (["under verification", "under review", "in review", "in_review"].includes(normalized)) return "in_review";
   if (["notified", "citizen notified"].includes(normalized)) return "notified";
   return "pending";
 };
 
-const queueTone = { "New Complaints": "navy", "Completed Work": "orange", "Re-verification": "red", "Resolution Requests": "amber" };
+const mapVerifierComplaint = (complaint) => {
+  const status = normalizeVerifierStatus(complaint.status);
+  const history = Array.isArray(complaint.statusHistory) ? complaint.statusHistory : [];
+  const wasRejected = history.some((entry) => String(entry.status || "").toLowerCase() === "rejected");
+  const previousRejection = [...history].reverse().find(
+    (entry) => String(entry.status || "").toLowerCase() === "rejected"
+  );
+  const previousVerifierDecision = [...history].reverse().find(
+    (entry) => ["verified", "rejected"].includes(String(entry.status || "").toLowerCase())
+  );
+  let queue = "New Complaints";
+  if (status === "rejected") {
+    queue = "Awaiting Staff Correction";
+  } else if (status === "in_action") {
+    queue = "Staff Work in Progress";
+  } else if (status === "in_review") {
+    queue = wasRejected ? "Re-verification" : "Completed Work";
+  } else if (status === "verified") {
+    queue = "Resolution Requests";
+  } else if (status === "resolved" || status === "notified") {
+    queue = "Resolved / Closed";
+  }
+
+  return {
+    ...complaint,
+    status,
+    queue,
+    previousRemarks: previousRejection?.remarks || complaint.previousRemarks || "",
+    verifierRemarks: complaint.verifierRemarks || previousVerifierDecision?.remarks || "",
+    remarks: complaint.inspection?.remarks || complaint.remarks || "",
+    photos: complaint.photos || {},
+    log: Array.isArray(complaint.log) ? complaint.log : [],
+  };
+};
+
+const queueTone = { "New Complaints": "navy", "Staff Work in Progress": "orange", "Completed Work": "orange", "Awaiting Staff Correction": "red", "Re-verification": "red", "Resolution Requests": "amber", "Resolved / Closed": "green" };
 
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
@@ -64,8 +105,6 @@ const colorForCategory = (category) => {
   for (let i = 0; i < category.length; i++) hash = category.charCodeAt(i) + ((hash << 5) - hash);
   return mapColors[Math.abs(hash) % mapColors.length];
 };
-
-
 
 const VerifierDashboard = () => {
   const location = useLocation();
@@ -80,8 +119,6 @@ const VerifierDashboard = () => {
     profilePhoto: storedUser.profilePhoto || "",
   });
 
-
-
   const [items, setItems] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
@@ -95,6 +132,13 @@ const VerifierDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showViewLocation, setShowViewLocation] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
+  const [actionSaving, setActionSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDetailView, setShowDetailView] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [activityComplaint, setActivityComplaint] = useState(null);
 
   const openView = (setter) => {
     setShowProfile(false);
@@ -105,6 +149,8 @@ const VerifierDashboard = () => {
     setShowComplaintHistory(false);
     setShowNotifications(false);
     setShowViewLocation(false);
+    setShowDetailView(false);
+    setShowActivityModal(false);
     setter(true);
   };
 
@@ -113,8 +159,6 @@ const VerifierDashboard = () => {
     openView(setShowProfile);
     navigate(location.pathname, { replace: true, state: null });
   }, [location.state, location.pathname, navigate]);
-
-
 
   const selected = items.find((c) => c.id === selectedId) || items[0] || {
     id: null, complaintNumber: "", category: "", issue: "", location: "",
@@ -135,43 +179,50 @@ const VerifierDashboard = () => {
             staffId: data.profile.verifierId || data.profile.staffId || current.staffId,
             role: data.profile.designation || data.profile.role || current.role,
             ward: data.profile.assignedArea || current.ward,
+            joinDate: data.profile.joiningDate
+              ? new Date(data.profile.joiningDate).toLocaleDateString()
+              : current.joinDate || "",
+            profilePhoto: data.profile.profilePhoto || current.profilePhoto,
           }));
         }
-        const mapped = (data.complaints || []).map((complaint) => ({
-          ...complaint,
-          status: normalizeVerifierStatus(complaint.status),
-          queue: complaint.queue || (
-            normalizeVerifierStatus(complaint.status) === "in_review"
-              ? "Completed Work"
-              : "New Complaints"
-          ),
-        }));
-        setItems(mapped);
-        setSelectedId(mapped[0]?.id || null);
+        const mapped = (data.complaints || []).map(mapVerifierComplaint);
+        setItems((current) => {
+          const existing = new Map(current.map((complaint) => [complaint.id, complaint]));
+          return mapped.map((complaint) => {
+            const previous = existing.get(complaint.id);
+            return previous && JSON.stringify(previous) === JSON.stringify(complaint)
+              ? previous
+              : complaint;
+          });
+        });
+        if (!showDetailView) {
+          setSelectedId(mapped[0]?.id || null);
+        }
         setNotifications(data.notifications || []);
+        setLoadError("");
       } catch (error) {
         console.error("Failed to load verifier dashboard:", error);
+        setLoadError(error.message || "Failed to load verifier dashboard.");
       }
     };
     loadDashboard();
-  }, []);
+  }, [showDetailView]);
 
-  // ✅ PREVIOUS 5 CARDS (First Grid Row)
   const previousStats = [
     { label: "Total Complaints", value: items.length, icon: "📊", tone: "navy" },
     { label: "Pending Verification", value: items.filter((c) => c.status === "pending").length, icon: "⏳", tone: "amber" },
     { label: "Verified", value: items.filter((c) => c.status === "verified").length, icon: "✅", tone: "green" },
     { label: "Rejected", value: items.filter((c) => c.status === "rejected").length, icon: "⛔", tone: "red" },
-    { label: "Resolved", value: items.filter((c) => c.status === "resolved").length, icon: "📂", tone: "green" },
+    { label: "Resolved", value: items.filter((c) => c.status === "resolved" || c.status === "notified").length, icon: "📂", tone: "green" },
   ];
 
-  // ✅ NEW 5 CARDS (Second Grid Row)
   const newStats = [
     { label: "Under Verification", value: items.filter((c) => c.status === "in_review").length, icon: "🔍", tone: "orange" },
     { label: "Completed Work Awaiting", value: items.filter((c) => c.queue === "Completed Work").length, icon: "🛠️", tone: "navy" },
-    { label: "Rework / Correction", value: items.filter((c) => c.status === "rejected").length, icon: "🔄", tone: "red" },
+    { label: "Rework / Correction", value: items.filter((c) => c.queue === "Awaiting Staff Correction").length, icon: "🔄", tone: "red" },
     { label: "Resolution Requests", value: items.filter((c) => c.queue === "Resolution Requests").length, icon: "📌", tone: "amber" },
     { label: "Re-verification Queue", value: items.filter((c) => c.queue === "Re-verification").length, icon: "🔁", tone: "red" },
+    { label: "Staff Work in Progress", value: items.filter((c) => c.queue === "Staff Work in Progress").length, icon: "🚧", tone: "orange" },
   ];
 
   const mapGroups = items.reduce((groups, c) => {
@@ -181,9 +232,19 @@ const VerifierDashboard = () => {
     return groups;
   }, {});
 
-  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const filteredItems = items.filter((complaint) => {
+    const query = searchTerm.trim().toLowerCase();
+    return !query || [
+      complaint.complaintNumber,
+      complaint.category,
+      complaint.issue,
+      complaint.location,
+      complaint.status,
+      complaint.queue,
+    ].some((value) => String(value || "").toLowerCase().includes(query));
+  });
 
-  const addLog = (list, text) => [...list, { text, time: "just now" }];
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   const openVerification = (c) => {
     setSelectedId(c.id);
@@ -191,151 +252,103 @@ const VerifierDashboard = () => {
     scrollTo("verification-panel");
   };
 
+  const handleViewDetails = (complaint) => {
+    setSelectedId(complaint.id);
+    setShowDetailView(true);
+    setRemarksDraft(complaint.remarks || "");
+  };
+
+  const handleBackToList = () => {
+    setShowDetailView(false);
+  };
+
+  // ✅ NEW: Quick verify action from table
+  const handleQuickVerify = (complaint) => {
+    setSelectedId(complaint.id);
+    setRemarksDraft(complaint.remarks || "");
+    setShowDetailView(true);
+  };
+
+  // ✅ NEW: Show activity modal for a complaint
+  const handleShowActivity = (complaint) => {
+    setActivityComplaint(complaint);
+    setShowActivityModal(true);
+  };
+
+  const handleCloseActivityModal = () => {
+    setShowActivityModal(false);
+    setActivityComplaint(null);
+  };
+
   const handleUpdateProfile = async (updatedVerifier) => {
-    try {
-      const data = await updateDashboardProfile(getUserId(storedUser), {
-        name: updatedVerifier.name,
-        designation: updatedVerifier.role,
-        assignedArea: updatedVerifier.ward,
-        contact: updatedVerifier.contact,
-        email: updatedVerifier.email,
-      });
-      setVerifier((current) => ({ ...current, ...updatedVerifier, ...(data.user || {}) }));
-    } catch (error) {
-      console.error("Failed to update verifier profile:", error);
-    }
+    const data = await updateDashboardProfile(getUserId(storedUser), {
+      name: updatedVerifier.name,
+      designation: updatedVerifier.role,
+      department: updatedVerifier.department,
+      assignedArea: updatedVerifier.ward,
+      contact: updatedVerifier.contact,
+      email: updatedVerifier.email,
+      profilePhoto: updatedVerifier.profilePhoto,
+    });
+    const user = data.user || {};
+    const nextVerifier = {
+      ...updatedVerifier,
+      ...user,
+      role: user.designation || updatedVerifier.role,
+      ward: user.assignedArea || updatedVerifier.ward,
+      staffId: user.verifierId || user.staffId || updatedVerifier.staffId,
+      contact: user.contact || user.mobile || updatedVerifier.contact,
+    };
+    setVerifier((current) => ({ ...current, ...nextVerifier }));
+    return data;
   };
 
-  // ✅ Handler for Completed Work Verification
-  const handleCompletedWorkVerify = async (id, action, remarks, dateTime) => {
-    try {
-      await updateDashboardComplaint(id, { status: action === "approve" ? "Verified" : "Rejected", remarks });
-    } catch (error) {
-      console.error("Failed to save verification:", error);
-      return;
-    }
-    setItems(
-      items.map((c) => {
-        if (c.id === id) {
-          if (action === "approve") {
-            return {
-              ...c,
-              status: "verified",
-              queue: "Resolution Requests", // Move to next stage
-              verifierRemarks: remarks,
-              verificationDateTime: dateTime,
-              log: [...c.log, { text: `Verified by ${verifier.name}: ${remarks}`, time: "just now" }]
-            };
-          } else {
-            return {
-              ...c,
-              status: "rejected",
-              queue: "Re-verification", // Send back to staff
-              verifierRemarks: remarks,
-              verificationDateTime: dateTime,
-              log: [...c.log, { text: `Rejected by ${verifier.name}: ${remarks}`, time: "just now" }]
-            };
-          }
-        }
-        return c;
-      })
-    );
+  const persistComplaintStatus = async (id, status, remarks = "", dateTime = "") => {
+    const result = await updateDashboardComplaint(id, {
+      status,
+      remarks,
+      ...(dateTime ? { verificationDateTime: dateTime } : {}),
+    });
+    const updatedComplaint = mapVerifierComplaint(result.complaint);
+    setItems((current) => current.map((complaint) => (
+      complaint.id === id ? updatedComplaint : complaint
+    )));
+    return updatedComplaint;
   };
 
-
+  const handleCompletedWorkVerify = (id, action, remarks, dateTime) =>
+    persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
 
   const handleMarkNotifAsRead = async (id) => {
-    await markDashboardNotificationRead(id).catch((error) => console.error("Failed to mark notification read:", error));
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    await markDashboardNotificationRead(id);
+    setNotifications((current) => current.map((notification) => (
+      notification.id === id ? { ...notification, isRead: true } : notification
+    )));
   };
 
   const handleMarkAllNotifsRead = async () => {
-    await Promise.all(notifications.filter((notification) => !notification.isRead).map((notification) => markDashboardNotificationRead(notification.id)))
-      .catch((error) => console.error("Failed to mark notifications read:", error));
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
-  };
-
-
-
-  // ✅ Handler for Physical Verification Submission
-  const handlePhysicalVerificationSubmit = async (id, decision, remarks, dateTime) => {
-    try {
-      await updateDashboardComplaint(id, { status: decision === "approve" ? "Verified" : "Rejected", remarks });
-    } catch (error) {
-      console.error("Failed to save physical verification:", error);
-      return;
+    const unread = notifications.filter((notification) => !notification.isRead);
+    const results = await Promise.allSettled(
+      unread.map((notification) => markDashboardNotificationRead(notification.id))
+    );
+    const successfulIds = new Set(
+      results.flatMap((result, index) => result.status === "fulfilled" ? [unread[index].id] : [])
+    );
+    setNotifications((current) => current.map((notification) => (
+      successfulIds.has(notification.id) ? { ...notification, isRead: true } : notification
+    )));
+    const failedCount = results.filter((result) => result.status === "rejected").length;
+    if (failedCount) {
+      throw new Error(`Could not mark ${failedCount} notification(s) as read. Please try again.`);
     }
-    setItems(
-      items.map((c) => {
-        if (c.id === id) {
-          const logEntry = {
-            text: `Physical Verification ${decision === 'approve' ? 'Approved' : 'Rejected'}: "${remarks}"`,
-            time: "just now"
-          };
-
-          if (decision === "approve") {
-            return {
-              ...c,
-              status: "verified",
-              queue: "Resolution Requests", // Moves to next stage
-              remarks: remarks,
-              verificationDateTime: dateTime,
-              log: [...c.log, logEntry]
-            };
-          } else {
-            return {
-              ...c,
-              status: "rejected",
-              queue: "Re-verification", // Sent back for correction
-              remarks: remarks,
-              previousRemarks: remarks, // Saves reason for the Re-verification page
-              verificationDateTime: dateTime,
-              log: [...c.log, logEntry]
-            };
-          }
-        }
-        return c;
-      })
-    );
   };
 
-  // ✅ Handler for Re-verification Actions
-  const handleReverifyAction = (id, action, remarks, dateTime) => {
-    setItems(
-      items.map((c) => {
-        if (c.id === id) {
-          const logEntry = {
-            text: `${action === "approve" ? "Re-verification Approved" : "Rejected Again"} by ${verifier.name}: "${remarks}"`,
-            time: "just now"
-          };
+  const handlePhysicalVerificationSubmit = (id, decision, remarks, dateTime) =>
+    persistComplaintStatus(id, decision === "approve" ? "Verified" : "Rejected", remarks, dateTime);
 
-          if (action === "approve") {
-            return {
-              ...c,
-              status: "verified",
-              queue: "Resolution Requests", // Moves to final resolution stage
-              remarks: remarks,
-              verificationDateTime: dateTime,
-              log: [...c.log, logEntry, { text: "System: Assigned staff member notified of approval.", time: "just now" }]
-            };
-          } else {
-            // Stays in Re-verification queue but updates remarks
-            return {
-              ...c,
-              status: "rejected",
-              queue: "Re-verification",
-              remarks: remarks,
-              previousRemarks: remarks, // Update the previous remarks for the next loop
-              verificationDateTime: dateTime,
-              log: [...c.log, logEntry, { text: "System: Assigned staff member notified of rejection.", time: "just now" }]
-            };
-          }
-        }
-        return c;
-      })
-    );
-  };
-  // ✅ ADDED: Proper Logout Functionality
+  const handleReverifyAction = (id, action, remarks, dateTime) =>
+    persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
+
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
       localStorage.removeItem("user");
@@ -345,80 +358,31 @@ const VerifierDashboard = () => {
     }
   };
 
-  // ---------------- PHYSICAL VERIFICATION: compare, then approve or reject ----------------
-  const approveWork = async (id) => {
-    try {
-      await updateDashboardComplaint(id, { status: "Verified", remarks: remarksDraft });
-    } catch (error) {
-      console.error("Failed to approve work:", error);
-      return;
-    }
-    setItems(
-      items.map((c) =>
-        c.id === id
-          ? { ...c, status: "verified", remarks: remarksDraft, log: addLog(c.log, "Approved — work satisfies the reported issue") }
-          : c
-      )
-    );
+  const approveWork = (id) => {
+    if (!remarksDraft.trim()) throw new Error("Please enter verification remarks before approving.");
+    return persistComplaintStatus(id, "Verified", remarksDraft);
   };
 
-  const rejectWork = async (id) => {
-    if (!remarksDraft.trim()) return;
-    try {
-      await updateDashboardComplaint(id, { status: "Rejected", remarks: remarksDraft });
-    } catch (error) {
-      console.error("Failed to reject work:", error);
-      return;
-    }
-    setItems(
-      items.map((c) =>
-        c.id === id
-          ? {
-            ...c,
-            status: "rejected",
-            queue: "Re-verification",
-            remarks: remarksDraft,
-            log: addLog(c.log, "Rejected — sent back for further action"),
-          }
-          : c
-      )
-    );
+  const rejectWork = (id) => {
+    if (!remarksDraft.trim()) throw new Error("Please enter verification remarks before rejecting.");
+    return persistComplaintStatus(id, "Rejected", remarksDraft);
   };
 
-  // ---------------- Staff completes further action -> back into review ----------------
-  const sendForReverification = async (id) => {
-    try {
-      await updateDashboardComplaint(id, { status: "Under Verification", remarks: "Sent for re-verification" });
-    } catch (error) {
-      console.error("Failed to send complaint for re-verification:", error);
-      return;
-    }
-    setItems(
-      items.map((c) =>
-        c.id === id
-          ? { ...c, status: "in_review", log: addLog(c.log, "Staff completed further action — ready for re-verification") }
-          : c
-      )
-    );
-  };
+  const markResolved = (id) => persistComplaintStatus(id, "Resolved");
 
-  // ---------------- UPDATE status as Verified -> Resolved/Closed -> Notify citizen ----------------
-  const markResolved = async (id) => {
-    try {
-      await updateDashboardComplaint(id, { status: "Resolved" });
-    } catch (error) {
-      console.error("Failed to mark complaint resolved:", error);
-      return;
-    }
-    setItems(
-      items.map((c) => (c.id === id ? { ...c, status: "resolved", log: addLog(c.log, "Marked as Resolved / Closed") } : c))
-    );
-  };
+  const closeComplaint = (id) => persistComplaintStatus(id, "Closed");
 
-  const notifyCitizen = (id) => {
-    setItems(
-      items.map((c) => (c.id === id ? { ...c, status: "notified", log: addLog(c.log, "Citizen notified of status update") } : c))
-    );
+  const handleDashboardAction = async (action) => {
+    setActionMessage("");
+    setActionSaving(true);
+    try {
+      await action();
+    } catch (error) {
+      console.error("Verifier action failed:", error);
+      setActionMessage(error.message || "Unable to save this verifier action.");
+    } finally {
+      setActionSaving(false);
+    }
   };
 
   const initials = verifier.name
@@ -427,7 +391,6 @@ const VerifierDashboard = () => {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
 
   if (showProfile) {
     return (
@@ -439,7 +402,6 @@ const VerifierDashboard = () => {
     );
   }
 
-  // ✅ FULL PAGE CONDITIONAL RENDERING - Shows NewComplaints as full page
   if (showNewComplaints) {
     return (
       <NewComplaints
@@ -449,7 +411,6 @@ const VerifierDashboard = () => {
     );
   }
 
-  // ✅ FULL PAGE CONDITIONAL RENDERING
   if (showComplaintHistory) {
     return (
       <ComplaintHistory
@@ -459,7 +420,6 @@ const VerifierDashboard = () => {
     );
   }
 
-  // ✅ FULL PAGE CONDITIONAL RENDERING
   if (showPhysicalVerification) {
     return (
       <PhysicalVerification
@@ -470,7 +430,6 @@ const VerifierDashboard = () => {
     );
   }
 
-  // ✅ FULL PAGE CONDITIONAL RENDERING
   if (showCompletedWork) {
     return (
       <CompletedWork
@@ -481,7 +440,6 @@ const VerifierDashboard = () => {
     );
   }
 
-  // ✅ FULL PAGE CONDITIONAL RENDERING
   if (showReverification) {
     return (
       <Reverification
@@ -491,6 +449,7 @@ const VerifierDashboard = () => {
       />
     );
   }
+
   if (showNotifications) {
     return (
       <Notifications
@@ -502,17 +461,349 @@ const VerifierDashboard = () => {
     );
   }
 
-    // ✅ FULL PAGE CONDITIONAL RENDERING
   if (showViewLocation) {
     return (
-      <ViewLocation 
-        complaints={items} 
-        onBack={() => setShowViewLocation(false)} 
+      <ViewLocation
+        complaints={items}
+        onBack={() => setShowViewLocation(false)}
       />
     );
   }
 
+  // ✅ DETAILED COMPLAINT VIEW
+  if (showDetailView && selected) {
+    return (
+      <div className="vd-shell">
+        <aside className="vd-sidebar">
+          <div className="vd-sb-brand">
+            <div className="vd-sb-logo">MI</div>
+            <div>
+              <b>MyRoad India</b>
+              <span>Verifier Portal</span>
+            </div>
+          </div>
 
+          <div className="vd-sb-label">Overview</div>
+          <nav className="vd-sb-nav">
+            <button type="button" className="vd-sb-link" onClick={() => setShowDetailView(false)}>
+              📊 Dashboard
+            </button>
+            <button type="button" className="vd-sb-link" onClick={() => openView(setShowProfile)}>
+              👤 My Profile
+            </button>
+          </nav>
+
+          <div className="vd-sb-label">Account</div>
+          <nav className="vd-sb-nav">
+            <button
+              type="button"
+              className="vd-sb-link"
+              onClick={handleLogout}
+              style={{ color: "#ff6b6b", marginTop: "8px" }}
+            >
+              🚪 Logout
+            </button>
+          </nav>
+
+          <div className="vd-sb-footer">
+            <div className="vd-sb-user">
+              <div className="vd-sb-avatar">
+                {verifier.profilePhoto ? <img src={toMediaUrl(verifier.profilePhoto)} alt="Profile" /> : initials}
+              </div>
+              <div className="vd-sb-user-info">
+                <b>{verifier.name}</b>
+                <span>{verifier.staffId}</span>
+              </div>
+            </div>
+            <div className="vd-sb-ward">
+              {verifier.role} · {verifier.ward}
+            </div>
+          </div>
+        </aside>
+
+        <div className="vd-main">
+          <div className="vd-topbar">
+            <button className="vd-btn-outline" onClick={handleBackToList}>
+              ← Back to List
+            </button>
+            <div className="vd-tb-actions">
+              <div className="vd-tb-user">
+                <div className="vd-tb-avatar">
+                  {verifier.profilePhoto ? <img src={toMediaUrl(verifier.profilePhoto)} alt="Profile" /> : initials}
+                </div>
+                <div>
+                  <b>{verifier.name}</b>
+                  <span>{verifier.role}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="vd-content">
+            {actionMessage && (
+              <div className="vd-error-message" role="alert">
+                {actionMessage}
+              </div>
+            )}
+
+            {/* COMPLAINT DETAILS HEADER */}
+            <div className="vd-panel vd-form-panel">
+              <div className="vd-panel-head">
+                <h3>Complaint Details</h3>
+                <span className="vd-panel-link">{selected.complaintNumber}</span>
+              </div>
+              <div className="vd-detail-grid">
+                <div className="vd-detail-item">
+                  <span>Complaint Number</span>
+                  <b>{selected.complaintNumber}</b>
+                </div>
+                <div className="vd-detail-item">
+                  <span>Category</span>
+                  <b>{selected.category}</b>
+                </div>
+                <div className="vd-detail-item">
+                  <span>Citizen</span>
+                  <b>{selected.citizenName}</b>
+                </div>
+                <div className="vd-detail-item">
+                  <span>Citizen Contact</span>
+                  <b>{selected.citizenContact}</b>
+                </div>
+                <div className="vd-detail-item vd-detail-wide">
+                  <span>Description</span>
+                  <b>{selected.description}</b>
+                </div>
+              </div>
+            </div>
+
+            {/* CITIZEN, ASSIGNMENT & WORK DETAILS */}
+            <div className="vd-panel vd-form-panel">
+              <div className="vd-panel-head">
+                <h3>Citizen, Assignment & Work Details</h3>
+              </div>
+              <div className="vd-detail-table-grid">
+                <div className="vd-detail-table-row">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Citizen</span>
+                    <span className="vd-detail-value">{selected.citizenName}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Citizen Contact</span>
+                    <span className="vd-detail-value">{selected.citizenContact || "Not available"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Citizen Email</span>
+                    <span className="vd-detail-value">{selected.citizenEmail || "Not available"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Department</span>
+                    <span className="vd-detail-value">{selected.department || "Not assigned"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Assigned Staff</span>
+                    <span className="vd-detail-value">{selected.assignedStaff || "Not assigned"}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Assigned Verifier</span>
+                    <span className="vd-detail-value">{selected.assignedVerifier || verifier.name}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Priority</span>
+                    <span className="vd-detail-value">{selected.priority || "Normal"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Submitted</span>
+                    <span className="vd-detail-value">{selected.date ? new Date(selected.date).toLocaleString() : "Not recorded"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Last Updated</span>
+                    <span className="vd-detail-value">{selected.updatedAt ? new Date(selected.updatedAt).toLocaleString() : "Not recorded"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Landmark</span>
+                    <span className="vd-detail-value">{selected.landmark || "Not provided"}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Inspection Date</span>
+                    <span className="vd-detail-value">{selected.inspectionDate || "Not recorded"}</span>
+                  </div>
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Work Completion Date</span>
+                    <span className="vd-detail-value">{selected.completionDate || "Not recorded"}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row vd-full-width">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Reported Description</span>
+                    <span className="vd-detail-value vd-description">{selected.description}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row vd-full-width">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Staff Inspection Remarks</span>
+                    <span className="vd-detail-value vd-description">{selected.inspection?.remarks || "No staff inspection remarks recorded."}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row vd-full-width">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Action Taken by Staff</span>
+                    <span className="vd-detail-value vd-description">{selected.actionTaken || "No work action recorded."}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PHOTOS SECTION */}
+            <div className="vd-panel vd-form-panel">
+              <div className="vd-panel-head">
+                <h3>Photos — {selected.complaintNumber}</h3>
+              </div>
+              <div className="vd-photo-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Before Repair</th>
+                      <th>Site Photo</th>
+                      <th>After Repair</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        {selected.photos.before ? (
+                          <img src={toMediaUrl(selected.photos.before)} alt="Before repair" className="vd-photo-table-img" />
+                        ) : (
+                          <div className="vd-photo-placeholder">
+                            <span>📷</span>
+                            <span>Not available</span>
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {selected.photos.site ? (
+                          <img src={toMediaUrl(selected.photos.site)} alt="Site photo" className="vd-photo-table-img" />
+                        ) : (
+                          <div className="vd-photo-placeholder">
+                            <span>📷</span>
+                            <span>Not available</span>
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {selected.photos.after ? (
+                          <img src={toMediaUrl(selected.photos.after)} alt="After repair" className="vd-photo-table-img" />
+                        ) : (
+                          <div className="vd-photo-placeholder">
+                            <span></span>
+                            <span>Not available</span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* PHYSICAL VERIFICATION */}
+            <div className="vd-panel vd-form-panel" id="verification-panel">
+              <div className="vd-panel-head">
+                <h3>Physical Verification — {selected.complaintNumber}</h3>
+                <span className={`vd-badge vd-badge-${statusTone[selected.status]}`}>{statusLabel[selected.status]}</span>
+              </div>
+              <div className="vd-verification-table">
+                <div className="vd-verification-row">
+                  <div className="vd-verification-label">Current Status</div>
+                  <div className="vd-verification-value">
+                    <span className={`vd-badge vd-badge-${statusTone[selected.status]}`}>{statusLabel[selected.status]}</span>
+                  </div>
+                </div>
+                <div className="vd-verification-row">
+                  <div className="vd-verification-label">Verification Remarks</div>
+                  <div className="vd-verification-value">
+                    <textarea
+                      id="verifier-remarks"
+                      rows="3"
+                      placeholder="Note what you observed on-site"
+                      value={remarksDraft}
+                      onChange={(e) => setRemarksDraft(e.target.value)}
+                      className="vd-verification-textarea"
+                    />
+                  </div>
+                </div>
+                {selected.status === "rejected" && (
+                  <div className="vd-verification-row">
+                    <div className="vd-verification-label">Previous Rejection Reason</div>
+                    <div className="vd-verification-value vd-description">
+                      {selected.previousRemarks || "See the activity log for verifier feedback."}
+                    </div>
+                  </div>
+                )}
+                <div className="vd-verification-actions">
+                  {(selected.status === "pending" || selected.status === "in_review") && (
+                    <>
+                      <button
+                        className="vd-btn-danger"
+                        type="button"
+                        disabled={actionSaving}
+                        onClick={() => handleDashboardAction(() => rejectWork(selected.id))}
+                      >
+                        Work Not Satisfied — Reject
+                      </button>
+                      <button
+                        className="vd-btn-primary"
+                        type="button"
+                        disabled={actionSaving}
+                        onClick={() => handleDashboardAction(() => approveWork(selected.id))}
+                      >
+                        Work Satisfied — Approve / Verify
+                      </button>
+                    </>
+                  )}
+                  {selected.status === "rejected" && (
+                    <div className="vd-verification-info">
+                      The assigned staff member must submit corrected work for re-verification.
+                    </div>
+                  )}
+                  {selected.status === "verified" && (
+                    <button
+                      className="vd-btn-primary"
+                      type="button"
+                      disabled={actionSaving}
+                      onClick={() => handleDashboardAction(() => markResolved(selected.id))}
+                    >
+                      Update Status → Resolved / Closed
+                    </button>
+                  )}
+                  {selected.status === "resolved" && (
+                    <button
+                      className="vd-btn-primary"
+                      type="button"
+                      disabled={actionSaving}
+                      onClick={() => handleDashboardAction(() => closeComplaint(selected.id))}
+                    >
+                      Close Complaint
+                    </button>
+                  )}
+                  {selected.status === "notified" && (
+                    <div className="vd-verification-success">
+                      ✅ Citizen has been notified and the complaint is closed.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ MAIN DASHBOARD VIEW (FULL-WIDTH PENDING VERIFICATIONS TABLE)
   return (
     <div className="vd-shell">
       {/* ============ SIDEBAR ============ */}
@@ -525,75 +816,47 @@ const VerifierDashboard = () => {
           </div>
         </div>
 
-        {/* ✅ REORGANIZED & CLEAN SIDEBAR NAVIGATION */}
         <div className="vd-sb-label">Overview</div>
         <nav className="vd-sb-nav">
           <button type="button" className="vd-sb-link active" onClick={() => scrollTo("vd-top")}>
             📊 Dashboard
           </button>
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowProfile)}>
             👤 My Profile
           </button>
-
-
         </nav>
 
         <div className="vd-sb-label">Verification Queues</div>
         <nav className="vd-sb-nav">
-
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowNewComplaints)}>
-            🆕New Complaints
+            🆕 New Complaints
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
           </button>
-
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowCompletedWork)}>
             🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
-
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowReverification)}>
-            🛠️Re-verification
+            ️ Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
-
-
-
-
-
         </nav>
 
         <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowPhysicalVerification)}>
             🔍 Physical Verification
           </button>
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowComplaintHistory)}>
             📜 Complaint History
           </button>
-
           <button type="button" className="vd-sb-link" onClick={() => openView(setShowNotifications)}>
             🔔 Notifications
             <span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span>
           </button>
-
-          <button
-            type="button"
-            className="vd-sb-link"
-            onClick={() => openView(setShowViewLocation)}
-          >
+          <button type="button" className="vd-sb-link" onClick={() => openView(setShowViewLocation)}>
             🗺️ View Location
           </button>
-
-
-
-
-
         </nav>
 
         <div className="vd-sb-label">Account</div>
@@ -611,7 +874,7 @@ const VerifierDashboard = () => {
         <div className="vd-sb-footer">
           <div className="vd-sb-user">
             <div className="vd-sb-avatar">
-              {verifier.profilePhoto ? <img src={verifier.profilePhoto} alt="Profile" /> : initials}
+              {verifier.profilePhoto ? <img src={toMediaUrl(verifier.profilePhoto)} alt="Profile" /> : initials}
             </div>
             <div className="vd-sb-user-info">
               <b>{verifier.name}</b>
@@ -629,12 +892,17 @@ const VerifierDashboard = () => {
         {/* TOPBAR */}
         <div className="vd-topbar">
           <div className="vd-search">
-            🔍 <input type="text" placeholder="Search complaints to verify..." />
+            🔍 <input
+              type="search"
+              placeholder="Search complaints to verify..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
           </div>
           <div className="vd-tb-actions">
             <div className="vd-tb-user" id="vd-profile">
               <div className="vd-tb-avatar">
-                {verifier.profilePhoto ? <img src={verifier.profilePhoto} alt="Profile" /> : initials}
+                {verifier.profilePhoto ? <img src={toMediaUrl(verifier.profilePhoto)} alt="Profile" /> : initials}
               </div>
               <div>
                 <b>{verifier.name}</b>
@@ -646,6 +914,16 @@ const VerifierDashboard = () => {
 
         {/* CONTENT */}
         <div className="vd-content">
+          {loadError && (
+            <div className="vd-error-message" role="alert">
+              {loadError}
+            </div>
+          )}
+          {actionMessage && (
+            <div className="vd-error-message" role="alert">
+              {actionMessage}
+            </div>
+          )}
           <div className="vd-title-row">
             <div>
               <h1>Welcome back, {verifier.name.split(" ")[0]}</h1>
@@ -655,7 +933,7 @@ const VerifierDashboard = () => {
             </div>
           </div>
 
-          {/* ✅ FIRST GRID ROW: Previous 5 Cards */}
+          {/* FIRST GRID ROW: Previous 5 Cards */}
           <div className="vd-stats-row">
             {previousStats.map((stat, i) => (
               <div className={`vd-stat-card tone-${stat.tone}`} key={i}>
@@ -666,7 +944,7 @@ const VerifierDashboard = () => {
             ))}
           </div>
 
-          {/* ✅ SECOND GRID ROW: New 5 Cards */}
+          {/* SECOND GRID ROW: New 5 Cards */}
           <div className="vd-stats-row" style={{ marginTop: "16px" }}>
             {newStats.map((stat, i) => (
               <div className={`vd-stat-card tone-${stat.tone}`} key={i}>
@@ -677,29 +955,35 @@ const VerifierDashboard = () => {
             ))}
           </div>
 
-          {/* TWO COLUMN: QUEUE TABLE + LIFECYCLE/ACTIVITY */}
-          <div className="vd-dash-grid" id="queue-panel">
-            {/* LEFT: Pending Verifications (READ) */}
-            <div className="vd-panel">
-              <div className="vd-panel-head">
-                <h3>Pending Verifications</h3>
-                <span className="vd-panel-link">{items.length} total</span>
-              </div>
+          {/* ✅ FULL-WIDTH PENDING VERIFICATIONS TABLE WITH VERIFY & ACTIVITY COLUMNS */}
+          <div className="vd-panel" id="queue-panel">
+            <div className="vd-panel-head">
+              <h3>Pending Verifications</h3>
+              <span className="vd-panel-link">{filteredItems.length} shown / {items.length} total</span>
+            </div>
 
-              <div className="vd-table-wrap">
-                <table>
-                  <thead>
+            <div className="vd-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Complaint</th>
+                    <th>Category</th>
+                    <th>Location</th>
+                    <th>Queue</th>
+                    <th>Status</th>
+                    <th>Verify</th>
+                    <th>Activity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.length === 0 ? (
                     <tr>
-                      <th>Complaint</th>
-                      <th>Category</th>
-                      <th>Location</th>
-                      <th>Queue</th>
-                      <th>Status</th>
-                      <th></th>
+                      <td colSpan="7" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
+                        No complaints found.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((c) => (
+                  ) : (
+                    filteredItems.map((c) => (
                       <tr
                         key={c.id}
                         className={selectedId === c.id ? "vd-row-active" : ""}
@@ -719,214 +1003,69 @@ const VerifierDashboard = () => {
                         <td>
                           <span className={`vd-badge vd-badge-${statusTone[c.status]}`}>{statusLabel[c.status]}</span>
                         </td>
+                        {/* ✅ VERIFY COLUMN */}
                         <td onClick={(e) => e.stopPropagation()}>
-                          <button className="vd-icon-btn small" type="button" onClick={() => openVerification(c)} title="Open Verification">
-                            🔍
+                          <button
+                            className="vd-verify-btn"
+                            type="button"
+                            onClick={() => handleQuickVerify(c)}
+                            title="Open verification for this complaint"
+                          >
+                            ✅ Verify
+                          </button>
+                        </td>
+                        {/* ✅ ACTIVITY COLUMN */}
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="vd-activity-btn"
+                            type="button"
+                            onClick={() => handleShowActivity(c)}
+                            title="View activity log"
+                          >
+                            📜 {c.log?.length || 0}
                           </button>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            {/* RIGHT: Lifecycle + Activity Log */}
-            <div className="vd-side-col">
-              <div className="vd-panel">
-                <div className="vd-panel-head">
-                  <h3>Verification Lifecycle</h3>
-                  <span className="vd-mono vd-faint">{selected.complaintNumber}</span>
+          {/* ✅ ACTIVITY LOG MODAL */}
+          {showActivityModal && activityComplaint && (
+            <div className="vd-activity-modal-overlay" onClick={handleCloseActivityModal}>
+              <div className="vd-activity-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="vd-activity-modal-header">
+                  <div>
+                    <h3>Activity Log</h3>
+                    <span className="vd-mono vd-faint">{activityComplaint.complaintNumber}</span>
+                  </div>
+                  <button className="vd-activity-modal-close" onClick={handleCloseActivityModal}>✕</button>
                 </div>
-                <p className="vd-lifecycle-location">📍 {selected.location || "Location pending"}</p>
-                {selected.status === "rejected" && (
-                  <div className="vd-status-banner reject">Sent back for further action — awaiting re-inspection.</div>
-                )}
-                <div className="vd-lifecycle">
-                  {lifecycleStages.map((stage, i) => {
-                    const currentIndex = statusToStageIndex[selected.status];
-                    return (
-                      <div className="vd-lc-item" key={i}>
-                        <div
-                          className={`vd-lc-dot ${selected.status === "rejected" && i === 1
-                              ? "reject"
-                              : i < currentIndex
-                                ? "done"
-                                : i === currentIndex
-                                  ? "now"
-                                  : "pend"
-                            }`}
-                        ></div>
-                        <div className="vd-lc-body">
-                          <b>{stage}</b>
+                <div className="vd-activity-modal-body">
+                  {activityComplaint.log && activityComplaint.log.length > 0 ? (
+                    <div className="vd-activity-list">
+                      {activityComplaint.log.map((note, i) => (
+                        <div className="vd-activity-item" key={i}>
+                          <span className="vd-activity-dot"></span>
+                          <div className="vd-activity-content">
+                            <b>{note.text}</b>
+                            <span>{note.time}</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="vd-panel" id="history-panel">
-                <div className="vd-panel-head">
-                  <h3>Activity Log</h3>
-                </div>
-                <div className="vd-notif-list">
-                  {selected.log.map((note, i) => (
-                    <div className="vd-notif-item" key={i}>
-                      <span className="vd-notif-dot"></span>
-                      <div>
-                        <b>{note.text}</b>
-                        <span>{note.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* COMPLAINT DETAILS (READ — Category, Description, Citizen Details, Complaint Number) */}
-          <div className="vd-panel vd-form-panel">
-            <div className="vd-panel-head">
-              <h3>Complaint Details</h3>
-              <span className="vd-panel-link">{selected.complaintNumber}</span>
-            </div>
-            <div className="vd-detail-grid">
-              <div className="vd-detail-item">
-                <span>Complaint Number</span>
-                <b>{selected.complaintNumber}</b>
-              </div>
-              <div className="vd-detail-item">
-                <span>Category</span>
-                <b>{selected.category}</b>
-              </div>
-              <div className="vd-detail-item">
-                <span>Citizen</span>
-                <b>{selected.citizenName}</b>
-              </div>
-              <div className="vd-detail-item">
-                <span>Citizen Contact</span>
-                <b>{selected.citizenContact}</b>
-              </div>
-              <div className="vd-detail-item vd-detail-wide">
-                <span>Description</span>
-                <b>{selected.description}</b>
-              </div>
-            </div>
-          </div>
-
-          {/* VIEW PHOTOS: Before Repair, Site Photo, After Repair */}
-          <div className="vd-panel vd-form-panel">
-            <div className="vd-panel-head">
-              <h3>Photos — {selected.complaintNumber}</h3>
-            </div>
-            <div className="vd-photo-grid">
-              <div className="vd-photo-card">
-                <div className="vd-photo-thumb">📷</div>
-                <span>Before Repair</span>
-                <b>{selected.photos.before || "Not available"}</b>
-              </div>
-              <div className="vd-photo-card">
-                <div className="vd-photo-thumb">📷</div>
-                <span>Site Photo</span>
-                <b>{selected.photos.site || "Not available"}</b>
-              </div>
-              <div className="vd-photo-card">
-                <div className="vd-photo-thumb">📷</div>
-                <span>After Repair</span>
-                <b>{selected.photos.after || "Not available"}</b>
-              </div>
-            </div>
-          </div>
-
-          {/* PHYSICAL VERIFICATION: compare reported issue with completed work, then approve or reject */}
-          <div className="vd-panel vd-form-panel" id="verification-panel">
-            <div className="vd-panel-head">
-              <h3>Physical Verification — {selected.complaintNumber}</h3>
-              <span className={`vd-badge vd-badge-${statusTone[selected.status]}`}>{statusLabel[selected.status]}</span>
-            </div>
-            <div className="vd-new-form">
-              <p className="vd-compare-note">
-                Compare the reported issue against the completed work and photos above before recording a decision.
-              </p>
-              <div className="vd-field">
-                <label htmlFor="verifier-remarks">Verifier Remarks</label>
-                <textarea
-                  id="verifier-remarks"
-                  rows="3"
-                  placeholder="Note what you observed on-site"
-                  value={remarksDraft}
-                  onChange={(e) => setRemarksDraft(e.target.value)}
-                ></textarea>
-              </div>
-
-              <div className="vd-verify-actions">
-                {(selected.status === "pending" || selected.status === "in_review") && (
-                  <>
-                    <button className="vd-btn-danger" type="button" onClick={() => rejectWork(selected.id)}>
-                      Work Not Satisfied — Reject
-                    </button>
-                    <button className="vd-btn-primary" type="button" onClick={() => approveWork(selected.id)}>
-                      Work Satisfied — Approve / Verify
-                    </button>
-                  </>
-                )}
-
-                {selected.status === "rejected" && (
-                  <button className="vd-btn-outline" type="button" onClick={() => sendForReverification(selected.id)}>
-                    Staff Completed Action → Send for Re-verification
-                  </button>
-                )}
-
-                {selected.status === "verified" && (
-                  <button className="vd-btn-primary" type="button" onClick={() => markResolved(selected.id)}>
-                    Update Status → Resolved / Closed
-                  </button>
-                )}
-
-
-
-                {selected.status === "resolved" && (
-                  <button className="vd-btn-primary" type="button" onClick={() => notifyCitizen(selected.id)}>
-                    Notify Citizen of Status Update
-                  </button>
-                )}
-
-                {selected.status === "notified" && <span className="vd-done-note">✅ Citizen has been notified — complaint closed.</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* VIEW LOCATION ON MAP (READ — grouped by location) */}
-          {showMapView && (
-            <div className="vd-panel vd-form-panel" id="map-section">
-              <div className="vd-panel-head">
-                <h3>Complaint Locations — {verifier.ward}</h3>
-                <span className="vd-panel-link" onClick={() => setShowMapView(false)} style={{ cursor: "pointer" }}>
-                  Hide Map View
-                </span>
-              </div>
-              <div className="vd-map-grid">
-                {Object.entries(mapGroups).map(([location, group]) => (
-                  <div className="vd-map-ward-card" key={location}>
-                    <p className="vd-map-ward-name">{location}</p>
-                    <div className="vd-map-pins">
-                      {group.map((c) => (
-                        <span
-                          className="vd-map-pin"
-                          key={c.id}
-                          style={{ background: colorForCategory(c.category) }}
-                          title={`${c.complaintNumber} — ${c.category}`}
-                        >
-                          📍
-                        </span>
                       ))}
                     </div>
-                    <span className="vd-map-ward-count">
-                      {group.length} complaint{group.length !== 1 ? "s" : ""} to verify
-                    </span>
-                  </div>
-                ))}
+                  ) : (
+                    <div className="vd-activity-empty">
+                      <p>No activity recorded for this complaint yet.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="vd-activity-modal-footer">
+                  <button className="vd-btn-outline" onClick={handleCloseActivityModal}>Close</button>
+                </div>
               </div>
             </div>
           )}
@@ -955,7 +1094,7 @@ const VerifierDashboard = () => {
                 scrollTo("map-section");
               }}
             >
-              <div className="vd-quick-ic green">🗺️</div>
+              <div className="vd-quick-ic green">️</div>
               <div>
                 <h5>View Location on Map</h5>
                 <p>See complaints awaiting verification</p>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./ComplaintStatus.css";
+import StaffComplaintDetails from "./StaffComplaintDetails";
 
 const EMPTY_COMPLAINT = { id: "", complaintNumber: "", issue: "", stage: 0 };
 
@@ -9,6 +10,8 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
 
   const [newStage, setNewStage] = useState(currentComplaint.stage);
   const [updateMessage, setUpdateMessage] = useState("");
+  const [updateError, setUpdateError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const stageLabels = [
     "Action Initiated",
@@ -25,22 +28,29 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
     setUpdateMessage("");
   }, [currentComplaintId, currentComplaint]);
 
-  const handleManualUpdate = (e) => {
-    e.preventDefault();
-    if (onStatusUpdate) {
-      onStatusUpdate(currentComplaintId, newStage);
+  const saveStage = async (stage) => {
+    setSaving(true);
+    setUpdateError("");
+    try {
+      await onStatusUpdate?.(currentComplaintId, stage);
+      setNewStage(stage);
+      setUpdateMessage(`Status saved as "${stageLabels[stage]}".`);
+    } catch (error) {
+      setUpdateMessage("");
+      setUpdateError(error.message || "Unable to save the complaint status.");
+    } finally {
+      setSaving(false);
     }
-    setUpdateMessage(`Status successfully updated to "${stageLabels[newStage]}"!`);
-    setTimeout(() => setUpdateMessage(""), 3000);
   };
 
-  const handleQuickAction = (targetStage) => {
+  const handleManualUpdate = async (e) => {
+    e.preventDefault();
+    await saveStage(newStage);
+  };
+
+  const handleQuickAction = async (targetStage) => {
     setNewStage(targetStage);
-    if (onStatusUpdate) {
-      onStatusUpdate(currentComplaintId, targetStage);
-    }
-    setUpdateMessage(`Quick Action applied: "${stageLabels[targetStage]}"`);
-    setTimeout(() => setUpdateMessage(""), 3000);
+    await saveStage(targetStage);
   };
 
   return (
@@ -70,12 +80,15 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
           </select>
         </div>
 
+        <StaffComplaintDetails complaint={currentComplaint} />
+
         {/* Success Message */}
         {updateMessage && (
           <div className="cs-success-banner">
             ✅ {updateMessage}
           </div>
         )}
+        {updateError && <div className="cs-error-banner" role="alert">{updateError}</div>}
 
         {/* Visual Workflow Tracker */}
         <div className="cs-card">
@@ -94,7 +107,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
             ))}
           </div>
           <div className="cs-current-status-text">
-            Latest Status: <strong>{stageLabels[newStage]}</strong>
+            Latest Status: <strong>{currentComplaint.status || stageLabels[newStage]}</strong>
           </div>
         </div>
 
@@ -107,7 +120,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
               type="button" 
               className="cs-action-btn cs-action-initiate"
               onClick={() => handleQuickAction(0)}
-              disabled={newStage >= 0}
+              disabled={saving || newStage >= 0}
             >
               🚀 Mark Action Initiated
             </button>
@@ -116,7 +129,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
               type="button" 
               className="cs-action-btn cs-action-complete"
               onClick={() => handleQuickAction(2)}
-              disabled={newStage >= 2}
+              disabled={saving || newStage >= 2}
             >
               🛠️ Mark Work Completed
             </button>
@@ -125,7 +138,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
               type="button" 
               className="cs-action-btn cs-action-verify"
               onClick={() => handleQuickAction(4)}
-              disabled={newStage >= 4}
+              disabled={saving || newStage >= 4}
             >
               📤 Submit for Verification
             </button>
@@ -149,7 +162,7 @@ const ComplaintStatus = ({ complaints, selectedId, onBack, onStatusUpdate }) => 
           </div>
           <div className="cs-form-actions">
             <button type="button" className="cs-btn-outline" onClick={onBack}>Cancel</button>
-            <button type="submit" className="cs-btn-primary">Update Status →</button>
+            <button type="submit" className="cs-btn-primary" disabled={saving}>{saving ? "Saving..." : "Update Status →"}</button>
           </div>
         </form>
       </div>

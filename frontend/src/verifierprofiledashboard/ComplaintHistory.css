@@ -554,6 +554,9 @@
 }
 
 .ch-photo-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   font-size: 12px;
   font-weight: 600;
   background: var(--white);
@@ -561,6 +564,14 @@
   border-radius: 8px;
   color: var(--navy-700);
   border: 1px solid var(--line);
+}
+
+.ch-photo-badge img {
+  width: 100%;
+  max-width: 220px;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .ch-empty-text {
