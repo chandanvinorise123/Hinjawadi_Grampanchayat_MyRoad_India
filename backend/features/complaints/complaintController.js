@@ -36,6 +36,7 @@ const createComplaint = async (req, res) => {
     const {
       citizenId,
       citizenName,
+      mobile,
       category,
       issueType,
       description,
@@ -48,8 +49,8 @@ const createComplaint = async (req, res) => {
     // Validate required fields
     // ------------------------------------------
     if (
-      !citizenId ||
       !citizenName ||
+      !mobile ||
       !category ||
       !issueType ||
       !description
@@ -57,14 +58,19 @@ const createComplaint = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Citizen ID, category, issue type, and description are required",
+          "Citizen name, mobile number, category, issue type, and description are required",
       });
     }
 
-    // ------------------------------------------
-    // Validate citizen ID
-    // ------------------------------------------
-    if (!isValidObjectId(citizenId)) {
+    if (!/^[6-9]\d{9}$/.test(String(mobile).trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid 10-digit mobile number",
+      });
+    }
+
+    const linkedCitizenId = citizenId || null;
+    if (linkedCitizenId && !isValidObjectId(linkedCitizenId)) {
       return res.status(400).json({
         success: false,
         message: "Invalid citizen ID",
@@ -217,8 +223,9 @@ const createComplaint = async (req, res) => {
     // Create complaint
     // ------------------------------------------
     const complaint = await Complaint.create({
-      citizenId,
-      citizenName,
+      citizenId: linkedCitizenId,
+      citizenName: String(citizenName).trim(),
+      citizenMobile: String(mobile).trim(),
       category,
       issueType,
       description,
@@ -233,14 +240,18 @@ const createComplaint = async (req, res) => {
       photos: images.length,
     });
 
-    await Notification.insertMany([
-      {
-        role: "citizen",
-        userId: complaint.citizenId,
-        complaintId: complaint._id,
-        type: "Complaint Registered",
-        message: `${complaint.complaintNumber} was registered successfully and is ready for review.`,
-      },
+    const notifications = [
+      ...(linkedCitizenId
+        ? [
+            {
+              role: "citizen",
+              userId: linkedCitizenId,
+              complaintId: complaint._id,
+              type: "Complaint Registered",
+              message: `${complaint.complaintNumber} was registered successfully and is ready for review.`,
+            },
+          ]
+        : []),
       {
         role: "admin",
         complaintId: complaint._id,
@@ -253,11 +264,14 @@ const createComplaint = async (req, res) => {
         type: "Complaint Registered",
         message: `${complaint.complaintNumber} is ready for verification.`,
       },
-    ]);
+    ];
+
+    await Notification.insertMany(notifications);
 
     return res.status(201).json({
       success: true,
       message: "Complaint registered successfully",
+      complaintNumber: complaint.complaintNumber,
       data: complaint,
     });
   } catch (error) {

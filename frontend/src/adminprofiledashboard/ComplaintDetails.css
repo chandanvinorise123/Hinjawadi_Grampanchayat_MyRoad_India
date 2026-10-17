@@ -393,3 +393,72 @@
     height: 220px;
   }
 }
+
+/* ==========================================
+   TABLE VIEW STYLES (New Addition)
+   ========================================== */
+.cd-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.cd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.cd-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.cd-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.cd-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.cd-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.cd-view-btn {
+  background-color: #2e6cb0;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cd-view-btn:hover {
+  background-color: #1e4d82;
+}
+
+/* Fallback for missing photos in detail view */
+.cd-photo-placeholder {
+  width: 100%;
+  height: 150px;
+  background-color: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 0.9rem;
+}

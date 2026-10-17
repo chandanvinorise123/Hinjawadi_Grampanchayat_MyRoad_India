@@ -16,7 +16,7 @@ const statRoutes = require("./features/stats/statRoutes");
 const notificationRoutes = require("./features/notifications/notificationRoutes");
 const adminProfileRoutes = require("./features/admin/adminProfileRoutes");
 const photoRoutes = require("./features/photos/photoRoutes");
-const complaintRoutes = require("./features/complaints/complaintRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
 const adminManagementRoutes = require("./features/admin/adminManagementRoutes");
 const dashboardRoutes = require("./features/dashboard/dashboardRoutes");
 

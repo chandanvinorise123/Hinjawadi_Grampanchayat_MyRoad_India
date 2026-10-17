@@ -418,11 +418,11 @@ const AdminDashboard = () => {
   const overviewStats = [
     { label: "Total Complaints", value: complaints.length, icon: "🗂️", tone: "navy" },
     { label: "New Complaints", value: complaints.filter((c) => c.status === "New").length, icon: "🆕", tone: "navy" },
-    { label: "Pending", value: complaints.filter((c) => c.status === "Pending").length, icon: "⏳", tone: "amber" },
+    { label: "Pending", value: complaints.filter((c) => c.status === "Pending").length, icon: "", tone: "amber" },
     { label: "Under Verification", value: complaints.filter((c) => c.status === "Under Verification").length, icon: "🔍", tone: "orange" },
-    { label: "Under Action", value: complaints.filter((c) => c.status === "Under Action").length, icon: "🛠️", tone: "orange" },
+    { label: "Under Action", value: complaints.filter((c) => c.status === "Under Action").length, icon: "️", tone: "orange" },
     { label: "Resolved", value: complaints.filter((c) => c.status === "Resolved").length, icon: "✅", tone: "green" },
-    { label: "Critical", value: complaints.filter((c) => c.priority === "Critical").length, icon: "🚨", tone: "red" },
+    { label: "Critical", value: complaints.filter((c) => c.priority === "Critical").length, icon: "", tone: "red" },
   ];
 
   const userCounts = [
@@ -851,11 +851,11 @@ const AdminDashboard = () => {
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintDetails)}>
-                    📋 Complaint Details
+                  📈Complaint Details
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
-                    🧑‍🔧 Staff & Work Monitoring
+                    🧑‍ Staff & Work Monitoring
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
@@ -1293,11 +1293,11 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* COMPLAINT MANAGEMENT */}
+                  {/* COMPLAINT MANAGEMENT - TABLE VIEW */}
                   <div className="ad-panel ad-form-panel" id="complaint-mgmt">
                     <div className="ad-panel-head">
-                      <h3>Complaint Management</h3>
-                      <span className="ad-panel-link">{filteredComplaints.length} shown</span>
+                      <h3>All Complaints</h3>
+                      <span className="ad-panel-link">{filteredComplaints.length} total</span>
                     </div>
 
                     <div className="ad-filter-row">
@@ -1325,7 +1325,7 @@ const AdminDashboard = () => {
                               <th>Priority</th>
                               <th>Status</th>
                               <th>Photos</th>
-                              <th></th>
+                              <th>Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1339,16 +1339,25 @@ const AdminDashboard = () => {
                                     <td>
                                       <div className="ad-cat">
                                         <span className="ad-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
-                                        {c.issue}
+                                        {c.category}
                                       </div>
                                     </td>
                                     <td>{getLocationString(c.location)}</td>
                                     <td><span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span></td>
                                     <td><span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span></td>
-                                    <td className="ad-mono">{c.photos}</td>
+                                    <td className="ad-mono">{c.photos || 0}</td>
                                     <td onClick={(e) => e.stopPropagation()}>
+                                      <button 
+                                        className="ad-btn-primary small" 
+                                        onClick={() => {
+                                          setSelectedId(c.id);
+                                          setShowComplaintDetails(true);
+                                        }}
+                                      >
+                                        View Details
+                                      </button>
                                       {c.status === "New" && (
-                                        <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteComplaintId(c.id)} title="Remove eligible record">🗑️</button>
+                                        <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteComplaintId(c.id)} title="Remove eligible record" style={{ marginLeft: "8px" }}>🗑️</button>
                                       )}
                                     </td>
                                   </tr>
@@ -1539,7 +1548,7 @@ const AdminDashboard = () => {
                                 </div>
                               )}
                               <div style={{ marginTop: "8px", display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                                <a href={`https://www.google.com/maps/search/?api=1&query=${selectedMapComplaint.lat},${selectedMapComplaint.lng}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "#2e6cb0", textDecoration: "none" }}>📍 Open in Google Maps</a>
+                                <a href={`https://www.google.com/maps/search/?api=1&query=${selectedMapComplaint.lat},${selectedMapComplaint.lng}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "#2e6cb0", textDecoration: "none" }}> Open in Google Maps</a>
                               </div>
                             </div>
                           </InfoWindow>
@@ -1555,95 +1564,6 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   </div>
-
-                  {/* COMPLAINT DETAILS */}
-                  {selected && (
-                    <div className="ad-panel ad-form-panel">
-                      <div className="ad-panel-head">
-                        <h3>Complaint Details — {selected.complaintNumber}</h3>
-                      </div>
-                      <div className="ad-detail-grid">
-                        <div className="ad-detail-item"><span>Citizen</span><b>{selected.citizenName}</b></div>
-                        <div className="ad-detail-item"><span>Category</span><b>{selected.category}</b></div>
-                        <div className="ad-detail-item"><span>Location</span><b>{getLocationString(selected.location)}</b></div>
-                        <div className="ad-detail-item"><span>Date Reported</span><b>{selected.date}</b></div>
-                        <div className="ad-detail-item ad-detail-wide"><span>Description</span><b>{selected.description}</b></div>
-                      </div>
-                      <div className="ad-update-row">
-                        <div className="ad-field">
-                          <label htmlFor="upd-status">Update Status</label>
-                          <select id="upd-status" className="ad-inline-select" value={selected.status} onChange={(e) => updateStatus(selected.id, e.target.value)}>
-                            {statusOptions.map((s) => (<option key={s} value={s}>{s}</option>))}
-                          </select>
-                        </div>
-                        <div className="ad-field">
-                          <label htmlFor="upd-priority">Update Priority</label>
-                          <select id="upd-priority" className="ad-inline-select" value={selected.priority} onChange={(e) => updatePriority(selected.id, e.target.value)}>
-                            {priorityOptions.map((p) => (<option key={p} value={p}>{p}</option>))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* STAFF / VERIFIER ASSIGNMENT */}
-                  {selected && (
-                    <div className="ad-panel ad-form-panel" id="assignment-panel">
-                      <div className="ad-panel-head">
-                        <h3>Staff / Verifier Assignment — {selected.complaintNumber}</h3>
-                      </div>
-                      <div className="ad-assign-grid">
-                        <div className="ad-assign-card">
-                          <h5>Staff Assignment</h5>
-                          <p>Assigned issues, work status and action taken are tracked on the staff dashboard once assigned.</p>
-                          <div className="ad-field">
-                            <label htmlFor="assign-staff">Assign Staff</label>
-                            <select id="assign-staff" className="ad-inline-select" value={selected.assignedStaff} onChange={(e) => assignStaff(selected.id, e.target.value)}>
-                              <option value="">Unassigned</option>
-                              {staffList.map((s) => (<option key={s.id} value={s.name}>{s.name}</option>))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="ad-assign-card">
-                          <h5>Verifier Assignment</h5>
-                          <p>Verifiers pick this up in their verification queue to approve or reject completed work.</p>
-                          <div className="ad-field">
-                            <label htmlFor="assign-verifier">Assign Verifier</label>
-                            <select id="assign-verifier" className="ad-inline-select" value={selected.assignedVerifier} onChange={(e) => assignVerifier(selected.id, e.target.value)}>
-                              <option value="">Unassigned</option>
-                              {verifierList.map((v) => (<option key={v.id} value={v.name}>{v.name}</option>))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* LOCATION / MAP VIEW */}
-                  {showMapView && (
-                    <div className="ad-panel ad-form-panel" id="map-section">
-                      <div className="ad-panel-head">
-                        <h3>Complaint Locations — Category &amp; Area-wise</h3>
-                        <span className="ad-panel-link" onClick={() => setShowMapView(false)} style={{ cursor: "pointer" }}>Hide Map View</span>
-                      </div>
-                      <div className="ad-map-grid">
-                        {Object.entries(mapGroups).map(([location, group]) => (
-                          <div className="ad-map-ward-card" key={location}>
-                            <p className="ad-map-ward-name">{location}</p>
-                            <div className="ad-map-pins">
-                              {group.map((c) => (
-                                <span className="ad-map-pin" key={c.id} style={{ background: colorForCategory(c.category) }} title={`${c.complaintNumber} — ${c.category} · ${c.priority}`}>📍</span>
-                              ))}
-                            </div>
-                            <span className="ad-map-ward-count">
-                              {group.length} issue{group.length !== 1 ? "s" : ""}
-                              {group.some((c) => c.priority === "Critical") ? " · includes critical" : ""}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* REPORTS & ANALYTICS */}
                   <div className="ad-panel ad-form-panel" id="reports-panel">
@@ -1682,7 +1602,7 @@ const AdminDashboard = () => {
                   {/* NOTIFICATION MONITORING */}
                   <div className="ad-panel" id="notif-panel">
                     <div className="ad-panel-head">
-                      <h3>🔔 Notification Monitoring</h3>
+                      <h3> Notification Monitoring</h3>
                       <span className="ad-panel-link">Complete System Monitoring</span>
                     </div>
                     <div className="ad-notif-list">

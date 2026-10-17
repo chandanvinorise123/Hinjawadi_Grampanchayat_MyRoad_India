@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./ComplaintVerification.css";
-import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
+import { fetchDashboard, getStoredUser, getUserId, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
 
 // ==========================================
 // ==========================================
@@ -13,19 +13,37 @@ const ComplaintVerification = ({ onBack }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [verifierRemarks, setVerifierRemarks] = useState("");
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [savingAction, setSavingAction] = useState(false);
 
   useEffect(() => {
     fetchDashboard("admin", getUserId(getStoredUser()))
       .then(({ complaints: loaded = [] }) => setComplaints(loaded
         .filter((complaint) => ["Under Verification", "Verified", "Resolved", "Closed", "Rejected"].includes(complaint.status))
-        .map((complaint) => ({
-          ...complaint,
-          currentStep: { "Under Action": 1, "Under Verification": 3, Verified: 4, Resolved: 5, Closed: 5, Rejected: 2 }[complaint.status] || 0,
-          issue: complaint.issue || complaint.issueType,
-          staffName: complaint.assignedStaff || "Unassigned",
-          workDetails: complaint.description,
-          photos: complaint.images || [],
-        }))))
+        .map((complaint) => {
+          const inspection = complaint.inspection || {};
+          const images = (complaint.images || []).map((image) =>
+            typeof image === "string" ? image : image?.url
+          ).filter(Boolean);
+          const evidence = [
+            ...images.map((url, index) => ({ url, label: `Complaint photo ${index + 1}` })),
+            ...(inspection.sitePhoto
+              ? [{ url: inspection.sitePhoto, label: "Before-work / site photo" }]
+              : []),
+            ...(inspection.completionPhoto
+              ? [{ url: inspection.completionPhoto, label: "After-work / completion photo" }]
+              : []),
+          ].filter((photo, index, all) =>
+            all.findIndex((candidate) => candidate.url === photo.url) === index
+          );
+          return {
+            ...complaint,
+            currentStep: { "Under Action": 1, "Under Verification": 3, Verified: 4, Resolved: 5, Closed: 5, Rejected: 2 }[complaint.status] || 0,
+            issue: complaint.issue || complaint.issueType,
+            staffName: complaint.assignedStaff || "Unassigned",
+            workDetails: complaint.inspection?.actionTaken || complaint.description,
+            evidence,
+          };
+        })))
       .catch((error) => console.error("Failed to load verification queue:", error));
   }, []);
 
@@ -50,46 +68,71 @@ const ComplaintVerification = ({ onBack }) => {
 
   // Action: Verify and Close
   const handleVerifyAndClose = async () => {
+    if (!selectedComplaint?.id || savingAction) return;
     if (!verifierRemarks.trim()) {
       showMessage("error", "Please add closure remarks before verifying.");
       return;
     }
+    setSavingAction(true);
     try {
-      await updateDashboardComplaint(selectedComplaint.id, { status: "Closed", remarks: verifierRemarks });
+      const result = await updateDashboardComplaint(selectedComplaint.id, {
+        status: "Closed",
+        remarks: verifierRemarks.trim(),
+      });
+      const updatedComplaint = result.complaint;
+      setComplaints((current) => current.map((complaint) =>
+        complaint.id === selectedComplaint.id
+          ? {
+              ...complaint,
+              ...updatedComplaint,
+              currentStep: 5,
+              remarks: verifierRemarks.trim(),
+            }
+          : complaint
+      ));
     } catch (error) {
       console.error("Failed to close complaint:", error);
+      showMessage("error", error.message || "Unable to verify and close this complaint.");
       return;
+    } finally {
+      setSavingAction(false);
     }
-    const updated = complaints.map(c => 
-      c.id === selectedComplaint.id 
-        ? { ...c, currentStep: 5, remarks: verifierRemarks, status: "Closed" } 
-        : c
-    );
-    setComplaints(updated);
     setIsModalOpen(false);
     showMessage("success", "Complaint verified and closed successfully!");
   };
 
   // Action: Return for Additional Action
   const handleReturnForAction = async () => {
+    if (!selectedComplaint?.id || savingAction) return;
     if (!verifierRemarks.trim()) {
       showMessage("error", "Please add remarks explaining why it's being returned.");
       return;
     }
+    setSavingAction(true);
     try {
-      await updateDashboardComplaint(selectedComplaint.id, { status: "Under Action", remarks: verifierRemarks });
+      await updateDashboardComplaint(selectedComplaint.id, {
+        status: "Under Action",
+        remarks: verifierRemarks.trim(),
+      });
     } catch (error) {
       console.error("Failed to return complaint:", error);
+      showMessage("error", error.message || "Unable to return this complaint to staff.");
       return;
+    } finally {
+      setSavingAction(false);
     }
-    const updated = complaints.map(c => 
-      c.id === selectedComplaint.id 
-        ? { ...c, currentStep: 2, remarks: `RETURNED: ${verifierRemarks}`, status: "Under Action" } 
-        : c
-    );
-    setComplaints(updated);
+    setComplaints((current) => current.map((complaint) =>
+      complaint.id === selectedComplaint.id
+        ? {
+            ...complaint,
+            currentStep: 2,
+            remarks: `RETURNED: ${verifierRemarks.trim()}`,
+            status: "Under Action",
+          }
+        : complaint
+    ));
     setIsModalOpen(false);
-    showMessage("error", "Complaint returned to staff for additional action.");
+    showMessage("success", "Complaint returned to staff for additional action.");
   };
 
   return (
@@ -180,9 +223,14 @@ const ComplaintVerification = ({ onBack }) => {
                 </div>
                 <div className="cv-detail-card">
                   <h4>Evidence / Photos</h4>
-                  {selectedComplaint.photos.length > 0 ? (
+                  {selectedComplaint.evidence.length > 0 ? (
                     <div className="cv-photo-grid">
-                      {selectedComplaint.photos.map((url, i) => <img key={i} src={url} alt="Work proof" />)}
+                      {selectedComplaint.evidence.map((photo) => (
+                        <figure className="cv-evidence-item" key={`${photo.label}-${photo.url}`}>
+                          <img src={toMediaUrl(photo.url)} alt={photo.label} />
+                          <figcaption>{photo.label}</figcaption>
+                        </figure>
+                      ))}
                     </div>
                   ) : (
                     <p className="cv-empty">No photos uploaded.</p>
@@ -203,8 +251,26 @@ const ComplaintVerification = ({ onBack }) => {
             </div>
 
             <div className="cv-modal-footer">
-              <button className="cv-btn-return" onClick={handleReturnForAction}>↩ Return for Additional Action</button>
-              <button className="cv-btn-verify" onClick={handleVerifyAndClose}>✅ Verify & Close Complaint</button>
+              {["Under Verification", "Verified"].includes(selectedComplaint.status) ? (
+                <>
+                  <button
+                    className="cv-btn-return"
+                    onClick={handleReturnForAction}
+                    disabled={savingAction}
+                  >
+                    ↩ Return for Additional Action
+                  </button>
+                  <button
+                    className="cv-btn-verify"
+                    onClick={handleVerifyAndClose}
+                    disabled={savingAction}
+                  >
+                    {savingAction ? "Saving..." : "✅ Verify & Close Complaint"}
+                  </button>
+                </>
+              ) : (
+                <span className="cv-empty">This complaint is already {selectedComplaint.status.toLowerCase()}.</span>
+              )}
             </div>
           </div>
         </div>

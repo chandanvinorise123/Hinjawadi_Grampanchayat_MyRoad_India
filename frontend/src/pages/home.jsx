@@ -2,9 +2,21 @@
 import React, { useEffect, useRef, useState } from "react";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./home.css";
+import { API_BASE_URL } from "../utils/dashboardApi";
 const REPORT_ROUTE = "/reportissue";
+
+const findComplaintByNumber = async (complaintNumber) => {
+  const response = await fetch(
+    `${API_BASE_URL}/complaints/track/${encodeURIComponent(complaintNumber)}`
+  );
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Complaint not found. Please check the ID.");
+  }
+  return result.data;
+};
 
 // Hero background slider images
 import heroImage1 from "../assets/r1.jpg";
@@ -233,43 +245,15 @@ const teamMembers = [
   },
 ];
 
-const trackTimeline = [
-  {
-    label: "complaintRegistered",
-    time: "18 Aug, 10:42 AM",
-    state: "done",
-  },
-  {
-    label: "verified",
-    time: "18 Aug, 3:10 PM",
-    state: "done",
-  },
-  {
-    label: "assignedToStaff",
-    time: "19 Aug, 9:05 AM",
-    state: "done",
-  },
-  {
-    label: "repairInProgress",
-    time: "21 Aug, 11:20 AM",
-    state: "now",
-  },
-  {
-    label: "resolutionVerified",
-    time: "pending",
-    state: "pend",
-  },
-  {
-    label: "closed",
-    time: "pending",
-    state: "pend",
-  },
-];
-
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
 
+  const [trackId, setTrackId] = useState("");
+  const [trackedComplaint, setTrackedComplaint] = useState(null);
+  const [trackError, setTrackError] = useState("");
+  const [trackLoading, setTrackLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tvPlaying, setTvPlaying] = useState(true);
   const videoRef = useRef(null);
@@ -277,6 +261,47 @@ const Home = () => {
   // Gallery lightbox
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const lightboxOpen = lightboxIndex !== null;
+
+  const handleTrackComplaint = async (complaintNumber) => {
+    const requestedId = String(complaintNumber || "").trim();
+    if (!requestedId) {
+      setTrackError("Enter a complaint number to track.");
+      setTrackedComplaint(null);
+      return;
+    }
+
+    setTrackLoading(true);
+    setTrackError("");
+    setTrackedComplaint(null);
+    setTrackId(requestedId);
+    try {
+      setTrackedComplaint(await findComplaintByNumber(requestedId));
+    } catch (error) {
+      console.error("Track complaint error:", error);
+      setTrackError(error.message || "Unable to track this complaint.");
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
+  const submitComplaintTracking = (event) => {
+    event.preventDefault();
+    handleTrackComplaint(trackId);
+  };
+
+  useEffect(() => {
+    const complaintNumber = location.state?.trackComplaintNumber;
+    if (!complaintNumber) return;
+
+    handleTrackComplaint(complaintNumber);
+    window.setTimeout(() => {
+      document.getElementById("home-complaint-tracker")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 0);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const openLightbox = (index) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);
@@ -577,7 +602,7 @@ const Home = () => {
       </section>
 
       {/* ================= TRACK COMPLAINT ================= */}
-      <section className="track-section">
+      <section className="track-section" id="home-complaint-tracker">
         <div className="track-shell">
           {/* Left card: search */}
           <div className="track-card track-form-card">
@@ -588,10 +613,7 @@ const Home = () => {
 
             <form
               className="track-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                // Connect your existing tracking API here.
-              }}
+              onSubmit={submitComplaintTracking}
             >
               <label htmlFor="track-id" className="sr-only">
                 {t("home.complaintNumber")}
@@ -601,39 +623,65 @@ const Home = () => {
                 id="track-id"
                 type="text"
                 placeholder={t("home.complaintPlaceholder")}
+                value={trackId}
+                onChange={(event) => {
+                  setTrackId(event.target.value);
+                  setTrackError("");
+                }}
+                required
               />
 
               <button
                 className="primary-btn track-btn"
                 type="submit"
+                disabled={trackLoading}
               >
-                {t("home.trackStatus")}
+                {trackLoading ? "Tracking..." : t("home.trackStatus")}
               </button>
             </form>
+            {trackError && <p className="track-error" role="alert">{trackError}</p>}
           </div>
 
           {/* Right card: timeline */}
           <div className="track-card timeline-card">
-            <div className="tl-head">
-              <b>#MRI-2026-08341</b>
-              <span>{t("home.onTrack")}</span>
-            </div>
-
-            {trackTimeline.map((item, i) => (
-              <div className="tl-item" key={i}>
-                <div className={`tl-dot ${item.state}`}></div>
-
-                <div className="tl-body">
-                  <b>{t(`home.${item.label}`)}</b>
-
-                  <span>
-                    {item.time === "pending"
-                      ? t("home.pending")
-                      : item.time}
-                  </span>
+            {trackedComplaint ? (
+              <>
+                <div className="tl-head">
+                  <b>{trackedComplaint.complaintNumber}</b>
+                  <span>{trackedComplaint.status || "New"}</span>
                 </div>
+                <p>
+                  {trackedComplaint.category} · {trackedComplaint.issueType}
+                </p>
+                <p>{trackedComplaint.location}</p>
+                <div className="tl-updates">
+                  <b>Work updates</b>
+                  {(trackedComplaint.statusHistory || []).length > 0 ? (
+                    [...trackedComplaint.statusHistory].reverse().map((update, index) => (
+                      <div className="tl-item" key={`${update.updatedAt || update.status}-${index}`}>
+                        <div className={`tl-dot ${index === 0 ? "now" : "done"}`}></div>
+                        <div className="tl-body">
+                          <b>{update.status}</b>
+                          <span>
+                            {update.updatedAt
+                              ? new Date(update.updatedAt).toLocaleString()
+                              : ""}
+                          </span>
+                          {update.remarks && <span>{update.remarks}</span>}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No status updates are available yet.</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="tl-head">
+                <b>Complaint progress</b>
+                <span>Enter a complaint number to view updates</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

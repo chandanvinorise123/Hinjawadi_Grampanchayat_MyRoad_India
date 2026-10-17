@@ -42,20 +42,21 @@ const getStageFromStatus = (status) => {
   return statusMap[String(status || "").trim().toLowerCase()] ?? 0;
 };
 
-const TrackComplaint = ({ onBack }) => {
-  const [trackId, setTrackId] = useState("");
+const TrackComplaint = ({ onBack, initialComplaintId = "" }) => {
+  const [trackId, setTrackId] = useState(initialComplaintId);
   const [trackedComplaint, setTrackedComplaint] = useState(null);
   const [error, setError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleTrack = async (e) => {
-    e.preventDefault();
+  const trackComplaint = async (complaintNumber) => {
     setError("");
     setTrackedComplaint(null);
     setShowDetails(false);
+    setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/complaints/track/${encodeURIComponent(trackId.trim())}`);
+      const response = await fetch(`${API_BASE_URL}/complaints/track/${encodeURIComponent(complaintNumber.trim())}`);
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Complaint not found");
       const complaint = result.data;
@@ -71,8 +72,21 @@ const TrackComplaint = ({ onBack }) => {
       });
     } catch (trackError) {
       setError(trackError.message || "Complaint not found. Please check the ID and try again.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleTrack = (event) => {
+    event.preventDefault();
+    trackComplaint(trackId);
+  };
+
+  React.useEffect(() => {
+    if (initialComplaintId.trim()) {
+      trackComplaint(initialComplaintId);
+    }
+  }, [initialComplaintId]);
 
   // Close modal on Escape key
   React.useEffect(() => {
@@ -116,8 +130,8 @@ const TrackComplaint = ({ onBack }) => {
               required
             />
           </div>
-          <button type="submit" className="cdp-tc-track-btn">
-            Track Status
+          <button type="submit" className="cdp-tc-track-btn" disabled={loading}>
+            {loading ? "Tracking..." : "Track Status"}
           </button>
         </form>
 

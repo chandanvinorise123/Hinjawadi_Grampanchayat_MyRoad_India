@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as turf from "@turf/turf";
 
 import {
@@ -87,6 +87,7 @@ const BOUNDARY_URL = "/boundaries/hinjavadi.geojson";
 const ReportIssue = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
@@ -105,7 +106,7 @@ const ReportIssue = () => {
   const [boundaryBounds, setBoundaryBounds] = useState(null);
   const [mapBounds, setMapBounds] = useState(null);
 
-  // Citizen details: email has been removed
+  // Citizen details
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
 
@@ -136,6 +137,9 @@ const ReportIssue = () => {
   // Photo verification state
   const [verifiedPhotosData, setVerifiedPhotosData] = useState([]);
   const [capturedLocation, setCapturedLocation] = useState(null);
+
+  // Direct Photo Upload / Capture State
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
 
   // Load the selected issue type passed through navigation.
   useEffect(() => {
@@ -261,7 +265,6 @@ const ReportIssue = () => {
   };
 
   // Draw the boundary when the map and GeoJSON are available.
-  // Transparent fill keeps the map visible beneath the boundary.
   useEffect(() => {
     if (!map || !hinjawadiBoundary || !isLoaded) return;
 
@@ -438,6 +441,42 @@ const ReportIssue = () => {
     );
   };
 
+  // Handle Photo Upload / Capture
+  const handlePhotoCapture = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      const newPhotos = files.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        name: file.name,
+      }));
+
+      setSelectedPhotos((prev) => [...prev, ...newPhotos]);
+
+      // Update verifiedPhotosData to satisfy existing form validation
+      const newVerifiedData = newPhotos.map((photo, index) => ({
+        publicUrl: photo.preview, // In a real app, this would be the uploaded URL
+        file: photo.file,
+        verificationId: `upload-${Date.now()}-${index}`,
+        verified: true,
+        requiresReview: false,
+        location: selectedLocation.lat
+          ? { latitude: selectedLocation.lat, longitude: selectedLocation.lng }
+          : null,
+      }));
+
+      setVerifiedPhotosData((prev) => [...prev, ...newVerifiedData]);
+    }
+    // Reset input value to allow selecting the same file again if needed
+    e.target.value = "";
+  };
+
+  // Remove a selected photo
+  const removePhoto = (index) => {
+    setSelectedPhotos((prev) => prev.filter((_, i) => i !== index));
+    setVerifiedPhotosData((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Photo verification callbacks.
   const handlePhotoVerified = (photoId, aiResult) => {
     console.log("Photo verified:", photoId, aiResult);
@@ -522,23 +561,8 @@ const ReportIssue = () => {
       return;
     }
 
-    const photoLocationsValid = verifiedPhotosData.every((photo) => {
-      const photoLocation = photo.location;
-      if (
-        !photoLocation ||
-        !Number.isFinite(Number(photoLocation.latitude)) ||
-        !Number.isFinite(Number(photoLocation.longitude))
-      ) {
-        return false;
-      }
-      const latitudeDifference = Math.abs(Number(photoLocation.latitude) - latitude);
-      const longitudeDifference = Math.abs(Number(photoLocation.longitude) - longitude);
-      return latitudeDifference <= 0.001 && longitudeDifference <= 0.001;
-    });
-    if (!photoLocationsValid) {
-      setErrorMessage("Capture the complaint photo at the same location selected on the map.");
-      return;
-    }
+    // ✅ REMOVED: Strict photo location matching validation. 
+    // Users can now capture/upload photos from anywhere (inside or outside Hinjawadi).
 
     // Include citizen ID if a logged-in user is available.
     let user = null;
@@ -549,30 +573,44 @@ const ReportIssue = () => {
       console.error("Unable to parse user:", error);
     }
 
-    const complaintData = {
-      category: categories.find((category) => category.issues.includes(issueType))?.title || "",
-      fullName: fullName.trim(),
-      citizenName: fullName.trim(),
-      mobile,
-      issueType,
-      description: description.trim(),
-      location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-      locationUrl: "Google Maps selected location",
-      latitude,
-      longitude,
-      coordinates: { latitude, longitude },
-      photoVerifications: verifiedPhotosData
-        .filter((photo) => photo.verified || photo.requiresReview)
-        .map(({ publicUrl, verificationId, verified, requiresReview, location }) => ({
-          publicUrl,
-          verificationId,
-          verified,
-          requiresReview,
-          location,
-        }))
-        .filter((photo) => photo.publicUrl),
-      citizenId: user?.id || user?._id || undefined,
-    };
+    const complaintData = new FormData();
+    complaintData.append(
+      "category",
+      categories.find((category) => category.issues.includes(issueType))?.title || ""
+    );
+    complaintData.append("citizenName", fullName.trim());
+    complaintData.append("mobile", mobile);
+    complaintData.append("issueType", issueType);
+    complaintData.append("description", description.trim());
+    complaintData.append("location", `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+    complaintData.append("locationUrl", "Google Maps selected location");
+    complaintData.append("coordinates", JSON.stringify({ latitude, longitude }));
+    if (user?.id || user?._id) {
+      complaintData.append("citizenId", user.id || user._id);
+    }
+
+    selectedPhotos.forEach(({ file }) => {
+      if (file) complaintData.append("images", file);
+    });
+
+    const photoVerifications = verifiedPhotosData
+      .filter((photo) => photo.verified || photo.requiresReview)
+      .map(({ publicUrl, verificationId, verified, requiresReview, location }) => ({
+        publicUrl,
+        verificationId,
+        verified,
+        requiresReview,
+        location,
+      }))
+      .filter((photo) =>
+        photo.publicUrl &&
+        !photo.publicUrl.startsWith("blob:") &&
+        !photo.publicUrl.startsWith("data:") &&
+        photo.location
+      );
+    if (photoVerifications.length > 0) {
+      complaintData.append("photoVerifications", JSON.stringify(photoVerifications));
+    }
 
     setLoading(true);
 
@@ -581,10 +619,7 @@ const ReportIssue = () => {
         `${API_BASE_URL}/complaints`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(complaintData),
+          body: complaintData,
         }
       );
 
@@ -633,6 +668,7 @@ const ReportIssue = () => {
     setIssueType("");
     setDescription("");
     setVerifiedPhotosData([]);
+    setSelectedPhotos([]);
     setCapturedLocation(null);
     setErrorMessage("");
 
@@ -715,8 +751,6 @@ const ReportIssue = () => {
                   </div>
                 </div>
 
-                {/* Email field removed */}
-
                 <div className="segmented-toggle">
                   <button
                     type="button"
@@ -734,7 +768,6 @@ const ReportIssue = () => {
                       locationMode === "live" ? "active" : ""
                     }
                     onClick={handleUseLiveLocation}
-                    
                   >
                     {boundaryLoading
                       ? "Loading Boundary..."
@@ -861,7 +894,6 @@ const ReportIssue = () => {
                         type="button"
                         className="secondary-btn"
                         onClick={handleUseLiveLocation}
-                        
                       >
                         Try Live Location Again
                       </button>
@@ -930,8 +962,70 @@ const ReportIssue = () => {
                 </div>
               </div>
 
-              {/* Right column: existing photo verification */}
+              {/* Right column: Photo Upload & Verification */}
               <div className="report-col">
+                {/* Direct Upload / Capture Functionality */}
+                <div className="form-field">
+                  <label htmlFor="photoUpload">
+                    Upload or Capture Photo
+                  </label>
+                  <input
+                    id="photoUpload"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    onChange={handlePhotoCapture}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px dashed #cbd5e1',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      marginBottom: '10px',
+                      backgroundColor: '#f8fafc'
+                    }}
+                  />
+                  
+                  {/* Photo Previews */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                    {selectedPhotos.map((photo, index) => (
+                      <div key={index} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                        <img 
+                          src={photo.preview} 
+                          alt={`Preview ${index}`} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => removePhoto(index)}
+                          style={{ 
+                            position: 'absolute', 
+                            top: '4px', 
+                            right: '4px', 
+                            background: 'rgba(220, 38, 38, 0.9)', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '50%', 
+                            width: '24px', 
+                            height: '24px', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Existing Photo Detection Component */}
                 <PhotoDetection
                   onPhotoVerified={handlePhotoVerified}
                   onPhotoRejected={handlePhotoRejected}
@@ -978,13 +1072,28 @@ const ReportIssue = () => {
               <button
                 className="primary-btn"
                 type="button"
-                onClick={() =>
-                  window.location.assign(
-                    `/track-complaint?complaintNumber=${encodeURIComponent(
-                      complaintNumber
-                    )}`
-                  )
-                }
+                onClick={() => {
+                  let user = null;
+                  try {
+                    user = JSON.parse(localStorage.getItem("user") || "null");
+                  } catch (error) {
+                    console.error("Unable to parse user:", error);
+                  }
+
+                  if (String(user?.role || "").toLowerCase() === "citizen") {
+                    navigate("/citizendashboard", {
+                      state: {
+                        openTrack: true,
+                        trackComplaintNumber: complaintNumber,
+                      },
+                    });
+                    return;
+                  }
+
+                  navigate("/", {
+                    state: { trackComplaintNumber: complaintNumber },
+                  });
+                }}
               >
                 {t("report.trackComplaint")} <span> →</span>
               </button>

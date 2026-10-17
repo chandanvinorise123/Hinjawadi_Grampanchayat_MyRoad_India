@@ -226,6 +226,7 @@ const CitizenDashboard = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showMyComplaints, setShowMyComplaints] = useState(false);
   const [showTrackComplaint, setShowTrackComplaint] = useState(false);
+  const [initialTrackComplaintNumber, setInitialTrackComplaintNumber] = useState("");
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
   const [showIssueMap, setShowIssueMap] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -545,6 +546,10 @@ const CitizenDashboard = () => {
     const s = location.state;
     if (!s) return;
     if (s.openForm) setShowNewForm(true);
+    if (s.openTrack) {
+      setInitialTrackComplaintNumber(s.trackComplaintNumber || "");
+      setShowTrackComplaint(true);
+    }
     if (s.openMap) setShowMapView(true);
     if (s.scrollTo) setTimeout(() => scrollTo(s.scrollTo), 50);
     navigate(location.pathname, { replace: true, state: null });
@@ -574,7 +579,12 @@ const CitizenDashboard = () => {
   // ✅ CONDITIONAL RENDERING (Must be AFTER all hooks, BEFORE main return)
   if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
   if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} onDelete={handleDelete} />;
-  if (showTrackComplaint) return <TrackComplaint onBack={() => setShowTrackComplaint(false)} />;
+  if (showTrackComplaint) return (
+    <TrackComplaint
+      onBack={() => setShowTrackComplaint(false)}
+      initialComplaintId={initialTrackComplaintNumber}
+    />
+  );
   if (showComplaintDetails) return <ComplaintsDetails complaints={complaints} onBack={() => setShowComplaintDetails(false)} />;
   if (showIssueMap) return <IssueMap complaints={complaints} onBack={() => setShowIssueMap(false)} />;
   if (showNotifications) return <Notifications onBack={() => setShowNotifications(false)} />;
@@ -623,7 +633,14 @@ const CitizenDashboard = () => {
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowTrackComplaint)}>
+          <button
+            type="button"
+            className="cdp-sb-link"
+            onClick={() => {
+              setInitialTrackComplaintNumber("");
+              openView(setShowTrackComplaint);
+            }}
+          >
             <Icons.Track /> Track Complaint
           </button>
           <button type="button" className="cdp-sb-link" onClick={() => openView(setShowComplaintDetails)}>

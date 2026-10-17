@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import "./ComplaintsDetails.css";
+import { toMediaUrl } from "../utils/dashboardApi";
 
 
 const priorityTone = {
@@ -36,9 +37,13 @@ const ComplaintsDetails = ({ onBack, complaints = [] }) => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const complaintDetails = complaints.map((complaint) => ({
     ...complaint,
-    photos: complaint.photos && typeof complaint.photos === "object"
-      ? complaint.photos
-      : { before: complaint.images?.[0] || "", after: complaint.images?.[1] || "" },
+    imageUrls: Array.from(new Set([
+      ...(Array.isArray(complaint.images) ? complaint.images : []),
+      ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
+      ...(complaint.photos && typeof complaint.photos === "object"
+        ? Object.values(complaint.photos)
+        : []),
+    ].filter((image) => typeof image === "string" && image.trim()))),
     history: (complaint.statusHistory || []).map((entry) => ({
       time: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
       action: entry.status,
@@ -188,28 +193,21 @@ const ComplaintsDetails = ({ onBack, complaints = [] }) => {
               </div>
 
               {/* 4. Photo Gallery (Before/After/Site) */}
-              {(selectedComplaint.photos?.before || selectedComplaint.photos?.after || selectedComplaint.photos?.site) && (
+              {selectedComplaint.imageUrls.length > 0 && (
                 <div className="cdp-cd-section">
                   <h4>📷 Photographic Evidence</h4>
                   <div className="cdp-cd-photo-grid">
-                    {selectedComplaint.photos.before && (
-                      <div className="cdp-cd-photo-card">
-                        <span className="cdp-cd-photo-label">Before Repair</span>
-                        <div className="cdp-cd-photo-placeholder">📷 {selectedComplaint.photos.before}</div>
+                    {selectedComplaint.imageUrls.map((image, index) => (
+                      <div className="cdp-cd-photo-card" key={image}>
+                        <span className="cdp-cd-photo-label">Complaint Photo {index + 1}</span>
+                        <img
+                          className="cdp-cd-photo-image"
+                          src={toMediaUrl(image)}
+                          alt={`Complaint evidence ${index + 1}`}
+                          loading="lazy"
+                        />
                       </div>
-                    )}
-                    {selectedComplaint.photos.site && (
-                      <div className="cdp-cd-photo-card">
-                        <span className="cdp-cd-photo-label">Site Inspection</span>
-                        <div className="cdp-cd-photo-placeholder">📷 {selectedComplaint.photos.site}</div>
-                      </div>
-                    )}
-                    {selectedComplaint.photos.after && (
-                      <div className="cdp-cd-photo-card">
-                        <span className="cdp-cd-photo-label">After Repair</span>
-                        <div className="cdp-cd-photo-placeholder">📷 {selectedComplaint.photos.after}</div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
               )}
