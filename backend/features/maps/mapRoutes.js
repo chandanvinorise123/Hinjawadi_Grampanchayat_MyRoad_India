@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 // ✅ FIXED: Changed "../models/Map" to "../models/Complaint"
-const Complaint = require("../models/Complaint");
+const Complaint = require("../../models/Complaint");
 
 // =====================================================
 // ✅ ADDED: GET ALL COMPLAINTS FOR MAP (For Admin Dashboard)
@@ -10,15 +10,26 @@ const Complaint = require("../models/Complaint");
 router.get("/complaints", async (req, res) => {
   try {
     const complaints = await Complaint.find({
-      "location.coordinates": { $exists: true, $ne: [0, 0] }
-    }).select("complaintNumber category issue location status priority citizenName date description photos");
+      $or: [
+        { "coordinates.latitude": { $exists: true } },
+        { "location.coordinates": { $exists: true, $ne: [0, 0] } }
+      ]
+    }).select("complaintNumber category issueType location coordinates status priority citizenName createdAt description photos images");
     
-    const formattedComplaints = complaints.map(c => ({
-      ...c.toObject(),
-      id: c._id,
-      lat: c.location.coordinates[1],
-      lng: c.location.coordinates[0]
-    }));
+    const formattedComplaints = complaints.map(c => {
+      const data = c.toObject();
+      const lat = data.coordinates?.latitude ?? data.location?.coordinates?.[1];
+      const lng = data.coordinates?.longitude ?? data.location?.coordinates?.[0];
+
+      return {
+        ...data,
+        id: c._id,
+        issue: data.issueType,
+        date: data.createdAt,
+        lat,
+        lng
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -120,7 +131,8 @@ router.patch("/:id/location", async (req, res) => {
       req.params.id,
       {
         $set: {
-          "location.coordinates": [lng, lat], // ✅ FIXED: Updated to match GeoJSON format
+          "coordinates.latitude": lat,
+          "coordinates.longitude": lng,
         },
       },
       {

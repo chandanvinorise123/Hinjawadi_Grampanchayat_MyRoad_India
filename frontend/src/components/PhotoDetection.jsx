@@ -17,6 +17,8 @@ const PhotoDetection = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
+  const [cameraError, setCameraError] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
   const fileInputRef = useRef(null);
 
   const VALID_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -94,7 +96,7 @@ const PhotoDetection = ({
     return { valid: errors.length === 0, errors };
   };
 
-  // Verify image with AI backend
+  // Kept for the optional AI workflow. Normal report capture does not call it.
   const verifyImageWithAI = async (photoId, file, capturedLocation = location) => {
     setIsProcessing(true);
     setVerificationStatus((prev) => ({
@@ -161,9 +163,63 @@ const PhotoDetection = ({
     }
   };
 
+  const openRearCamera = async (event) => {
+    if (cameraReady || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      return;
+    }
+
+    event.preventDefault();
+    setCameraError("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Your device does not support camera selection. Please use the back camera only.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } },
+        audio: false,
+      });
+      stream.getTracks().forEach((track) => track.stop());
+      setCameraReady(true);
+      fileInputRef.current?.click();
+    } catch (error) {
+      console.error("Rear camera access error:", error);
+      setCameraError("Please allow and use the back camera only. Front camera is not supported for complaint photos.");
+    }
+  };
+
+  const uploadNormalPhoto = async (photoId, file, capturedLocation) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await fetch(`${API_BASE_URL}/photos/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Photo upload failed");
+    }
+
+    setVerificationStatus((prev) => ({
+      ...prev,
+      [photoId]: {
+        status: "verified",
+        roadRelated: true,
+        confidence: 100,
+        message: "Photo captured successfully.",
+        verificationId: result.verificationId,
+        publicUrl: result.publicUrl,
+        location: capturedLocation,
+      },
+    }));
+  };
+
   // Handle camera capture
   const handleCameraCapture = async (e) => {
     const files = e.target.files;
+    setCameraReady(false);
     if (!files || files.length === 0) return;
     const file = files[0];
 
@@ -216,7 +272,15 @@ const PhotoDetection = ({
 
     // Add to state and verify
     setPhotos((prev) => [...prev, photo]);
-    await     verifyImageWithAI(photoId, file, currentLocation);
+    try {
+      await uploadNormalPhoto(photoId, file, currentLocation);
+    } catch (error) {
+      console.error("Normal photo upload error:", error);
+      setVerificationStatus((prev) => ({
+        ...prev,
+        [photoId]: { status: "error", message: error.message || "Photo upload failed." },
+      }));
+    }
     e.target.value = "";
   };
 
@@ -234,7 +298,13 @@ const PhotoDetection = ({
 
   // Retry verification
   const retryVerification = async (photo) => {
-    if (photo.file) await verifyImageWithAI(photo.id, photo.file);
+    if (photo.file) {
+      try {
+        await uploadNormalPhoto(photo.id, photo.file, photo.location);
+      } catch (error) {
+        console.error("Normal photo upload retry error:", error);
+      }
+    }
   };
 
   // Get verification badge
@@ -271,7 +341,7 @@ const PhotoDetection = ({
     <div className="photo-detection-container">
       <div className="pd-header">
         <h3>📸 Capture Road Issue Photo</h3>
-        <p className="pd-subtitle">Use your rear camera to capture the issue. AI will verify it instantly.</p>
+        <p className="pd-subtitle">Use your rear camera to capture the issue. A normal photo is required.</p>
       </div>
 
       <div className="pd-requirements">
@@ -306,6 +376,7 @@ const PhotoDetection = ({
             accept="image/*"
             capture="environment" 
             onChange={handleCameraCapture}
+            onClick={openRearCamera}
             disabled={isProcessing || photos.length >= maxPhotos}
             className="pd-file-input"
           />
@@ -316,6 +387,8 @@ const PhotoDetection = ({
           </div>
         </div>
       )}
+
+      {cameraError && <div className="pd-error pd-camera-error">{cameraError}</div>}
 
       {photos.length > 0 && (
         <div className="pd-photo-grid">
@@ -359,8 +432,8 @@ const PhotoDetection = ({
       )}
 
       {required && photos.length === 0 && <div className="pd-validation-message pd-required">⚠️ At least one verified photo is required</div>}
-      {!allPhotosValidForSubmission && photos.length > 0 && <div className="pd-validation-message pd-pending">⏳ Waiting for AI verification...</div>}
-      {allPhotosValidForSubmission && <div className="pd-validation-message pd-success">✅ All photos verified successfully.</div>}
+      {!allPhotosValidForSubmission && photos.length > 0 && <div className="pd-validation-message pd-pending">⏳ Uploading photo...</div>}
+      {allPhotosValidForSubmission && <div className="pd-validation-message pd-success">✅ Photo captured successfully.</div>}
 
       <input type="hidden" name="photos" value={JSON.stringify(getVerifiedPhotosData())} readOnly />
       <input type="hidden" name="location" value={JSON.stringify(location)} readOnly />

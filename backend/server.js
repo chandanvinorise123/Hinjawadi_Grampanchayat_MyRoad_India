@@ -10,15 +10,15 @@ const connectDB = require("./config/db");
 // ROUTES
 // =====================================================
 
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const statRoutes = require("./routes/statRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const adminProfileRoutes = require("./routes/adminProfileRoutes");
-const photoRoutes = require("./routes/photoRoutes");
-const complaintRoutes = require("./routes/complaintRoutes");
-const adminManagementRoutes = require("./routes/adminManagementRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
+const authRoutes = require("./features/auth/authRoutes");
+const userRoutes = require("./features/users/userRoutes");
+const statRoutes = require("./features/stats/statRoutes");
+const notificationRoutes = require("./features/notifications/notificationRoutes");
+const adminProfileRoutes = require("./features/admin/adminProfileRoutes");
+const photoRoutes = require("./features/photos/photoRoutes");
+const complaintRoutes = require("./features/complaints/complaintRoutes");
+const adminManagementRoutes = require("./features/admin/adminManagementRoutes");
+const dashboardRoutes = require("./features/dashboard/dashboardRoutes");
 
 // =====================================================
 // APP
@@ -86,13 +86,13 @@ app.use("/api/complaints", complaintRoutes);
 // =====================================================
 
 try {
-  const mapRoutes = require("./routes/mapRoutes");
+  const mapRoutes = require("./features/maps/mapRoutes");
 
   app.use("/api/map", mapRoutes);
 } catch (error) {
   if (
     error.code === "MODULE_NOT_FOUND" &&
-    error.message.includes("./routes/mapRoutes")
+    error.message.includes("./features/maps/mapRoutes")
   ) {
     // Optional map routes are not available.
   } else {

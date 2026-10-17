@@ -1,9 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Complaint = require("../models/Complaint");
-const Notification = require("../models/Notification");
-const User = require("../models/user");
-const Admin = require("../models/Admin");
+const Complaint = require("../../models/Complaint");
+const Notification = require("../../models/Notification");
+const User = require("../../models/user");
+const Admin = require("../../models/Admin");
 
 const router = express.Router();
 const roles = new Set(["admin", "citizen", "staff", "verifier"]);
@@ -95,7 +95,7 @@ router.get("/:role", async (req, res) => {
       Notification.find({
         role,
         ...(userId && isObjectId(userId) ? { $or: [{ userId }, { userId: null }] } : {}),
-      }).sort({ createdAt: -1 }).limit(50).lean(),
+      }).populate("complaintId", "complaintNumber category issueType location images").sort({ createdAt: -1 }).limit(50).lean(),
     ]);
 
     const statusCounts = complaints.reduce((counts, complaint) => {
@@ -116,6 +116,17 @@ router.get("/:role", async (req, res) => {
         message: notification.message,
         isRead: notification.isRead,
         time: notification.createdAt,
+        complaintNumber: notification.complaintId?.complaintNumber || "",
+        details: {
+          category: notification.complaintId?.category || "",
+          issue: notification.complaintId?.issueType || "",
+          location: notification.complaintId?.location || "",
+        },
+        photos: {
+          before: notification.complaintId?.images?.[0] || "",
+          site: notification.complaintId?.images?.[0] || "",
+          after: notification.complaintId?.images?.[1] || "",
+        },
       })),
       stats: { total: complaints.length, statusCounts },
     });

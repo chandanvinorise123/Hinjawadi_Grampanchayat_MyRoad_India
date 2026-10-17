@@ -2,8 +2,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Notification = require("../models/Notification");
-const Complaint = require("../models/Complaint");
+const Notification = require("../../models/Notification");
+const Complaint = require("../../models/Complaint");
 
 // Helper function to format time (e.g., "2 hours ago")
 const getTimeAgo = (date) => {

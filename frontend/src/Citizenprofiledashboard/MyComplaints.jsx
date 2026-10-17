@@ -80,12 +80,15 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
     setSelectedComplaint(null); // Close details modal if open
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const idsToDelete = deleteTarget === 'bulk' ? selectedIds : [deleteTarget];
+    if (onDelete) {
+      const results = await Promise.all(idsToDelete.map((id) => onDelete(id)));
+      if (results.some((result) => result === false)) return;
+    }
     const updatedComplaints = localComplaints.filter(c => !idsToDelete.includes(c.id));
     
     setLocalComplaints(updatedComplaints);
-    if (onDelete) onDelete(updatedComplaints); // Notify parent component if needed
     
     setSelectedIds([]);
     setShowDeleteConfirm(false);

@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/user");
-const Category = require("../models/Category");
-const SystemConfig = require("../models/SystemConfig");
-const QRCode = require("../models/QRCode");
-const ActivityLog = require("../models/ActivityLog");
-const Complaint = require("../models/Complaint"); // Adjust path if needed
+const User = require("../../models/user");
+const Category = require("../../models/Category");
+const SystemConfig = require("../../models/SystemConfig");
+const QRCode = require("../../models/QRCode");
+const ActivityLog = require("../../models/ActivityLog");
+const Complaint = require("../../models/Complaint"); // Adjust path if needed
 
 // ==========================================
 // 0. ADMIN OVERVIEW STATS

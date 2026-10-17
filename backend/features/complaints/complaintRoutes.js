@@ -6,7 +6,7 @@ const fs = require("fs");
 
 const router = express.Router();
 
-const Complaint = require("../models/Complaint");
+const Complaint = require("../../models/Complaint");
 
 // IMPORTANT:
 // The controller is in backend/controllers/complaintController.js
@@ -16,7 +16,7 @@ const {
   getMyComplaints,
   updateComplaint,
   deleteComplaint,
-} = require("../controllers/complaintController");
+} = require("./complaintController");
 
 // =====================================================
 // ROUTE FILE LOAD CHECK
@@ -26,7 +26,7 @@ console.log("✅ routes/complaintRoutes.js loaded successfully");
 // =====================================================
 // UPLOAD DIRECTORY
 // =====================================================
-const uploadDir = path.join(__dirname, "../uploads");
+const uploadDir = path.join(__dirname, "../../uploads");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

@@ -14,6 +14,34 @@ const lifecycleStages = [
 
 const stageTone = ["amber", "amber", "orange", "orange", "orange", "amber", "green"];
 
+const getStageFromStatus = (status) => {
+  const statusMap = {
+    new: 0,
+    pending: 0,
+    submitted: 0,
+    "under review": 0,
+    registered: 0,
+    "complaint registered": 0,
+    "under verification": 1,
+    verified: 1,
+    "complaint verified": 1,
+    assigned: 2,
+    "assigned to staff/officer": 2,
+    "assigned to staff": 2,
+    "assigned to officer": 2,
+    "action initiated": 3,
+    "under action": 3,
+    "in progress": 3,
+    "work completed": 4,
+    completed: 4,
+    verification: 5,
+    resolved: 5,
+    closed: 6,
+    "complaint closed": 6,
+  };
+  return statusMap[String(status || "").trim().toLowerCase()] ?? 0;
+};
+
 const TrackComplaint = ({ onBack }) => {
   const [trackId, setTrackId] = useState("");
   const [trackedComplaint, setTrackedComplaint] = useState(null);
@@ -30,7 +58,17 @@ const TrackComplaint = ({ onBack }) => {
       const response = await fetch(`${API_BASE_URL}/complaints/track/${encodeURIComponent(trackId.trim())}`);
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Complaint not found");
-      setTrackedComplaint(result.data);
+      const complaint = result.data;
+      setTrackedComplaint({
+        ...complaint,
+        issue: complaint.issue || complaint.issueType || "General Issue",
+        stage: getStageFromStatus(complaint.status),
+        date: complaint.date || (complaint.createdAt ? new Date(complaint.createdAt).toISOString().slice(0, 10) : ""),
+        updates: (complaint.statusHistory || []).map((entry) => ({
+          time: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
+          text: entry.remarks || `Complaint status changed to ${entry.status}`,
+        })),
+      });
     } catch (trackError) {
       setError(trackError.message || "Complaint not found. Please check the ID and try again.");
     }

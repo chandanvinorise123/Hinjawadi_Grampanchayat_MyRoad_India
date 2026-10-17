@@ -5,6 +5,17 @@ import "./IssueMap.css";
 const GOOGLE_MAPS_LIBRARIES = ["places"];
 
 const statusToneMap = {
+  New: "amber",
+  Pending: "amber",
+  Submitted: "amber",
+  "Under Review": "amber",
+  Verified: "amber",
+  "Under Verification": "amber",
+  Assigned: "orange",
+  "Under Action": "orange",
+  "In Progress": "orange",
+  Resolved: "green",
+  Closed: "green",
   "Complaint Registered": "amber",
   "Complaint Verified": "amber",
   "Assigned to Staff/Officer": "orange",
@@ -27,6 +38,17 @@ const IssueMap = ({ onBack, complaints = [] }) => {
       ...complaint,
       lat: complaint.coordinates.latitude,
       lng: complaint.coordinates.longitude,
+      history: (complaint.statusHistory || []).map((entry) => ({
+        time: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
+        action: entry.status,
+        remarks: entry.remarks || "",
+      })),
+      photos: complaint.photos && typeof complaint.photos === "object"
+        ? complaint.photos
+        : {
+          before: complaint.images?.[0] || "",
+          after: complaint.images?.[1] || "",
+        },
     }));
   const mapCenter = mapComplaints.length
     ? [mapComplaints[0].lat, mapComplaints[0].lng]

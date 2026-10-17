@@ -11,7 +11,7 @@ import ComplaintsDetails from "../Citizenprofiledashboard/ComplaintsDetails";
 import IssueMap from "../Citizenprofiledashboard/IssueMap";
 import Notifications from "../Citizenprofiledashboard/Notifications";
 import RecentActivity from "../Citizenprofiledashboard/RecentActivity";
-import { API_BASE_URL } from "../utils/dashboardApi";
+import { API_BASE_URL, markDashboardNotificationRead } from "../utils/dashboardApi";
 
 const API_URL = `${API_BASE_URL}/complaints`;
 
@@ -367,15 +367,21 @@ const CitizenDashboard = () => {
     if (!newComplaint.category.trim() || !newComplaint.description.trim()) return;
 
     const citizenId = getCitizenId(getStoredUser());
+    const citizenName = getStoredUser().name;
     const [latitude, longitude] = newComplaint.gps.split(",").map(Number);
-    if (!citizenId || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!citizenId || !citizenName || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       alert("Capture your location before submitting the complaint.");
+      return;
+    }
+    if (!newComplaint.photo) {
+      alert("Upload a complaint photo before submitting.");
       return;
     }
 
     try {
       const body = new FormData();
       body.append("citizenId", citizenId);
+      body.append("citizenName", citizenName);
       body.append("category", newComplaint.category.trim());
       body.append("issueType", newComplaint.issue.trim() || "General Issue");
       body.append("description", newComplaint.description.trim());
@@ -388,6 +394,14 @@ const CitizenDashboard = () => {
       if (!response.ok || !result.success) throw new Error(result.message || "Failed to register complaint");
 
       await fetchMyComplaints();
+      const dashboardResponse = await fetch(
+        `${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`,
+        { headers: getAuthHeaders() }
+      );
+      const dashboardResult = await dashboardResponse.json();
+      if (dashboardResponse.ok && dashboardResult.success) {
+        setNotifications(dashboardResult.notifications || []);
+      }
       setNewComplaint({ category: "", issue: "", location: "", description: "", photo: "", gps: "" });
       setShowNewForm(false);
     } catch (error) {
@@ -457,7 +471,7 @@ const CitizenDashboard = () => {
   const handleDelete = async (id) => {
     const user = getStoredUser();
     const citizenId = getCitizenId(user);
-    if (!citizenId) { alert("Please log in again."); return; }
+    if (!citizenId) { alert("Please log in again."); return false; }
 
     try {
       const response = await fetch(`${API_URL}/${encodeURIComponent(id)}`, {
@@ -472,9 +486,24 @@ const CitizenDashboard = () => {
       setConfirmDeleteId(null);
       await fetchMyComplaints();
       alert("Complaint deleted successfully");
+      return true;
     } catch (error) {
       console.error("Delete complaint error:", error);
       alert(error.message || "Failed to delete complaint");
+      return false;
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    const unreadNotifications = notifications.filter((notification) => !notification.isRead && notification.id);
+    if (!unreadNotifications.length) return;
+
+    try {
+      await Promise.all(unreadNotifications.map((notification) => markDashboardNotificationRead(notification.id)));
+      setNotifications((current) => current.map((notification) => ({ ...notification, isRead: true })));
+    } catch (error) {
+      console.error("Mark notifications read error:", error);
+      alert(error.message || "Unable to mark notifications as read.");
     }
   };
 
@@ -544,7 +573,7 @@ const CitizenDashboard = () => {
 
   // ✅ CONDITIONAL RENDERING (Must be AFTER all hooks, BEFORE main return)
   if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
-  if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} />;
+  if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} onDelete={handleDelete} />;
   if (showTrackComplaint) return <TrackComplaint onBack={() => setShowTrackComplaint(false)} />;
   if (showComplaintDetails) return <ComplaintsDetails complaints={complaints} onBack={() => setShowComplaintDetails(false)} />;
   if (showIssueMap) return <IssueMap complaints={complaints} onBack={() => setShowIssueMap(false)} />;
@@ -889,7 +918,7 @@ const CitizenDashboard = () => {
               <div className="cdp-panel" id="notif-panel">
                 <div className="cdp-panel-head">
                   <h3>Notifications</h3>
-                  <span className="cdp-panel-link">Mark all read</span>
+                  <button type="button" className="cdp-panel-link" onClick={markAllNotificationsRead}>Mark all read</button>
                 </div>
                 <div className="cdp-notif-list">
                   {notifications.map((note, i) => (

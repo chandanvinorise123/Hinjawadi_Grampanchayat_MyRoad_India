@@ -1,9 +1,9 @@
 
 const mongoose = require("mongoose");
-const Complaint = require("../models/Complaint");
-const Notification = require("../models/Notification");
-const departmentMapping = require("../constants/departmentMapping");
-const { isInsideHinjawadiBoundary } = require("../utils/boundaryValidator");
+const Complaint = require("../../models/Complaint");
+const Notification = require("../../models/Notification");
+const departmentMapping = require("../../constants/departmentMapping");
+const { isInsideHinjawadiBoundary } = require("../../utils/boundaryValidator");
 
 // ==========================================
 // HELPER: VALIDATE MONGODB OBJECT ID
@@ -234,6 +234,13 @@ const createComplaint = async (req, res) => {
     });
 
     await Notification.insertMany([
+      {
+        role: "citizen",
+        userId: complaint.citizenId,
+        complaintId: complaint._id,
+        type: "Complaint Registered",
+        message: `${complaint.complaintNumber} was registered successfully and is ready for review.`,
+      },
       {
         role: "admin",
         complaintId: complaint._id,

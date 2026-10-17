@@ -4,12 +4,12 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const mongoose = require("mongoose");
-const ImageVerification = require("../models/ImageVerification"); // ✅ ADDED: Import the model
-const User = require("../models/user");
-const Admin = require("../models/Admin");
+const ImageVerification = require("../../models/ImageVerification"); // ✅ ADDED: Import the model
+const User = require("../../models/user");
+const Admin = require("../../models/Admin");
 
 // Ensure upload directory exists
-const uploadDir = path.join(__dirname, "../uploads/complaints");
+const uploadDir = path.join(__dirname, "../../uploads/complaints");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

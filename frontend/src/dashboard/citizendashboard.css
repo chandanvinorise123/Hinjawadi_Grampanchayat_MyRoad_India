@@ -517,6 +517,11 @@
 }
 
 .cdp-panel-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--navy-800);

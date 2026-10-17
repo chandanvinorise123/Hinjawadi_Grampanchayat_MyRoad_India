@@ -4,11 +4,24 @@ import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi"
 
 const typeBadgeMap = {
   "Registered": "navy",
+  "Complaint Registered": "navy",
   "Verified": "amber",
+  "Complaint Verified": "amber",
   "Assigned": "orange",
+  "Staff Assigned": "orange",
   "Action Initiated": "orange",
   "Work Completed": "amber",
-  "Resolved/Closed": "green"
+  "Resolved/Closed": "green",
+  "Complaint Resolved": "green",
+};
+
+const typeFilterMap = {
+  Registered: ["Registered", "Complaint Registered"],
+  Verified: ["Verified", "Complaint Verified"],
+  Assigned: ["Assigned", "Staff Assigned"],
+  "Action Initiated": ["Action Initiated"],
+  "Work Completed": ["Work Completed"],
+  "Resolved/Closed": ["Resolved/Closed", "Complaint Resolved"],
 };
 
 const Notifications = ({ onBack }) => {
@@ -24,6 +37,8 @@ const Notifications = ({ onBack }) => {
         complaintNumber: notification.complaintNumber || "",
         title: notification.title || notification.type,
         date: notification.createdAt ? new Date(notification.createdAt).toLocaleString() : notification.time,
+        details: notification.details || { category: "", issue: "", location: "" },
+        photos: notification.photos || {},
       }))))
       .catch((error) => console.error("Failed to load citizen notifications:", error));
   }, []);
@@ -35,7 +50,7 @@ const Notifications = ({ onBack }) => {
         n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         n.message.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesType = filterType === "All" || n.type === filterType;
+      const matchesType = filterType === "All" || typeFilterMap[filterType]?.includes(n.type);
       return matchesSearch && matchesType;
     });
   }, [notifications, searchTerm, filterType]);

@@ -2,15 +2,33 @@ import React, { useState, useMemo } from "react";
 import "./ComplaintsDetails.css";
 
 
-const priorityTone = { High: "red", Medium: "amber", Low: "green" };
+const priorityTone = {
+  Critical: "red",
+  Urgent: "amber",
+  Normal: "green",
+  High: "red",
+  Medium: "amber",
+  Low: "green",
+};
 const statusToneMap = {
+  New: "amber",
+  Pending: "amber",
+  Submitted: "amber",
+  "Under Review": "amber",
+  Verified: "amber",
+  "Under Verification": "amber",
+  Assigned: "orange",
+  "Under Action": "orange",
+  "In Progress": "orange",
+  Resolved: "green",
+  Closed: "green",
   "Complaint Registered": "amber",
   "Complaint Verified": "amber",
   "Assigned to Staff/Officer": "orange",
   "Action Initiated": "orange",
   "Work Completed": "orange",
   "Verification": "amber",
-  "Complaint Closed": "green"
+  "Complaint Closed": "green",
 };
 
 const ComplaintsDetails = ({ onBack, complaints = [] }) => {

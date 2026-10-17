@@ -846,7 +846,7 @@ const AdminDashboard = () => {
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintManagement)}>
-                    📋ComplaintManagement
+                    ⚙️ComplaintManagement
                     <span className="ad-sb-badge">{complaints.length}</span>
                   </button>
 
@@ -866,7 +866,7 @@ const AdminDashboard = () => {
                 <div className="ad-sb-label">Insights</div>
                 <nav className="ad-sb-nav">
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowReports)}>
-                  📈Reports Management
+                    📈Reports Management
                   </button>
                   <button type="button" className="ad-sb-link" onClick={() => setShowNotificationMonitoring(true)}>
                     🔔 Notification Monitoring

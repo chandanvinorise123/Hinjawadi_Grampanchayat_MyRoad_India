@@ -1,9 +1,9 @@
-const SystemStat = require("../models/SystemStat");
+const SystemStat = require("../../models/SystemStat");
 
 // Safely try to load Complaint model (prevents crash if file is missing/named differently)
 let Complaint;
 try {
-  Complaint = require("../models/Complaint");
+  Complaint = require("../../models/Complaint");
 } catch (err) {
   console.warn("⚠️ Complaint model not found. Reported issues will default to 0.");
 }
