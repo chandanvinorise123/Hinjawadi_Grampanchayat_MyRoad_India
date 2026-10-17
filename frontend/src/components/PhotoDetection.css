@@ -69,6 +69,70 @@
   display: none;
 }
 
+.pd-camera-preview {
+  width: min(100%, 720px);
+  margin: 18px auto 0;
+  padding: clamp(10px, 2vw, 16px);
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #0f172a;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  box-sizing: border-box;
+}
+
+.pd-camera-preview video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(68vh, 620px);
+  min-height: 180px;
+  object-fit: contain;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  background: #020617;
+}
+
+.pd-camera-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.pd-camera-actions button {
+  flex: 1 1 0;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.pd-camera-actions button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.pd-camera-actions button:active {
+  transform: translateY(0);
+}
+
+.pd-capture-btn {
+  background: #16a34a;
+  box-shadow: 0 3px 8px rgba(22, 163, 74, 0.3);
+}
+
+.pd-cancel-btn {
+  background: #dc2626;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3);
+}
+
 
 /* ================= GEO-TAGGING STAMP ================= */
 .pd-geo-stamp {
@@ -202,8 +266,33 @@
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
+  .photo-detection-container { padding: 16px; }
   .pd-photo-grid { grid-template-columns: 1fr; }
   .pd-requirements { flex-direction: column; gap: 8px; }
   .pd-camera-zone { padding: 30px 15px; }
   .pd-camera-icon { font-size: 2.5rem; }
+  .pd-camera-preview {
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .pd-camera-preview video {
+    max-height: 58vh;
+    min-height: 160px;
+    border-radius: 8px;
+  }
+  .pd-camera-actions { gap: 8px; margin-top: 10px; }
+  .pd-camera-actions button {
+    min-height: 50px;
+    padding: 12px 8px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .pd-camera-actions button {
+    font-size: 0.88rem;
+    padding-inline: 6px;
+  }
 }

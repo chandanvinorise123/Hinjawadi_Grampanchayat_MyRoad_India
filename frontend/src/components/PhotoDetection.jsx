@@ -435,9 +435,9 @@ const PhotoDetection = ({
         <div className="pd-camera-preview">
           <video ref={cameraVideoRef} autoPlay playsInline muted aria-label="Rear camera preview" />
           <canvas ref={cameraCanvasRef} hidden />
-          <div>
-            <button type="button" onClick={captureRearPhoto}>Capture Photo</button>
-            <button type="button" onClick={stopRearCamera}>Cancel</button>
+          <div className="pd-camera-actions">
+            <button type="button" className="pd-capture-btn" onClick={captureRearPhoto}>Capture Photo</button>
+            <button type="button" className="pd-cancel-btn" onClick={stopRearCamera}>Cancel</button>
           </div>
         </div>
       )}
