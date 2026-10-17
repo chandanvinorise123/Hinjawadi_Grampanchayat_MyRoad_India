@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./admindashboard.css";
-// Line 3
+
 import AdminProfile from "../adminprofiledashboard/AdminProfile";
 import AdminManagement from "../adminprofiledashboard/AdminManagement";
 import StaffVerifierProfile from "../adminprofiledashboard/StaffVerifierProfile"; 
@@ -11,7 +11,7 @@ import ComplaintVerification from "../adminprofiledashboard/ComplaintVerificatio
 import ReportsManagement from "../adminprofiledashboard/ReportsManagement";
 import logo from '../assets/logo.jpeg';
 import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
-import VisitorsOverview from "../components/dashboard/VisitorsOverview";
+import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
@@ -52,8 +52,6 @@ const notifTone = {
   "Complaint Closed": "green",
 };
 
-// Backend API base URL
-
 // Normalize MongoDB _id to id
 const normalizeId = (doc) => ({ ...doc, id: doc.id || doc._id });
 
@@ -75,8 +73,7 @@ const defaultCenter = null;
 
 // ✅ Constants outside component so Google Maps script is NOT reloaded on every render
 const GOOGLE_MAPS_LIBRARIES = ["places"];
-const GOOGLE_MAPS_API_KEY =
-  import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const mapOptions = {
   styles: [
     { featureType: "poi", stylers: [{ visibility: "off" }] },
@@ -116,6 +113,7 @@ const markerIcons = {
 const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
   // ✅ Load Google Maps script once (fast reload, no repeated script download)
   const { isLoaded: isMapLoaded, loadError: mapLoadError } = useJsApiLoader({
     id: "google-map-script",
@@ -131,6 +129,15 @@ const AdminDashboard = () => {
     staffId: storedAdmin.adminId || storedAdmin.staffId || getUserId(storedAdmin) || "",
     profilePhoto: storedAdmin.profilePhoto || "",
   });
+
+  // ✅ Helper to get auth headers with token for ALL fetch requests
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      "Authorization": token ? `Bearer ${token}` : ""
+    };
+  };
 
   useEffect(() => {
     const loadAdminProfile = async () => {
@@ -219,7 +226,7 @@ const AdminDashboard = () => {
   const [resettingAdminPasswordId, setResettingAdminPasswordId] = useState(null);
   const [newPassword, setNewPassword] = useState("");
 
-  const [showProfile, setShowProfile] = useState(false); // ✅ ADD THIS LINE
+  const [showProfile, setShowProfile] = useState(false);
 
   const openView = (setter) => {
     setShowProfile(false);
@@ -237,34 +244,26 @@ const AdminDashboard = () => {
     openView(setShowProfile);
     navigate(location.pathname, { replace: true, state: null });
   }, [location.state, location.pathname, navigate]);
+  
   const [showStaffVerifierProfile, setShowStaffVerifierProfile] = useState(false);
-    const [showComplaintVerification, setShowComplaintVerification] = useState(false);
+  const [showComplaintVerification, setShowComplaintVerification] = useState(false);
   const [showStaffMonitoring, setShowStaffMonitoring] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
   const [showAdminManagement, setShowAdminManagement] = useState(false);
   const [showComplaintManagement, setShowComplaintManagement] = useState(false);
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
-    const [showReports, setShowReports] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 
-    // ---------------- LOGOUT FUNCTION ----------------
+  // ---------------- LOGOUT FUNCTION ----------------
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      // 1. Clear any stored user data, tokens, or session info
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       localStorage.removeItem("adminData"); 
-      // (Add any other localStorage keys you use for login here)
-
-      // 2. Redirect to the login page
-      // If you are using React Router, use: navigate("/login");
       window.location.href = "/login"; 
     }
   };
 
-
-
-
-  // ✅ ADD THESE FOR STAFF/VERIFIER PROFILE MODAL
   const [viewingProfileId, setViewingProfileId] = useState(null);
   const [viewingProfileRole, setViewingProfileRole] = useState(null);
 
@@ -281,7 +280,9 @@ const AdminDashboard = () => {
     const fetchUsers = async () => {
       try {
         setUsersLoading(true);
-        const response = await fetch(`${API_BASE_URL}/users?role=staff,verifier`);
+        const response = await fetch(`${API_BASE_URL}/users?role=staff,verifier`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           setUsers(data.users.map(normalizeId));
@@ -300,7 +301,9 @@ const AdminDashboard = () => {
     const fetchAdmins = async () => {
       try {
         setAdminsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/users?role=admin`);
+        const response = await fetch(`${API_BASE_URL}/users?role=admin`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           setAdmins(data.users.map(normalizeId));
@@ -319,7 +322,9 @@ const AdminDashboard = () => {
     const fetchComplaints = async () => {
       try {
         setComplaintsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/complaints`);
+        const response = await fetch(`${API_BASE_URL}/complaints`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           const normalized = data.complaints.map((complaint) => ({
@@ -344,7 +349,9 @@ const AdminDashboard = () => {
     const fetchNotifications = async () => {
       try {
         setNotifLoading(true);
-        const response = await fetch(`${API_BASE_URL}/notifications`);
+        const response = await fetch(`${API_BASE_URL}/notifications`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           setNotificationFeed(data.notifications.map(normalizeId));
@@ -363,7 +370,9 @@ const AdminDashboard = () => {
     const fetchAnalytics = async () => {
       try {
         setAnalyticsLoading(true);
-        const response = await fetch(`${API_BASE_URL}/complaints/analytics`);
+        const response = await fetch(`${API_BASE_URL}/complaints/analytics`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           setAnalytics(data.analytics);
@@ -382,12 +391,13 @@ const AdminDashboard = () => {
     const fetchMapComplaints = async () => {
       try {
         setMapLoading(true);
-        const response = await fetch(`${API_BASE_URL}/complaints`);
+        const response = await fetch(`${API_BASE_URL}/complaints`, {
+          headers: getAuthHeaders() // ✅ ADDED
+        });
         const data = await response.json();
         if (response.ok && data.success) {
           const normalized = data.complaints.map(normalizeId);
           setMapComplaints(normalized);
-          // Set map center to first complaint with coordinates
           const firstWithCoords = normalized.find(c => c.lat && c.lng);
           if (firstWithCoords) {
             setMapCenter({ lat: firstWithCoords.lat, lng: firstWithCoords.lng });
@@ -430,8 +440,6 @@ const AdminDashboard = () => {
   };
 
   // ---------------- STAFF/VERIFIER CRUD ----------------
-
-  // CREATE/UPDATE Staff/Verifier
   const saveUser = async (e) => {
     e.preventDefault();
     setUserMessage({ type: "", text: "" });
@@ -442,15 +450,12 @@ const AdminDashboard = () => {
     }
 
     try {
-      const url = editingUserId
-        ? `${API_BASE_URL}/users/${editingUserId}`
-        : `${API_BASE_URL}/users`;
-
+      const url = editingUserId ? `${API_BASE_URL}/users/${editingUserId}` : `${API_BASE_URL}/users`;
       const method = editingUserId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ UPDATED
         body: JSON.stringify(newUser),
       });
 
@@ -464,7 +469,6 @@ const AdminDashboard = () => {
           setUsers([normalizeId(data.user), ...users]);
           showMessage("success", `User "${data.user.name}" registered successfully!`);
         }
-
         setNewUser({ name: "", role: "staff", contact: "", email: "", password: "" });
         setShowAddUser(false);
         setEditingUserId(null);
@@ -482,7 +486,7 @@ const AdminDashboard = () => {
       role: user.role,
       contact: user.contact,
       email: user.email,
-      password: "", // Don't show existing password
+      password: "",
     });
     setEditingUserId(user.id);
     setShowAddUser(true);
@@ -497,7 +501,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ UPDATED
         body: JSON.stringify({ password: newPassword }),
       });
       const data = await response.json();
@@ -518,6 +522,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "DELETE",
+        headers: getAuthHeaders(), // ✅ ADDED
       });
       const data = await response.json();
       if (response.ok && data.success) {
@@ -534,8 +539,6 @@ const AdminDashboard = () => {
   };
 
   // ---------------- ADMIN CRUD ----------------
-
-  // CREATE/UPDATE Admin
   const saveAdmin = async (e) => {
     e.preventDefault();
     setUserMessage({ type: "", text: "" });
@@ -546,15 +549,12 @@ const AdminDashboard = () => {
     }
 
     try {
-      const url = editingAdminId
-        ? `${API_BASE_URL}/users/${editingAdminId}`
-        : `${API_BASE_URL}/users`;
-
+      const url = editingAdminId ? `${API_BASE_URL}/users/${editingAdminId}` : `${API_BASE_URL}/users`;
       const method = editingAdminId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ UPDATED
         body: JSON.stringify({ ...newAdmin, role: "admin" }),
       });
 
@@ -568,7 +568,6 @@ const AdminDashboard = () => {
           setAdmins([normalizeId(data.user), ...admins]);
           showMessage("success", `Admin "${data.user.name}" registered successfully!`);
         }
-
         setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" });
         setShowAddAdmin(false);
         setEditingAdminId(null);
@@ -601,7 +600,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ UPDATED
         body: JSON.stringify({ password: newPassword }),
       });
       const data = await response.json();
@@ -622,6 +621,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${id}`, {
         method: "DELETE",
+        headers: getAuthHeaders(), // ✅ ADDED
       });
       const data = await response.json();
       if (response.ok && data.success) {
@@ -663,7 +663,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(), // ✅ UPDATED
         body: JSON.stringify(patch),
       });
       const data = await response.json();
@@ -688,6 +688,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
         method: "DELETE",
+        headers: getAuthHeaders(), // ✅ ADDED
       });
       const data = await response.json();
       if (response.ok && data.success) {
@@ -757,86 +758,56 @@ const AdminDashboard = () => {
     setMapPriorityFilter("All");
   };
 
-
   return (
-  <>
-    {showProfile ? (
-      <AdminProfile
-        adminId={admin.staffId || getUserId(storedAdmin)}
-        onBack={() => setShowProfile(false)}
-      />
-    ) :showComplaintManagement ? (
+    <>
+      {showProfile ? (
+        <AdminProfile
+          adminId={admin.staffId || getUserId(storedAdmin)}
+          onBack={() => setShowProfile(false)}
+        />
+      ) : showComplaintManagement ? (
         <ComplaintManagement onBack={() => setShowComplaintManagement(false)} />
-     ): showComplaintVerification ? ( // ✅ ADD THIS BLOCK
+      ) : showComplaintVerification ? (
         <ComplaintVerification onBack={() => setShowComplaintVerification(false)} />
-      ): showComplaintDetails ? ( // ✅ ADD THIS BLOCK
+      ) : showComplaintDetails ? (
         <ComplaintDetails
           complaint={complaints.find((complaint) => complaint.id === selectedId)}
           onBack={() => setShowComplaintDetails(false)}
         />
-       ): showStaffMonitoring ? ( // ✅ ADD THIS BLOCK
+      ) : showStaffMonitoring ? (
         <StaffWorkMonitoring onBack={() => setShowStaffMonitoring(false)} />
-
-       ): showReports ? ( // ✅ ADD THIS BLOCK
+      ) : showReports ? (
         <ReportsManagement onBack={() => setShowReports(false)} />
-
-      ):
-    showAdminManagement ? (
-      <AdminManagement
-        onBack={() => setShowAdminManagement(false)}
-      />
-    ) 
-    
-    : showStaffVerifierProfile && selectedUserProfile ? (
-      <StaffVerifierProfile
-        userId={selectedUserProfile.id}
-        role={selectedUserProfile.role}
-        onBack={() => {
-          setShowStaffVerifierProfile(false);
-          setSelectedUserProfile(null);
-        }}
-      />
-    ) : (
-      <div className="ad-shell">
-        {/* ============ SIDEBAR ============ */}
-        <aside className="ad-sidebar">
-          <div className="ad-sb-brand">
-            <div className="ad-sb-logo">
-              <img src={logo} alt="My Road India Logo" />
+      ) : showAdminManagement ? (
+        <AdminManagement onBack={() => setShowAdminManagement(false)} />
+      ) : showStaffVerifierProfile && selectedUserProfile ? (
+        <StaffVerifierProfile
+          userId={selectedUserProfile.id}
+          role={selectedUserProfile.role}
+          onBack={() => {
+            setShowStaffVerifierProfile(false);
+            setSelectedUserProfile(null);
+          }}
+        />
+      ) : (
+        <div className="ad-shell">
+          {/* ============ SIDEBAR ============ */}
+          <aside className="ad-sidebar">
+            <div className="ad-sb-brand">
+              <div className="ad-sb-logo">
+                <img src={logo} alt="My Road India Logo" />
+              </div>
+              <div>
+                <b>My Road India</b>
+                <span>Admin Portal</span>
+              </div>
             </div>
-
-            <div>
-              <b>My Road India</b>
-              <span>Admin Portal</span>
-            </div>
-          </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             <div className="ad-sb-label">Overview</div>
             <nav className="ad-sb-nav">
               <button type="button" className="ad-sb-link active" onClick={() => scrollTo("ad-top")}>
                 📊 System Overview
               </button>
-
               <button type="button" className="ad-sb-link" onClick={() => openView(setShowProfile)}>
                 👤 My Profile
               </button>
@@ -844,126 +815,62 @@ const AdminDashboard = () => {
 
             <div className="ad-sb-label">Management</div>
             <nav className="ad-sb-nav">
-
-
-              {/* ✅ FIXED: Changed from broken setShowStaffVerifierPage to scrollTo */}
-
-
               <button 
-  type="button" 
-  className="ad-sb-link" 
-  onClick={() => {
-    if (users.length > 0) {
-      setSelectedUserProfile(users[0]);
-      setShowStaffVerifierProfile(true);
-    }
-  }}
->
-  👥Staff & Verifier Profile
-  <span className="ad-sb-badge">{users.length}</span>
-</button>
+                type="button" 
+                className="ad-sb-link" 
+                onClick={() => {
+                  if (users.length > 0) {
+                    setSelectedUserProfile(users[0]);
+                    setShowStaffVerifierProfile(true);
+                  }
+                }}
+              >
+                👥 Staff & Verifier Profile
+                <span className="ad-sb-badge">{users.length}</span>
+              </button>
 
               <button type="button" className="ad-sb-link" onClick={() => openView(setShowAdminManagement)}>
                 ⚙️ Admin Management
                 <span className="ad-sb-badge">{admins.length}</span>
               </button>
 
-
-
               <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintManagement)}>
-                📋Complaint Management
+                📋 Complaint Management
                 <span className="ad-sb-badge">{complaints.length}</span>
               </button>
 
-
               <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintDetails)}>
-               📋Complaint Details
+               📋 Complaint Details
               </button>
 
-             <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
                 🧑‍🔧 Staff & Work Monitoring
               </button>
 
-
-          <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
                 📈 Complaint Verification
               </button>
-
-
-
-
-              
-
-
-
-
-
-
-
-              {/* <button type="button" className="ad-sb-link" onClick={() => scrollTo("map-dashboard")}>
-                🗺️ Map Dashboard
-              </button> */}
-             
-              {/* <button
-                type="button"
-                className="ad-sb-link"
-                onClick={() => {
-                  setShowMapView(true);
-                  scrollTo("map-section");
-                }}
-              >
-                📍 Location / Map View
-              </button>
-
- */}
-
-
-
-
-
-
-
-
-
-
-
-
-
             </nav>
 
             <div className="ad-sb-label">Insights</div>
             <nav className="ad-sb-nav">
-
-
-          <button type="button" className="ad-sb-link" onClick={() => openView(setShowReports)}>
+              <button type="button" className="ad-sb-link" onClick={() => openView(setShowReports)}>
                  Reports Management
               </button>
 
-
-
               <button type="button" className="ad-sb-link" onClick={() => scrollTo("notif-panel")}>
-                🔔Notification Monitoring
+                🔔 Notification Monitoring
                 <span className="ad-sb-badge">{notificationFeed.length}</span>
               </button>
 
-                            {/* ✅ LOGOUT BUTTON */}
               <button 
                 type="button" 
                 className="ad-button-link" 
                 onClick={handleLogout}
-
                 style={{ color: "#cf4438", fontWeight: "600", marginTop: "8px" }}
               >
                Logout
               </button>
-
-
-
-
-
-
-
-
             </nav>
 
             <div className="ad-sb-footer">
@@ -997,9 +904,6 @@ const AdminDashboard = () => {
                 <button type="button" className="ad-icon-btn" aria-label="Notifications" onClick={() => scrollTo("notif-panel")}>
                   🔔<span className="ad-tb-dot"></span>
                 </button>
-                {/* <button className="ad-btn-primary" type="button" onClick={() => setShowAddUser(true)}>
-                  + Add Staff/Verifier
-                </button> */}
                 <div className="ad-tb-user" id="ad-profile">
                   <div className="ad-tb-avatar">
                     {admin.profilePhoto ? <img src={admin.profilePhoto} alt="Profile" /> : initials}
@@ -1196,50 +1100,18 @@ const AdminDashboard = () => {
                                         type="text"
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
-                                        style={{
-                                          width: "120px",
-                                          padding: "4px 8px",
-                                          border: "1px solid #2e6cb0",
-                                          borderRadius: "4px",
-                                          fontSize: "0.85em",
-                                        }}
+                                        style={{ width: "120px", padding: "4px 8px", border: "1px solid #2e6cb0", borderRadius: "4px", fontSize: "0.85em" }}
                                         placeholder="New password"
                                         autoFocus
                                       />
-                                      <button
-                                        className="ad-btn-primary small"
-                                        onClick={() => resetUserPassword(u.id)}
-                                        style={{ padding: "4px 8px", fontSize: "0.8rem" }}
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="ad-btn-outline small"
-                                        onClick={() => {
-                                          setResettingPasswordId(null);
-                                          setNewPassword("");
-                                        }}
-                                        style={{ padding: "4px 8px", fontSize: "0.8rem" }}
-                                      >
-                                        ✕
-                                      </button>
+                                      <button className="ad-btn-primary small" onClick={() => resetUserPassword(u.id)} style={{ padding: "4px 8px", fontSize: "0.8rem" }}>✓</button>
+                                      <button className="ad-btn-outline small" onClick={() => { setResettingPasswordId(null); setNewPassword(""); }} style={{ padding: "4px 8px", fontSize: "0.8rem" }}>✕</button>
                                     </div>
                                   ) : (
                                     <div
                                       className="ad-mono"
-                                      style={{
-                                        fontSize: "0.85em",
-                                        color: "#555",
-                                        background: "#f4f6f8",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
-                                        cursor: "pointer",
-                                        display: "inline-block",
-                                      }}
-                                      onClick={() => {
-                                        setResettingPasswordId(u.id);
-                                        setNewPassword("");
-                                      }}
+                                      style={{ fontSize: "0.85em", color: "#555", background: "#f4f6f8", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", display: "inline-block" }}
+                                      onClick={() => { setResettingPasswordId(u.id); setNewPassword(""); }}
                                       title="Click to reset password"
                                     >
                                       •••••••• (click to reset)
@@ -1254,35 +1126,9 @@ const AdminDashboard = () => {
                                 <td className="ad-mono">{u.contact}</td>
                                 <td className="ad-mono">{u.joined || (u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-")}</td>
                                 <td>
-                                  <button
-                                    className="ad-btn-outline small"
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedUserProfile(u);
-                                      setShowStaffVerifierProfile(true);
-                                    }}
-                                    title="View Profile"
-                                    style={{ marginRight: "4px" }}
-                                  >
-                                    👁️
-                                  </button>
-                                  <button
-                                    className="ad-btn-outline small"
-                                    type="button"
-                                    onClick={() => editUser(u)}
-                                    title="Edit"
-                                    style={{ marginRight: "4px" }}
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    className="ad-icon-btn small danger"
-                                    type="button"
-                                    onClick={() => setConfirmDeleteUserId(u.id)}
-                                    title="Remove user"
-                                  >
-                                    🗑️
-                                  </button>
+                                  <button className="ad-btn-outline small" type="button" onClick={() => { setSelectedUserProfile(u); setShowStaffVerifierProfile(true); }} title="View Profile" style={{ marginRight: "4px" }}>👁️</button>
+                                  <button className="ad-btn-outline small" type="button" onClick={() => editUser(u)} title="Edit" style={{ marginRight: "4px" }}>✏️</button>
+                                  <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteUserId(u.id)} title="Remove user">🗑️</button>
                                 </td>
                               </tr>
                               {confirmDeleteUserId === u.id && (
@@ -1291,12 +1137,8 @@ const AdminDashboard = () => {
                                     <div className="ad-delete-confirm">
                                       <span>Remove {u.name} from the system?</span>
                                       <div>
-                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteUserId(null)}>
-                                          No
-                                        </button>
-                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteUser(u.id)}>
-                                          Yes, Remove
-                                        </button>
+                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteUserId(null)}>No</button>
+                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteUser(u.id)}>Yes, Remove</button>
                                       </div>
                                     </div>
                                   </td>
@@ -1322,7 +1164,7 @@ const AdminDashboard = () => {
 
                 {/* Admin Count */}
                 <div className="ad-role-counts">
-                  <div className={`ad-role-chip tone-admin`}>
+                  <div className="ad-role-chip tone-admin">
                     <b>{admins.length}</b>
                     <span>Admin{admins.length !== 1 ? "s" : ""}</span>
                   </div>
@@ -1335,76 +1177,35 @@ const AdminDashboard = () => {
 
                     <div className="ad-vertical-field">
                       <label htmlFor="admin-name">Full Name</label>
-                      <input
-                        id="admin-name"
-                        type="text"
-                        placeholder="e.g., Admin User"
-                        value={newAdmin.name}
-                        onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
-                        required
-                      />
+                      <input id="admin-name" type="text" placeholder="e.g., Admin User" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} required />
                     </div>
 
                     <div className="ad-vertical-field">
                       <label htmlFor="admin-contact">Contact</label>
-                      <input
-                        id="admin-contact"
-                        type="text"
-                        placeholder="+91 ..."
-                        value={newAdmin.contact}
-                        onChange={(e) => setNewAdmin({ ...newAdmin, contact: e.target.value })}
-                        required
-                      />
+                      <input id="admin-contact" type="text" placeholder="+91 ..." value={newAdmin.contact} onChange={(e) => setNewAdmin({ ...newAdmin, contact: e.target.value })} required />
                     </div>
 
                     <div className="ad-vertical-field">
                       <label htmlFor="admin-email">Email Address</label>
-                      <input
-                        id="admin-email"
-                        type="email"
-                        placeholder="e.g., admin@example.com"
-                        value={newAdmin.email}
-                        onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                        required
-                      />
+                      <input id="admin-email" type="email" placeholder="e.g., admin@example.com" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} required />
                     </div>
 
                     <div className="ad-vertical-field">
                       <label htmlFor="admin-password">{editingAdminId ? "New Password (leave blank to keep current)" : "Password"}</label>
                       <div className="ad-password-row">
-                        <input
-                          id="admin-password"
-                          type="text"
-                          placeholder={editingAdminId ? "Leave blank to keep current" : "Generate or type password"}
-                          value={newAdmin.password}
-                          onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                          required={!editingAdminId}
-                        />
+                        <input id="admin-password" type="text" placeholder={editingAdminId ? "Leave blank to keep current" : "Generate or type password"} value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} required={!editingAdminId} />
                         {!editingAdminId && (
-                          <button
-                            type="button"
-                            className="ad-btn-outline small"
-                            onClick={() => setNewAdmin({ ...newAdmin, password: generatePassword() })}
-                            title="Generate Random Secure Password"
-                          >
-                            🎲 Generate
-                          </button>
+                          <button type="button" className="ad-btn-outline small" onClick={() => setNewAdmin({ ...newAdmin, password: generatePassword() })} title="Generate Random Secure Password">🎲 Generate</button>
                         )}
                       </div>
                       <small className="ad-field-hint">
-                        {editingAdminId
-                          ? "Leave password blank to keep the current one."
-                          : "Provide these credentials to the admin for login."}
+                        {editingAdminId ? "Leave password blank to keep the current one." : "Provide these credentials to the admin for login."}
                       </small>
                     </div>
 
                     <div className="ad-form-actions">
-                      <button className="ad-btn-outline" type="button" onClick={() => { setShowAddAdmin(false); setEditingAdminId(null); setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" }); }}>
-                        Cancel
-                      </button>
-                      <button className="ad-btn-primary" type="submit">
-                        {editingAdminId ? "Update Admin →" : "Register Admin →"}
-                      </button>
+                      <button className="ad-btn-outline" type="button" onClick={() => { setShowAddAdmin(false); setEditingAdminId(null); setNewAdmin({ name: "", role: "admin", contact: "", email: "", password: "" }); }}>Cancel</button>
+                      <button className="ad-btn-primary" type="submit">{editingAdminId ? "Update Admin →" : "Register Admin →"}</button>
                     </div>
                   </form>
                 )}
@@ -1438,91 +1239,26 @@ const AdminDashboard = () => {
                             <React.Fragment key={a.id}>
                               <tr>
                                 <td>{a.name}</td>
-                                <td className="ad-mono" style={{ fontWeight: "600", color: "#2e6cb0" }}>
-                                  {a.email || "-"}
-                                </td>
+                                <td className="ad-mono" style={{ fontWeight: "600", color: "#2e6cb0" }}>{a.email || "-"}</td>
                                 <td>
                                   {resettingAdminPasswordId === a.id ? (
                                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                                      <input
-                                        type="text"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        style={{
-                                          width: "120px",
-                                          padding: "4px 8px",
-                                          border: "1px solid #2e6cb0",
-                                          borderRadius: "4px",
-                                          fontSize: "0.85em",
-                                        }}
-                                        placeholder="New password"
-                                        autoFocus
-                                      />
-                                      <button
-                                        className="ad-btn-primary small"
-                                        onClick={() => resetAdminPassword(a.id)}
-                                        style={{ padding: "4px 8px", fontSize: "0.8rem" }}
-                                      >
-                                        ✓
-                                      </button>
-                                      <button
-                                        className="ad-btn-outline small"
-                                        onClick={() => {
-                                          setResettingAdminPasswordId(null);
-                                          setNewPassword("");
-                                        }}
-                                        style={{ padding: "4px 8px", fontSize: "0.8rem" }}
-                                      >
-                                        ✕
-                                      </button>
+                                      <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={{ width: "120px", padding: "4px 8px", border: "1px solid #2e6cb0", borderRadius: "4px", fontSize: "0.85em" }} placeholder="New password" autoFocus />
+                                      <button className="ad-btn-primary small" onClick={() => resetAdminPassword(a.id)} style={{ padding: "4px 8px", fontSize: "0.8rem" }}>✓</button>
+                                      <button className="ad-btn-outline small" onClick={() => { setResettingAdminPasswordId(null); setNewPassword(""); }} style={{ padding: "4px 8px", fontSize: "0.8rem" }}>✕</button>
                                     </div>
                                   ) : (
-                                    <div
-                                      className="ad-mono"
-                                      style={{
-                                        fontSize: "0.85em",
-                                        color: "#555",
-                                        background: "#f4f6f8",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
-                                        cursor: "pointer",
-                                        display: "inline-block",
-                                      }}
-                                      onClick={() => {
-                                        setResettingAdminPasswordId(a.id);
-                                        setNewPassword("");
-                                      }}
-                                      title="Click to reset password"
-                                    >
+                                    <div className="ad-mono" style={{ fontSize: "0.85em", color: "#555", background: "#f4f6f8", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", display: "inline-block" }} onClick={() => { setResettingAdminPasswordId(a.id); setNewPassword(""); }} title="Click to reset password">
                                       •••••••• (click to reset)
                                     </div>
                                   )}
                                 </td>
-                                <td>
-                                  <span className={`ad-badge ad-badge-${roleTone[a.role]}`}>
-                                    Admin
-                                  </span>
-                                </td>
+                                <td><span className={`ad-badge ad-badge-${roleTone[a.role]}`}>Admin</span></td>
                                 <td className="ad-mono">{a.contact}</td>
                                 <td className="ad-mono">{a.joined || (a.createdAt ? new Date(a.createdAt).toLocaleDateString() : "-")}</td>
                                 <td>
-                                  <button
-                                    className="ad-btn-outline small"
-                                    type="button"
-                                    onClick={() => editAdmin(a)}
-                                    title="Edit admin"
-                                    style={{ marginRight: "4px" }}
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    className="ad-icon-btn small danger"
-                                    type="button"
-                                    onClick={() => setConfirmDeleteAdminId(a.id)}
-                                    title="Remove admin"
-                                  >
-                                    🗑️
-                                  </button>
+                                  <button className="ad-btn-outline small" type="button" onClick={() => editAdmin(a)} title="Edit admin" style={{ marginRight: "4px" }}>✏️</button>
+                                  <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteAdminId(a.id)} title="Remove admin">🗑️</button>
                                 </td>
                               </tr>
                               {confirmDeleteAdminId === a.id && (
@@ -1531,12 +1267,8 @@ const AdminDashboard = () => {
                                     <div className="ad-delete-confirm">
                                       <span>Remove {a.name} from the system?</span>
                                       <div>
-                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteAdminId(null)}>
-                                          No
-                                        </button>
-                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteAdmin(a.id)}>
-                                          Yes, Remove
-                                        </button>
+                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteAdminId(null)}>No</button>
+                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteAdmin(a.id)}>Yes, Remove</button>
                                       </div>
                                     </div>
                                   </td>
@@ -1561,18 +1293,12 @@ const AdminDashboard = () => {
                 <div className="ad-filter-row">
                   <select className="ad-inline-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                     {categories.map((c) => (
-                      <option key={c} value={c}>
-                        {c === "All" ? "All Categories" : c}
-                      </option>
+                      <option key={c} value={c}>{c === "All" ? "All Categories" : c}</option>
                     ))}
                   </select>
                   <select className="ad-inline-select" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
                     <option value="All">All Priorities</option>
-                    {priorityOptions.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
+                    {priorityOptions.map((p) => (<option key={p} value={p}>{p}</option>))}
                   </select>
                 </div>
 
@@ -1594,11 +1320,7 @@ const AdminDashboard = () => {
                       </thead>
                       <tbody>
                         {filteredComplaints.length === 0 ? (
-                          <tr>
-                            <td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
-                              No complaints found.
-                            </td>
-                          </tr>
+                          <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>No complaints found.</td></tr>
                         ) : (
                           filteredComplaints.map((c) => (
                             <React.Fragment key={c.id}>
@@ -1610,25 +1332,13 @@ const AdminDashboard = () => {
                                     {c.issue}
                                   </div>
                                 </td>
-                                {/* ✅ FIX 1: Safely render location */}
                                 <td>{getLocationString(c.location)}</td>
-                                <td>
-                                  <span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span>
-                                </td>
-                                <td>
-                                  <span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span>
-                                </td>
+                                <td><span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span></td>
+                                <td><span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span></td>
                                 <td className="ad-mono">{c.photos}</td>
                                 <td onClick={(e) => e.stopPropagation()}>
                                   {c.status === "New" && (
-                                    <button
-                                      className="ad-icon-btn small danger"
-                                      type="button"
-                                      onClick={() => setConfirmDeleteComplaintId(c.id)}
-                                      title="Remove eligible record"
-                                    >
-                                      🗑️
-                                    </button>
+                                    <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteComplaintId(c.id)} title="Remove eligible record">🗑️</button>
                                   )}
                                 </td>
                               </tr>
@@ -1638,12 +1348,8 @@ const AdminDashboard = () => {
                                     <div className="ad-delete-confirm">
                                       <span>Remove complaint {c.complaintNumber}? Only eligible new records can be removed.</span>
                                       <div>
-                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteComplaintId(null)}>
-                                          No
-                                        </button>
-                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteComplaint(c.id)}>
-                                          Yes, Remove
-                                        </button>
+                                        <button className="ad-btn-outline small" type="button" onClick={() => setConfirmDeleteComplaintId(null)}>No</button>
+                                        <button className="ad-btn-danger small" type="button" onClick={() => deleteComplaint(c.id)}>Yes, Remove</button>
                                       </div>
                                     </div>
                                   </td>
@@ -1697,18 +1403,6 @@ const AdminDashboard = () => {
                       ))}
                     </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
                     {/* 3. Priority-Wise */}
                     <div className="ad-report-block">
                       <h5>Priority-Wise Complaints</h5>
@@ -1755,7 +1449,6 @@ const AdminDashboard = () => {
                   <div className="ad-loading">No analytics data available.</div>
                 )}
               </div>
-              
 
               {/* ================= MAP DASHBOARD (NEW) ================= */}
               <div className="ad-panel ad-form-panel" id="map-dashboard">
@@ -1768,32 +1461,20 @@ const AdminDashboard = () => {
                 <div className="ad-filter-row" style={{ marginBottom: "16px" }}>
                   <select className="ad-inline-select" value={mapCategoryFilter} onChange={(e) => setMapCategoryFilter(e.target.value)}>
                     <option value="All">All Categories</option>
-                    {categories.filter(c => c !== "All").map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    {categories.filter(c => c !== "All").map((c) => (<option key={c} value={c}>{c}</option>))}
                   </select>
 
                   <select className="ad-inline-select" value={mapStatusFilter} onChange={(e) => setMapStatusFilter(e.target.value)}>
                     <option value="All">All Statuses</option>
-                    {statusOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                    {statusOptions.map((s) => (<option key={s} value={s}>{s}</option>))}
                   </select>
 
                   <select className="ad-inline-select" value={mapPriorityFilter} onChange={(e) => setMapPriorityFilter(e.target.value)}>
                     <option value="All">All Priorities</option>
-                    {priorityOptions.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                    {priorityOptions.map((p) => (<option key={p} value={p}>{p}</option>))}
                   </select>
 
-                  <button
-                    className="ad-btn-outline small"
-                    type="button"
-                    onClick={resetMapFilters}
-                  >
-                    Reset Filters
-                  </button>
+                  <button className="ad-btn-outline small" type="button" onClick={resetMapFilters}>Reset Filters</button>
                 </div>
 
                 {/* Legend */}
@@ -1801,9 +1482,7 @@ const AdminDashboard = () => {
                   <span><span style={{ color: "#cf4438", fontWeight: "bold" }}>▲</span> Critical</span>
                   <span><span style={{ color: "#c1900a", fontWeight: "bold" }}>▲</span> Urgent</span>
                   <span><span style={{ color: "#1d8a5c", fontWeight: "bold" }}>▲</span> Normal</span>
-                  <span style={{ marginLeft: "auto", color: "#666" }}>
-                    💡 Click a marker to view details
-                  </span>
+                  <span style={{ marginLeft: "auto", color: "#666" }}>💡 Click a marker to view details</span>
                 </div>
 
                 {/* Google Map */}
@@ -1814,13 +1493,7 @@ const AdminDashboard = () => {
                 ) : !mapCenter ? (
                   <div className="ad-loading">No complaint coordinates are available yet.</div>
                 ) : (
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={13}
-                    onClick={handleMapClick}
-                    options={mapOptions}
-                  >
+                  <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={13} onClick={handleMapClick} options={mapOptions}>
                     {filteredMapComplaints.map((complaint) => (
                       <Marker
                         key={complaint.id}
@@ -1831,78 +1504,32 @@ const AdminDashboard = () => {
                       />
                     ))}
 
-
                     {selectedMapComplaint && (
-                      <InfoWindow
-                        position={{ lat: selectedMapComplaint.lat, lng: selectedMapComplaint.lng }}
-                        onCloseClick={() => setSelectedMapComplaint(null)}
-                      >
+                      <InfoWindow position={{ lat: selectedMapComplaint.lat, lng: selectedMapComplaint.lng }} onCloseClick={() => setSelectedMapComplaint(null)}>
                         <div style={{ minWidth: "250px", maxWidth: "320px" }}>
-                          <h4 style={{ margin: "0 0 8px 0", fontSize: "1rem", color: "#1e293b" }}>
-                            {selectedMapComplaint.complaintNumber}
-                          </h4>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Issue:</strong> {selectedMapComplaint.issue}
-                          </p>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Category:</strong>{" "}
-                            <span style={{ color: colorForCategory(selectedMapComplaint.category) }}>
-                              {selectedMapComplaint.category}
-                            </span>
-                          </p>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Status:</strong>{" "}
-                            <span className={`ad-badge ad-badge-${statusTone[selectedMapComplaint.status]}`} style={{ fontSize: "0.75rem" }}>
-                              {selectedMapComplaint.status}
-                            </span>
-                          </p>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Priority:</strong>{" "}
-                            <span className={`ad-badge ad-badge-${priorityTone[selectedMapComplaint.priority]}`} style={{ fontSize: "0.75rem" }}>
-                              {selectedMapComplaint.priority}
-                            </span>
-                          </p>
-                          {/* ✅ FIX 2: Safely render location in InfoWindow */}
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Location:</strong> {getLocationString(selectedMapComplaint.location)}
-                          </p>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Citizen:</strong> {selectedMapComplaint.citizenName}
-                          </p>
-                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}>
-                            <strong>Date:</strong> {selectedMapComplaint.date}
-                          </p>
+                          <h4 style={{ margin: "0 0 8px 0", fontSize: "1rem", color: "#1e293b" }}>{selectedMapComplaint.complaintNumber}</h4>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Issue:</strong> {selectedMapComplaint.issue}</p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Category:</strong> <span style={{ color: colorForCategory(selectedMapComplaint.category) }}>{selectedMapComplaint.category}</span></p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Status:</strong> <span className={`ad-badge ad-badge-${statusTone[selectedMapComplaint.status]}`} style={{ fontSize: "0.75rem" }}>{selectedMapComplaint.status}</span></p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Priority:</strong> <span className={`ad-badge ad-badge-${priorityTone[selectedMapComplaint.priority]}`} style={{ fontSize: "0.75rem" }}>{selectedMapComplaint.priority}</span></p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Location:</strong> {getLocationString(selectedMapComplaint.location)}</p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Citizen:</strong> {selectedMapComplaint.citizenName}</p>
+                          <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Date:</strong> {selectedMapComplaint.date}</p>
                           {selectedMapComplaint.description && (
-                            <p style={{ margin: "8px 0 4px 0", fontSize: "0.8rem", color: "#555", fontStyle: "italic" }}>
-                              "{selectedMapComplaint.description}"
-                            </p>
+                            <p style={{ margin: "8px 0 4px 0", fontSize: "0.8rem", color: "#555", fontStyle: "italic" }}>"{selectedMapComplaint.description}"</p>
                           )}
                           {selectedMapComplaint.photos > 0 && (
-                            <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#2e6cb0" }}>
-                              {selectedMapComplaint.photos} photo(s) attached
-                            </p>
+                            <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#2e6cb0" }}>{selectedMapComplaint.photos} photo(s) attached</p>
                           )}
                           {selectedMapComplaint.photoUrls && selectedMapComplaint.photoUrls.length > 0 && (
                             <div style={{ margin: "8px 0", display: "flex", gap: "4px", flexWrap: "wrap" }}>
                               {selectedMapComplaint.photoUrls.map((url, idx) => (
-                                <img
-                                  key={idx}
-                                  src={url}
-                                  alt={`Photo ${idx + 1}`}
-                                  style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "4px", border: "1px solid #ddd" }}
-                                />
+                                <img key={idx} src={url} alt={`Photo ${idx + 1}`} style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "4px", border: "1px solid #ddd" }} />
                               ))}
                             </div>
                           )}
                           <div style={{ marginTop: "8px", display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${selectedMapComplaint.lat},${selectedMapComplaint.lng}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ fontSize: "0.75rem", color: "#2e6cb0", textDecoration: "none" }}
-                            >
-                              📍 Open in Google Maps
-                            </a>
+                            <a href={`https://www.google.com/maps/search/?api=1&query=${selectedMapComplaint.lat},${selectedMapComplaint.lng}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "#2e6cb0", textDecoration: "none" }}>📍 Open in Google Maps</a>
                           </div>
                         </div>
                       </InfoWindow>
@@ -1914,16 +1541,10 @@ const AdminDashboard = () => {
                 {mapComplaints.some(c => !c.lat || !c.lng) && (
                   <div style={{ marginTop: "16px", padding: "12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "6px" }}>
                     <strong style={{ color: "#c2410c" }}>⚠️ {mapComplaints.filter(c => !c.lat || !c.lng).length} complaint(s) missing coordinates</strong>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#666" }}>
-                      These complaints will appear on the map once their locations are geocoded.
-                    </p>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#666" }}>These complaints will appear on the map once their locations are geocoded.</p>
                   </div>
                 )}
               </div>
-
-
-
-              
 
               {/* COMPLAINT DETAILS */}
               {selected && (
@@ -1932,57 +1553,23 @@ const AdminDashboard = () => {
                     <h3>Complaint Details — {selected.complaintNumber}</h3>
                   </div>
                   <div className="ad-detail-grid">
-                    <div className="ad-detail-item">
-                      <span>Citizen</span>
-                      <b>{selected.citizenName}</b>
-                    </div>
-                    <div className="ad-detail-item">
-                      <span>Category</span>
-                      <b>{selected.category}</b>
-                    </div>
-                    <div className="ad-detail-item">
-                      <span>Location</span>
-                      {/* ✅ FIX 3: Safely render location in details */}
-                      <b>{getLocationString(selected.location)}</b>
-                    </div>
-                    <div className="ad-detail-item">
-                      <span>Date Reported</span>
-                      <b>{selected.date}</b>
-                    </div>
-                    <div className="ad-detail-item ad-detail-wide">
-                      <span>Description</span>
-                      <b>{selected.description}</b>
-                    </div>
+                    <div className="ad-detail-item"><span>Citizen</span><b>{selected.citizenName}</b></div>
+                    <div className="ad-detail-item"><span>Category</span><b>{selected.category}</b></div>
+                    <div className="ad-detail-item"><span>Location</span><b>{getLocationString(selected.location)}</b></div>
+                    <div className="ad-detail-item"><span>Date Reported</span><b>{selected.date}</b></div>
+                    <div className="ad-detail-item ad-detail-wide"><span>Description</span><b>{selected.description}</b></div>
                   </div>
                   <div className="ad-update-row">
                     <div className="ad-field">
                       <label htmlFor="upd-status">Update Status</label>
-                      <select
-                        id="upd-status"
-                        className="ad-inline-select"
-                        value={selected.status}
-                        onChange={(e) => updateStatus(selected.id, e.target.value)}
-                      >
-                        {statusOptions.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
+                      <select id="upd-status" className="ad-inline-select" value={selected.status} onChange={(e) => updateStatus(selected.id, e.target.value)}>
+                        {statusOptions.map((s) => (<option key={s} value={s}>{s}</option>))}
                       </select>
                     </div>
                     <div className="ad-field">
                       <label htmlFor="upd-priority">Update Priority</label>
-                      <select
-                        id="upd-priority"
-                        className="ad-inline-select"
-                        value={selected.priority}
-                        onChange={(e) => updatePriority(selected.id, e.target.value)}
-                      >
-                        {priorityOptions.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
+                      <select id="upd-priority" className="ad-inline-select" value={selected.priority} onChange={(e) => updatePriority(selected.id, e.target.value)}>
+                        {priorityOptions.map((p) => (<option key={p} value={p}>{p}</option>))}
                       </select>
                     </div>
                   </div>
@@ -2001,18 +1588,9 @@ const AdminDashboard = () => {
                       <p>Assigned issues, work status and action taken are tracked on the staff dashboard once assigned.</p>
                       <div className="ad-field">
                         <label htmlFor="assign-staff">Assign Staff</label>
-                        <select
-                          id="assign-staff"
-                          className="ad-inline-select"
-                          value={selected.assignedStaff}
-                          onChange={(e) => assignStaff(selected.id, e.target.value)}
-                        >
+                        <select id="assign-staff" className="ad-inline-select" value={selected.assignedStaff} onChange={(e) => assignStaff(selected.id, e.target.value)}>
                           <option value="">Unassigned</option>
-                          {staffList.map((s) => (
-                            <option key={s.id} value={s.name}>
-                              {s.name}
-                            </option>
-                          ))}
+                          {staffList.map((s) => (<option key={s.id} value={s.name}>{s.name}</option>))}
                         </select>
                       </div>
                     </div>
@@ -2021,18 +1599,9 @@ const AdminDashboard = () => {
                       <p>Verifiers pick this up in their verification queue to approve or reject completed work.</p>
                       <div className="ad-field">
                         <label htmlFor="assign-verifier">Assign Verifier</label>
-                        <select
-                          id="assign-verifier"
-                          className="ad-inline-select"
-                          value={selected.assignedVerifier}
-                          onChange={(e) => assignVerifier(selected.id, e.target.value)}
-                        >
+                        <select id="assign-verifier" className="ad-inline-select" value={selected.assignedVerifier} onChange={(e) => assignVerifier(selected.id, e.target.value)}>
                           <option value="">Unassigned</option>
-                          {verifierList.map((v) => (
-                            <option key={v.id} value={v.name}>
-                              {v.name}
-                            </option>
-                          ))}
+                          {verifierList.map((v) => (<option key={v.id} value={v.name}>{v.name}</option>))}
                         </select>
                       </div>
                     </div>
@@ -2045,9 +1614,7 @@ const AdminDashboard = () => {
                 <div className="ad-panel ad-form-panel" id="map-section">
                   <div className="ad-panel-head">
                     <h3>Complaint Locations — Category &amp; Area-wise</h3>
-                    <span className="ad-panel-link" onClick={() => setShowMapView(false)} style={{ cursor: "pointer" }}>
-                      Hide Map View
-                    </span>
+                    <span className="ad-panel-link" onClick={() => setShowMapView(false)} style={{ cursor: "pointer" }}>Hide Map View</span>
                   </div>
                   <div className="ad-map-grid">
                     {Object.entries(mapGroups).map(([location, group]) => (
@@ -2055,14 +1622,7 @@ const AdminDashboard = () => {
                         <p className="ad-map-ward-name">{location}</p>
                         <div className="ad-map-pins">
                           {group.map((c) => (
-                            <span
-                              className="ad-map-pin"
-                              key={c.id}
-                              style={{ background: colorForCategory(c.category) }}
-                              title={`${c.complaintNumber} — ${c.category} · ${c.priority}`}
-                            >
-                              📍
-                            </span>
+                            <span className="ad-map-pin" key={c.id} style={{ background: colorForCategory(c.category) }} title={`${c.complaintNumber} — ${c.category} · ${c.priority}`}>📍</span>
                           ))}
                         </div>
                         <span className="ad-map-ward-count">
@@ -2088,10 +1648,7 @@ const AdminDashboard = () => {
                       <div className="ad-bar-row" key={b.label}>
                         <span className="ad-bar-label">{b.label}</span>
                         <div className="ad-bar-track">
-                          <div
-                            className="ad-bar-fill"
-                            style={{ width: `${(b.count / maxCategoryCount) * 100}%`, background: colorForCategory(b.label) }}
-                          ></div>
+                          <div className="ad-bar-fill" style={{ width: `${(b.count / maxCategoryCount) * 100}%`, background: colorForCategory(b.label) }}></div>
                         </div>
                         <span className="ad-bar-count">{b.count}</span>
                       </div>
@@ -2103,10 +1660,7 @@ const AdminDashboard = () => {
                       <div className="ad-bar-row" key={b.label}>
                         <span className="ad-bar-label">{b.label}</span>
                         <div className="ad-bar-track">
-                          <div
-                            className={`ad-bar-fill tone-${priorityTone[b.label]}`}
-                            style={{ width: `${(b.count / maxPriorityCount) * 100}%` }}
-                          ></div>
+                          <div className={`ad-bar-fill tone-${priorityTone[b.label]}`} style={{ width: `${(b.count / maxPriorityCount) * 100}%` }}></div>
                         </div>
                         <span className="ad-bar-count">{b.count}</span>
                       </div>
@@ -2129,9 +1683,7 @@ const AdminDashboard = () => {
                   ) : (
                     notificationFeed.map((note) => (
                       <div className="ad-notif-item" key={note.id}>
-                        <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>
-                          {note.type}
-                        </span>
+                        <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>{note.type}</span>
                         <div>
                           <b>{note.text}</b>
                           <span>{note.time}</span>

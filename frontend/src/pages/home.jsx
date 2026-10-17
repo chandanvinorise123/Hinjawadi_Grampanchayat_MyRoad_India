@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import VisitorsOverview from "../components/dashboard/VisitorsOverview";
+import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./home.css";
