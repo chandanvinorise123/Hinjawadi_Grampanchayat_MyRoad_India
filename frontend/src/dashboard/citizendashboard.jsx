@@ -232,6 +232,15 @@ const CitizenDashboard = () => {
   const [showRecentActivity, setShowRecentActivity] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
 
+  // ✅ NEW: Helper to get auth headers with token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      "Authorization": token ? `Bearer ${token}` : ""
+    };
+  };
+
   const openView = (setter) => {
     setShowProfile(false);
     setShowMyComplaints(false);
@@ -273,9 +282,13 @@ const CitizenDashboard = () => {
     const requestUrl = `${API_URL}/my/${encodeURIComponent(String(citizenId))}`;
 
     try {
+      // ✅ UPDATED: Added getAuthHeaders()
       const response = await fetch(requestUrl, {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          ...getAuthHeaders()
+        },
       });
       const result = await readJsonResponse(response);
 
@@ -326,9 +339,13 @@ const CitizenDashboard = () => {
 
     try {
       const requestUrl = `${API_URL}/track/${encodeURIComponent(complaintId)}`;
+      // ✅ UPDATED: Added getAuthHeaders()
       const response = await fetch(requestUrl, {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+          ...getAuthHeaders()
+        },
       });
       const result = await readJsonResponse(response);
 
@@ -474,7 +491,11 @@ const CitizenDashboard = () => {
   useEffect(() => {
     const citizenId = getCitizenId(getStoredUser());
     if (!citizenId) return;
-    fetch(`${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`)
+
+    // ✅ UPDATED: Added getAuthHeaders()
+    fetch(`${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`, {
+      headers: getAuthHeaders()
+    })
       .then((response) => response.json())
       .then((result) => {
         setNotifications(result.notifications || []);

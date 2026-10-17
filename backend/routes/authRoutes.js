@@ -196,17 +196,18 @@ router.get("/users/:id", async (req, res) => {
 });
  
  
-// PUT /api/auth/users/:id  ->  update name, mobile and location
+// PUT /api/auth/users/:id  ->  update name, email, mobile and location
 router.put("/users/:id", async (req, res) => {
     try {
         const name = String(req.body.name || "").trim();
+        const email = String(req.body.email || "").trim().toLowerCase();
         const mobile = String(req.body.mobile || "").trim();
         const location = String(req.body.location || "").trim();
  
-        if (!name || !mobile) {
+        if (!name || !email || !mobile) {
             return res.status(400).json({
                 success: false,
-                message: "Name and mobile number are required"
+                message: "Name, email and mobile number are required"
             });
         }
  
@@ -218,20 +219,22 @@ router.put("/users/:id", async (req, res) => {
         }
  
         const duplicate = await User.findOne({
-            mobile,
+            $or: [{ mobile }, { email }],
             _id: { $ne: req.params.id }
         });
  
         if (duplicate) {
             return res.status(409).json({
                 success: false,
-                message: "Mobile number already registered"
+                message: duplicate.email === email
+                    ? "Email already registered"
+                    : "Mobile number already registered"
             });
         }
  
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { name, mobile, location },
+            { name, email, mobile, location },
             { returnDocument: "after", runValidators: true }
         );
  

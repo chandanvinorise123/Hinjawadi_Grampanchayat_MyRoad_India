@@ -70,6 +70,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     // ==========================================
     // EMPLOYMENT INFORMATION
     // Mainly for Staff and Verifier

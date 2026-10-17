@@ -58,10 +58,18 @@ const MyProfile = ({ onBack }) => {
     .slice(0, 2)
     .toUpperCase();
 
-  const jsonHeaders = { "Content-Type": "application/json" };
+  // ✅ NEW: Helper to get auth headers with token for ALL fetch requests
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
 
   const clearSession = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     window.dispatchEvent(new Event("authChange"));
   };
 
@@ -73,7 +81,11 @@ const MyProfile = ({ onBack }) => {
 
     const loadProfile = async () => {
       try {
-        const response = await fetch(`${API_URL}/${storedUser.id}`);
+        // ✅ UPDATED: Added getAuthHeaders()
+        const response = await fetch(`${API_URL}/${storedUser.id}`, {
+          headers: getAuthHeaders()
+        });
+
         if (response.status === 404) {
           clearSession();
           navigate("/login");
@@ -99,6 +111,8 @@ const MyProfile = ({ onBack }) => {
           const current = JSON.parse(localStorage.getItem("user") || "{}");
           localStorage.setItem("user", JSON.stringify({ ...current, ...u }));
           setStoredUser({ ...current, ...u });
+        } else {
+          console.error("Failed to load profile data:", data);
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -153,9 +167,10 @@ const MyProfile = ({ onBack }) => {
 
     setSaving(true);
     try {
+      // ✅ UPDATED: Added getAuthHeaders()
       const response = await fetch(`${API_URL}/${storedUser.id}`, {
         method: "PUT",
-        headers: jsonHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           name: form.name.trim(),
           email: form.email.trim(),
@@ -173,9 +188,11 @@ const MyProfile = ({ onBack }) => {
         setEditing(false);
         setNotice({ type: "success", text: "Profile updated successfully." });
       } else {
+        console.error("Update profile failed:", data);
         setNotice({ type: "error", text: data.message || "Could not update profile." });
       }
     } catch (err) {
+      console.error("Update profile error:", err);
       setNotice({ type: "error", text: "Unable to reach the server." });
     } finally {
       setSaving(false);
@@ -193,9 +210,10 @@ const MyProfile = ({ onBack }) => {
 
     setSaving(true);
     try {
+      // ✅ UPDATED: Added getAuthHeaders()
       const response = await fetch(`${API_URL}/${storedUser.id}/password`, {
         method: "PUT",
-        headers: jsonHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
@@ -208,9 +226,11 @@ const MyProfile = ({ onBack }) => {
         setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
         setChangingPassword(false);
       } else {
+        console.error("Change password failed:", data);
         setNotice({ type: "error", text: data.message || "Could not change password. Check current password." });
       }
     } catch (err) {
+      console.error("Change password error:", err);
       setNotice({ type: "error", text: "Unable to reach the server." });
     } finally {
       setSaving(false);
@@ -221,9 +241,10 @@ const MyProfile = ({ onBack }) => {
     e.preventDefault();
     setDeleting(true);
     try {
+      // ✅ UPDATED: Added getAuthHeaders()
       const response = await fetch(`${API_URL}/${storedUser.id}`, {
         method: "DELETE",
-        headers: jsonHeaders,
+        headers: getAuthHeaders(),
         body: JSON.stringify({ password: deletePassword }),
       });
       const data = await response.json();
@@ -232,9 +253,11 @@ const MyProfile = ({ onBack }) => {
         clearSession();
         navigate("/");
       } else {
+        console.error("Delete account failed:", data);
         setNotice({ type: "error", text: data.message || "Could not delete account. Check password." });
       }
     } catch (err) {
+      console.error("Delete account error:", err);
       setNotice({ type: "error", text: "Unable to reach the server." });
     } finally {
       setDeleting(false);
@@ -253,7 +276,6 @@ const MyProfile = ({ onBack }) => {
   return (
     <div className="cdp-profile-page">
       <div className="cdp-profile-header">
-        {/* ✅ FIXED: Now uses the smart handleBack function */}
         <button className="cdp-back-btn" onClick={handleBack}>
           ← Back to Dashboard
         </button>
