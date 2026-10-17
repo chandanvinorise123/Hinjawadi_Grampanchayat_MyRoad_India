@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import * as turf from "@turf/turf";
@@ -244,42 +244,6 @@ const ReportIssue = () => {
     };
   }, []);
 
-  // Check whether a location is inside the Hinjawadi boundary.
-  const isInsideHinjawadi = useCallback(
-    (lat, lng) => {
-      if (
-        !hinjawadiBoundary ||
-        lat === null ||
-        lng === null ||
-        lat === undefined ||
-        lng === undefined ||
-        lat === "" ||
-        lng === "" ||
-        !Number.isFinite(Number(lat)) ||
-        !Number.isFinite(Number(lng))
-      ) {
-        return false;
-      }
-
-      try {
-        const point = turf.point([
-          Number(lng),
-          Number(lat),
-        ]);
-
-        return hinjawadiBoundary.features.some(
-          (feature) =>
-            feature.geometry &&
-            turf.booleanPointInPolygon(point, feature)
-        );
-      } catch (error) {
-        console.error("Boundary validation error:", error);
-        return false;
-      }
-    },
-    [hinjawadiBoundary]
-  );
-
   // Save Google Maps instance and initialize its position.
   const handleMapLoad = (mapInstance) => {
     setMap(mapInstance);
@@ -348,13 +312,6 @@ const ReportIssue = () => {
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
 
-    if (!isInsideHinjawadi(lat, lng)) {
-      setErrorMessage(
-        "Please select a location within Hinjawadi Gram Panchayat."
-      );
-      return;
-    }
-
     setSelectedLocation({ lat, lng });
     setErrorMessage("");
   };
@@ -365,19 +322,6 @@ const ReportIssue = () => {
 
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
-
-    if (!isInsideHinjawadi(lat, lng)) {
-      setErrorMessage(
-        "The selected location must be within Hinjawadi Gram Panchayat."
-      );
-
-      // Restore the marker to the last valid location.
-      if (map && selectedLocation.lat !== null) {
-        map.panTo(selectedLocation);
-      }
-
-      return;
-    }
 
     setSelectedLocation({ lat, lng });
     setErrorMessage("");
@@ -402,13 +346,6 @@ const ReportIssue = () => {
 
     const lat = place.geometry.location.lat();
     const lng = place.geometry.location.lng();
-
-    if (!isInsideHinjawadi(lat, lng)) {
-      setErrorMessage(
-        "That location is outside Hinjawadi Gram Panchayat. Please choose a location inside the boundary."
-      );
-      return;
-    }
 
     setSelectedLocation({ lat, lng });
     setErrorMessage("");
@@ -441,34 +378,10 @@ const ReportIssue = () => {
       return;
     }
 
-    if (boundaryLoading) {
-      setLocationStatus("error");
-      setErrorMessage(
-        "The Hinjawadi boundary is still loading. Please try again shortly."
-      );
-      return;
-    }
-
-    if (!hinjawadiBoundary) {
-      setLocationStatus("error");
-      setErrorMessage(
-        "The Hinjawadi boundary could not be loaded. Please select a location on the map or refresh the page."
-      );
-      return;
-    }
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
-
-        if (!isInsideHinjawadi(latitude, longitude)) {
-          setLocationStatus("error");
-          setErrorMessage(
-            "Your current location is outside Hinjawadi Gram Panchayat. Please select a location inside the boundary on the map."
-          );
-          return;
-        }
 
         setLiveLocation({
           lat: latitude.toFixed(6),
@@ -565,13 +478,6 @@ const ReportIssue = () => {
       return;
     }
 
-    if (boundaryLoading || !hinjawadiBoundary) {
-      setErrorMessage(
-        "The Hinjawadi boundary is not available. Please wait and try again."
-      );
-      return;
-    }
-
     let latitude;
     let longitude;
 
@@ -607,11 +513,12 @@ const ReportIssue = () => {
     if (
       !Number.isFinite(latitude) ||
       !Number.isFinite(longitude) ||
-      !isInsideHinjawadi(latitude, longitude)
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
     ) {
-      setErrorMessage(
-        "Please select a valid location inside Hinjawadi Gram Panchayat."
-      );
+      setErrorMessage("Please select valid geographic coordinates.");
       return;
     }
 
@@ -827,7 +734,7 @@ const ReportIssue = () => {
                       locationMode === "live" ? "active" : ""
                     }
                     onClick={handleUseLiveLocation}
-                    disabled={boundaryLoading}
+                    
                   >
                     {boundaryLoading
                       ? "Loading Boundary..."
@@ -858,10 +765,7 @@ const ReportIssue = () => {
                         <Autocomplete
                           onLoad={handleAutocompleteLoad}
                           onPlaceChanged={handlePlaceChanged}
-                          options={{
-                            bounds: mapBounds || undefined,
-                            strictBounds: Boolean(mapBounds),
-                          }}
+                          options={{ strictBounds: false }}
                         >
                           <input
                             type="text"
@@ -923,8 +827,7 @@ const ReportIssue = () => {
 
                         {selectedLocation.lat === null && (
                           <p className="location-help">
-                            Search for a location or click inside the
-                            Hinjawadi boundary to place the marker.
+                            Search for a location or click anywhere on the map to place the marker.
                           </p>
                         )}
                       </>
@@ -958,7 +861,7 @@ const ReportIssue = () => {
                         type="button"
                         className="secondary-btn"
                         onClick={handleUseLiveLocation}
-                        disabled={boundaryLoading}
+                        
                       >
                         Try Live Location Again
                       </button>
@@ -1046,7 +949,7 @@ const ReportIssue = () => {
                 <button
                   className="primary-btn"
                   type="submit"
-                  disabled={loading || boundaryLoading}
+                  disabled={loading}
                 >
                   {loading
                     ? "Submitting..."
