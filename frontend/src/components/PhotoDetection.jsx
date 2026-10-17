@@ -18,8 +18,11 @@ const PhotoDetection = ({
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [cameraError, setCameraError] = useState("");
-  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileInputRef = useRef(null);
+  const cameraVideoRef = useRef(null);
+  const cameraCanvasRef = useRef(null);
+  const cameraStreamRef = useRef(null);
 
   const VALID_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   const MAX_SIZE_MB = 10;
@@ -163,12 +166,25 @@ const PhotoDetection = ({
     }
   };
 
-  const openRearCamera = async (event) => {
-    if (cameraReady || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      return;
-    }
+  const stopRearCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
+    setCameraOpen(false);
+  };
 
-    event.preventDefault();
+  useEffect(() => stopRearCamera, []);
+
+  useEffect(() => {
+    if (!cameraOpen || !cameraVideoRef.current || !cameraStreamRef.current) return;
+    cameraVideoRef.current.srcObject = cameraStreamRef.current;
+    cameraVideoRef.current.play().catch((error) => {
+      console.error("Rear camera preview error:", error);
+      setCameraError("Unable to start the rear camera preview.");
+    });
+  }, [cameraOpen]);
+
+  const openRearCamera = async () => {
     setCameraError("");
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -181,13 +197,39 @@ const PhotoDetection = ({
         video: { facingMode: { exact: "environment" } },
         audio: false,
       });
-      stream.getTracks().forEach((track) => track.stop());
-      setCameraReady(true);
-      fileInputRef.current?.click();
+      const [track] = stream.getVideoTracks();
+      const facingMode = track?.getSettings?.().facingMode;
+      if (facingMode && facingMode !== "environment") {
+        stream.getTracks().forEach((cameraTrack) => cameraTrack.stop());
+        throw new Error("The active camera is not the rear camera.");
+      }
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
     } catch (error) {
       console.error("Rear camera access error:", error);
       setCameraError("Please allow and use the back camera only. Front camera is not supported for complaint photos.");
     }
+  };
+
+  const captureRearPhoto = async () => {
+    const video = cameraVideoRef.current;
+    const canvas = cameraCanvasRef.current;
+    if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+      setCameraError("The rear camera is not ready. Please try again.");
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setCameraError("Unable to capture the photo. Please try again.");
+        return;
+      }
+      await processPhotoFile(new File([blob], `road-issue-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      stopRearCamera();
+    }, "image/jpeg", 0.92);
   };
 
   const uploadNormalPhoto = async (photoId, file, capturedLocation) => {
@@ -217,22 +259,17 @@ const PhotoDetection = ({
   };
 
   // Handle camera capture
-  const handleCameraCapture = async (e) => {
-    const files = e.target.files;
-    setCameraReady(false);
-    if (!files || files.length === 0) return;
-    const file = files[0];
+  const processPhotoFile = async (file) => {
+    if (!file) return;
 
     if (photos.length >= maxPhotos) {
       alert(`Maximum ${maxPhotos} photos allowed`);
-      e.target.value = "";
       return;
     }
 
     const validation = validateImage(file);
     if (!validation.valid) {
       alert(`Invalid image: ${validation.errors.join(", ")}`);
-      e.target.value = "";
       return;
     }
 
@@ -281,6 +318,10 @@ const PhotoDetection = ({
         [photoId]: { status: "error", message: error.message || "Photo upload failed." },
       }));
     }
+  };
+
+  const handleCameraCapture = async (e) => {
+    await processPhotoFile(e.target.files?.[0]);
     e.target.value = "";
   };
 
@@ -376,19 +417,30 @@ const PhotoDetection = ({
             accept="image/*"
             capture="environment" 
             onChange={handleCameraCapture}
-            onClick={openRearCamera}
             disabled={isProcessing || photos.length >= maxPhotos}
             className="pd-file-input"
           />
           <div className="pd-camera-content">
             <div className="pd-camera-icon"></div>
-            <p className="pd-camera-text"><strong>Tap to open rear camera</strong></p>
+            <button type="button" className="pd-camera-text" onClick={openRearCamera} disabled={isProcessing}>
+              Tap to open rear camera
+            </button>
             <p className="pd-camera-hint">Point camera at the road issue and take a clear photo</p>
           </div>
         </div>
       )}
 
       {cameraError && <div className="pd-error pd-camera-error">{cameraError}</div>}
+      {cameraOpen && (
+        <div className="pd-camera-preview">
+          <video ref={cameraVideoRef} autoPlay playsInline muted aria-label="Rear camera preview" />
+          <canvas ref={cameraCanvasRef} hidden />
+          <div>
+            <button type="button" onClick={captureRearPhoto}>Capture Photo</button>
+            <button type="button" onClick={stopRearCamera}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       {photos.length > 0 && (
         <div className="pd-photo-grid">
@@ -396,7 +448,6 @@ const PhotoDetection = ({
             <div key={photo.id} className={`pd-photo-card ${verificationStatus[photo.id]?.status || ""}`}>
               <div className="pd-photo-wrapper">
                 <img src={photo.preview} alt={photo.name} className="pd-photo-preview" />
-                <div className="pd-verification-overlay">{getVerificationBadge(photo.id)}</div>
                 <button type="button" className="pd-remove-btn" onClick={() => removePhoto(index)} title="Remove photo">✕</button>
                 {verificationStatus[photo.id]?.status === "error" && (
                   <button type="button" className="pd-retry-verify-btn" onClick={() => retryVerification(photo)}> Retry</button>
