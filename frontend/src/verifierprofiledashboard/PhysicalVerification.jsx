@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./PhysicalVerification.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
   const [selectedItem, setSelectedItem] = useState(null);
@@ -120,7 +120,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                         <span>Before</span>
                         <div>
                           {selectedItem.photos?.before
-                            ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                            ? <ComplaintImage src={selectedItem.photos.before} alt="Before repair evidence" fallbackClassName="pv-photo-fallback" />
                             : "N/A"}
                         </div>
                       </div>
@@ -128,7 +128,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                         <span>After</span>
                         <div>
                           {selectedItem.photos?.after
-                            ? <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                            ? <ComplaintImage src={selectedItem.photos.after} alt="After repair evidence" fallbackClassName="pv-photo-fallback" />
                             : "N/A"}
                         </div>
                       </div>
@@ -136,7 +136,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                         <span>Site</span>
                         <div>
                           {selectedItem.photos?.site
-                            ? <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                            ? <ComplaintImage src={selectedItem.photos.site} alt="Site inspection evidence" fallbackClassName="pv-photo-fallback" />
                             : "N/A"}
                         </div>
                       </div>

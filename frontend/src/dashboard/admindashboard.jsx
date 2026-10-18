@@ -14,7 +14,7 @@ import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import NotificationMonitoring from "../adminprofiledashboard/Notification";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
-import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
 
 /* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
@@ -61,6 +61,16 @@ const getLocationString = (loc) => {
   if (!loc) return "Location pending";
   if (typeof loc === 'object' && loc !== null) return loc.address || "Location pending";
   return String(loc);
+};
+
+const getPhotoCount = (complaint) => {
+  if (Array.isArray(complaint.photos)) return complaint.photos.length;
+  if (Array.isArray(complaint.images)) return complaint.images.length;
+  if (typeof complaint.photos === "number") return complaint.photos;
+  if (complaint.photos && typeof complaint.photos === "object") {
+    return new Set(Object.values(complaint.photos).filter(Boolean)).size;
+  }
+  return 0;
 };
 
 // Google Maps configuration
@@ -163,6 +173,7 @@ const AdminDashboard = () => {
   // ---------------- USERS (Staff & Verifiers) ----------------
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [usersLoadError, setUsersLoadError] = useState("");
 
   // ---------------- ADMINS ----------------
   const [admins, setAdmins] = useState([]);
@@ -171,6 +182,8 @@ const AdminDashboard = () => {
   // ---------------- COMPLAINTS ----------------
   const [complaints, setComplaints] = useState([]);
   const [complaintsLoading, setComplaintsLoading] = useState(true);
+  const [assignmentSavingKey, setAssignmentSavingKey] = useState("");
+  const [assignmentError, setAssignmentError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
 
@@ -271,10 +284,80 @@ const AdminDashboard = () => {
 
   const selected = complaints.find((c) => c.id === selectedId) || complaints[0] || null;
   const categories = ["All", ...Array.from(new Set(complaints.map((c) => c.category)))];
+  const adminStaffOptions = useMemo(() => users.filter((user) => user.role === "staff"), [users]);
+  const adminVerifierOptions = useMemo(() => users.filter((user) => user.role === "verifier"), [users]);
+  const getStaffAccountId = (complaint) =>
+    complaint.assignedStaffId ||
+    adminStaffOptions.find((user) => user.name === complaint.assignedStaff)?.id ||
+    "";
+  const getVerifierAccountId = (complaint) =>
+    complaint.assignedVerifierId ||
+    adminVerifierOptions.find((user) => user.name === complaint.assignedVerifier)?.id ||
+    "";
+
+  const handleComplaintUpdated = (updatedComplaint) => {
+    if (!updatedComplaint) return;
+    const normalized = normalizeId(updatedComplaint);
+    setSelectedId(normalized.id);
+    setComplaints((current) => current.map((complaint) =>
+      String(complaint.id) === String(normalized.id) ? { ...complaint, ...normalized } : complaint
+    ));
+  };
+
+  const handleManagedUserUpdated = (updatedUser) => {
+    setUsers((current) => current.map((user) =>
+      String(user.id) === String(updatedUser._id || updatedUser.id)
+        ? normalizeId(updatedUser)
+        : user
+    ));
+  };
 
   const showMessage = (type, text) => {
     setUserMessage({ type, text });
     setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
+  };
+
+  const handleInlineAssignment = async (complaint, role, accountId) => {
+    const savingKey = String(complaint.id);
+    const usersForRole = role === "staff" ? adminStaffOptions : adminVerifierOptions;
+    const selectedUser = usersForRole.find((user) => String(user.id) === String(accountId));
+    setAssignmentError("");
+    setAssignmentSavingKey(savingKey);
+    try {
+      const update = role === "staff"
+        ? {
+            assignedStaff: selectedUser?.name || "",
+            assignedStaffId: selectedUser?.id || "",
+            ...(selectedUser && ["New", "Pending"].includes(complaint.status)
+              ? { status: "Under Action" }
+              : {}),
+          }
+        : {
+            assignedVerifier: selectedUser?.name || "",
+            assignedVerifierId: selectedUser?.id || "",
+          };
+      const result = await updateDashboardComplaint(complaint.id, update);
+      handleComplaintUpdated(result.complaint);
+    } catch (error) {
+      console.error(`Failed to assign ${role}:`, error);
+      setAssignmentError(error.message || `Unable to assign ${role}. Please try again.`);
+    } finally {
+      setAssignmentSavingKey("");
+    }
+  };
+
+  const handleOpenNotificationComplaint = (notification) => {
+    const complaint = complaints.find((item) =>
+      String(item.id) === String(notification.complaintId) ||
+      item.complaintNumber === notification.complaintNumber
+    );
+    if (!complaint) {
+      showMessage("error", "The complaint linked to this notification is not available in the current complaint list yet.");
+      return;
+    }
+    setSelectedId(complaint.id);
+    setShowNotificationMonitoring(false);
+    setShowComplaintDetails(true);
   };
 
   // ---------------- FETCH USERS (Staff & Verifiers) ----------------
@@ -282,15 +365,16 @@ const AdminDashboard = () => {
     const fetchUsers = async () => {
       try {
         setUsersLoading(true);
+        setUsersLoadError("");
         const response = await fetch(`${API_BASE_URL}/users?role=staff,verifier`, {
           headers: getAuthHeaders() // ✅ ADDED
         });
         const data = await response.json();
-        if (response.ok && data.success) {
-          setUsers(data.users.map(normalizeId));
-        }
+        if (!response.ok || !data.success) throw new Error(data.message || "Failed to load staff and verifier accounts.");
+        setUsers(data.users.map(normalizeId));
       } catch (err) {
         console.error("Failed to fetch users:", err);
+        setUsersLoadError(err.message || "Failed to load staff and verifier accounts.");
       } finally {
         setUsersLoading(false);
       }
@@ -321,50 +405,67 @@ const AdminDashboard = () => {
 
   // ---------------- FETCH COMPLAINTS ----------------
   useEffect(() => {
+    let active = true;
     const fetchComplaints = async () => {
       try {
-        setComplaintsLoading(true);
         const response = await fetch(`${API_BASE_URL}/complaints`, {
           headers: getAuthHeaders() // ✅ ADDED
         });
         const data = await response.json();
         if (response.ok && data.success) {
+          if (!active) return;
           const normalized = data.complaints.map((complaint) => ({
             ...normalizeId(complaint),
             lat: complaint.lat ?? complaint.coordinates?.latitude,
             lng: complaint.lng ?? complaint.coordinates?.longitude,
           }));
           setComplaints(normalized);
-          if (normalized.length > 0) setSelectedId(normalized[0].id);
+          if (normalized.length > 0) {
+            setSelectedId((current) => (
+              normalized.some((complaint) => String(complaint.id) === String(current))
+                ? current
+                : normalized[0].id
+            ));
+          }
         }
       } catch (err) {
-        console.error("Failed to fetch complaints:", err);
+        if (active) console.error("Failed to fetch complaints:", err);
       } finally {
-        setComplaintsLoading(false);
+        if (active) setComplaintsLoading(false);
       }
     };
     fetchComplaints();
+    const refreshTimer = window.setInterval(fetchComplaints, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   // ---------------- FETCH NOTIFICATIONS ----------------
   useEffect(() => {
+    let active = true;
     const fetchNotifications = async () => {
       try {
-        setNotifLoading(true);
         const response = await fetch(`${API_BASE_URL}/notifications`, {
           headers: getAuthHeaders() // ✅ ADDED
         });
         const data = await response.json();
         if (response.ok && data.success) {
-          setNotificationFeed(data.notifications.map(normalizeId));
+          if (active) setNotificationFeed(data.notifications.map(normalizeId));
         }
       } catch (err) {
-        console.error("Failed to fetch notifications:", err);
+        if (active) console.error("Failed to fetch notifications:", err);
       } finally {
-        setNotifLoading(false);
+        if (active) setNotifLoading(false);
       }
     };
     fetchNotifications();
+    const refreshTimer = window.setInterval(fetchNotifications, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   // ---------------- FETCH COMPLAINT ANALYTICS (NEW) ----------------
@@ -748,7 +849,13 @@ const AdminDashboard = () => {
         <ComplaintVerification onBack={() => setShowComplaintVerification(false)} />
       ) : showComplaintDetails ? (
         <ComplaintDetails
-          complaint={complaints.find((complaint) => complaint.id === selectedId)}
+          key={String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "all-complaints")}
+          complaint={complaints.find((complaint) => String(complaint.id) === String(selectedId))}
+          staffOptions={adminStaffOptions}
+          verifierOptions={adminVerifierOptions}
+          assignmentsLoading={usersLoading}
+          assignmentsError={usersLoadError}
+          onComplaintUpdated={handleComplaintUpdated}
           onBack={() => setShowComplaintDetails(false)}
         />
       ) : showStaffMonitoring ? (
@@ -762,6 +869,7 @@ const AdminDashboard = () => {
           userId={selectedUserProfile?.id}
           role={selectedUserProfile?.role || "staff"}
           usersList={users} // ✅ PASS THE FULL USERS ARRAY HERE
+          onUserUpdated={handleManagedUserUpdated}
           onBack={() => {
             setShowStaffVerifierProfile(false);
             setSelectedUserProfile(null);
@@ -772,6 +880,7 @@ const AdminDashboard = () => {
         : showNotificationMonitoring ? (
           <NotificationMonitoring
             onBack={() => setShowNotificationMonitoring(false)}
+            onOpenComplaint={handleOpenNotificationComplaint}
           />
         )
 
@@ -1287,11 +1396,24 @@ const AdminDashboard = () => {
                       </select>
                     </div>
 
+                    {assignmentError && <div className="ad-assignment-error" role="alert">{assignmentError}</div>}
+
                     <div className="ad-table-wrap">
                       {complaintsLoading ? (
                         <div className="ad-loading">Loading complaints...</div>
                       ) : (
-                        <table>
+                        <table className="ad-all-complaints-table">
+                          <colgroup>
+                            <col className="ad-col-complaint" />
+                            <col className="ad-col-category" />
+                            <col className="ad-col-location" />
+                            <col className="ad-col-priority" />
+                            <col className="ad-col-status" />
+                            <col className="ad-col-assignee" />
+                            <col className="ad-col-assignee" />
+                            <col className="ad-col-photos" />
+                            <col className="ad-col-action" />
+                          </colgroup>
                           <thead>
                             <tr>
                               <th>Complaint</th>
@@ -1299,17 +1421,19 @@ const AdminDashboard = () => {
                               <th>Location</th>
                               <th>Priority</th>
                               <th>Status</th>
+                              <th>Assigned Staff</th>
+                              <th>Verifier</th>
                               <th>Photos</th>
                               <th>Action</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredComplaints.length === 0 ? (
-                              <tr><td colSpan={7} style={{ textAlign: "center", padding: "20px", color: "#888" }}>No complaints found.</td></tr>
+                              <tr><td colSpan={9} style={{ textAlign: "center", padding: "20px", color: "#888" }}>No complaints found.</td></tr>
                             ) : (
                               filteredComplaints.map((c) => (
                                 <React.Fragment key={c.id}>
-                                  <tr className={selectedId === c.id ? "ad-row-active" : ""} onClick={() => setSelectedId(c.id)}>
+                                  <tr className={String(selectedId) === String(c.id) ? "ad-row-active" : ""} onClick={() => setSelectedId(c.id)}>
                                     <td className="ad-mono">{c.complaintNumber}</td>
                                     <td>
                                       <div className="ad-cat">
@@ -1317,10 +1441,57 @@ const AdminDashboard = () => {
                                         {c.category}
                                       </div>
                                     </td>
-                                    <td>{getLocationString(c.location)}</td>
+                                    <td>
+                                      {getLocationString(c.location)}
+                                      {(c.coordinates?.latitude ?? c.lat) != null && (c.coordinates?.longitude ?? c.lng) != null && (
+                                        <a
+                                          className="ad-location-map-link"
+                                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.coordinates?.latitude ?? c.lat},${c.coordinates?.longitude ?? c.lng}`)}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(event) => event.stopPropagation()}
+                                        >
+                                          Open Map · {Number(c.coordinates?.latitude ?? c.lat).toFixed(4)}, {Number(c.coordinates?.longitude ?? c.lng).toFixed(4)}
+                                        </a>
+                                      )}
+                                    </td>
                                     <td><span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span></td>
                                     <td><span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span></td>
-                                    <td className="ad-mono">{c.photos || 0}</td>
+                                    <td onClick={(event) => event.stopPropagation()}>
+                                      <select
+                                        className="ad-assignment-select"
+                                        aria-label={`Assign staff for complaint ${c.complaintNumber}`}
+                                        value={getStaffAccountId(c)}
+                                        disabled={usersLoading || Boolean(usersLoadError) || assignmentSavingKey === String(c.id)}
+                                        onChange={(event) => handleInlineAssignment(c, "staff", event.target.value)}
+                                      >
+                                        <option value="">Unassigned</option>
+                                        {adminStaffOptions.map((user) => (
+                                          <option key={user.id} value={user.id}>
+                                            {user.name} · {user.staffId || user.email}{user.department ? ` · ${user.department}` : ""}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {assignmentSavingKey === String(c.id) && <small className="ad-assignment-saving">Saving…</small>}
+                                    </td>
+                                    <td onClick={(event) => event.stopPropagation()}>
+                                      <select
+                                        className="ad-assignment-select"
+                                        aria-label={`Assign verifier for complaint ${c.complaintNumber}`}
+                                        value={getVerifierAccountId(c)}
+                                        disabled={usersLoading || Boolean(usersLoadError) || assignmentSavingKey === String(c.id)}
+                                        onChange={(event) => handleInlineAssignment(c, "verifier", event.target.value)}
+                                      >
+                                        <option value="">Unassigned</option>
+                                        {adminVerifierOptions.map((user) => (
+                                          <option key={user.id} value={user.id}>
+                                            {user.name} · {user.verifierId || user.staffId || user.email}{user.department ? ` · ${user.department}` : ""}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {assignmentSavingKey === String(c.id) && <small className="ad-assignment-saving">Saving…</small>}
+                                    </td>
+                                    <td className="ad-mono">{getPhotoCount(c)}</td>
                                     <td onClick={(e) => e.stopPropagation()}>
                                       <button 
                                         className="ad-btn-primary small" 
@@ -1338,7 +1509,7 @@ const AdminDashboard = () => {
                                   </tr>
                                   {confirmDeleteComplaintId === c.id && (
                                     <tr className="ad-edit-row">
-                                      <td colSpan={7}>
+                                      <td colSpan={9}>
                                         <div className="ad-delete-confirm">
                                           <span>Remove complaint {c.complaintNumber}? Only eligible new records can be removed.</span>
                                           <div>

@@ -209,6 +209,32 @@ router.put("/users/:id", async (req, res) => {
 router.put("/profile/:id", async (req, res) => {
   try {
     const userId = req.params.id;
+    const profileUser = await User.findById(userId);
+
+    if (!profileUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (
+      ["staff", "verifier"].includes(profileUser.role) &&
+      [
+        profileUser.role === "staff" ? "staffId" : "verifierId",
+        "staffId",
+        "verifierId",
+        "department",
+        "password",
+      ].some((field) =>
+        Object.prototype.hasOwnProperty.call(req.body || {}, field)
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Staff/verifier ID and department are read-only. Use the password change form to update your password.",
+      });
+    }
 
     const updateData = {
       ...req.body,

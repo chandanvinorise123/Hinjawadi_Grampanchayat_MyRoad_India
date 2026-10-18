@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./verifierdashboard.css";
-import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
+import logo from "../assets/logo.jpeg";
+import { fetchDashboard, fetchDashboardUsers, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
 
 import MyProfile from "../verifierprofiledashboard/MyProfile";
 import NewComplaints from "../verifierprofiledashboard/NewComplaints";
@@ -11,6 +12,7 @@ import PhysicalVerification from "../verifierprofiledashboard/PhysicalVerificati
 import ComplaintHistory from "../verifierprofiledashboard/ComplaintHistory";
 import Notifications from "../verifierprofiledashboard/Notifications";
 import ViewLocation from "../verifierprofiledashboard/ViewLocation";
+import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
 
 const lifecycleStages = [
   "Completed Work Received",
@@ -87,6 +89,7 @@ const mapVerifierComplaint = (complaint) => {
 
   return {
     ...complaint,
+    citizenEmail: complaint.citizenEmail || complaint.citizenProfile?.email || "",
     status,
     queue,
     previousRemarks: previousRejection?.remarks || complaint.previousRemarks || "",
@@ -116,10 +119,13 @@ const VerifierDashboard = () => {
     contact: storedUser.contact || storedUser.mobile || "",
     ward: storedUser.assignedArea || "",
     staffId: storedUser.verifierId || storedUser.staffId || "",
+    department: storedUser.department || "",
     profilePhoto: storedUser.profilePhoto || "",
   });
 
   const [items, setItems] = useState([]);
+  const [staffOptions, setStaffOptions] = useState([]);
+  const [assignmentSavingId, setAssignmentSavingId] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
   const [remarksDraft, setRemarksDraft] = useState("");
@@ -139,6 +145,7 @@ const VerifierDashboard = () => {
   const [showDetailView, setShowDetailView] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [activityComplaint, setActivityComplaint] = useState(null);
+  const [activeNav, setActiveNav] = useState("dashboard");
 
   const openView = (setter) => {
     setShowProfile(false);
@@ -154,6 +161,25 @@ const VerifierDashboard = () => {
     setter(true);
   };
 
+  const selectView = (view, setter) => {
+    setActiveNav(view);
+    openView(setter);
+  };
+
+  const returnToDashboard = () => {
+    setShowProfile(false);
+    setShowNewComplaints(false);
+    setShowCompletedWork(false);
+    setShowReverification(false);
+    setShowPhysicalVerification(false);
+    setShowComplaintHistory(false);
+    setShowNotifications(false);
+    setShowViewLocation(false);
+    setShowDetailView(false);
+    setShowActivityModal(false);
+    setActiveNav("dashboard");
+  };
+
   useEffect(() => {
     if (!location.state?.openProfile) return;
     openView(setShowProfile);
@@ -167,10 +193,12 @@ const VerifierDashboard = () => {
   };
 
   useEffect(() => {
+    let active = true;
     const loadDashboard = async () => {
       try {
         const user = getStoredUser();
         const data = await fetchDashboard("verifier", getUserId(user));
+        if (!active) return;
         if (data.profile) {
           setVerifier((current) => ({
             ...current,
@@ -178,6 +206,7 @@ const VerifierDashboard = () => {
             contact: data.profile.contact || data.profile.mobile || current.contact,
             staffId: data.profile.verifierId || data.profile.staffId || current.staffId,
             role: data.profile.designation || data.profile.role || current.role,
+            department: data.profile.department || current.department,
             ward: data.profile.assignedArea || current.ward,
             joinDate: data.profile.joiningDate
               ? new Date(data.profile.joiningDate).toLocaleDateString()
@@ -201,12 +230,35 @@ const VerifierDashboard = () => {
         setNotifications(data.notifications || []);
         setLoadError("");
       } catch (error) {
-        console.error("Failed to load verifier dashboard:", error);
-        setLoadError(error.message || "Failed to load verifier dashboard.");
+        if (active) {
+          console.error("Failed to load verifier dashboard:", error);
+          setLoadError(error.message || "Failed to load verifier dashboard.");
+        }
       }
     };
     loadDashboard();
+    const refreshTimer = window.setInterval(loadDashboard, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, [showDetailView]);
+
+  useEffect(() => {
+    let active = true;
+    fetchDashboardUsers("staff")
+      .then((data) => {
+        if (active) setStaffOptions(data.users || []);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load staff options:", error);
+        setLoadError(error.message || "Failed to load staff accounts.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const previousStats = [
     { label: "Total Complaints", value: items.length, icon: "📊", tone: "navy" },
@@ -243,6 +295,10 @@ const VerifierDashboard = () => {
       complaint.queue,
     ].some((value) => String(value || "").toLowerCase().includes(query));
   });
+  const getAssignedStaffId = (complaint) =>
+    complaint.assignedStaffId ||
+    staffOptions.find((staff) => staff.name === complaint.assignedStaff)?._id ||
+    "";
 
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -284,7 +340,6 @@ const VerifierDashboard = () => {
     const data = await updateDashboardProfile(getUserId(storedUser), {
       name: updatedVerifier.name,
       designation: updatedVerifier.role,
-      department: updatedVerifier.department,
       assignedArea: updatedVerifier.ward,
       contact: updatedVerifier.contact,
       email: updatedVerifier.email,
@@ -314,6 +369,26 @@ const VerifierDashboard = () => {
       complaint.id === id ? updatedComplaint : complaint
     )));
     return updatedComplaint;
+  };
+
+  const handleAssignStaff = async (complaint, staffId) => {
+    setActionMessage("");
+    setAssignmentSavingId(complaint.id);
+    const assignedStaff = staffOptions.find((staff) => String(staff._id) === String(staffId));
+    try {
+      const result = await updateDashboardComplaint(complaint.id, {
+        assignedStaff: assignedStaff?.name || "",
+        assignedStaffId: assignedStaff?._id || "",
+        ...(assignedStaff && ["pending", "rejected"].includes(complaint.status) ? { status: "Under Action" } : {}),
+      });
+      const updatedComplaint = mapVerifierComplaint(result.complaint);
+      setItems((current) => current.map((item) => item.id === complaint.id ? updatedComplaint : item));
+    } catch (error) {
+      console.error("Failed to assign staff to complaint:", error);
+      setActionMessage(error.message || "Unable to assign staff to this complaint.");
+    } finally {
+      setAssignmentSavingId("");
+    }
   };
 
   const handleCompletedWorkVerify = (id, action, remarks, dateTime) =>
@@ -396,7 +471,7 @@ const VerifierDashboard = () => {
     return (
       <MyProfile
         initialVerifier={verifier}
-        onBack={() => setShowProfile(false)}
+        onBack={returnToDashboard}
         onUpdate={handleUpdateProfile}
       />
     );
@@ -406,7 +481,7 @@ const VerifierDashboard = () => {
     return (
       <NewComplaints
         complaints={items}
-        onBack={() => setShowNewComplaints(false)}
+        onBack={returnToDashboard}
       />
     );
   }
@@ -415,7 +490,7 @@ const VerifierDashboard = () => {
     return (
       <ComplaintHistory
         complaints={items}
-        onBack={() => setShowComplaintHistory(false)}
+        onBack={returnToDashboard}
       />
     );
   }
@@ -424,7 +499,7 @@ const VerifierDashboard = () => {
     return (
       <PhysicalVerification
         complaints={items}
-        onBack={() => setShowPhysicalVerification(false)}
+        onBack={returnToDashboard}
         onSubmitVerification={handlePhysicalVerificationSubmit}
       />
     );
@@ -434,7 +509,7 @@ const VerifierDashboard = () => {
     return (
       <CompletedWork
         complaints={items}
-        onBack={() => setShowCompletedWork(false)}
+        onBack={returnToDashboard}
         onVerify={handleCompletedWorkVerify}
       />
     );
@@ -444,7 +519,7 @@ const VerifierDashboard = () => {
     return (
       <Reverification
         complaints={items}
-        onBack={() => setShowReverification(false)}
+        onBack={returnToDashboard}
         onReverify={handleReverifyAction}
       />
     );
@@ -454,7 +529,7 @@ const VerifierDashboard = () => {
     return (
       <Notifications
         notifications={notifications}
-        onBack={() => setShowNotifications(false)}
+        onBack={returnToDashboard}
         onMarkAsRead={handleMarkNotifAsRead}
         onMarkAllRead={handleMarkAllNotifsRead}
       />
@@ -465,7 +540,7 @@ const VerifierDashboard = () => {
     return (
       <ViewLocation
         complaints={items}
-        onBack={() => setShowViewLocation(false)}
+        onBack={returnToDashboard}
       />
     );
   }
@@ -476,7 +551,7 @@ const VerifierDashboard = () => {
       <div className="vd-shell">
         <aside className="vd-sidebar">
           <div className="vd-sb-brand">
-            <div className="vd-sb-logo">MI</div>
+            <div className="vd-sb-logo"><img src={logo} alt="MyRoad India logo" /></div>
             <div>
               <b>MyRoad India</b>
               <span>Verifier Portal</span>
@@ -485,10 +560,10 @@ const VerifierDashboard = () => {
 
           <div className="vd-sb-label">Overview</div>
           <nav className="vd-sb-nav">
-            <button type="button" className="vd-sb-link" onClick={() => setShowDetailView(false)}>
+            <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { setActiveNav("dashboard"); setShowDetailView(false); }}>
               📊 Dashboard
             </button>
-            <button type="button" className="vd-sb-link" onClick={() => openView(setShowProfile)}>
+            <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
               👤 My Profile
             </button>
           </nav>
@@ -615,7 +690,7 @@ const VerifierDashboard = () => {
                   </div>
                   <div className="vd-detail-table-cell">
                     <span className="vd-detail-label">Submitted</span>
-                    <span className="vd-detail-value">{selected.date ? new Date(selected.date).toLocaleString() : "Not recorded"}</span>
+                    <span className="vd-detail-value">{selected.createdAt ? new Date(selected.createdAt).toLocaleString() : selected.date ? new Date(selected.date).toLocaleString() : "Not recorded"}</span>
                   </div>
                   <div className="vd-detail-table-cell">
                     <span className="vd-detail-label">Last Updated</span>
@@ -629,11 +704,11 @@ const VerifierDashboard = () => {
                 <div className="vd-detail-table-row">
                   <div className="vd-detail-table-cell">
                     <span className="vd-detail-label">Inspection Date</span>
-                    <span className="vd-detail-value">{selected.inspectionDate || "Not recorded"}</span>
+                    <span className="vd-detail-value">{selected.inspection?.inspectionDate || selected.inspectionDate || "Not recorded"}</span>
                   </div>
                   <div className="vd-detail-table-cell">
                     <span className="vd-detail-label">Work Completion Date</span>
-                    <span className="vd-detail-value">{selected.completionDate || "Not recorded"}</span>
+                    <span className="vd-detail-value">{selected.inspection?.completionDate || selected.completionDate || "Not recorded"}</span>
                   </div>
                 </div>
                 <div className="vd-detail-table-row vd-full-width">
@@ -651,7 +726,24 @@ const VerifierDashboard = () => {
                 <div className="vd-detail-table-row vd-full-width">
                   <div className="vd-detail-table-cell">
                     <span className="vd-detail-label">Action Taken by Staff</span>
-                    <span className="vd-detail-value vd-description">{selected.actionTaken || "No work action recorded."}</span>
+                    <span className="vd-detail-value vd-description">{selected.inspection?.actionTaken || selected.actionTaken || "No work action recorded."}</span>
+                  </div>
+                </div>
+                <div className="vd-detail-table-row vd-full-width">
+                  <div className="vd-detail-table-cell">
+                    <span className="vd-detail-label">Complaint GPS Coordinates</span>
+                    {selected.coordinates?.latitude != null && selected.coordinates?.longitude != null ? (
+                      <a
+                        className="vd-detail-value"
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selected.coordinates.latitude},${selected.coordinates.longitude}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {selected.coordinates.latitude}, {selected.coordinates.longitude} · Open map
+                      </a>
+                    ) : (
+                      <span className="vd-detail-value">Coordinates not available</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -675,7 +767,7 @@ const VerifierDashboard = () => {
                     <tr>
                       <td>
                         {selected.photos.before ? (
-                          <img src={toMediaUrl(selected.photos.before)} alt="Before repair" className="vd-photo-table-img" />
+                          <ComplaintImage src={selected.photos.before} alt="Before repair" className="vd-photo-table-img" fallbackClassName="vd-photo-placeholder" />
                         ) : (
                           <div className="vd-photo-placeholder">
                             <span>📷</span>
@@ -685,7 +777,7 @@ const VerifierDashboard = () => {
                       </td>
                       <td>
                         {selected.photos.site ? (
-                          <img src={toMediaUrl(selected.photos.site)} alt="Site photo" className="vd-photo-table-img" />
+                          <ComplaintImage src={selected.photos.site} alt="Site photo" className="vd-photo-table-img" fallbackClassName="vd-photo-placeholder" />
                         ) : (
                           <div className="vd-photo-placeholder">
                             <span>📷</span>
@@ -695,7 +787,7 @@ const VerifierDashboard = () => {
                       </td>
                       <td>
                         {selected.photos.after ? (
-                          <img src={toMediaUrl(selected.photos.after)} alt="After repair" className="vd-photo-table-img" />
+                          <ComplaintImage src={selected.photos.after} alt="After repair" className="vd-photo-table-img" fallbackClassName="vd-photo-placeholder" />
                         ) : (
                           <div className="vd-photo-placeholder">
                             <span></span>
@@ -809,7 +901,7 @@ const VerifierDashboard = () => {
       {/* ============ SIDEBAR ============ */}
       <aside className="vd-sidebar">
         <div className="vd-sb-brand">
-          <div className="vd-sb-logo">MI</div>
+          <div className="vd-sb-logo"><img src={logo} alt="MyRoad India logo" /></div>
           <div>
             <b>MyRoad India</b>
             <span>Verifier Portal</span>
@@ -818,25 +910,25 @@ const VerifierDashboard = () => {
 
         <div className="vd-sb-label">Overview</div>
         <nav className="vd-sb-nav">
-          <button type="button" className="vd-sb-link active" onClick={() => scrollTo("vd-top")}>
+          <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { setActiveNav("dashboard"); scrollTo("vd-top"); }}>
             📊 Dashboard
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowProfile)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
             👤 My Profile
           </button>
         </nav>
 
         <div className="vd-sb-label">Verification Queues</div>
         <nav className="vd-sb-nav">
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowNewComplaints)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new", setShowNewComplaints)}>
             🆕 New Complaints
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowCompletedWork)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "completed" ? "active" : ""}`} onClick={() => selectView("completed", setShowCompletedWork)}>
             🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowReverification)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "reverification" ? "active" : ""}`} onClick={() => selectView("reverification", setShowReverification)}>
             ️ Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
@@ -844,17 +936,17 @@ const VerifierDashboard = () => {
 
         <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowPhysicalVerification)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "physical" ? "active" : ""}`} onClick={() => selectView("physical", setShowPhysicalVerification)}>
             🔍 Physical Verification
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowComplaintHistory)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "history" ? "active" : ""}`} onClick={() => selectView("history", setShowComplaintHistory)}>
             📜 Complaint History
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowNotifications)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}>
             🔔 Notifications
             <span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span>
           </button>
-          <button type="button" className="vd-sb-link" onClick={() => openView(setShowViewLocation)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location", setShowViewLocation)}>
             🗺️ View Location
           </button>
         </nav>
@@ -955,10 +1047,10 @@ const VerifierDashboard = () => {
             ))}
           </div>
 
-          {/* ✅ FULL-WIDTH PENDING VERIFICATIONS TABLE WITH VERIFY & ACTIVITY COLUMNS */}
+          {/* All citizen and guest complaints available for verifier review */}
           <div className="vd-panel" id="queue-panel">
             <div className="vd-panel-head">
-              <h3>Pending Verifications</h3>
+              <h3>All Complaints</h3>
               <span className="vd-panel-link">{filteredItems.length} shown / {items.length} total</span>
             </div>
 
@@ -967,18 +1059,20 @@ const VerifierDashboard = () => {
                 <thead>
                   <tr>
                     <th>Complaint</th>
+                    <th>Source</th>
                     <th>Category</th>
-                    <th>Location</th>
+                    <th>Location / GPS</th>
                     <th>Queue</th>
                     <th>Status</th>
-                    <th>Verify</th>
+                    <th>Assigned Staff</th>
+                    <th>Details / Verify</th>
                     <th>Activity</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
+                      <td colSpan="9" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
                         No complaints found.
                       </td>
                     </tr>
@@ -990,18 +1084,49 @@ const VerifierDashboard = () => {
                         onClick={() => setSelectedId(c.id)}
                       >
                         <td className="vd-mono">{c.complaintNumber}</td>
+                        <td>{c.citizenId ? "Registered citizen" : "Guest"}</td>
                         <td>
                           <div className="vd-cat">
                             <span className="vd-cat-dot" style={{ background: colorForCategory(c.category) }}></span>
                             {c.issue}
                           </div>
                         </td>
-                        <td>{c.location || "Location pending"}</td>
+                        <td>
+                          <div>{c.location || "Location pending"}</div>
+                          {c.coordinates?.latitude != null && c.coordinates?.longitude != null && (
+                            <a
+                              className="vd-table-map-link"
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.coordinates.latitude},${c.coordinates.longitude}`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {c.coordinates.latitude}, {c.coordinates.longitude} · Map
+                            </a>
+                          )}
+                        </td>
                         <td>
                           <span className={`vd-badge vd-badge-${queueTone[c.queue]}`}>{c.queue}</span>
                         </td>
                         <td>
                           <span className={`vd-badge vd-badge-${statusTone[c.status]}`}>{statusLabel[c.status]}</span>
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <select
+                            className="vd-assignment-select"
+                            aria-label={`Assign staff for complaint ${c.complaintNumber}`}
+                            value={getAssignedStaffId(c)}
+                            disabled={assignmentSavingId === c.id || staffOptions.length === 0}
+                            onChange={(event) => handleAssignStaff(c, event.target.value)}
+                          >
+                            <option value="">Unassigned</option>
+                            {staffOptions.map((staff) => (
+                              <option key={staff._id} value={staff._id}>
+                                {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
+                              </option>
+                            ))}
+                          </select>
+                          {assignmentSavingId === c.id && <small> Saving…</small>}
                         </td>
                         {/* ✅ VERIFY COLUMN */}
                         <td onClick={(e) => e.stopPropagation()}>
@@ -1011,7 +1136,7 @@ const VerifierDashboard = () => {
                             onClick={() => handleQuickVerify(c)}
                             title="Open verification for this complaint"
                           >
-                            ✅ Verify
+                            📄 Details / Verify
                           </button>
                         </td>
                         {/* ✅ ACTIVITY COLUMN */}

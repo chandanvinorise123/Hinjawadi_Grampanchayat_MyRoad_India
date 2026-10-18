@@ -109,7 +109,7 @@ const bannerImage =
         if (userRole === "citizen") {
           navigate("/", { replace: true });
         } else if (userRole === "admin") {
-          navigate("/admindashboard", { replace: true });
+          window.location.replace("/admindashboard");
         } else if (userRole === "staff") {
           navigate("/staffdashboard", { replace: true });
         } else if (userRole === "verifier") {

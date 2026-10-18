@@ -245,6 +245,16 @@
   box-shadow: 0 10px 30px -10px rgba(11, 36, 71, 0.08);
 }
 
+.mp-password-card {
+  margin-top: 24px;
+}
+
+.mp-password-help {
+  margin: -8px 0 24px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
 .mp-card-header {
   margin-bottom: 28px;
   padding-bottom: 20px;
@@ -359,6 +369,11 @@
   border-color: var(--ink-soft);
   color: var(--ink);
   background: var(--surface);
+}
+
+.mp-btn-primary:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 /* ============================================

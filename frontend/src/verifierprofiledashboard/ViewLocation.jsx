@@ -1,18 +1,9 @@
 import React, { useState, useMemo } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./ViewLocation.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
-
-const GOOGLE_MAPS_LIBRARIES = ["places"];
-const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+import ComplaintImage from "./ComplaintImage";
 
 const ViewLocation = ({ complaints, onBack }) => {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -38,6 +29,12 @@ const ViewLocation = ({ complaints, onBack }) => {
   
   const externalMapUrl = coords
     ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+    : "";
+  const mapBounds = coords
+    ? `${coords.lng - 0.01},${coords.lat - 0.006},${coords.lng + 0.01},${coords.lat + 0.006}`
+    : "";
+  const embeddedMapUrl = coords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapBounds}&layer=mapnik&marker=${coords.lat},${coords.lng}`
     : "";
 
   return (
@@ -100,11 +97,18 @@ const ViewLocation = ({ complaints, onBack }) => {
                   )}
                 </div>
                 <div className="vl-map-container">
-                  {loadError ? <div>Google Maps could not be loaded.</div> : !googleMapsApiKey ? <div>Interactive map is not configured. Use Open in Google Maps to view this location.</div> : !isLoaded ? <div>Loading map...</div> : coords ? (
-                    <GoogleMap mapContainerStyle={{ width: "100%", height: "100%" }} center={coords} zoom={15}>
-                      <Marker position={coords} title={selectedItem.complaintNumber} />
-                    </GoogleMap>
-                  ) : <div>No coordinates available for this complaint.</div>}
+                  {embeddedMapUrl ? (
+                    <iframe
+                      title={`Map location for ${selectedItem.complaintNumber}`}
+                      src={embeddedMapUrl}
+                      width="100%"
+                      height="100%"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  ) : (
+                    <div>No coordinates available for this complaint.</div>
+                  )}
                 </div>
               </div>
 
@@ -127,7 +131,7 @@ const ViewLocation = ({ complaints, onBack }) => {
                   </div>
                   <div className="vl-detail-row">
                     <span>Nearby Landmarks:</span>
-                    <b>{selectedItem.category} area, {selectedItem.location} vicinity</b>
+                    <b>{selectedItem.landmark || "Not provided"}</b>
                   </div>
                 </div>
 
@@ -168,7 +172,7 @@ const ViewLocation = ({ complaints, onBack }) => {
                     <div className="vl-evidence-item" key={label}>
                       <span>{label}</span>
                       {photo
-                        ? <img src={toMediaUrl(photo)} alt={`${label} photograph`} />
+                        ? <ComplaintImage key={`${selectedItem.id}-${label}`} src={photo} alt={`${label} photograph`} fallbackClassName="vl-evidence-image-fallback" />
                         : <p>Not available</p>}
                     </div>
                   ))}

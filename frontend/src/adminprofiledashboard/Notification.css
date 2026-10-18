@@ -152,6 +152,19 @@
   color: #475569;
 }
 
+.nm-complaint-link {
+  max-width: 190px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1e5c9a;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
 .nm-message-text {
   max-width: 300px;
   overflow: hidden;

@@ -26,6 +26,9 @@ const request = async (path, options = {}) => {
 export const fetchDashboard = (role, userId) =>
   request(`/dashboard/${role}${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`);
 
+export const fetchDashboardUsers = (role) =>
+  request(`/users?role=${encodeURIComponent(role)}`);
+
 export const updateDashboardComplaint = (id, updates) => {
   const role = String(getStoredUser()?.role || "").toLowerCase();
   const actorRole = ["admin", "staff", "verifier"].includes(role) ? role : undefined;
@@ -79,10 +82,29 @@ export const updateDashboardProfile = (id, updates) =>
     body: JSON.stringify(updates),
   });
 
+export const changeDashboardPassword = (id, currentPassword, newPassword) =>
+  request(`/auth/users/${encodeURIComponent(id)}/password`, {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
 export const toMediaUrl = (value) => {
   if (!value) return "";
-  if (/^https?:\/\//i.test(value)) return value;
-  return `${API_BASE_URL.replace(/\/api$/, "")}${value.startsWith("/") ? value : `/${value}`}`;
+  const mediaPath = String(value).trim().replace(/\\/g, "/");
+  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, "");
+  if (/^https?:\/\//i.test(mediaPath)) {
+    try {
+      const parsedUrl = new URL(mediaPath);
+      if (["localhost", "127.0.0.1", "0.0.0.0"].includes(parsedUrl.hostname)) {
+        return `${apiOrigin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+      }
+      return mediaPath;
+    } catch (error) {
+      console.error("Invalid complaint media URL:", error);
+      return mediaPath;
+    }
+  }
+  return `${apiOrigin}${mediaPath.startsWith("/") ? mediaPath : `/${mediaPath}`}`;
 };
 
 export { API_BASE_URL };

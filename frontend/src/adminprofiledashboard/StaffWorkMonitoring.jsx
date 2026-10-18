@@ -25,7 +25,7 @@ const StaffWorkMonitoring = ({ onBack }) => {
         setSelectedStaffId(users[0]?.id || "");
         setComplaints((dashboard.complaints || []).map((complaint) => ({
           ...complaint,
-          assignedTo: users.find((user) => user.name === complaint.assignedStaff)?.id || "",
+          assignedTo: complaint.assignedStaffId || users.find((user) => user.name === complaint.assignedStaff)?.id || "",
         })));
       })
       .catch((error) => console.error("Failed to load staff monitoring data:", error));
@@ -58,13 +58,17 @@ const StaffWorkMonitoring = ({ onBack }) => {
   const handleAssign = async (complaintId, staffId) => {
     const staff = staffList.find((item) => item.id === staffId);
     try {
-      await updateDashboardComplaint(complaintId, { assignedStaff: staff?.name || staffId, status: "Under Action" });
+      await updateDashboardComplaint(complaintId, {
+        assignedStaff: staff?.name || staffId,
+        assignedStaffId: staffId,
+        status: "Under Action",
+      });
     } catch (error) {
       console.error("Failed to assign complaint:", error);
       return;
     }
     setComplaints(complaints.map(c => 
-      c.id === complaintId ? { ...c, assignedTo: staffId, status: "Under Action" } : c
+      c.id === complaintId ? { ...c, assignedTo: staffId, assignedStaffId: staffId, status: "Under Action" } : c
     ));
     showMessage("success", `Complaint assigned successfully!`);
   };
@@ -72,13 +76,16 @@ const StaffWorkMonitoring = ({ onBack }) => {
   const handleReassign = async (complaintId, newStaffId) => {
     const staff = staffList.find((item) => item.id === newStaffId);
     try {
-      await updateDashboardComplaint(complaintId, { assignedStaff: staff?.name || newStaffId });
+      await updateDashboardComplaint(complaintId, {
+        assignedStaff: staff?.name || newStaffId,
+        assignedStaffId: newStaffId,
+      });
     } catch (error) {
       console.error("Failed to reassign complaint:", error);
       return;
     }
     setComplaints(complaints.map(c => 
-      c.id === complaintId ? { ...c, assignedTo: newStaffId } : c
+      c.id === complaintId ? { ...c, assignedTo: newStaffId, assignedStaffId: newStaffId } : c
     ));
     showMessage("success", `Complaint reassigned successfully!`);
   };

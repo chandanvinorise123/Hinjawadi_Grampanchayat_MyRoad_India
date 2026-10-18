@@ -180,6 +180,59 @@
   grid-column: 1 / -1;
 }
 
+.cd-coordinates {
+  margin: 0 0 12px;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.cd-coordinates a {
+  color: #1b4586;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cd-coordinates a:hover { text-decoration: underline; }
+
+.cd-assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 16px;
+}
+
+.cd-assignment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cd-assignment-field label {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cd-assignment-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+}
+
+.cd-assignment-action { grid-column: 1 / -1; }
+.cd-assignment-error { grid-column: 1 / -1; margin: 12px 0 0; color: #b91c1c; }
+
+@media (max-width: 640px) {
+  .cd-assignment-grid { grid-template-columns: 1fr; }
+  .cd-assignment-action { grid-column: auto; }
+}
+
 .cd-description {
   line-height: 1.6;
   color: #475569;

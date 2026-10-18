@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./ComplaintDetails.css";
-import { API_BASE_URL, toMediaUrl } from "../utils/dashboardApi";
+import { API_BASE_URL, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
 
 const formatDate = (complaint) =>
   complaint.date ||
@@ -27,9 +27,9 @@ const toDetailData = (complaint) => {
     ...complaint,
     date: formatDate(complaint),
     citizen: {
-      name: complaint.citizenName,
+      name: complaint.citizenName || complaint.citizenProfile?.name || "Guest",
       contact: complaint.citizenContact || complaint.citizenMobile || "",
-      email: complaint.citizenEmail || "",
+      email: complaint.citizenEmail || complaint.citizenProfile?.email || "",
     },
     photos: images,
     location: {
@@ -50,7 +50,6 @@ const toDetailData = (complaint) => {
     },
     beforeAfter: {
       before:
-        inspection.sitePhoto ||
         complaint.beforePhoto ||
         images[0] ||
         "",
@@ -64,13 +63,40 @@ const toDetailData = (complaint) => {
   };
 };
 
-const ComplaintDetails = ({ onBack }) => {
+const ComplaintDetails = ({
+  complaint: initialComplaint,
+  staffOptions = [],
+  verifierOptions = [],
+  assignmentsLoading = false,
+  assignmentsError = "",
+  onComplaintUpdated,
+  onBack,
+}) => {
   const [complaintsList, setComplaintsList] = useState([]);
-  // Always start with the list view (no complaint selected)
-  const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [selectedComplaint, setSelectedComplaint] = useState(
+    initialComplaint ? toDetailData(initialComplaint) : null
+  );
+  const [loading, setLoading] = useState(!initialComplaint);
+  const [staffSelection, setStaffSelection] = useState(null);
+  const [verifierSelection, setVerifierSelection] = useState(null);
+  const [savingAssignments, setSavingAssignments] = useState(false);
+  const [assignmentError, setAssignmentError] = useState("");
+  const selectedStaffId = staffSelection ?? (
+    selectedComplaint?.assignedStaffId ||
+    staffOptions.find((staff) => staff.name === selectedComplaint?.assignedStaff)?.id ||
+    staffOptions.find((staff) => staff.name === selectedComplaint?.assignedStaff)?._id ||
+    ""
+  );
+  const selectedVerifierId = verifierSelection ?? (
+    selectedComplaint?.assignedVerifierId ||
+    verifierOptions.find((verifier) => verifier.name === selectedComplaint?.assignedVerifier)?.id ||
+    verifierOptions.find((verifier) => verifier.name === selectedComplaint?.assignedVerifier)?._id ||
+    ""
+  );
 
   useEffect(() => {
+    if (initialComplaint) return undefined;
+
     // Fetch all complaints for the table view directly from the API
     const fetchAllComplaints = async () => {
       try {
@@ -93,14 +119,46 @@ const ComplaintDetails = ({ onBack }) => {
     };
 
     fetchAllComplaints();
-  }, []);
+    return undefined;
+  }, [initialComplaint]);
 
   const handleViewDetails = (complaint) => {
+    setStaffSelection(null);
+    setVerifierSelection(null);
     setSelectedComplaint(toDetailData(complaint));
   };
 
   const handleBackToList = () => {
     setSelectedComplaint(null);
+  };
+
+  const handleSaveAssignments = async () => {
+    if (!selectedComplaint?.id) return;
+    const staff = staffOptions.find((user) => String(user.id || user._id) === String(selectedStaffId));
+    const verifier = verifierOptions.find((user) => String(user.id || user._id) === String(selectedVerifierId));
+    setSavingAssignments(true);
+    setAssignmentError("");
+    try {
+      const result = await updateDashboardComplaint(selectedComplaint.id, {
+        assignedStaff: staff?.name || "",
+        assignedStaffId: staff ? String(staff.id || staff._id) : "",
+        assignedVerifier: verifier?.name || "",
+        assignedVerifierId: verifier ? String(verifier.id || verifier._id) : "",
+        ...(staff && ["New", "Pending"].includes(selectedComplaint.status)
+          ? { status: "Under Action" }
+          : {}),
+      });
+      const updated = toDetailData(result.complaint);
+      setSelectedComplaint(updated);
+      setStaffSelection(null);
+      setVerifierSelection(null);
+      onComplaintUpdated?.(result.complaint);
+    } catch (error) {
+      console.error("Failed to assign complaint:", error);
+      setAssignmentError(error.message || "Could not save complaint assignments.");
+    } finally {
+      setSavingAssignments(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -206,7 +264,7 @@ const ComplaintDetails = ({ onBack }) => {
       {/* Header */}
       <div className="cd-header">
         <div className="cd-header-actions">
-          <button className="cd-back-btn" onClick={handleBackToList}>← Back to List</button>
+          {!initialComplaint && <button className="cd-back-btn" onClick={handleBackToList}>← Back to List</button>}
           <button className="cd-back-btn" onClick={onBack}>← Back to Dashboard</button>
         </div>
         <div className="cd-header-info">
@@ -233,16 +291,24 @@ const ComplaintDetails = ({ onBack }) => {
               <p>{data.citizen.name}</p>
             </div>
             <div className="cd-info-item">
+              <label>Report Source</label>
+              <p>{data.citizenProfile || data.citizenId ? "Registered citizen" : "Guest submission"}</p>
+            </div>
+            <div className="cd-info-item">
               <label>Contact Number</label>
               <p>{data.citizen.contact}</p>
             </div>
             <div className="cd-info-item">
               <label>Email Address</label>
-              <p>{data.citizen.email}</p>
+              <p>{data.citizen.email || data.citizenProfile?.email || "N/A"}</p>
             </div>
             <div className="cd-info-item">
               <label>Issue Category</label>
               <p>{data.category}</p>
+            </div>
+            <div className="cd-info-item">
+              <label>Department</label>
+              <p>{data.department || "Not provided"}</p>
             </div>
             <div className="cd-info-item">
               <label>Specific Issue</label>
@@ -279,6 +345,19 @@ const ComplaintDetails = ({ onBack }) => {
         <div className="cd-card">
           <h3 className="cd-card-title">📍 Complaint Location</h3>
           <p className="cd-address">{data.location.address || "Address not provided"}</p>
+          {Number.isFinite(data.location.lat) && Number.isFinite(data.location.lng) && (
+            <p className="cd-coordinates">
+              GPS: {data.location.lat}, {data.location.lng}
+              {" · "}
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${data.location.lat},${data.location.lng}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Google Maps
+              </a>
+            </p>
+          )}
           <div className="cd-map-container">
             {Number.isFinite(data.location.lat) && Number.isFinite(data.location.lng) ? (
               <iframe
@@ -307,7 +386,7 @@ const ComplaintDetails = ({ onBack }) => {
             </div>
             <div className="cd-info-item">
               <label>Staff Contact</label>
-              <p>{data.inspection.staffContact || "N/A"}</p>
+              <p>{data.inspection.staffContact || data.assignedStaffContact || "N/A"}</p>
             </div>
             <div className="cd-info-item">
               <label>Assigned Date</label>
@@ -322,6 +401,58 @@ const ComplaintDetails = ({ onBack }) => {
               <p className="cd-description">{data.inspection.actionTaken || "No remarks yet."}</p>
             </div>
           </div>
+        </div>
+
+        <div className="cd-card cd-card-full">
+          <h3 className="cd-card-title">👥 Staff & Verifier Assignment</h3>
+          <div className="cd-assignment-grid">
+            <div className="cd-assignment-field">
+              <label htmlFor="cd-assigned-staff">Assigned Staff</label>
+              <select
+                id="cd-assigned-staff"
+                value={selectedStaffId}
+                onChange={(event) => setStaffSelection(event.target.value)}
+                disabled={savingAssignments || assignmentsLoading || Boolean(assignmentsError)}
+              >
+                <option value="">Unassigned</option>
+                {staffOptions.map((staff) => (
+                  <option key={staff.id || staff._id} value={String(staff.id || staff._id)}>
+                    {staff.name} · {staff.staffId || staff.email}
+                    {staff.department ? ` · ${staff.department}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="cd-assignment-field">
+              <label htmlFor="cd-assigned-verifier">Assigned Verifier</label>
+              <select
+                id="cd-assigned-verifier"
+                value={selectedVerifierId}
+                onChange={(event) => setVerifierSelection(event.target.value)}
+                disabled={savingAssignments || assignmentsLoading || Boolean(assignmentsError)}
+              >
+                <option value="">Unassigned</option>
+                {verifierOptions.map((verifier) => (
+                  <option key={verifier.id || verifier._id} value={String(verifier.id || verifier._id)}>
+                    {verifier.name} · {verifier.verifierId || verifier.staffId || verifier.email}
+                    {verifier.department ? ` · ${verifier.department}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="cd-assignment-action">
+              <button
+                className="cd-view-btn"
+                type="button"
+                onClick={handleSaveAssignments}
+                disabled={savingAssignments || assignmentsLoading || Boolean(assignmentsError)}
+              >
+                {assignmentsLoading ? "Loading accounts..." : savingAssignments ? "Saving..." : "Save Assignments"}
+              </button>
+            </div>
+          </div>
+          {assignmentsError && <p className="cd-assignment-error" role="alert">{assignmentsError}</p>}
+          {assignmentError && <p className="cd-assignment-error" role="alert">{assignmentError}</p>}
         </div>
 
         {/* 6. Before & After Photographs */}
@@ -367,7 +498,7 @@ const ComplaintDetails = ({ onBack }) => {
                     <span className="cd-timeline-date">{event.date || (event.updatedAt ? new Date(event.updatedAt).toLocaleDateString() : "N/A")}</span>
                     <span className={`cd-badge cd-status-${getStatusColor(event.status)}`}>{event.status}</span>
                   </div>
-                  <p className="cd-timeline-user"><strong>By:</strong> {event.user || "System"}</p>
+                  <p className="cd-timeline-user"><strong>By:</strong> {event.user || event.actor || "System"}</p>
                   <p className="cd-timeline-remark">{event.remark || event.remarks || "No remarks"}</p>
                 </div>
               </div>

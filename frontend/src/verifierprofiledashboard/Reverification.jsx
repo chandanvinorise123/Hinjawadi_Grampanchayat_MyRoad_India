@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./Reverification.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const Reverification = ({ complaints, onBack, onReverify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
@@ -116,7 +116,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                       <span className="rv-photo-label">Before Repair (Original)</span>
                       <div className="rv-photo-placeholder">
                         {selectedItem.photos?.before
-                          ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Original before-repair evidence" />
+                          ? <ComplaintImage src={selectedItem.photos.before} alt="Original before-repair evidence" fallbackClassName="rv-photo-fallback" />
                           : "No photo"}
                       </div>
                     </div>
@@ -125,7 +125,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                       <span className="rv-photo-label">Updated After Repair (Resubmitted)</span>
                       <div className="rv-photo-placeholder">
                         {selectedItem.photos?.after
-                          ? <img src={toMediaUrl(selectedItem.photos.after)} alt="Resubmitted after-repair evidence" />
+                          ? <ComplaintImage src={selectedItem.photos.after} alt="Resubmitted after-repair evidence" fallbackClassName="rv-photo-fallback" />
                           : "No photo"}
                       </div>
                     </div>
@@ -133,7 +133,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                       <div className="rv-site-photo">
                         <span className="rv-photo-label">Site Inspection Photo</span>
                         <div className="rv-photo-placeholder">
-                          <img src={toMediaUrl(selectedItem.photos.site)} alt="Resubmitted site inspection evidence" />
+                          <ComplaintImage src={selectedItem.photos.site} alt="Resubmitted site inspection evidence" fallbackClassName="rv-photo-fallback" />
                         </div>
                       </div>
                     )}

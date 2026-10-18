@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./ComplaintHistory.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const ComplaintHistory = ({ complaints = [], onBack }) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
@@ -242,19 +242,19 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                       {selectedItem.photos?.before && (
                         <div className="ch-photo-badge">
                           <span>Before Repair</span>
-                          <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                          <ComplaintImage src={selectedItem.photos.before} alt="Before repair evidence" fallbackClassName="ch-photo-fallback" />
                         </div>
                       )}
                       {selectedItem.photos?.site && (
                         <div className="ch-photo-badge">
                           <span>Site Photo</span>
-                          <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                          <ComplaintImage src={selectedItem.photos.site} alt="Site inspection evidence" fallbackClassName="ch-photo-fallback" />
                         </div>
                       )}
                       {selectedItem.photos?.after && (
                         <div className="ch-photo-badge">
                           <span>After Repair</span>
-                          <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                          <ComplaintImage src={selectedItem.photos.after} alt="After repair evidence" fallbackClassName="ch-photo-fallback" />
                         </div>
                       )}
                       {!selectedItem.photos?.before && !selectedItem.photos?.site && !selectedItem.photos?.after && (

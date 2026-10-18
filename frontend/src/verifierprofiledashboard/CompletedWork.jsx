@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./CompletedWork.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const CompletedWork = ({ complaints, onBack, onVerify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
@@ -120,7 +120,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                       <span className="cw-photo-label">Before Repair</span>
                       <div className="cw-photo-placeholder">
                         {selectedItem.photos?.before
-                          ? <img src={toMediaUrl(selectedItem.photos.before)} alt="Before repair evidence" />
+                          ? <ComplaintImage src={selectedItem.photos.before} alt="Before repair evidence" fallbackClassName="cw-photo-fallback" />
                           : "No photo available"}
                       </div>
                     </div>
@@ -129,7 +129,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                       <span className="cw-photo-label">After Repair</span>
                       <div className="cw-photo-placeholder">
                         {selectedItem.photos?.after
-                          ? <img src={toMediaUrl(selectedItem.photos.after)} alt="After repair evidence" />
+                          ? <ComplaintImage src={selectedItem.photos.after} alt="After repair evidence" fallbackClassName="cw-photo-fallback" />
                           : "No photo available"}
                       </div>
                     </div>
@@ -138,7 +138,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                     <div className="cw-site-photo">
                       <span className="cw-photo-label">Site Inspection Photo</span>
                       <div className="cw-photo-placeholder-small">
-                        <img src={toMediaUrl(selectedItem.photos.site)} alt="Site inspection evidence" />
+                        <ComplaintImage src={selectedItem.photos.site} alt="Site inspection evidence" fallbackClassName="cw-photo-fallback-small" />
                       </div>
                     </div>
                   )}

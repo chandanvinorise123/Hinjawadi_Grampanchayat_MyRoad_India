@@ -202,14 +202,17 @@ const StaffDashboard = () => {
     .toUpperCase();
 
   // ✅ Dashboard Stats
-  const assignedComplaints = complaints.filter(
-    (complaint) => [staff.name, staff.staffId].some(
+  const currentStaffId = String(staff._id || getUserId(storedUser) || "").trim().toLowerCase();
+  const assignedComplaints = complaints.filter((complaint) => {
+    const assignedStaffId = String(complaint.assignedStaffId || "").trim().toLowerCase();
+    if (assignedStaffId) return assignedStaffId === currentStaffId;
+    return [staff.name, staff.staffId, currentStaffId].some(
       (identifier) => identifier && String(complaint.assignedStaff || "").trim().toLowerCase() === String(identifier).trim().toLowerCase()
-    )
-  );
+    );
+  });
   const overviewStats = [
-    { label: "All Complaints", value: complaints.length, icon: "🗂️", tone: "navy" },
-    { label: "Assigned to Me", value: assignedComplaints.length, icon: "🆕", tone: "navy" },
+    { label: "Assigned Complaints", value: complaints.length, icon: "🗂️", tone: "navy" },
+    { label: "Active Assignments", value: assignedComplaints.filter((c) => !["Verified", "Resolved", "Closed"].includes(c.status)).length, icon: "🆕", tone: "navy" },
     { label: "Under Inspection", value: complaints.filter((c) => ["Assigned", "Under Action"].includes(c.status)).length, icon: "🔍", tone: "amber" },
     { label: "Work in Progress", value: complaints.filter((c) => c.status === "In Progress").length, icon: "️", tone: "orange" },
     { label: "Pending Verification", value: complaints.filter((c) => c.status === "Under Verification").length, icon: "⏳", tone: "amber" },
@@ -360,14 +363,21 @@ const StaffDashboard = () => {
       const data = await updateDashboardProfile(getUserId(storedUser), {
         name: updatedStaff.name,
         designation: updatedStaff.role,
-        department: updatedStaff.department,
         assignedArea: updatedStaff.ward,
         contact: updatedStaff.contact,
         email: updatedStaff.email,
       });
-      setStaff((current) => ({ ...current, ...updatedStaff, ...(data.user || {}) }));
+      setStaff((current) => ({
+        ...current,
+        ...updatedStaff,
+        ...(data.user || {}),
+        role: data.user?.designation || updatedStaff.role,
+        staffId: current.staffId,
+        department: current.department,
+      }));
     } catch (error) {
       console.error("Failed to update staff profile:", error);
+      throw error;
     }
   };
 
@@ -470,6 +480,7 @@ const StaffDashboard = () => {
         complaints={complaints}
         staffId={staff.staffId}
         staffName={staff.name}
+        staffUserId={getUserId(storedUser)}
         onBack={() => setShowAssignedComplaints(false)}
       />
     );
@@ -731,7 +742,7 @@ const StaffDashboard = () => {
           {/* FULL WIDTH: ASSIGNED WORK TABLE */}
           <div className="sd-panel" id="assigned-work" style={{ marginBottom: "24px" }}>
             <div className="sd-panel-head">
-              <h3>All Complaints</h3>
+              <h3>Assigned Complaints</h3>
               <span className="sd-panel-link">{filteredComplaints.length} total</span>
             </div>
             <div className="sd-table-wrap">
@@ -1351,8 +1362,8 @@ const StaffDashboard = () => {
             >
               <div className="sd-quick-ic navy">🗂️</div>
               <div>
-                <h5>View All Complaints</h5>
-                <p>Citizen reports, assignments, evidence & status</p>
+                <h5>View Assigned Complaints</h5>
+                <p>Your assignments, evidence & status</p>
               </div>
             </button>
             <button

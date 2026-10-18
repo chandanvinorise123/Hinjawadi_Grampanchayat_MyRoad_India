@@ -94,6 +94,7 @@ const ComplaintManagement = ({ onBack }) => {
       priority: complaint.priority || "Normal",
       status: complaint.status || "New",
       assignedStaff: complaint.assignedStaff || "",
+      assignedStaffId: complaint.assignedStaffId || "",
       assignedVerifier: complaint.assignedVerifier || "",
     });
     setShowModal(true);
@@ -107,6 +108,7 @@ const ComplaintManagement = ({ onBack }) => {
         status: selectedComplaint.status,
         priority: selectedComplaint.priority,
         assignedStaff: selectedComplaint.assignedStaff,
+        assignedStaffId: selectedComplaint.assignedStaffId,
         assignedVerifier: selectedComplaint.assignedVerifier,
       });
       setComplaints((current) => current.map(c => c.id === selectedComplaint.id ? data.complaint : c));
@@ -253,9 +255,21 @@ const ComplaintManagement = ({ onBack }) => {
 
                 <div className="cm-form-group">
                   <label>Assign / Reassign Staff</label>
-                  <select value={selectedComplaint.assignedStaff} onChange={(e) => setSelectedComplaint({...selectedComplaint, assignedStaff: e.target.value})}>
+                  <select
+                    value={selectedComplaint.assignedStaffId || staffOptions.find((staff) => staff.name === selectedComplaint.assignedStaff)?._id || ""}
+                    onChange={(e) => {
+                      const staff = staffOptions.find((item) => item._id === e.target.value);
+                      setSelectedComplaint({
+                        ...selectedComplaint,
+                        assignedStaff: staff?.name || "",
+                        assignedStaffId: staff?._id || "",
+                      });
+                    }}
+                  >
                     <option value="">-- Unassigned --</option>
-                    {staffOptions.map(s => <option key={s._id} value={s.name}>{s.name}</option>)}
+                    {staffOptions.map((staff) => (
+                      <option key={staff._id} value={staff._id}>{staff.name} · {staff.staffId || staff.email}</option>
+                    ))}
                   </select>
                 </div>
 

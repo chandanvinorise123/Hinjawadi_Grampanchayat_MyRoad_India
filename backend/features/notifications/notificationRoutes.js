@@ -1,15 +1,17 @@
 
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 const Notification = require("../../models/Notification");
 const Complaint = require("../../models/Complaint");
+const User = require("../../models/user");
 
 // Helper function to format time (e.g., "2 hours ago")
 const getTimeAgo = (date) => {
-  const seconds = Math.floor(
-    (new Date() - new Date(date)) / 1000
-  );
+  const timestamp = new Date(date).getTime();
+  if (!Number.isFinite(timestamp)) return "Time unavailable";
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
 
   if (seconds < 60) return "Just now";
 
@@ -33,20 +35,35 @@ router.get("/", async (req, res) => {
     // Later, you can pass ?role=citizen&userId=xyz
     // for other dashboards
 
-    const query = req.query.role
-      ? { role: req.query.role }
-      : { role: "admin" };
+    const query = req.query.role === "staff"
+      ? { role: "staff", userId: req.query.userId }
+      : req.query.role
+        ? { role: req.query.role }
+        : { role: "admin" };
+
+    if (req.query.role === "staff" && !mongoose.Types.ObjectId.isValid(req.query.userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid staff userId is required",
+      });
+    }
 
     const notifications = await Notification.find(query)
+      .populate("complaintId", "complaintNumber status createdAt date")
       .sort({ createdAt: -1 })
       .limit(50);
 
-    // Format to match your frontend's expected structure
     const formatted = notifications.map((n) => ({
-      id: n._id,
+      id: String(n._id),
       type: n.type,
       text: n.message,
       time: getTimeAgo(n.createdAt),
+      createdAt: n.createdAt || n.complaintId?.createdAt || null,
+      complaintId: n.complaintId?._id ? String(n.complaintId._id) : null,
+      complaintNumber: n.complaintId?.complaintNumber || "",
+      complaintStatus: n.complaintId?.status || "",
+      recipientId: n.userId ? String(n.userId) : null,
+      isRead: n.isRead,
     }));
 
     res.json({
@@ -74,6 +91,13 @@ router.post("/", async (req, res) => {
       type,
       message,
     } = req.body;
+
+    if (role === "staff" && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid staff userId is required for staff notifications",
+      });
+    }
 
     const newNotif = new Notification({
       userId,
@@ -141,11 +165,28 @@ router.put("/:id", async (req, res) => {
       updateData.status || oldComplaint.status;
 
     const oldStatus = oldComplaint.status;
+    const notificationsToCreate = [];
+
+    const assignmentChanged =
+      (updatedComplaint.assignedStaff || "") !== (oldComplaint.assignedStaff || "") ||
+      (updatedComplaint.assignedStaffId || "") !== (oldComplaint.assignedStaffId || "");
+    if (assignmentChanged && (updatedComplaint.assignedStaff || updatedComplaint.assignedStaffId)) {
+      const staff = updatedComplaint.assignedStaffId && mongoose.Types.ObjectId.isValid(updatedComplaint.assignedStaffId)
+        ? await User.findOne({ _id: updatedComplaint.assignedStaffId, role: "staff" }).select("_id")
+        : await User.findOne({ role: "staff", name: updatedComplaint.assignedStaff }).select("_id");
+      if (staff) {
+        notificationsToCreate.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: updatedComplaint._id,
+          type: "Staff Assigned",
+          message: `${updatedComplaint.complaintNumber} has been assigned to you for action.`,
+        });
+      }
+    }
 
     // Only trigger notifications if the status actually changed
     if (newStatus !== oldStatus) {
-      const notificationsToCreate = [];
-
       // A. Notify ADMIN (for all major status changes)
       if (
         [
@@ -162,20 +203,7 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // B. Notify STAFF (when assigned or work starts)
-      if (
-        newStatus === "Under Action" &&
-        updateData.assignedStaff
-      ) {
-        notificationsToCreate.push({
-          role: "staff",
-          complaintId: updatedComplaint._id,
-          type: "Complaint Assigned",
-          message: `You have been assigned to work on ${updatedComplaint.complaintNumber}.`,
-        });
-      }
-
-      // C. Notify VERIFIER (when work is done and needs checking)
+      // B. Notify VERIFIER (when work is done and needs checking)
       if (
         newStatus === "Under Verification" ||
         newStatus === "Resolved"
@@ -188,7 +216,7 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // D. Notify CITIZEN (when their specific complaint is resolved)
+      // C. Notify CITIZEN (when their specific complaint is resolved)
       if (newStatus === "Resolved") {
         notificationsToCreate.push({
           // If your Complaint model has a 'citizenId' field,
@@ -202,13 +230,10 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // Save all triggered notifications to the database
-      // at once (efficient batch insert)
-      if (notificationsToCreate.length > 0) {
-        await Notification.insertMany(
-          notificationsToCreate
-        );
-      }
+    }
+
+    if (notificationsToCreate.length > 0) {
+      await Notification.insertMany(notificationsToCreate);
     }
 
     res.json({

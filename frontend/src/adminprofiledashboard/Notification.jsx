@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./Notification.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
 
-const NotificationMonitoring = ({ onBack }) => {
+const NotificationMonitoring = ({ onBack, onOpenComplaint }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotif, setSelectedNotif] = useState(null);
@@ -10,9 +10,9 @@ const NotificationMonitoring = ({ onBack }) => {
 
   // Fetch notifications dynamically from backend
   useEffect(() => {
+    let active = true;
     const fetchNotifications = async () => {
       try {
-        setLoading(true);
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_BASE_URL}/notifications`, {
           headers: {
@@ -23,23 +23,27 @@ const NotificationMonitoring = ({ onBack }) => {
         const data = await response.json();
         
         if (response.ok && data.success) {
-          // Normalize _id to id for consistency
           const normalized = data.notifications.map((n) => ({
             ...n,
             id: n.id || n._id,
           }));
-          setNotifications(normalized);
+          if (active) setNotifications(normalized);
         } else {
-          console.error("Failed to fetch notifications:", data.message);
+          if (active) console.error("Failed to fetch notifications:", data.message);
         }
       } catch (err) {
-        console.error("Fetch error:", err);
+        if (active) console.error("Fetch error:", err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchNotifications();
+    const refreshTimer = window.setInterval(fetchNotifications, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   // Filter notifications by type
@@ -65,7 +69,9 @@ const NotificationMonitoring = ({ onBack }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("en-IN", {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short",
     });
@@ -137,7 +143,16 @@ const NotificationMonitoring = ({ onBack }) => {
                       {notif.text || notif.message}
                     </td>
                     <td className="nm-mono">
-                      {notif.complaintNumber || notif.complaintId || "N/A"}
+                      {notif.complaintNumber ? (
+                        <button
+                          className="nm-complaint-link"
+                          type="button"
+                          onClick={() => onOpenComplaint?.(notif)}
+                          title="Open complaint details"
+                        >
+                          {notif.complaintNumber}
+                        </button>
+                      ) : notif.complaintId || "N/A"}
                     </td>
                     <td>
                       <span className={`nm-status ${notif.isRead ? "read" : "unread"}`}>
@@ -207,6 +222,18 @@ const NotificationMonitoring = ({ onBack }) => {
             </div>
 
             <div className="nm-modal-footer">
+              {(selectedNotif.complaintId || selectedNotif.complaintNumber) && onOpenComplaint && (
+                <button
+                  className="nm-view-btn"
+                  type="button"
+                  onClick={() => {
+                    setSelectedNotif(null);
+                    onOpenComplaint(selectedNotif);
+                  }}
+                >
+                  View Complaint Details
+                </button>
+              )}
               <button className="nm-modal-close-btn" onClick={() => setSelectedNotif(null)}>
                 Close
               </button>

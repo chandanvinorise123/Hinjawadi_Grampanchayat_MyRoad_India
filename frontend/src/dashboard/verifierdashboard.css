@@ -46,10 +46,10 @@
 .vd-sb-brand { display: flex; align-items: center; gap: 12px; padding: 6px 8px 26px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 18px; }
 .vd-sb-logo {
   width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(155deg, var(--saffron), var(--saffron-dark));
+  background: #fff; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: 13px; color: #3a1e00;
 }
+.vd-sb-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .vd-sb-brand b { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; font-weight: 800; color: #fff; display: block; }
 .vd-sb-brand span { font-size: 9.5px; letter-spacing: 1.4px; color: #ffd9a8; font-weight: 700; text-transform: uppercase; }
 
@@ -363,6 +363,27 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+.vd-assignment-select {
+  min-width: 170px;
+  max-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.vd-table-map-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--navy-700);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.vd-table-map-link:hover { text-decoration: underline; }
 
 /* Physical Verification Table Format */
 .vd-verification-table {

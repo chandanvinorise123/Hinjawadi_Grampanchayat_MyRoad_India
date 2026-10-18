@@ -1,27 +1,70 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./MyProfile.css";
-import { uploadProfilePhoto } from "../utils/dashboardApi";
+import { changeDashboardPassword, getStoredUser, getUserId, uploadProfilePhoto } from "../utils/dashboardApi";
 
 const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(initialStaff);
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    setFormData(initialStaff);
-  }, [initialStaff]);
+  const [messageType, setMessageType] = useState("success");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = (e) => {
+  const showMessage = (text, type = "success") => {
+    setMessage(text);
+    setMessageType(type);
+    window.setTimeout(() => setMessage(""), 4000);
+  };
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    onUpdate(formData);
-    setIsEditing(false);
-    setMessage("✅ Profile updated successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    setIsSaving(true);
+    try {
+      await onUpdate(formData);
+      setIsEditing(false);
+      showMessage("Profile updated successfully.");
+    } catch (error) {
+      showMessage(error.message || "Profile update failed.", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showMessage("New passwords do not match.", "error");
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      showMessage("New password must be at least 6 characters.", "error");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changeDashboardPassword(
+        getUserId(getStoredUser()),
+        passwordData.currentPassword,
+        passwordData.newPassword
+      );
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      showMessage("Password changed successfully.");
+    } catch (error) {
+      showMessage(error.message || "Password change failed.", "error");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -30,13 +73,13 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
     try {
       const data = await uploadProfilePhoto(file, formData._id || formData.id, "staff");
       setFormData((current) => ({ ...current, profilePhoto: data.profilePhoto }));
-      onUpdate({ ...formData, profilePhoto: data.profilePhoto });
+      await onUpdate({ ...formData, profilePhoto: data.profilePhoto });
       const current = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
       window.dispatchEvent(new Event("authChange"));
-      setMessage("✅ Profile photo uploaded successfully!");
+      showMessage("Profile photo uploaded successfully.");
     } catch (error) {
-      setMessage(error.message || "Profile photo upload failed.");
+      showMessage(error.message || "Profile photo upload failed.", "error");
     } finally {
       e.target.value = "";
     }
@@ -64,7 +107,7 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
         <h2>My Profile</h2>
       </div>
 
-      {message && <div className="mp-success-message">{message}</div>}
+      {message && <div className={`mp-success-message ${messageType === "error" ? "mp-error-message" : ""}`} role={messageType === "error" ? "alert" : "status"}>{message}</div>}
 
       <div className="mp-container">
         {/* ✅ LEFT SIDE: Profile Summary Card */}
@@ -135,11 +178,7 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
                 {/* Department */}
                 <div className="mp-field">
                   <label>Department</label>
-                  {isEditing ? (
-                    <input name="department" value={formData.department} onChange={handleChange} required />
-                  ) : (
-                    <div className="mp-readonly-value">{formData.department}</div>
-                  )}
+                  <div className="mp-readonly-value">{formData.department}</div>
                 </div>
 
                 {/* Assigned Ward */}
@@ -184,11 +223,62 @@ const MyProfile = ({ initialStaff, onBack, onUpdate }) => {
                   <button type="button" className="mp-btn-outline" onClick={handleCancel}>
                     Cancel
                   </button>
-                  <button type="submit" className="mp-btn-primary">
-                    Save Changes
+                  <button type="submit" className="mp-btn-primary" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               )}
+            </form>
+          </div>
+
+          <div className="mp-content-card mp-password-card">
+            <div className="mp-card-header">
+              <h3>Change Password</h3>
+            </div>
+            <p className="mp-password-help">Use your current password to set a new password for your staff account.</p>
+            <form className="mp-form" onSubmit={handlePasswordChange}>
+              <div className="mp-form-grid">
+                <div className="mp-field">
+                  <label htmlFor="staff-current-password">Current Password</label>
+                  <input
+                    id="staff-current-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, currentPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mp-field">
+                  <label htmlFor="staff-new-password">New Password</label>
+                  <input
+                    id="staff-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mp-field">
+                  <label htmlFor="staff-confirm-password">Confirm New Password</label>
+                  <input
+                    id="staff-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mp-form-actions">
+                <button type="submit" className="mp-btn-primary" disabled={isChangingPassword}>
+                  {isChangingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
             </form>
           </div>
         </div>

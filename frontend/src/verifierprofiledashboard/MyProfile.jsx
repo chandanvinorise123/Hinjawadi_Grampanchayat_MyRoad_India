@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./MyProfile.css";
-import { toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
+import { changeDashboardPassword, getStoredUser, getUserId, toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
 
 const createFormData = (profile = {}) => ({
   ...profile,
@@ -19,10 +19,12 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [messageType, setMessageType] = useState("success");
-
-  useEffect(() => {
-    setFormData(createFormData(initialVerifier));
-  }, [initialVerifier]);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +69,38 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
     } finally {
       setIsSaving(false);
       e.target.value = "";
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessageType("error");
+      setMessage("New passwords do not match.");
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      setMessageType("error");
+      setMessage("New password must be at least 6 characters.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setMessage("");
+    try {
+      await changeDashboardPassword(
+        getUserId(getStoredUser()),
+        passwordData.currentPassword,
+        passwordData.newPassword
+      );
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setMessageType("success");
+      setMessage("Password changed successfully.");
+    } catch (error) {
+      setMessageType("error");
+      setMessage(error.message || "Password change failed.");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -163,11 +197,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                 {/* Department */}
                 <div className="mp-field">
                   <label>Department</label>
-                  {isEditing ? (
-                    <input name="department" value={formData.department} onChange={handleChange} required />
-                  ) : (
-                    <div className="mp-readonly-value">{formData.department}</div>
-                  )}
+                  <div className="mp-readonly-value">{formData.department}</div>
                 </div>
 
                 {/* Assigned Ward */}
@@ -217,6 +247,57 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   </button>
                 </div>
               )}
+            </form>
+          </div>
+
+          <div className="mp-content-card mp-password-card">
+            <div className="mp-card-header">
+              <h3>Change Password</h3>
+            </div>
+            <p className="mp-password-help">Enter your current password to set a new password for your verifier account.</p>
+            <form className="mp-form" onSubmit={handlePasswordChange}>
+              <div className="mp-form-grid">
+                <div className="mp-field">
+                  <label htmlFor="verifier-current-password">Current Password</label>
+                  <input
+                    id="verifier-current-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, currentPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mp-field">
+                  <label htmlFor="verifier-new-password">New Password</label>
+                  <input
+                    id="verifier-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="mp-field">
+                  <label htmlFor="verifier-confirm-password">Confirm New Password</label>
+                  <input
+                    id="verifier-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData((current) => ({ ...current, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mp-form-actions">
+                <button type="submit" className="mp-btn-primary" disabled={isChangingPassword}>
+                  {isChangingPassword ? "Updating..." : "Update Password"}
+                </button>
+              </div>
             </form>
           </div>
         </div>

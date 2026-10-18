@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./StaffVerifierProfile.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
 
-const StaffVerifierProfile = ({ userId, role, onBack, usersList = [] }) => {
+const StaffVerifierProfile = ({ userId, role, onBack, onUserUpdated, usersList = [] }) => {
   // ✅ NEW: Manage view mode (list vs detail). Defaults to list if usersList is provided.
   const [viewMode, setViewMode] = useState(usersList.length > 0 ? "list" : "detail");
   const [currentUserId, setCurrentUserId] = useState(userId);
@@ -57,21 +57,31 @@ const StaffVerifierProfile = ({ userId, role, onBack, usersList = [] }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/users/profile/${currentUserId}`, {
+      const updates = { ...formData };
+      delete updates.password;
+      if (viewRole === "staff") {
+        delete updates.verifierId;
+      } else {
+        delete updates.staffId;
+      }
+      const response = await fetch(`${API_BASE_URL}/users/${currentUserId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updates),
       });
       const data = await response.json();
       if (response.ok && data.success) {
+        setProfile(data.user);
+        if (usersList.length > 0) onUserUpdated?.(data.user);
         setMessage({ type: "success", text: "Profile updated successfully!" });
         setIsEditing(false);
         setTimeout(() => setMessage({ type: "", text: "" }), 3000);
       } else {
         setMessage({ type: "error", text: data.message || "Update failed" });
       }
-    } catch (err) {
-      setMessage({ type: "error", text: "Server error" });
+    } catch (error) {
+      console.error("Failed to update staff/verifier profile:", error);
+      setMessage({ type: "error", text: error.message || "Server error" });
     }
   };
 
@@ -260,7 +270,14 @@ const StaffVerifierProfile = ({ userId, role, onBack, usersList = [] }) => {
             <div className="svp-grid">
               <div className="svp-field">
                 <label>{isStaff ? "Staff ID" : "Verifier ID"}</label>
-                <input type="text" value={profileId} disabled={true} className="svp-readonly" />
+                <input
+                  type="text"
+                  name={isStaff ? "staffId" : "verifierId"}
+                  value={isStaff ? profileId : formData.verifierId}
+                  onChange={handleChange}
+                  disabled={!isEditing || isStaff}
+                  className={!isEditing || isStaff ? "svp-readonly" : ""}
+                />
               </div>
               <div className="svp-field">
                 <label>Department</label>

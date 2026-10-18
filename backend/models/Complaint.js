@@ -170,9 +170,19 @@ const complaintSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    assignedStaffId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
     // Name of the verifier assigned to check the work
     assignedVerifier: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    assignedVerifierId: {
       type: String,
       default: "",
       trim: true,

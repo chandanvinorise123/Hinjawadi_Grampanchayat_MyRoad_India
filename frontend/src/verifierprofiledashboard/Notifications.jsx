@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./Notifications.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const displayCategory = (category) => {
   const normalized = String(category || "").trim().toLowerCase();
@@ -217,7 +217,7 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                     ].map(([label, photo]) => photo && (
                       <div key={label}>
                         <span>{label}</span>
-                        <img src={toMediaUrl(photo)} alt={`${label} evidence`} />
+                        <ComplaintImage src={photo} alt={`${label} evidence`} fallbackClassName="notif-evidence-fallback" />
                       </div>
                     ))}
                   </div>

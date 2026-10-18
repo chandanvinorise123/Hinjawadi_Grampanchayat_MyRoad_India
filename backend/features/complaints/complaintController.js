@@ -419,6 +419,9 @@ const getMyComplaints = async (req, res) => {
         assignedStaff:
           complaint.assignedStaff || "",
 
+        assignedStaffId:
+          complaint.assignedStaffId || "",
+
         assignedVerifier:
           complaint.assignedVerifier || "",
 

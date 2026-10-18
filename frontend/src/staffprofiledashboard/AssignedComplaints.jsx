@@ -3,22 +3,26 @@ import "./AssignedComplaints.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 
 
-const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", onBack }) => {
+const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", staffUserId = "", onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedComplaint, setSelectedComplaint] = useState(null); // For table row selection
   const [viewingComplaint, setViewingComplaint] = useState(null); // For modal overlay
 
-  const statuses = [...new Set(complaints.map((complaint) => complaint.status).filter(Boolean))];
   const normalizedStaffName = String(staffName || "").trim().toLowerCase();
   const normalizedStaffId = String(staffId || "").trim().toLowerCase();
+  const normalizedUserId = String(staffUserId || "").trim().toLowerCase();
   const isAssignedToStaff = (complaint) => {
+    const assignedStaffId = String(complaint.assignedStaffId || "").trim().toLowerCase();
+    if (assignedStaffId) return assignedStaffId === normalizedUserId;
     const assignee = String(complaint.assignedStaff || "").trim().toLowerCase();
-    return Boolean(assignee && (assignee === normalizedStaffName || assignee === normalizedStaffId));
+    return Boolean(assignee && [normalizedStaffName, normalizedStaffId, normalizedUserId].includes(assignee));
   };
+  const staffComplaints = complaints.filter(isAssignedToStaff);
+  const statuses = [...new Set(staffComplaints.map((complaint) => complaint.status).filter(Boolean))];
 
-  const filteredComplaints = complaints.filter((c) => {
+  const filteredComplaints = staffComplaints.filter((c) => {
     const matchesSearch =
       String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.issue || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,9 +62,9 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", onB
           ← Back to Dashboard
         </button>
         <div>
-          <h2>All Complaints</h2>
+          <h2>Assigned Complaints</h2>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", margin: "4px 0 0 0" }}>
-            Showing {complaints.length} complaints from the shared complaint register
+            Showing {staffComplaints.length} complaints assigned to you
           </p>
         </div>
       </div>
@@ -110,8 +114,8 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", onB
             {filteredComplaints.length === 0 ? (
               <tr>
                 <td colSpan="7" className="ac-empty">
-                  {complaints.length === 0
-                    ? "No complaints are available."
+                  {staffComplaints.length === 0
+                    ? "No complaints are assigned to you yet."
                     : "No complaints match your search or filters."}
                 </td>
               </tr>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "./NewComplaints.css";
-import { toMediaUrl } from "../utils/dashboardApi";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
+import ComplaintImage from "./ComplaintImage";
 
 const NewComplaints = ({ complaints, onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -230,7 +230,7 @@ const NewComplaints = ({ complaints, onBack }) => {
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">Before Repair</span>
                       <div className="nc-photo-placeholder">
-                        <img src={toMediaUrl(selectedComplaint.photos.before)} alt="Before repair evidence" />
+                        <ComplaintImage key={`${selectedComplaint.id}-before`} src={selectedComplaint.photos.before} alt="Before repair evidence" fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}
@@ -241,7 +241,7 @@ const NewComplaints = ({ complaints, onBack }) => {
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">Site Photo</span>
                       <div className="nc-photo-placeholder">
-                        <img src={toMediaUrl(selectedComplaint.photos.site)} alt="Site inspection evidence" />
+                        <ComplaintImage key={`${selectedComplaint.id}-site`} src={selectedComplaint.photos.site} alt="Site inspection evidence" fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}
@@ -249,7 +249,7 @@ const NewComplaints = ({ complaints, onBack }) => {
                     <div className="nc-photo-box">
                       <span className="nc-photo-label">After Repair</span>
                       <div className="nc-photo-placeholder">
-                        <img src={toMediaUrl(selectedComplaint.photos.after)} alt="After repair evidence" />
+                        <ComplaintImage key={`${selectedComplaint.id}-after`} src={selectedComplaint.photos.after} alt="After repair evidence" fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}

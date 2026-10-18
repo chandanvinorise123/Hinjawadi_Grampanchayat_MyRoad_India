@@ -10,6 +10,18 @@ const roles = new Set(["admin", "citizen", "staff", "verifier"]);
 
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
+const findAssignedUser = async (role, identifier) => {
+  if (!identifier) return null;
+  if (isObjectId(identifier)) {
+    const userById = await User.findOne({ _id: identifier, role }).select("_id");
+    if (userById) return userById;
+  }
+  const fields = role === "staff" ? ["name", "staffId"] : ["name", "verifierId"];
+  const alternatives = fields.map((field) => ({ [field]: identifier }));
+  const matches = await User.find({ role, $or: alternatives }).select("_id").limit(2);
+  return matches.length === 1 ? matches[0] : null;
+};
+
 const toComplaintView = (complaint) => {
   const value = complaint.toObject ? complaint.toObject() : complaint;
   const inspection = value.inspection || {};
@@ -157,13 +169,21 @@ router.get("/:role", async (req, res) => {
 
     if (role === "citizen") {
       query.citizenId = userId;
-    } else if (role === "verifier") {
-      const identifiers = [profile?.name, profile?.staffId, profile?.verifierId, userId]
-        .filter(Boolean)
-        .map(String);
+    } else if (role === "staff") {
+      const identifiers = [profile?.staffId, userId].filter(Boolean).map(String);
+      if (profile?.name) {
+        const sameNameStaff = await User.find({ role: "staff", name: profile.name })
+          .select("_id")
+          .limit(2)
+          .lean();
+        if (sameNameStaff.length === 1) identifiers.push(String(profile.name));
+      }
       query.$or = [
-        { assignedVerifier: { $in: identifiers } },
-        { status: { $in: ["New", "Pending", "Submitted", "Under Review", "Under Verification", "Assigned", "Under Action", "In Progress", "Verified", "Resolved", "Rejected", "Closed"] } },
+        { assignedStaffId: userId },
+        {
+          assignedStaffId: { $in: [null, ""] },
+          assignedStaff: { $in: identifiers },
+        },
       ];
     }
 
@@ -174,14 +194,16 @@ router.get("/:role", async (req, res) => {
         .lean(),
       Notification.find({
         role,
-        ...(userId && isObjectId(userId)
+        ...(role === "staff"
+          ? { userId }
+          : userId && isObjectId(userId)
           ? role === "citizen"
             ? { $or: [{ userId }, { userId: null, complaintId: null }] }
             : { $or: [{ userId }, { userId: null }] }
           : {}),
       }).populate({
         path: "complaintId",
-        select: "complaintNumber citizenId citizenName citizenMobile category issueType description location landmark coordinates images photos inspection assignedStaff assignedVerifier department priority status statusHistory activityLog verifierRemarks previousRemarks remarks createdAt updatedAt",
+        select: "complaintNumber citizenId citizenName citizenMobile category issueType description location landmark coordinates images photos inspection assignedStaff assignedStaffId assignedVerifier assignedVerifierId department priority status statusHistory activityLog verifierRemarks previousRemarks remarks createdAt updatedAt",
         populate: { path: "citizenId", select: "name email mobile contact" },
       }).sort({ createdAt: -1 }).lean(),
     ]);
@@ -233,7 +255,7 @@ router.patch("/complaints/:id", async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid complaint ID" });
     }
 
-    const allowed = ["status", "priority", "assignedStaff", "assignedVerifier", "description", "location", "inspection"];
+    const allowed = ["status", "priority", "assignedStaff", "assignedStaffId", "assignedVerifier", "assignedVerifierId", "description", "location", "inspection"];
     const updates = Object.fromEntries(
       Object.entries(req.body || {}).filter(([key]) => allowed.includes(key))
     );
@@ -250,7 +272,7 @@ router.patch("/complaints/:id", async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid inspection data" });
     }
     if (
-      ["assignedStaff", "assignedVerifier", "description", "location"].some(
+      ["assignedStaff", "assignedStaffId", "assignedVerifier", "assignedVerifierId", "description", "location"].some(
         (field) => updates[field] !== undefined && typeof updates[field] !== "string"
       )
     ) {
@@ -273,8 +295,65 @@ router.patch("/complaints/:id", async (req, res) => {
       return res.status(404).json({ success: false, message: "Complaint not found" });
     }
 
+    if (updates.assignedStaffId) {
+      if (!isObjectId(updates.assignedStaffId)) {
+        return res.status(400).json({ success: false, message: "Invalid assigned staff ID" });
+      }
+      const assignedUser = await User.findOne({ _id: updates.assignedStaffId, role: "staff" }).select("name");
+      if (!assignedUser) {
+        return res.status(400).json({ success: false, message: "Assigned staff member was not found" });
+      }
+      if (
+        updates.assignedStaff !== undefined &&
+        String(updates.assignedStaff).trim().toLowerCase() !== String(assignedUser.name).trim().toLowerCase()
+      ) {
+        return res.status(400).json({ success: false, message: "Assigned staff name does not match the staff account" });
+      }
+      updates.assignedStaff = assignedUser.name;
+    }
+
+    let assignedVerifierUser = null;
+    if (updates.assignedVerifierId || updates.assignedVerifier) {
+      const verifierIdentifier = updates.assignedVerifierId || updates.assignedVerifier;
+      if (updates.assignedVerifierId && !isObjectId(updates.assignedVerifierId)) {
+        return res.status(400).json({ success: false, message: "Invalid assigned verifier ID" });
+      }
+      assignedVerifierUser = updates.assignedVerifierId
+        ? await User.findOne({ _id: updates.assignedVerifierId, role: "verifier" }).select("_id name")
+        : await findAssignedUser("verifier", verifierIdentifier);
+      if (!assignedVerifierUser) {
+        return res.status(400).json({ success: false, message: "Assigned verifier was not found" });
+      }
+      if (
+        updates.assignedVerifier &&
+        !isObjectId(updates.assignedVerifier) &&
+        String(updates.assignedVerifier).trim().toLowerCase() !== String(assignedVerifierUser.name).trim().toLowerCase()
+      ) {
+        return res.status(400).json({ success: false, message: "Assigned verifier name does not match the verifier account" });
+      }
+      updates.assignedVerifier = assignedVerifierUser.name;
+      updates.assignedVerifierId = String(assignedVerifierUser._id);
+    } else if (updates.assignedVerifier === "" || updates.assignedVerifierId === "") {
+      updates.assignedVerifier = "";
+      updates.assignedVerifierId = "";
+    }
+
     const previousStatus = previousComplaint.status;
     const previousAssignedStaff = previousComplaint.assignedStaff;
+    const previousAssignedStaffId = previousComplaint.assignedStaffId || "";
+    const previousAssignedVerifier = previousComplaint.assignedVerifier || "";
+    const previousAssignedVerifierId = previousComplaint.assignedVerifierId || "";
+    const staffAssignmentChanged =
+      (updates.assignedStaff !== undefined && updates.assignedStaff !== previousAssignedStaff) ||
+      (updates.assignedStaffId !== undefined && updates.assignedStaffId !== previousAssignedStaffId);
+    if (
+      staffAssignmentChanged &&
+      (updates.assignedStaffId || updates.assignedStaff) &&
+      ["New", "Pending"].includes(previousStatus) &&
+      updates.status === undefined
+    ) {
+      updates.status = "Under Action";
+    }
     const actorRole = ["admin", "staff", "verifier"].includes(req.body.actorRole)
       ? req.body.actorRole
       : null;
@@ -298,16 +377,19 @@ router.patch("/complaints/:id", async (req, res) => {
     const activityEntries = [];
     const sameValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
-    if (updates.assignedStaff !== undefined && updates.assignedStaff !== previousComplaint.assignedStaff) {
+    if (staffAssignmentChanged) {
       activityEntries.push({
         actor: actorName || "Admin",
-        message: updates.assignedStaff
-          ? `Assigned staff member ${updates.assignedStaff}`
+        message: (updates.assignedStaff ?? previousAssignedStaff)
+          ? `Assigned staff member ${updates.assignedStaff ?? previousAssignedStaff}`
           : "Removed staff assignment",
         createdAt: new Date(),
       });
     }
-    if (updates.assignedVerifier !== undefined && updates.assignedVerifier !== previousComplaint.assignedVerifier) {
+    const verifierAssignmentChanged =
+      (updates.assignedVerifier !== undefined && updates.assignedVerifier !== previousAssignedVerifier) ||
+      (updates.assignedVerifierId !== undefined && updates.assignedVerifierId !== previousAssignedVerifierId);
+    if (verifierAssignmentChanged) {
       activityEntries.push({
         actor: actorName || "Admin",
         message: updates.assignedVerifier
@@ -357,42 +439,45 @@ router.patch("/complaints/:id", async (req, res) => {
     const complaintLabel = complaint.complaintNumber || String(complaint._id);
 
     const notifications = [];
-    if (updates.assignedStaff && updates.assignedStaff !== previousAssignedStaff) {
-      const staff = await User.findOne({ role: "staff", name: updates.assignedStaff }).select("_id");
-      notifications.push({
-        role: "staff",
-        userId: staff?._id || null,
-        complaintId: complaint._id,
-        type: "Staff Assigned",
-        message: `${complaintLabel} has been assigned to you for action.`,
-      });
+    if (staffAssignmentChanged && (updates.assignedStaffId || updates.assignedStaff)) {
+      const staff = await findAssignedUser("staff", updates.assignedStaffId || updates.assignedStaff);
+      if (staff) {
+        notifications.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: complaint._id,
+          type: "Staff Assigned",
+          message: `${complaintLabel} has been assigned to you for action.`,
+        });
+      }
     }
-    if (
-      updates.assignedVerifier &&
-      updates.assignedVerifier !== previousComplaint.assignedVerifier
-    ) {
-      const verifier = await User.findOne({ role: "verifier", name: updates.assignedVerifier }).select("_id");
-      notifications.push({
-        role: "verifier",
-        userId: verifier?._id || null,
-        complaintId: complaint._id,
-        type: "Verifier Assigned",
-        message: `${complaintLabel} has been assigned to you for verification.`,
-      });
+    if (verifierAssignmentChanged && (updates.assignedVerifierId || updates.assignedVerifier)) {
+      const verifier = assignedVerifierUser || await findAssignedUser("verifier", updates.assignedVerifierId || updates.assignedVerifier);
+      if (verifier) {
+        notifications.push({
+          role: "verifier",
+          userId: verifier._id,
+          complaintId: complaint._id,
+          type: "Verifier Assigned",
+          message: `${complaintLabel} has been assigned to you for verification.`,
+        });
+      }
     }
     if (
       updates.priority !== undefined &&
       updates.priority !== previousComplaint.priority &&
-      complaint.assignedStaff
+      (complaint.assignedStaff || complaint.assignedStaffId)
     ) {
-      const staff = await User.findOne({ role: "staff", name: complaint.assignedStaff }).select("_id");
-      notifications.push({
-        role: "staff",
-        userId: staff?._id || null,
-        complaintId: complaint._id,
-        type: "Priority Updated",
-        message: `${complaintLabel} priority was changed to ${updates.priority}.`,
-      });
+      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
+      if (staff) {
+        notifications.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: complaint._id,
+          type: "Priority Updated",
+          message: `${complaintLabel} priority was changed to ${updates.priority}.`,
+        });
+      }
     }
     if (updates.status === "Under Verification" && updates.status !== previousStatus) {
       notifications.push(
@@ -410,39 +495,45 @@ router.patch("/complaints/:id", async (req, res) => {
         }
       );
     }
-    if (updates.status === "Rejected" && updates.status !== previousStatus && complaint.assignedStaff) {
-      const staff = await User.findOne({ role: "staff", name: complaint.assignedStaff }).select("_id");
-      notifications.push({
-        role: "staff",
-        userId: staff?._id || null,
-        complaintId: complaint._id,
-        type: "Verification Rejected",
-        message: `${complaintLabel} was rejected during verification and requires further action.`,
-      });
+    if (updates.status === "Rejected" && updates.status !== previousStatus && (complaint.assignedStaff || complaint.assignedStaffId)) {
+      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
+      if (staff) {
+        notifications.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: complaint._id,
+          type: "Verification Rejected",
+          message: `${complaintLabel} was rejected during verification and requires further action.`,
+        });
+      }
     }
-    if (updates.status === "Verified" && updates.status !== previousStatus && complaint.assignedStaff) {
-      const staff = await User.findOne({ role: "staff", name: complaint.assignedStaff }).select("_id");
-      notifications.push({
-        role: "staff",
-        userId: staff?._id || null,
-        complaintId: complaint._id,
-        type: "Verification Approved",
-        message: `${complaintLabel} passed verifier review.`,
-      });
+    if (updates.status === "Verified" && updates.status !== previousStatus && (complaint.assignedStaff || complaint.assignedStaffId)) {
+      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
+      if (staff) {
+        notifications.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: complaint._id,
+          type: "Verification Approved",
+          message: `${complaintLabel} passed verifier review.`,
+        });
+      }
     }
     if (
       ["Resolved", "Closed"].includes(updates.status) &&
       updates.status !== previousStatus &&
-      complaint.assignedStaff
+      (complaint.assignedStaff || complaint.assignedStaffId)
     ) {
-      const staff = await User.findOne({ role: "staff", name: complaint.assignedStaff }).select("_id");
-      notifications.push({
-        role: "staff",
-        userId: staff?._id || null,
-        complaintId: complaint._id,
-        type: "Complaint Resolved",
-        message: `${complaintLabel} was marked ${updates.status} after verification.`,
-      });
+      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
+      if (staff) {
+        notifications.push({
+          role: "staff",
+          userId: staff._id,
+          complaintId: complaint._id,
+          type: "Complaint Resolved",
+          message: `${complaintLabel} was marked ${updates.status} after verification.`,
+        });
+      }
     }
     const citizenStatusMessages = {
       "Under Action": "Work has been assigned and is in progress.",
