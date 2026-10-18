@@ -588,3 +588,25 @@
     padding: 12px;
   }
 }
+
+/* ==========================================
+   Mobile Responsive: Hide Photo Upload 
+   ========================================== */
+@media screen and (max-width: 768px) {
+  
+  /* 1. Hide the "Upload or Capture Photo" label */
+  label[for="photoUpload"] {
+    display: none !important;
+  }
+
+  /* 2. Hide the file input button itself */
+  #photoUpload {
+    display: none !important;
+  }
+
+  /* 3. Hide the photo preview container (the div immediately following the input) */
+  #photoUpload + div {
+    display: none !important;
+  }
+  
+}
