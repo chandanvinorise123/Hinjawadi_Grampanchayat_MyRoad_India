@@ -22,6 +22,7 @@ import Signup from "./pages/signup";
 import ReportIssue from "./pages/report";
 import Blog from "./pages/blog";
 import Dashboard from "./pages/dashboard"; // Main gateway dashboard
+import GuestComplaintDetails from "./pages/GuestComplaintDetails";
 
 // ================================
 // ROLE-SPECIFIC DASHBOARDS
@@ -50,6 +51,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/reportissue" element={<ReportIssue />} />
+        <Route path="/guest-details" element={<GuestComplaintDetails />} />
         
         {/* Main Dashboard Gateway Page */}
         <Route path="/dashboard" element={<Dashboard />} />

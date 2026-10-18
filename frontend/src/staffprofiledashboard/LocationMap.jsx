@@ -1,11 +1,18 @@
 import React, { useState, useMemo } from 'react';
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import './LocationMap.css';
 import StaffComplaintDetails from "./StaffComplaintDetails";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 const LocationMap = ({ complaints, ward = "", onBack }) => {
     const [selectedLocationData, setSelectedLocationData] = useState(null);
     const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
     const [filterCategory, setFilterCategory] = useState('All');
+    const { isLoaded, loadError } = useJsApiLoader({
+        id: "google-map-script",
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+        libraries: ["places"],
+    });
 
     // 1. Process Data: Group complaints by Location
     const locationData = useMemo(() => {
@@ -51,17 +58,41 @@ const LocationMap = ({ complaints, ward = "", onBack }) => {
 
     const validCoordinates = (complaint) => {
         const { latitude, longitude } = complaint.coordinates || {};
-        return latitude !== null && latitude !== undefined && latitude !== "" && longitude !== null && longitude !== undefined && longitude !== ""
-            && Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude));
+        return latitude !== null &&
+            latitude !== undefined &&
+            latitude !== "" &&
+            longitude !== null &&
+            longitude !== undefined &&
+            longitude !== "" &&
+            Number.isFinite(Number(latitude)) &&
+            Number.isFinite(Number(longitude)) &&
+            Number(latitude) >= -90 &&
+            Number(latitude) <= 90 &&
+            Number(longitude) >= -180 &&
+            Number(longitude) <= 180;
     };
     const mapComplaint = selectedMapComplaint || complaints.find(validCoordinates);
-    const mapUrl = mapComplaint && validCoordinates(mapComplaint)
-        ? `https://www.openstreetmap.org/export/embed.html?bbox=${Number(mapComplaint.coordinates.longitude) - 0.02}%2C${Number(mapComplaint.coordinates.latitude) - 0.02}%2C${Number(mapComplaint.coordinates.longitude) + 0.02}%2C${Number(mapComplaint.coordinates.latitude) + 0.02}&layer=mapnik&marker=${mapComplaint.coordinates.latitude}%2C${mapComplaint.coordinates.longitude}`
-        : "";
+    const mapCenter = mapComplaint && validCoordinates(mapComplaint)
+        ? {
+            lat: Number(mapComplaint.coordinates.latitude),
+            lng: Number(mapComplaint.coordinates.longitude),
+        }
+        : null;
 
-    const handleLocationClick = (locData) => {
+    const handleLocationClick = (locData, complaint = null) => {
         setSelectedLocationData(locData);
-        setSelectedMapComplaint(locData.complaints.find(validCoordinates) || {});
+        setSelectedMapComplaint(
+            complaint && validCoordinates(complaint)
+                ? complaint
+                : locData.complaints.find(validCoordinates) || null
+        );
+    };
+
+    const handleMarkerClick = (complaint) => {
+        const matchingLocation = locationData.find((location) =>
+            location.complaints.some((item) => item.id === complaint.id)
+        );
+        if (matchingLocation) handleLocationClick(matchingLocation, complaint);
     };
 
     const closeModal = () => {
@@ -149,22 +180,41 @@ const LocationMap = ({ complaints, ward = "", onBack }) => {
                             <span className="lm-map-subtitle">{ward}</span>
                         </div>
                         <div className="lm-map-container">
-                            {/* OpenStreetMap Embed */}
-                            <iframe 
-                                width="100%" 
-                                height="100%" 
-                                frameBorder="0" 
-                                scrolling="no" 
-                                marginHeight="0" 
-                                marginWidth="0" 
-                                src={mapUrl || undefined}
-                                title="Live Location Map"
-                            ></iframe>
-                            {mapUrl && <div className="lm-map-overlay-info">
+                            {loadError ? (
+                                <div className="lm-map-no-coordinates">Google Maps could not be loaded. Check the map API key and network connection.</div>
+                            ) : !isLoaded ? (
+                                <div className="lm-map-no-coordinates">Loading map...</div>
+                            ) : !mapCenter ? (
+                                <div className="lm-map-no-coordinates">No GPS coordinates are available for this complaint location.</div>
+                            ) : (
+                                <GoogleMap
+                                    mapContainerStyle={{ width: "100%", height: "100%" }}
+                                    center={mapCenter}
+                                    zoom={15}
+                                    options={{
+                                        streetViewControl: false,
+                                        mapTypeControl: false,
+                                        fullscreenControl: true,
+                                    }}
+                                >
+                                    {complaints.filter(validCoordinates).map((complaint) => (
+                                        <Marker
+                                            key={complaint.id}
+                                            position={{
+                                                lat: Number(complaint.coordinates.latitude),
+                                                lng: Number(complaint.coordinates.longitude),
+                                            }}
+                                            icon={getComplaintMapMarkerIcon(complaint)}
+                                            title={`${complaint.complaintNumber || "Complaint"} — ${complaint.location || "Location not provided"}`}
+                                            onClick={() => handleMarkerClick(complaint)}
+                                        />
+                                    ))}
+                                </GoogleMap>
+                            )}
+                            {mapCenter && <div className="lm-map-overlay-info">
                                 <p>📍 {mapComplaint.complaintNumber || "Complaint location"}</p>
                                 <small>{mapComplaint.location || "Selected complaint coordinates"}</small>
                             </div>}
-                            {!mapUrl && <div className="lm-map-no-coordinates">No GPS coordinates are available for this complaint location.</div>}
                         </div>
                     </div>
                 </div>

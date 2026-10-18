@@ -1,5 +1,6 @@
 import React from "react";
 import { toMediaUrl } from "../utils/dashboardApi";
+import ComplaintLocationMap from "../components/maps/ComplaintLocationMap";
 import "./StaffComplaintDetails.css";
 
 const formatDate = (value) => {
@@ -23,6 +24,9 @@ const StaffComplaintDetails = ({ complaint, showMap = true }) => {
   const mapQuery = hasCoordinates
     ? `${coordinates.latitude},${coordinates.longitude}`
     : complaint.location;
+  const mapPosition = hasCoordinates
+    ? { lat: Number(coordinates.latitude), lng: Number(coordinates.longitude) }
+    : null;
   const citizenPhotos = Array.isArray(complaint.citizenPhotos)
     ? complaint.citizenPhotos
     : Array.isArray(complaint.images) ? complaint.images : [];
@@ -83,13 +87,8 @@ const StaffComplaintDetails = ({ complaint, showMap = true }) => {
               {hasCoordinates ? `${coordinates.latitude}, ${coordinates.longitude} · Open map` : "Open location in map"}
             </a>
           )}
-          {showMap && hasCoordinates && (
-            <iframe
-              className="scd-map"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(coordinates.longitude) - 0.02}%2C${Number(coordinates.latitude) - 0.02}%2C${Number(coordinates.longitude) + 0.02}%2C${Number(coordinates.latitude) + 0.02}&layer=mapnik&marker=${coordinates.latitude}%2C${coordinates.longitude}`}
-              title={`Map for complaint ${complaint.complaintNumber || ""}`}
-              loading="lazy"
-            />
+          {showMap && mapPosition && (
+            <ComplaintLocationMap complaint={complaint} position={mapPosition} />
           )}
         </div>
       </div>

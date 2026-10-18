@@ -988,6 +988,31 @@
   border-radius: 14px;
 }
 
+.guest-details-btn {
+  align-self: center;
+  margin-top: 12px;
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy-900);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 180ms ease-out, background 180ms ease-out;
+}
+
+.guest-details-btn:hover {
+  border-color: var(--saffron);
+  background: #fff8ef;
+}
+
+.guest-details-btn:focus-visible {
+  outline: 3px solid rgba(255, 153, 51, 0.35);
+  outline-offset: 2px;
+}
+
 /* Right card: timeline */
 .tl-head {
   display: flex;

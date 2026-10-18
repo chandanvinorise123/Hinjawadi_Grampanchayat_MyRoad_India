@@ -13,8 +13,10 @@ import logo from '../assets/logo.jpeg';
 import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import NotificationMonitoring from "../adminprofiledashboard/Notification";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
+import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 /* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
@@ -73,6 +75,23 @@ const getPhotoCount = (complaint) => {
   return 0;
 };
 
+const hasValidMapCoordinates = (complaint) => {
+  const latitude = complaint.lat ?? complaint.coordinates?.latitude;
+  const longitude = complaint.lng ?? complaint.coordinates?.longitude;
+  return latitude !== null &&
+    latitude !== undefined &&
+    latitude !== "" &&
+    longitude !== null &&
+    longitude !== undefined &&
+    longitude !== "" &&
+    Number.isFinite(Number(latitude)) &&
+    Number.isFinite(Number(longitude)) &&
+    Number(latitude) >= -90 &&
+    Number(latitude) <= 90 &&
+    Number(longitude) >= -180 &&
+    Number(longitude) <= 180;
+};
+
 // Google Maps configuration
 const mapContainerStyle = {
   width: "100%",
@@ -89,36 +108,6 @@ const mapOptions = {
   styles: [
     { featureType: "poi", stylers: [{ visibility: "off" }] },
   ],
-};
-
-const markerIcons = {
-  Critical: {
-    path: "M12 2L2 22h20L12 2z",
-    fillColor: "#cf4438",
-    fillOpacity: 1,
-    strokeColor: "#8b0000",
-    strokeWeight: 2,
-    scale: 1.5,
-    anchor: { x: 12, y: 22 },
-  },
-  Urgent: {
-    path: "M12 2L2 22h20L12 2z",
-    fillColor: "#c1900a",
-    fillOpacity: 1,
-    strokeColor: "#8b6508",
-    strokeWeight: 2,
-    scale: 1.3,
-    anchor: { x: 12, y: 22 },
-  },
-  Normal: {
-    path: "M12 2L2 22h20L12 2z",
-    fillColor: "#1d8a5c",
-    fillOpacity: 1,
-    strokeColor: "#0d5c3a",
-    strokeWeight: 2,
-    scale: 1.1,
-    anchor: { x: 12, y: 22 },
-  },
 };
 
 const AdminDashboard = () => {
@@ -499,11 +488,18 @@ const AdminDashboard = () => {
         });
         const data = await response.json();
         if (response.ok && data.success) {
-          const normalized = data.complaints.map(normalizeId);
+          const normalized = data.complaints.map((complaint) => ({
+            ...normalizeId(complaint),
+            lat: complaint.lat ?? complaint.coordinates?.latitude ?? null,
+            lng: complaint.lng ?? complaint.coordinates?.longitude ?? null,
+          }));
           setMapComplaints(normalized);
-          const firstWithCoords = normalized.find(c => c.lat && c.lng);
+          const firstWithCoords = normalized.find(hasValidMapCoordinates);
           if (firstWithCoords) {
-            setMapCenter({ lat: firstWithCoords.lat, lng: firstWithCoords.lng });
+            setMapCenter({
+              lat: Number(firstWithCoords.lat),
+              lng: Number(firstWithCoords.lng),
+            });
           }
         }
       } catch (err) {
@@ -813,7 +809,7 @@ const AdminDashboard = () => {
   // ---------------- MAP DASHBOARD HELPERS (NEW) ----------------
   const filteredMapComplaints = useMemo(() => {
     return mapComplaints.filter((c) => {
-      if (!c.lat || !c.lng) return false;
+      if (!hasValidMapCoordinates(c)) return false;
       const matchesCategory = mapCategoryFilter === "All" || c.category === mapCategoryFilter;
       const matchesStatus = mapStatusFilter === "All" || c.status === mapStatusFilter;
       const matchesPriority = mapPriorityFilter === "All" || c.priority === mapPriorityFilter;
@@ -823,7 +819,7 @@ const AdminDashboard = () => {
 
   const handleMarkerClick = useCallback((complaint) => {
     setSelectedMapComplaint(complaint);
-    setMapCenter({ lat: complaint.lat, lng: complaint.lng });
+    setMapCenter({ lat: Number(complaint.lat), lng: Number(complaint.lng) });
   }, []);
 
   const handleMapClick = useCallback(() => {
@@ -1644,10 +1640,8 @@ const AdminDashboard = () => {
 
                     {/* Legend */}
                     <div style={{ display: "flex", gap: "16px", marginBottom: "12px", fontSize: "0.85rem", flexWrap: "wrap" }}>
-                      <span><span style={{ color: "#cf4438", fontWeight: "bold" }}>▲</span> Critical</span>
-                      <span><span style={{ color: "#c1900a", fontWeight: "bold" }}>▲</span> Urgent</span>
-                      <span><span style={{ color: "#1d8a5c", fontWeight: "bold" }}>▲</span> Normal</span>
-                      <span style={{ marginLeft: "auto", color: "#666" }}>💡 Click a marker to view details</span>
+                      <span>📍 Red pins show complaint locations</span>
+                      <span style={{ marginLeft: "auto", color: "#666" }}>💡 Click a pin to view complaint details</span>
                     </div>
 
                     {/* Google Map */}
@@ -1662,50 +1656,32 @@ const AdminDashboard = () => {
                         {filteredMapComplaints.map((complaint) => (
                           <Marker
                             key={complaint.id}
-                            position={{ lat: complaint.lat, lng: complaint.lng }}
+                            position={{ lat: Number(complaint.lat), lng: Number(complaint.lng) }}
                             onClick={() => handleMarkerClick(complaint)}
-                            icon={markerIcons[complaint.priority] || markerIcons.Normal}
+                            icon={getComplaintMapMarkerIcon(complaint)}
                             title={`${complaint.complaintNumber} - ${complaint.issue}`}
                           />
                         ))}
 
-                        {selectedMapComplaint && (
-                          <InfoWindow position={{ lat: selectedMapComplaint.lat, lng: selectedMapComplaint.lng }} onCloseClick={() => setSelectedMapComplaint(null)}>
-                            <div style={{ minWidth: "250px", maxWidth: "320px" }}>
-                              <h4 style={{ margin: "0 0 8px 0", fontSize: "1rem", color: "#1e293b" }}>{selectedMapComplaint.complaintNumber}</h4>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Issue:</strong> {selectedMapComplaint.issue}</p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Category:</strong> <span style={{ color: colorForCategory(selectedMapComplaint.category) }}>{selectedMapComplaint.category}</span></p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Status:</strong> <span className={`ad-badge ad-badge-${statusTone[selectedMapComplaint.status]}`} style={{ fontSize: "0.75rem" }}>{selectedMapComplaint.status}</span></p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Priority:</strong> <span className={`ad-badge ad-badge-${priorityTone[selectedMapComplaint.priority]}`} style={{ fontSize: "0.75rem" }}>{selectedMapComplaint.priority}</span></p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Location:</strong> {getLocationString(selectedMapComplaint.location)}</p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Citizen:</strong> {selectedMapComplaint.citizenName}</p>
-                              <p style={{ margin: "4px 0", fontSize: "0.85rem" }}><strong>Date:</strong> {selectedMapComplaint.date}</p>
-                              {selectedMapComplaint.description && (
-                                <p style={{ margin: "8px 0 4px 0", fontSize: "0.8rem", color: "#555", fontStyle: "italic" }}>"{selectedMapComplaint.description}"</p>
-                              )}
-                              {selectedMapComplaint.photos > 0 && (
-                                <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#2e6cb0" }}>{selectedMapComplaint.photos} photo(s) attached</p>
-                              )}
-                              {selectedMapComplaint.photoUrls && selectedMapComplaint.photoUrls.length > 0 && (
-                                <div style={{ margin: "8px 0", display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                                  {selectedMapComplaint.photoUrls.map((url, idx) => (
-                                    <img key={idx} src={url} alt={`Photo ${idx + 1}`} style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "4px", border: "1px solid #ddd" }} />
-                                  ))}
-                                </div>
-                              )}
-                              <div style={{ marginTop: "8px", display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                                <a href={`https://www.google.com/maps/search/?api=1&query=${selectedMapComplaint.lat},${selectedMapComplaint.lng}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.75rem", color: "#2e6cb0", textDecoration: "none" }}> Open in Google Maps</a>
-                              </div>
-                            </div>
-                          </InfoWindow>
-                        )}
+                                        {selectedMapComplaint && filteredMapComplaints.some(
+                                          (complaint) => complaint.id === selectedMapComplaint.id
+                                        ) && (
+                                          <ComplaintMapInfoWindow
+                                            complaint={selectedMapComplaint}
+                                            position={{
+                                              lat: Number(selectedMapComplaint.lat),
+                                              lng: Number(selectedMapComplaint.lng),
+                                            }}
+                                            onClose={() => setSelectedMapComplaint(null)}
+                                          />
+                                        )}
                       </GoogleMap>
                     )}
 
                     {/* Complaints without coordinates */}
-                    {mapComplaints.some(c => !c.lat || !c.lng) && (
+                    {mapComplaints.some((complaint) => !hasValidMapCoordinates(complaint)) && (
                       <div style={{ marginTop: "16px", padding: "12px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "6px" }}>
-                        <strong style={{ color: "#c2410c" }}>⚠️ {mapComplaints.filter(c => !c.lat || !c.lng).length} complaint(s) missing coordinates</strong>
+                        <strong style={{ color: "#c2410c" }}>⚠️ {mapComplaints.filter((complaint) => !hasValidMapCoordinates(complaint)).length} complaint(s) missing coordinates</strong>
                         <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#666" }}>These complaints will appear on the map once their locations are geocoded.</p>
                       </div>
                     )}

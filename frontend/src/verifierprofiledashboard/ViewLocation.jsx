@@ -1,11 +1,20 @@
 import React, { useState, useMemo } from "react";
+import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./ViewLocation.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
+import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 const ViewLocation = ({ complaints, onBack }) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showMapInfo, setShowMapInfo] = useState(false);
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: ["places"],
+  });
 
   const selectedItem = complaints.find((c) => c.id === selectedId) || complaints[0];
 
@@ -65,7 +74,10 @@ const ViewLocation = ({ complaints, onBack }) => {
                 <div
                   key={c.id}
                   className={`vl-list-item ${selectedItem?.id === c.id ? "active" : ""}`}
-                  onClick={() => setSelectedId(c.id)}
+                  onClick={() => {
+                    setSelectedId(c.id);
+                    setShowMapInfo(false);
+                  }}
                 >
                   <div className="vl-item-number">{c.complaintNumber}</div>
                   <div className="vl-item-location">📍 {c.location}</div>
@@ -98,14 +110,36 @@ const ViewLocation = ({ complaints, onBack }) => {
                 </div>
                 <div className="vl-map-container">
                   {embeddedMapUrl ? (
-                    <iframe
-                      title={`Map location for ${selectedItem.complaintNumber}`}
-                      src={embeddedMapUrl}
-                      width="100%"
-                      height="100%"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
+                    loadError ? (
+                      <div>No map could be loaded. Check the Google Maps API key and network connection.</div>
+                    ) : !isLoaded ? (
+                      <div>Loading map...</div>
+                    ) : (
+                      <GoogleMap
+                        mapContainerStyle={{ width: "100%", height: "100%" }}
+                        center={coords}
+                        zoom={16}
+                        options={{
+                          streetViewControl: false,
+                          mapTypeControl: false,
+                          fullscreenControl: true,
+                        }}
+                      >
+                        <Marker
+                          position={coords}
+                          icon={getComplaintMapMarkerIcon(selectedItem)}
+                          title={`${selectedItem.complaintNumber} — ${selectedItem.location || "Complaint location"}`}
+                          onClick={() => setShowMapInfo(true)}
+                        />
+                        {showMapInfo && (
+                          <ComplaintMapInfoWindow
+                            complaint={selectedItem}
+                            position={coords}
+                            onClose={() => setShowMapInfo(false)}
+                          />
+                        )}
+                      </GoogleMap>
+                    )
                   ) : (
                     <div>No coordinates available for this complaint.</div>
                   )}
@@ -123,11 +157,33 @@ const ViewLocation = ({ complaints, onBack }) => {
                   </div>
                   <div className="vl-detail-row">
                     <span>Latitude:</span>
-                    <b className="vl-mono">{coords ? coords.lat.toFixed(6) : "Not available"}</b>
+                    {coords ? (
+                      <a
+                        className="vl-mono"
+                        href={externalMapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {coords.lat.toFixed(6)}
+                      </a>
+                    ) : (
+                      <b className="vl-mono">Not available</b>
+                    )}
                   </div>
                   <div className="vl-detail-row">
                     <span>Longitude:</span>
-                    <b className="vl-mono">{coords ? coords.lng.toFixed(6) : "Not available"}</b>
+                    {coords ? (
+                      <a
+                        className="vl-mono"
+                        href={externalMapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {coords.lng.toFixed(6)}
+                      </a>
+                    ) : (
+                      <b className="vl-mono">Not available</b>
+                    )}
                   </div>
                   <div className="vl-detail-row">
                     <span>Nearby Landmarks:</span>

@@ -172,6 +172,23 @@ const ComplaintsDetails = ({ onBack, complaints = [] }) => {
               {/* 2. Map Section */}
               <div className="cdp-cd-section">
                 <h4>🗺️ Complaint Location</h4>
+                {Number.isFinite(Number(selectedComplaint.coordinates?.latitude)) &&
+                  Number.isFinite(Number(selectedComplaint.coordinates?.longitude)) &&
+                  selectedComplaint.coordinates?.latitude !== null &&
+                  selectedComplaint.coordinates?.latitude !== "" &&
+                  selectedComplaint.coordinates?.longitude !== null &&
+                  selectedComplaint.coordinates?.longitude !== "" && (
+                    <p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${Number(selectedComplaint.coordinates.latitude)},${Number(selectedComplaint.coordinates.longitude)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {Number(selectedComplaint.coordinates.latitude).toFixed(6)},{" "}
+                        {Number(selectedComplaint.coordinates.longitude).toFixed(6)} · Open exact location
+                      </a>
+                    </p>
+                  )}
                 <div className="cdp-cd-map-container">
                   <iframe 
                     width="100%" 

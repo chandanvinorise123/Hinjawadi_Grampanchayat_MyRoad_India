@@ -6,6 +6,7 @@ import * as turf from "@turf/turf";
 import {
   GoogleMap,
   Marker,
+  InfoWindow,
   Autocomplete,
   useJsApiLoader,
 } from "@react-google-maps/api";
@@ -13,6 +14,7 @@ import {
 import "./report.css";
 import PhotoDetection from "../components/PhotoDetection";
 import { API_BASE_URL } from "../utils/dashboardApi";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 const categories = [
   {
@@ -117,6 +119,7 @@ const ReportIssue = () => {
     lat: null,
     lng: null,
   });
+  const [showSelectedLocationInfo, setShowSelectedLocationInfo] = useState(false);
 
   const [liveLocation, setLiveLocation] = useState({
     lat: "",
@@ -316,6 +319,7 @@ const ReportIssue = () => {
     const lng = event.latLng.lng();
 
     setSelectedLocation({ lat, lng });
+    setShowSelectedLocationInfo(true);
     setErrorMessage("");
   };
 
@@ -327,6 +331,7 @@ const ReportIssue = () => {
     const lng = event.latLng.lng();
 
     setSelectedLocation({ lat, lng });
+    setShowSelectedLocationInfo(true);
     setErrorMessage("");
   };
 
@@ -351,6 +356,7 @@ const ReportIssue = () => {
     const lng = place.geometry.location.lng();
 
     setSelectedLocation({ lat, lng });
+    setShowSelectedLocationInfo(true);
     setErrorMessage("");
 
     if (map) {
@@ -395,6 +401,7 @@ const ReportIssue = () => {
           lat: latitude,
           lng: longitude,
         });
+        setShowSelectedLocationInfo(true);
 
         setLocationStatus("captured");
         setErrorMessage("");
@@ -663,6 +670,7 @@ const ReportIssue = () => {
     setMobile("");
     setLocationMode("map");
     setSelectedLocation({ lat: null, lng: null });
+    setShowSelectedLocationInfo(false);
     setLiveLocation({ lat: "", lng: "" });
     setLocationStatus("idle");
     setIssueType("");
@@ -836,9 +844,34 @@ const ReportIssue = () => {
                               selectedLocation.lng !== null && (
                                 <Marker
                                   position={selectedLocation}
+                                  icon={getComplaintMapMarkerIcon({ issue: issueType })}
                                   draggable
                                   onDragEnd={handleMarkerDragEnd}
+                                  onClick={() => setShowSelectedLocationInfo(true)}
                                 />
+                              )}
+                            {showSelectedLocationInfo &&
+                              selectedLocation.lat !== null &&
+                              selectedLocation.lng !== null && (
+                                <InfoWindow
+                                  position={selectedLocation}
+                                  onCloseClick={() => setShowSelectedLocationInfo(false)}
+                                >
+                                  <div>
+                                    <strong>Selected complaint location</strong>
+                                    <p>
+                                      {selectedLocation.lat.toFixed(6)},{" "}
+                                      {selectedLocation.lng.toFixed(6)}
+                                    </p>
+                                    <a
+                                      href={`https://www.google.com/maps/search/?api=1&query=${selectedLocation.lat},${selectedLocation.lng}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Open exact area in Google Maps
+                                    </a>
+                                  </div>
+                                </InfoWindow>
                               )}
                           </GoogleMap>
                         </div>
@@ -853,8 +886,14 @@ const ReportIssue = () => {
                           selectedLocation.lng !== null && (
                             <p className="location-status success">
                               Selected Location:{" "}
-                              {selectedLocation.lat.toFixed(6)},{" "}
-                              {selectedLocation.lng.toFixed(6)}
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${selectedLocation.lat},${selectedLocation.lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {selectedLocation.lat.toFixed(6)},{" "}
+                                {selectedLocation.lng.toFixed(6)}
+                              </a>
                             </p>
                           )}
 

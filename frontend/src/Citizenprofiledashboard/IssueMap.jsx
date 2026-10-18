@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
+import { toMediaUrl } from "../utils/dashboardApi";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 import "./IssueMap.css";
 
 const GOOGLE_MAPS_LIBRARIES = ["places"];
@@ -33,22 +35,39 @@ const IssueMap = ({ onBack, complaints = [] }) => {
   });
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const mapComplaints = complaints
-    .filter((complaint) => complaint.coordinates?.latitude !== undefined && complaint.coordinates?.longitude !== undefined)
+    .filter((complaint) => {
+      const latitude = complaint.coordinates?.latitude;
+      const longitude = complaint.coordinates?.longitude;
+      return latitude !== null &&
+        latitude !== undefined &&
+        latitude !== "" &&
+        longitude !== null &&
+        longitude !== undefined &&
+        longitude !== "" &&
+        Number.isFinite(Number(latitude)) &&
+        Number.isFinite(Number(longitude)) &&
+        Number(latitude) >= -90 &&
+        Number(latitude) <= 90 &&
+        Number(longitude) >= -180 &&
+        Number(longitude) <= 180;
+    })
     .map((complaint) => ({
       ...complaint,
-      lat: complaint.coordinates.latitude,
-      lng: complaint.coordinates.longitude,
+      lat: Number(complaint.coordinates.latitude),
+      lng: Number(complaint.coordinates.longitude),
       history: (complaint.statusHistory || []).map((entry) => ({
         time: entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "",
         action: entry.status,
         remarks: entry.remarks || "",
       })),
-      photos: complaint.photos && typeof complaint.photos === "object"
-        ? complaint.photos
-        : {
-          before: complaint.images?.[0] || "",
-          after: complaint.images?.[1] || "",
-        },
+      photos: {
+        before: complaint.photos?.before || complaint.images?.[0] || "",
+        site: complaint.photos?.site || complaint.inspection?.sitePhoto || "",
+        after:
+          complaint.photos?.after ||
+          complaint.inspection?.completionPhoto ||
+          "",
+      },
     }));
   const mapCenter = mapComplaints.length
     ? [mapComplaints[0].lat, mapComplaints[0].lng]
@@ -90,10 +109,18 @@ const IssueMap = ({ onBack, complaints = [] }) => {
             <h3>Reported Issues ({mapComplaints.length})</h3>
             <div className="cdp-im-list">
               {mapComplaints.map((c) => (
-                <div 
+                <div
                   key={c.id} 
                   className={`cdp-im-list-item ${selectedComplaint?.id === c.id ? "active" : ""}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleMarkerClick(c)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleMarkerClick(c);
+                    }
+                  }}
                 >
                   <div className="cdp-im-list-header">
                     <span className="cdp-im-list-number">{c.complaintNumber}</span>
@@ -103,9 +130,9 @@ const IssueMap = ({ onBack, complaints = [] }) => {
                     <p className="cdp-im-list-issue">{c.issue} <span className="cdp-im-list-cat">({c.category})</span></p>
                     <p className="cdp-im-list-loc">📍 {c.location}</p>
                   </div>
-                  <button className="cdp-im-view-btn" onClick={(e) => { e.stopPropagation(); handleMarkerClick(c); }}>
+                  <span className="cdp-im-view-btn">
                     View Details
-                  </button>
+                  </span>
                 </div>
               ))}
             </div>
@@ -114,9 +141,22 @@ const IssueMap = ({ onBack, complaints = [] }) => {
           {/* ✅ 2. Interactive Map (NOW ON THE RIGHT) */}
           <div className="cdp-im-map-container">
             {loadError ? <div>Google Maps could not be loaded.</div> : !isLoaded ? <div>Loading map...</div> : mapComplaints.length === 0 ? <div>No complaint coordinates are available.</div> : (
-              <GoogleMap mapContainerStyle={{ width: "100%", height: "100%" }} center={{ lat: mapCenter[0], lng: mapCenter[1] }} zoom={13}>
+              <GoogleMap
+                mapContainerStyle={{ width: "100%", height: "100%" }}
+                center={selectedComplaint
+                  ? { lat: selectedComplaint.lat, lng: selectedComplaint.lng }
+                  : { lat: mapCenter[0], lng: mapCenter[1] }}
+                zoom={13}
+                onClick={() => setSelectedComplaint(null)}
+              >
                 {mapComplaints.map((c) => (
-                  <Marker key={c.id} position={{ lat: c.lat, lng: c.lng }} onClick={() => handleMarkerClick(c)} />
+                  <Marker
+                    key={c.id}
+                    position={{ lat: c.lat, lng: c.lng }}
+                    icon={getComplaintMapMarkerIcon(c)}
+                    title={`${c.complaintNumber || "Complaint"} — ${c.issue || c.issueType || ""}`}
+                    onClick={() => handleMarkerClick(c)}
+                  />
                 ))}
                 {selectedComplaint && (
                   <InfoWindow position={{ lat: selectedComplaint.lat, lng: selectedComplaint.lng }} onCloseClick={() => setSelectedComplaint(null)}>
@@ -150,9 +190,21 @@ const IssueMap = ({ onBack, complaints = [] }) => {
               {/* Basic Info Grid */}
               <div className="cdp-im-info-grid">
                 <div className="cdp-im-info-item"><span>Category</span><b>{selectedComplaint.category}</b></div>
-                <div className="cdp-im-info-item"><span>Current Status</span><b className={`cdp-im-text-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</b></div>
-                <div className="cdp-im-info-item"><span>Date Submitted</span><b>{selectedComplaint.date}</b></div>
-                <div className="cdp-im-info-item" style={{ gridColumn: "1 / -1" }}><span>Location</span><b>📍 {selectedComplaint.location}</b></div>
+              <div className="cdp-im-info-item"><span>Issue</span><b>{selectedComplaint.issue || selectedComplaint.issueType}</b></div>
+              <div className="cdp-im-info-item"><span>Current Status</span><b className={`cdp-im-text-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</b></div>
+              <div className="cdp-im-info-item"><span>Date Submitted</span><b>{selectedComplaint.createdAt ? new Date(selectedComplaint.createdAt).toLocaleString() : selectedComplaint.date}</b></div>
+              <div className="cdp-im-info-item" style={{ gridColumn: "1 / -1" }}>
+                <span>Location</span>
+                <b>📍 {selectedComplaint.location}</b>
+                <a
+                  className="cdp-im-coordinate-link"
+                  href={`https://www.google.com/maps/search/?api=1&query=${selectedComplaint.lat},${selectedComplaint.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {selectedComplaint.lat.toFixed(6)}, {selectedComplaint.lng.toFixed(6)} · Open exact location
+                </a>
+              </div>
               </div>
 
               {/* Description */}
@@ -162,19 +214,40 @@ const IssueMap = ({ onBack, complaints = [] }) => {
               </div>
 
               {/* Photo Gallery */}
-              {(selectedComplaint.photos?.before || selectedComplaint.photos?.after || selectedComplaint.photos?.site) && (
+              {(selectedComplaint.photos?.before || selectedComplaint.photos?.after || selectedComplaint.photos?.site || selectedComplaint.images?.length > 0) && (
                 <div className="cdp-im-section">
                   <h4>📷 Photographic Evidence</h4>
                   <div className="cdp-im-photo-grid">
                     {selectedComplaint.photos.before && (
-                      <div className="cdp-im-photo-card"><span className="cdp-im-photo-label">Before Repair</span><div className="cdp-im-photo-placeholder">📷 {selectedComplaint.photos.before}</div></div>
+                      <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.before)} target="_blank" rel="noopener noreferrer">
+                        <span className="cdp-im-photo-label">Before Repair</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.before)} alt="Complaint before repair" loading="lazy" />
+                      </a>
                     )}
-                    {selectedComplaint.photos.site && (
-                      <div className="cdp-im-photo-card"><span className="cdp-im-photo-label">Site Inspection</span><div className="cdp-im-photo-placeholder">📷 {selectedComplaint.photos.site}</div></div>
+                    {selectedComplaint.photos.site &&
+                      selectedComplaint.photos.site !== selectedComplaint.photos.before && (
+                      <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.site)} target="_blank" rel="noopener noreferrer">
+                        <span className="cdp-im-photo-label">Site Inspection</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.site)} alt="Complaint site inspection" loading="lazy" />
+                      </a>
                     )}
                     {selectedComplaint.photos.after && (
-                      <div className="cdp-im-photo-card"><span className="cdp-im-photo-label">After Repair</span><div className="cdp-im-photo-placeholder">📷 {selectedComplaint.photos.after}</div></div>
+                      <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.after)} target="_blank" rel="noopener noreferrer">
+                        <span className="cdp-im-photo-label">After Repair</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.after)} alt="Complaint after repair" loading="lazy" />
+                      </a>
                     )}
+                    {[...new Set(selectedComplaint.images || [])]
+                      .filter((image) => image &&
+                        image !== selectedComplaint.photos.before &&
+                        image !== selectedComplaint.photos.site &&
+                        image !== selectedComplaint.photos.after)
+                      .map((image, index) => (
+                        <a className="cdp-im-photo-card" href={toMediaUrl(image)} target="_blank" rel="noopener noreferrer" key={`${image}-${index}`}>
+                          <span className="cdp-im-photo-label">Complaint Photo {index + 1}</span>
+                          <img className="cdp-im-photo-image" src={toMediaUrl(image)} alt={`Complaint evidence ${index + 1}`} loading="lazy" />
+                        </a>
+                      ))}
                   </div>
                 </div>
               )}

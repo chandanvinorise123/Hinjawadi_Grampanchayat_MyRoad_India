@@ -227,6 +227,7 @@
 }
 
 .cdp-im-view-btn {
+  display: block;
   width: 100%;
   padding: 8px;
   background: var(--navy-900);
@@ -359,6 +360,26 @@
   height: 120px; background: var(--surface); border: 1px dashed var(--line);
   border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
   font-size: 13px; color: var(--ink-faint); font-weight: 500;
+}
+
+.cdp-im-photo-image {
+  width: 100%;
+  height: 180px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.cdp-im-coordinate-link {
+  color: var(--navy-700);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cdp-im-photo-card {
+  color: inherit;
+  text-decoration: none;
 }
 
 .cdp-im-timeline { position: relative; padding-left: 24px; }

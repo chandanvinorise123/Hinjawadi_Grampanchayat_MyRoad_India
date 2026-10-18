@@ -56,7 +56,6 @@ const toDetailData = (complaint) => {
       after:
         inspection.completionPhoto ||
         complaint.afterPhoto ||
-        images[1] ||
         "",
     },
     history: complaint.statusHistory || complaint.log || [],

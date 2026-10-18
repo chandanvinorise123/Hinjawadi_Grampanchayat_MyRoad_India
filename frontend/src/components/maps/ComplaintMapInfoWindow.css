@@ -1,0 +1,72 @@
+.complaint-map-info {
+  width: min(300px, calc(100vw - 80px));
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px 2px;
+  color: #24344d;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.complaint-map-info-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.complaint-map-info-heading strong {
+  overflow-wrap: anywhere;
+  color: #0b2447;
+  font-size: 13px;
+}
+
+.complaint-map-info-heading span {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #e8f6ec;
+  color: #128807;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.complaint-map-info p {
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+.complaint-map-info a {
+  color: #1b4586;
+  font-weight: 700;
+}
+
+.complaint-map-info-description {
+  max-height: 56px;
+  overflow-y: auto;
+  color: #536075;
+}
+
+.complaint-map-info-photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.complaint-map-info-photos a {
+  display: grid;
+  gap: 3px;
+  color: #536075;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.complaint-map-info-photos img {
+  width: 100%;
+  height: 74px;
+  border: 1px solid #e2e6ee;
+  border-radius: 5px;
+  object-fit: cover;
+}

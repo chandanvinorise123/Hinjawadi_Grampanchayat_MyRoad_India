@@ -1,0 +1,61 @@
+.scm-marker {
+  border: 0;
+  background: transparent;
+}
+
+.scm-marker svg {
+  display: block;
+}
+
+.scm-popup {
+  min-width: 220px;
+  max-width: 300px;
+  color: #161b26;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.scm-popup > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0b2447;
+  font-size: 14px;
+}
+
+.scm-popup p {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.scm-popup a {
+  color: #1b4586;
+}
+
+.scm-popup-photos {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.scm-popup-photos a {
+  display: flex;
+  flex: 0 0 88px;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.scm-popup-photos img {
+  width: 88px;
+  height: 64px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.scm-popup-photos span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

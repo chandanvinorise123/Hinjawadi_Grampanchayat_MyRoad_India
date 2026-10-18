@@ -114,7 +114,7 @@ const toComplaintView = (complaint) => {
     photos: {
       before: images[0] || "",
       site: inspection.sitePhoto || images[0] || "",
-      after: inspection.completionPhoto || images[1] || "",
+      after: inspection.completionPhoto || "",
     },
     inspection: {
       ...inspection,

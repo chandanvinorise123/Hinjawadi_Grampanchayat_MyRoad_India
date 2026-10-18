@@ -639,6 +639,13 @@ const Home = () => {
                 {trackLoading ? "Tracking..." : t("home.trackStatus")}
               </button>
             </form>
+            <button
+              className="guest-details-btn"
+              type="button"
+              onClick={() => navigate("/guest-details")}
+            >
+              {t("home.guestDetailsButton")}
+            </button>
             {trackError && <p className="track-error" role="alert">{trackError}</p>}
           </div>
 

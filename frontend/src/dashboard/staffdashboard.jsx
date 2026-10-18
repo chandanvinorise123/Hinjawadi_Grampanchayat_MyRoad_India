@@ -15,6 +15,8 @@ import ComplaintStatus from "../staffprofiledashboard/ComplaintStatus";
 import ComplaintHistory from "../staffprofiledashboard/ComplaintHistory";
 import Notifications from "../staffprofiledashboard/Notifications";
 import LocationMap from "../staffprofiledashboard/LocationMap";
+import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
+import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 /* ============================================
    CONSTANTS & CONFIGURATION
@@ -65,7 +67,7 @@ const mapStaffComplaint = (complaint) => ({
     remarks: "",
     sitePhoto: complaint.images?.[0] || "",
     actionTaken: "",
-    completionPhoto: complaint.images?.[1] || "",
+    completionPhoto: "",
     inspectionDate: "",
     completionDate: "",
   },
@@ -100,6 +102,7 @@ const StaffDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMapView, setShowMapView] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -228,13 +231,18 @@ const StaffDashboard = () => {
   }, {});
   const hasCoordinates = (complaint) => complaint.coordinates?.latitude !== null
     && complaint.coordinates?.latitude !== undefined
+    && complaint.coordinates?.latitude !== ""
     && complaint.coordinates?.longitude !== null
     && complaint.coordinates?.longitude !== undefined
     && Number.isFinite(Number(complaint.coordinates.latitude))
-    && Number.isFinite(Number(complaint.coordinates.longitude));
+    && Number.isFinite(Number(complaint.coordinates.longitude))
+    && Number(complaint.coordinates.latitude) >= -90
+    && Number(complaint.coordinates.latitude) <= 90
+    && Number(complaint.coordinates.longitude) >= -180
+    && Number(complaint.coordinates.longitude) <= 180;
   const mapComplaint = complaints.find(hasCoordinates);
   const staffMapCenter = mapComplaint
-    ? { lat: mapComplaint.coordinates.latitude, lng: mapComplaint.coordinates.longitude }
+    ? { lat: Number(mapComplaint.coordinates.latitude), lng: Number(mapComplaint.coordinates.longitude) }
     : null;
 
   // ✅ Filter complaints for search
@@ -755,7 +763,7 @@ const StaffDashboard = () => {
                     <th style={{ minWidth: "100px" }}>Priority</th>
                     <th style={{ minWidth: "160px" }}>Status</th>
                     <th style={{ minWidth: "150px" }}>Assigned Staff</th>
-                    <th style={{ width: "80px" }}></th>
+                    <th style={{ minWidth: "180px" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -790,10 +798,22 @@ const StaffDashboard = () => {
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="sd-row-actions">
                             <button
+                              className="sd-btn-outline small"
+                              type="button"
+                              title={`View full details for ${c.complaintNumber}`}
+                              onClick={() => {
+                                setSelectedId(c.id);
+                                openView(setShowComplaintDetails);
+                              }}
+                            >
+                              View Details
+                            </button>
+                            <button
                               className="sd-icon-btn small"
                               type="button"
                               onClick={() => startInspection(c)}
                               title="Physical Inspection"
+                              aria-label={`Physical inspection for ${c.complaintNumber}`}
                             >
                               🔎
                             </button>
@@ -1314,17 +1334,41 @@ const StaffDashboard = () => {
                 ) : !staffMapCenter ? (
                   <div className="sd-empty-note">No complaint coordinates are available.</div>
                 ) : (
-                  <GoogleMap mapContainerStyle={staffMapContainerStyle} center={staffMapCenter} zoom={13}>
+                  <GoogleMap
+                    mapContainerStyle={staffMapContainerStyle}
+                    center={selectedMapComplaint && hasCoordinates(selectedMapComplaint)
+                      ? {
+                          lat: Number(selectedMapComplaint.coordinates.latitude),
+                          lng: Number(selectedMapComplaint.coordinates.longitude),
+                        }
+                      : staffMapCenter}
+                    zoom={13}
+                    onClick={() => setSelectedMapComplaint(null)}
+                  >
                     {complaints
                       .filter(hasCoordinates)
                       .map((complaint) => (
                         <Marker
                           key={complaint.id}
                           position={{ lat: Number(complaint.coordinates.latitude), lng: Number(complaint.coordinates.longitude) }}
+                          icon={getComplaintMapMarkerIcon(complaint)}
                           title={`${complaint.complaintNumber} - ${complaint.issue}`}
-                          onClick={() => setSelectedId(complaint.id)}
-                        />
-                      ))}
+                              onClick={() => {
+                                setSelectedId(complaint.id);
+                                setSelectedMapComplaint(complaint);
+                              }}
+                            />
+                          ))}
+                        {selectedMapComplaint && hasCoordinates(selectedMapComplaint) && (
+                          <ComplaintMapInfoWindow
+                            complaint={selectedMapComplaint}
+                            position={{
+                              lat: Number(selectedMapComplaint.coordinates.latitude),
+                              lng: Number(selectedMapComplaint.coordinates.longitude),
+                            }}
+                            onClose={() => setSelectedMapComplaint(null)}
+                          />
+                        )}
                   </GoogleMap>
                 )}
               </div>
