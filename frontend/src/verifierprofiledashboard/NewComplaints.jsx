@@ -3,10 +3,14 @@ import "./NewComplaints.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 
-const NewComplaints = ({ complaints, onBack }) => {
+const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [assignedStaffId, setAssignedStaffId] = useState("");
+  const [verifierRemarks, setVerifierRemarks] = useState("");
+  const [savingAction, setSavingAction] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   // 1. Filter only "New Complaints"
   const newComplaints = useMemo(() => {
@@ -52,6 +56,42 @@ const NewComplaints = ({ complaints, onBack }) => {
       rejected: "red",
     };
     return tones[status] || "navy";
+  };
+
+  const selectComplaint = (complaint) => {
+    setSelectedComplaint(complaint);
+    setAssignedStaffId(
+      complaint.assignedStaffId ||
+      staffOptions.find((staff) => staff.name === complaint.assignedStaff)?._id ||
+      ""
+    );
+    setVerifierRemarks("");
+    setActionError("");
+  };
+
+  const handleAction = async (action) => {
+    if (action === "accept" && !assignedStaffId) {
+      setActionError("Select a staff member before accepting this complaint.");
+      return;
+    }
+    if (action === "reject" && !verifierRemarks.trim()) {
+      setActionError("Add remarks explaining why this complaint is rejected.");
+      return;
+    }
+
+    setSavingAction(true);
+    setActionError("");
+    try {
+      await onAction(selectedComplaint.id, action, {
+        staffId: assignedStaffId,
+        remarks: verifierRemarks.trim(),
+      });
+      setSelectedComplaint(null);
+    } catch (error) {
+      setActionError(error.message || "Unable to save the complaint decision.");
+    } finally {
+      setSavingAction(false);
+    }
   };
 
   // Close modal on Escape key
@@ -158,7 +198,7 @@ const NewComplaints = ({ complaints, onBack }) => {
                     <td>
                       <button 
                         className="nc-view-btn"
-                        onClick={() => setSelectedComplaint(c)}
+                        onClick={() => selectComplaint(c)}
                       >
                         View Details
                       </button>
@@ -256,6 +296,43 @@ const NewComplaints = ({ complaints, onBack }) => {
                 </div>
               </div>
             </div>
+
+            {selectedComplaint.status === "pending" && (
+              <div className="nc-review-actions">
+                {actionError && <p className="nc-review-error" role="alert">{actionError}</p>}
+                <label htmlFor="nc-assigned-staff">Assign staff to accept this complaint *</label>
+                <select
+                  id="nc-assigned-staff"
+                  value={assignedStaffId}
+                  disabled={savingAction}
+                  onChange={(event) => setAssignedStaffId(event.target.value)}
+                >
+                  <option value="">Select staff member</option>
+                  {staffOptions.map((staff) => (
+                    <option key={staff._id} value={staff._id}>
+                      {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <label htmlFor="nc-verifier-remarks">Rejection remarks (required to reject)</label>
+                <textarea
+                  id="nc-verifier-remarks"
+                  rows="3"
+                  value={verifierRemarks}
+                  disabled={savingAction}
+                  onChange={(event) => setVerifierRemarks(event.target.value)}
+                  placeholder="Explain the issue requiring rejection."
+                />
+                <div className="nc-review-buttons">
+                  <button type="button" disabled={savingAction} onClick={() => handleAction("reject")}>
+                    Reject Complaint
+                  </button>
+                  <button type="button" disabled={savingAction} onClick={() => handleAction("accept")}>
+                    {savingAction ? "Saving..." : "Accept & Assign Staff"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="nc-modal-footer">
               <button className="nc-modal-close-btn" onClick={() => setSelectedComplaint(null)}>

@@ -345,6 +345,29 @@
   line-height: 1.5;
 }
 
+.vl-crosscheck-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.vl-crosscheck-photo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vl-crosscheck-photo img,
+.vl-crosscheck-photo-fallback {
+  width: 100%;
+  height: 100px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
 /* Empty States */
 .vl-empty, .vl-empty-main {
   text-align: center;

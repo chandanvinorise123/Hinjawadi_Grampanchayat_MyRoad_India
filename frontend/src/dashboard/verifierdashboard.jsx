@@ -53,27 +53,65 @@ const statusLabel = {
 };
 
 const normalizeVerifierStatus = (status) => {
-  const normalized = String(status || "").trim().toLowerCase();
+  const normalized = String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
   if (normalized === "closed") return "notified";
-  if (normalized === "resolved") return "resolved";
+  if (["resolved", "complaint resolved"].includes(normalized)) return "resolved";
   if (["verified", "approved"].includes(normalized)) return "verified";
-  if (["rejected", "sent back for action"].includes(normalized)) return "rejected";
-  if (["assigned", "under action", "in progress"].includes(normalized)) return "in_action";
-  if (["under verification", "under review", "in review", "in_review"].includes(normalized)) return "in_review";
+  if (["rejected", "sent back for action", "awaiting staff correction"].includes(normalized)) return "rejected";
+  if (["assigned", "under action", "in action", "in progress", "staff work in progress"].includes(normalized)) return "in_action";
+  if ([
+    "under verification",
+    "under review",
+    "in review",
+    "work completed",
+    "completed work",
+    "work submitted",
+    "awaiting verification",
+    "ready for verification",
+    "re verification",
+    "reverification",
+  ].includes(normalized)) return "in_review";
   if (["notified", "citizen notified"].includes(normalized)) return "notified";
+  if (["new", "registered", "complaint registered", "submitted", "pending", "pending verification"].includes(normalized)) return "pending";
   return "pending";
 };
 
 const mapVerifierComplaint = (complaint) => {
-  const status = normalizeVerifierStatus(complaint.status);
+  let status = normalizeVerifierStatus(complaint.status);
   const history = Array.isArray(complaint.statusHistory) ? complaint.statusHistory : [];
-  const wasRejected = history.some((entry) => String(entry.status || "").toLowerCase() === "rejected");
+  const historyStatus = (entry) =>
+    String(entry.status || "").trim().toLowerCase().replace(/[_-]+/g, " ");
+  const wasRejected = history.some((entry) => historyStatus(entry) === "rejected");
   const previousRejection = [...history].reverse().find(
-    (entry) => String(entry.status || "").toLowerCase() === "rejected"
+    (entry) => historyStatus(entry) === "rejected"
   );
   const previousVerifierDecision = [...history].reverse().find(
-    (entry) => ["verified", "rejected"].includes(String(entry.status || "").toLowerCase())
+    (entry) => ["verified", "approved", "rejected"].includes(historyStatus(entry))
   );
+  const inspection = complaint.inspection && typeof complaint.inspection === "object"
+    ? complaint.inspection
+    : {};
+  const hasSubmittedWork = Boolean(
+    String(inspection.completionPhoto || complaint.completionPhoto || "").trim() &&
+    String(inspection.actionTaken || complaint.actionTaken || "").trim()
+  );
+  if (["in_action", "pending"].includes(status) && hasSubmittedWork) {
+    status = "in_review";
+  }
+  const storedPhotos = Array.isArray(complaint.images)
+    ? complaint.images
+    : Array.isArray(complaint.citizenPhotos)
+      ? complaint.citizenPhotos
+      : Array.isArray(complaint.photos)
+        ? complaint.photos
+        : [];
+  const photos = complaint.photos && typeof complaint.photos === "object" && !Array.isArray(complaint.photos)
+    ? complaint.photos
+    : {};
   let queue = "New Complaints";
   if (status === "rejected") {
     queue = "Awaiting Staff Correction";
@@ -89,13 +127,32 @@ const mapVerifierComplaint = (complaint) => {
 
   return {
     ...complaint,
+    category: complaint.category || complaint.issueType || "Uncategorized",
+    issue: complaint.issue || complaint.issueType || complaint.category || "Issue not specified",
+    description: complaint.description || complaint.issueDescription || "",
+    citizenContact: complaint.citizenContact || complaint.citizenMobile || complaint.citizenProfile?.mobile || "",
     citizenEmail: complaint.citizenEmail || complaint.citizenProfile?.email || "",
     status,
     queue,
     previousRemarks: previousRejection?.remarks || complaint.previousRemarks || "",
     verifierRemarks: complaint.verifierRemarks || previousVerifierDecision?.remarks || "",
-    remarks: complaint.inspection?.remarks || complaint.remarks || "",
-    photos: complaint.photos || {},
+    remarks: inspection.remarks || complaint.remarks || "",
+    inspection: {
+      ...inspection,
+      inspectionDate: inspection.inspectionDate || complaint.inspectionDate || "",
+      completionDate: inspection.completionDate || complaint.completionDate || "",
+      remarks: inspection.remarks || complaint.staffRemarks || complaint.remarks || "",
+      actionTaken: inspection.actionTaken || complaint.actionTaken || "",
+      sitePhoto: inspection.sitePhoto || complaint.sitePhoto || "",
+      completionPhoto: inspection.completionPhoto || complaint.completionPhoto || "",
+      verificationPhoto: inspection.verificationPhoto || complaint.verificationPhoto || "",
+    },
+    photos: {
+      before: photos.before || storedPhotos[0] || "",
+      site: photos.site || inspection.sitePhoto || complaint.sitePhoto || storedPhotos[0] || "",
+      after: photos.after || inspection.completionPhoto || complaint.completionPhoto || storedPhotos[1] || "",
+      verification: photos.verification || inspection.verificationPhoto || complaint.verificationPhoto || "",
+    },
     log: Array.isArray(complaint.log) ? complaint.log : [],
   };
 };
@@ -127,6 +184,7 @@ const VerifierDashboard = () => {
   const [staffOptions, setStaffOptions] = useState([]);
   const [assignmentSavingId, setAssignmentSavingId] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [detailStaffId, setDetailStaffId] = useState("");
   const [showMapView, setShowMapView] = useState(false);
   const [remarksDraft, setRemarksDraft] = useState("");
   const [showProfile, setShowProfile] = useState(false);
@@ -310,6 +368,7 @@ const VerifierDashboard = () => {
 
   const handleViewDetails = (complaint) => {
     setSelectedId(complaint.id);
+    setDetailStaffId(getAssignedStaffId(complaint));
     setShowDetailView(true);
     setRemarksDraft(complaint.remarks || "");
   };
@@ -321,6 +380,7 @@ const VerifierDashboard = () => {
   // ✅ NEW: Quick verify action from table
   const handleQuickVerify = (complaint) => {
     setSelectedId(complaint.id);
+    setDetailStaffId(getAssignedStaffId(complaint));
     setRemarksDraft(complaint.remarks || "");
     setShowDetailView(true);
   };
@@ -358,8 +418,9 @@ const VerifierDashboard = () => {
     return data;
   };
 
-  const persistComplaintStatus = async (id, status, remarks = "", dateTime = "") => {
+  const persistComplaintStatus = async (id, status, remarks = "", dateTime = "", additionalUpdates = {}) => {
     const result = await updateDashboardComplaint(id, {
+      ...additionalUpdates,
       status,
       remarks,
       ...(dateTime ? { verificationDateTime: dateTime } : {}),
@@ -394,6 +455,58 @@ const VerifierDashboard = () => {
   const handleCompletedWorkVerify = (id, action, remarks, dateTime) =>
     persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
 
+  const handleNewComplaintAction = async (id, action, details = {}) => {
+    if (action === "reject") {
+      return persistComplaintStatus(id, "Rejected", details.remarks);
+    }
+    const assignedStaff = staffOptions.find((staff) => String(staff._id) === String(details.staffId));
+    if (!assignedStaff) {
+      throw new Error("Select a staff member before accepting this complaint.");
+    }
+    const result = await updateDashboardComplaint(id, {
+      assignedStaff: assignedStaff.name,
+      assignedStaffId: assignedStaff._id,
+      status: "Under Action",
+    });
+    const updatedComplaint = mapVerifierComplaint(result.complaint);
+    setItems((current) => current.map((complaint) => (
+      complaint.id === id ? updatedComplaint : complaint
+    )));
+    return updatedComplaint;
+  };
+
+  const handleVerificationDecision = (complaint, status, remarks, dateTime) =>
+    persistComplaintStatus(complaint.id, status, remarks, dateTime);
+
+  const handleNotificationComplaintUpdated = (updatedComplaint) => {
+    setNotifications((current) => current.map((notification) => (
+      (notification.complaint?.id || notification.complaintId) === updatedComplaint.id
+        ? { ...notification, complaint: updatedComplaint, complaintNumber: updatedComplaint.complaintNumber }
+        : notification
+    )));
+  };
+
+  const updateNotificationComplaintStaff = async (complaint, staffId, remarks) => {
+    const assignedStaff = staffOptions.find((staff) => String(staff._id) === String(staffId));
+    if (!assignedStaff) {
+      throw new Error("Select a valid staff member for this complaint.");
+    }
+    const result = await updateDashboardComplaint(complaint.id, {
+      assignedStaff: assignedStaff.name,
+      assignedStaffId: assignedStaff._id,
+      status: "Under Action",
+      remarks,
+    });
+    const updatedComplaint = mapVerifierComplaint(result.complaint);
+    setItems((current) => current.map((item) => (
+      item.id === complaint.id ? updatedComplaint : item
+    )));
+    return updatedComplaint;
+  };
+
+  const handleNotificationReject = (complaint, remarks) =>
+    persistComplaintStatus(complaint.id, "Rejected", remarks);
+
   const handleMarkNotifAsRead = async (id) => {
     await markDashboardNotificationRead(id);
     setNotifications((current) => current.map((notification) => (
@@ -418,8 +531,15 @@ const VerifierDashboard = () => {
     }
   };
 
-  const handlePhysicalVerificationSubmit = (id, decision, remarks, dateTime) =>
-    persistComplaintStatus(id, decision === "approve" ? "Verified" : "Rejected", remarks, dateTime);
+  const handlePhysicalVerificationSubmit = (id, decision, remarks, dateTime, verificationPhoto) => {
+    const complaint = items.find((item) => item.id === id);
+    return persistComplaintStatus(id, decision === "approve" ? "Verified" : "Rejected", remarks, dateTime, {
+      inspection: {
+        ...(complaint?.inspection || {}),
+        verificationPhoto,
+      },
+    });
+  };
 
   const handleReverifyAction = (id, action, remarks, dateTime) =>
     persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
@@ -441,6 +561,14 @@ const VerifierDashboard = () => {
   const rejectWork = (id) => {
     if (!remarksDraft.trim()) throw new Error("Please enter verification remarks before rejecting.");
     return persistComplaintStatus(id, "Rejected", remarksDraft);
+  };
+
+  const assignStaffFromDetails = async () => {
+    if (!detailStaffId) {
+      setActionMessage("Select a staff member before assigning this complaint.");
+      return;
+    }
+    await handleAssignStaff(selected, detailStaffId);
   };
 
   const markResolved = (id) => persistComplaintStatus(id, "Resolved");
@@ -481,6 +609,8 @@ const VerifierDashboard = () => {
     return (
       <NewComplaints
         complaints={items}
+        staffOptions={staffOptions}
+        onAction={handleNewComplaintAction}
         onBack={returnToDashboard}
       />
     );
@@ -490,6 +620,7 @@ const VerifierDashboard = () => {
     return (
       <ComplaintHistory
         complaints={items}
+        onVerify={handleVerificationDecision}
         onBack={returnToDashboard}
       />
     );
@@ -499,6 +630,7 @@ const VerifierDashboard = () => {
     return (
       <PhysicalVerification
         complaints={items}
+        loadError={loadError}
         onBack={returnToDashboard}
         onSubmitVerification={handlePhysicalVerificationSubmit}
       />
@@ -509,6 +641,7 @@ const VerifierDashboard = () => {
     return (
       <CompletedWork
         complaints={items}
+        loadError={loadError}
         onBack={returnToDashboard}
         onVerify={handleCompletedWorkVerify}
       />
@@ -519,6 +652,7 @@ const VerifierDashboard = () => {
     return (
       <Reverification
         complaints={items}
+        loadError={loadError}
         onBack={returnToDashboard}
         onReverify={handleReverifyAction}
       />
@@ -529,6 +663,13 @@ const VerifierDashboard = () => {
     return (
       <Notifications
         notifications={notifications}
+        complaints={items}
+        staffOptions={staffOptions}
+        onVerify={handleVerificationDecision}
+        onAcceptAssign={updateNotificationComplaintStaff}
+        onAssign={updateNotificationComplaintStaff}
+        onReject={handleNotificationReject}
+        onComplaintUpdated={handleNotificationComplaintUpdated}
         onBack={returnToDashboard}
         onMarkAsRead={handleMarkNotifAsRead}
         onMarkAllRead={handleMarkAllNotifsRead}
@@ -540,6 +681,11 @@ const VerifierDashboard = () => {
     return (
       <ViewLocation
         complaints={items}
+        staffOptions={staffOptions}
+        onVerify={handleVerificationDecision}
+        onAcceptAssign={updateNotificationComplaintStaff}
+        onAssign={updateNotificationComplaintStaff}
+        onReject={handleNotificationReject}
         onBack={returnToDashboard}
       />
     );
@@ -804,7 +950,7 @@ const VerifierDashboard = () => {
             {/* PHYSICAL VERIFICATION */}
             <div className="vd-panel vd-form-panel" id="verification-panel">
               <div className="vd-panel-head">
-                <h3>Physical Verification — {selected.complaintNumber}</h3>
+                <h3>Complaint Review & Assignment — {selected.complaintNumber}</h3>
                 <span className={`vd-badge vd-badge-${statusTone[selected.status]}`}>{statusLabel[selected.status]}</span>
               </div>
               <div className="vd-verification-table">
@@ -814,19 +960,25 @@ const VerifierDashboard = () => {
                     <span className={`vd-badge vd-badge-${statusTone[selected.status]}`}>{statusLabel[selected.status]}</span>
                   </div>
                 </div>
-                <div className="vd-verification-row">
-                  <div className="vd-verification-label">Verification Remarks</div>
-                  <div className="vd-verification-value">
-                    <textarea
-                      id="verifier-remarks"
-                      rows="3"
-                      placeholder="Note what you observed on-site"
-                      value={remarksDraft}
-                      onChange={(e) => setRemarksDraft(e.target.value)}
-                      className="vd-verification-textarea"
-                    />
+                {["pending", "in_review"].includes(selected.status) && (
+                  <div className="vd-verification-row">
+                    <div className="vd-verification-label">
+                      {selected.status === "pending" ? "Review / rejection remarks" : "Verification Remarks"}
+                    </div>
+                    <div className="vd-verification-value">
+                      <textarea
+                        id="verifier-remarks"
+                        rows="3"
+                        placeholder={selected.status === "pending"
+                          ? "Add a reason if rejecting this complaint."
+                          : "Note your review findings or reason for rejection."}
+                        value={remarksDraft}
+                        onChange={(e) => setRemarksDraft(e.target.value)}
+                        className="vd-verification-textarea"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
                 {selected.status === "rejected" && (
                   <div className="vd-verification-row">
                     <div className="vd-verification-label">Previous Rejection Reason</div>
@@ -836,7 +988,48 @@ const VerifierDashboard = () => {
                   </div>
                 )}
                 <div className="vd-verification-actions">
-                  {(selected.status === "pending" || selected.status === "in_review") && (
+                  {["pending", "in_action", "rejected"].includes(selected.status) && (
+                    <div className="vd-assignment-detail">
+                      <label htmlFor="vd-detail-staff">Assign staff for this complaint</label>
+                      <select
+                        id="vd-detail-staff"
+                        className="vd-assignment-select"
+                        value={detailStaffId}
+                        disabled={assignmentSavingId === selected.id || staffOptions.length === 0}
+                        onChange={(event) => setDetailStaffId(event.target.value)}
+                      >
+                        <option value="">Select staff member</option>
+                        {staffOptions.map((staff) => (
+                          <option key={staff._id} value={staff._id}>
+                            {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="vd-btn-primary"
+                        type="button"
+                        disabled={assignmentSavingId === selected.id || !detailStaffId}
+                        onClick={assignStaffFromDetails}
+                      >
+                        {assignmentSavingId === selected.id
+                          ? "Saving Assignment..."
+                          : selected.status === "pending"
+                            ? "Accept & Assign Staff"
+                            : "Assign / Reassign Staff"}
+                      </button>
+                    </div>
+                  )}
+                  {selected.status === "pending" && (
+                    <button
+                      className="vd-btn-danger"
+                      type="button"
+                      disabled={actionSaving}
+                      onClick={() => handleDashboardAction(() => rejectWork(selected.id))}
+                    >
+                      Reject Complaint (Remarks Required)
+                    </button>
+                  )}
+                  {selected.status === "in_review" && (
                     <>
                       <button
                         className="vd-btn-danger"
@@ -855,6 +1048,11 @@ const VerifierDashboard = () => {
                         Work Satisfied — Approve / Verify
                       </button>
                     </>
+                  )}
+                  {selected.status === "in_action" && (
+                    <div className="vd-verification-info">
+                      This complaint is assigned to staff. Verification decisions become available after staff submits completed work.
+                    </div>
                   )}
                   {selected.status === "rejected" && (
                     <div className="vd-verification-info">
@@ -929,7 +1127,7 @@ const VerifierDashboard = () => {
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "reverification" ? "active" : ""}`} onClick={() => selectView("reverification", setShowReverification)}>
-            ️ Re-verification
+            ️🔍Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
         </nav>
@@ -937,10 +1135,10 @@ const VerifierDashboard = () => {
         <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
           <button type="button" className={`vd-sb-link ${activeNav === "physical" ? "active" : ""}`} onClick={() => selectView("physical", setShowPhysicalVerification)}>
-            🔍 Physical Verification
+            🔍Physical Verification
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "history" ? "active" : ""}`} onClick={() => selectView("history", setShowComplaintHistory)}>
-            📜 Complaint History
+            📜Complaint History
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}>
             🔔 Notifications

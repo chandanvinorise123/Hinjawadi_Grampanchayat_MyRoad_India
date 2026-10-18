@@ -3,7 +3,7 @@ import "./CompletedWork.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 
-const CompletedWork = ({ complaints, onBack, onVerify }) => {
+const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [verifierRemarks, setVerifierRemarks] = useState("");
   const [verificationDateTime, setVerificationDateTime] = useState("");
@@ -67,6 +67,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
       </div>
 
       <div className="cw-container">
+        {loadError && <div className="cw-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="cw-summary">
           <span>📋 Total Completed Work Awaiting Verification: <b>{completedItems.length}</b></span>
@@ -160,7 +161,7 @@ const CompletedWork = ({ complaints, onBack, onVerify }) => {
                     <div className="cw-detail-row">
                       <span>Activity Log:</span>
                       <ul className="cw-log-list">
-                        {selectedItem.log.map((entry, idx) => (
+                        {(Array.isArray(selectedItem.log) ? selectedItem.log : []).map((entry, idx) => (
                           <li key={idx}>{entry.text} <span className="cw-log-time">({entry.time})</span></li>
                         ))}
                       </ul>

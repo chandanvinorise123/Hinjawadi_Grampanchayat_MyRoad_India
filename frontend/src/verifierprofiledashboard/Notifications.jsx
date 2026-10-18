@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import "./Notifications.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
+import VerifierDecisionForm from "./VerifierDecisionForm";
+import NotificationComplaintActions from "./NotificationComplaintActions";
 
 const displayCategory = (category) => {
   const normalized = String(category || "").trim().toLowerCase();
@@ -13,7 +15,19 @@ const displayCategory = (category) => {
   return category || "Other";
 };
 
-const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) => {
+const Notifications = ({
+  notifications,
+  complaints = [],
+  staffOptions,
+  onBack,
+  onMarkAsRead,
+  onMarkAllRead,
+  onVerify,
+  onAcceptAssign,
+  onReject,
+  onAssign,
+  onComplaintUpdated,
+}) => {
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [filterCategory, setFilterCategory] = useState("All");
   const [error, setError] = useState("");
@@ -72,6 +86,23 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
       setSaving(false);
     }
   };
+
+  const handleComplaintUpdated = (updatedComplaint) => {
+    if (!updatedComplaint) return;
+    setSelectedNotif((current) => current ? {
+      ...current,
+      complaint: updatedComplaint,
+      complaintNumber: updatedComplaint.complaintNumber,
+    } : current);
+    onComplaintUpdated?.(updatedComplaint);
+  };
+
+  const selectedComplaint = selectedNotif
+    ? selectedNotif.complaint || complaints.find((complaint) => (
+        complaint.id === selectedNotif.complaintId ||
+        complaint.complaintNumber === selectedNotif.complaintNumber
+      ))
+    : null;
 
   return (
     <div className="notif-shell">
@@ -206,14 +237,14 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                 <span className="notif-section-label">Full Message</span>
                 <p className="notif-modal-message">{selectedNotif.message}</p>
               </div>
-              {selectedNotif.complaint && (
+              {selectedComplaint ? (
                 <>
-                  <VerifierComplaintDetails complaint={selectedNotif.complaint} />
+                  <VerifierComplaintDetails complaint={selectedComplaint} />
                   <div className="notif-evidence-grid">
                     {[
-                      ["Before Repair", selectedNotif.complaint.photos?.before],
-                      ["Site Inspection", selectedNotif.complaint.photos?.site],
-                      ["After Repair", selectedNotif.complaint.photos?.after],
+                      ["Before Repair", selectedComplaint.photos?.before],
+                      ["Site Inspection", selectedComplaint.photos?.site],
+                      ["After Repair", selectedComplaint.photos?.after],
                     ].map(([label, photo]) => photo && (
                       <div key={label}>
                         <span>{label}</span>
@@ -221,7 +252,25 @@ const Notifications = ({ notifications, onBack, onMarkAsRead, onMarkAllRead }) =
                       </div>
                     ))}
                   </div>
+                  <VerifierDecisionForm
+                    complaint={selectedComplaint}
+                    onVerify={onVerify}
+                    onComplete={handleComplaintUpdated}
+                  />
+                  <NotificationComplaintActions
+                    key={`${selectedComplaint.id}-${selectedComplaint.status}`}
+                    complaint={selectedComplaint}
+                    staffOptions={staffOptions}
+                    onAcceptAssign={onAcceptAssign}
+                    onReject={onReject}
+                    onAssign={onAssign}
+                    onComplete={handleComplaintUpdated}
+                  />
                 </>
+              ) : (
+                <p className="notif-error" role="alert">
+                  Complaint details could not be matched to this notification. Refresh the dashboard and try again.
+                </p>
               )}
             </div>
 

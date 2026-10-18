@@ -1,22 +1,43 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./ViewLocation.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
 import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
+import VerifierDecisionForm from "./VerifierDecisionForm";
+import NotificationComplaintActions from "./NotificationComplaintActions";
 
-const ViewLocation = ({ complaints, onBack }) => {
+const getMapPosition = (complaint) => {
+  const latitudeValue = complaint?.coordinates?.latitude ?? complaint?.coordinates?.lat;
+  const longitudeValue = complaint?.coordinates?.longitude ?? complaint?.coordinates?.lng;
+  if (latitudeValue === "" || latitudeValue === null || latitudeValue === undefined) return null;
+  if (longitudeValue === "" || longitudeValue === null || longitudeValue === undefined) return null;
+  const latitude = Number(latitudeValue);
+  const longitude = Number(longitudeValue);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return null;
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) return null;
+  return { lat: latitude, lng: longitude };
+};
+
+const ViewLocation = ({
+  complaints,
+  staffOptions,
+  onBack,
+  onVerify,
+  onAcceptAssign,
+  onReject,
+  onAssign,
+}) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMapInfo, setShowMapInfo] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
     libraries: ["places"],
   });
-
-  const selectedItem = complaints.find((c) => c.id === selectedId) || complaints[0];
 
   // Filter complaints based on search
   const filteredComplaints = useMemo(() => {
@@ -26,26 +47,31 @@ const ViewLocation = ({ complaints, onBack }) => {
     );
   }, [complaints, searchTerm]);
 
-  const latitudeValue = selectedItem?.coordinates?.latitude;
-  const longitudeValue = selectedItem?.coordinates?.longitude;
-  const latitude = Number(latitudeValue);
-  const longitude = Number(longitudeValue);
-  const coords = latitudeValue !== null && latitudeValue !== "" &&
-    longitudeValue !== null && longitudeValue !== "" &&
-    Number.isFinite(latitude) && Number.isFinite(longitude)
-    ? { lat: latitude, lng: longitude }
-    : null;
+  const selectedItem = complaints.find((c) => c.id === selectedId) || complaints[0];
+  const mappedComplaints = useMemo(
+    () => filteredComplaints
+      .map((complaint) => ({ complaint, position: getMapPosition(complaint) }))
+      .filter((item) => item.position),
+    [filteredComplaints]
+  );
+  const coords = getMapPosition(selectedItem);
+  const mapCenter = coords || mappedComplaints[0]?.position;
+
+  useEffect(() => {
+    if (!mapInstance || !mappedComplaints.length || !window.google?.maps) return;
+    const bounds = new window.google.maps.LatLngBounds();
+    mappedComplaints.forEach(({ position }) => bounds.extend(position));
+    if (mappedComplaints.length === 1) {
+      mapInstance.setCenter(mappedComplaints[0].position);
+      mapInstance.setZoom(16);
+    } else {
+      mapInstance.fitBounds(bounds, 40);
+    }
+  }, [mapInstance, mappedComplaints]);
   
   const externalMapUrl = coords
     ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
     : "";
-  const mapBounds = coords
-    ? `${coords.lng - 0.01},${coords.lat - 0.006},${coords.lng + 0.01},${coords.lat + 0.006}`
-    : "";
-  const embeddedMapUrl = coords
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapBounds}&layer=mapnik&marker=${coords.lat},${coords.lng}`
-    : "";
-
   return (
     <div className="vl-shell">
       {/* Header */}
@@ -109,7 +135,7 @@ const ViewLocation = ({ complaints, onBack }) => {
                   )}
                 </div>
                 <div className="vl-map-container">
-                  {embeddedMapUrl ? (
+                  {mappedComplaints.length > 0 ? (
                     loadError ? (
                       <div>No map could be loaded. Check the Google Maps API key and network connection.</div>
                     ) : !isLoaded ? (
@@ -117,21 +143,29 @@ const ViewLocation = ({ complaints, onBack }) => {
                     ) : (
                       <GoogleMap
                         mapContainerStyle={{ width: "100%", height: "100%" }}
-                        center={coords}
-                        zoom={16}
+                        center={mapCenter}
+                        zoom={mappedComplaints.length === 1 ? 16 : 12}
+                        onLoad={setMapInstance}
+                        onUnmount={() => setMapInstance(null)}
                         options={{
                           streetViewControl: false,
                           mapTypeControl: false,
                           fullscreenControl: true,
                         }}
                       >
-                        <Marker
-                          position={coords}
-                          icon={getComplaintMapMarkerIcon(selectedItem)}
-                          title={`${selectedItem.complaintNumber} — ${selectedItem.location || "Complaint location"}`}
-                          onClick={() => setShowMapInfo(true)}
-                        />
-                        {showMapInfo && (
+                        {mappedComplaints.map(({ complaint, position }) => (
+                          <Marker
+                            key={complaint.id}
+                            position={position}
+                            icon={getComplaintMapMarkerIcon(complaint)}
+                            title={`${complaint.complaintNumber} — ${complaint.location || "Complaint location"}`}
+                            onClick={() => {
+                              setSelectedId(complaint.id);
+                              setShowMapInfo(true);
+                            }}
+                          />
+                        ))}
+                        {showMapInfo && selectedItem && coords && (
                           <ComplaintMapInfoWindow
                             complaint={selectedItem}
                             position={coords}
@@ -141,7 +175,7 @@ const ViewLocation = ({ complaints, onBack }) => {
                       </GoogleMap>
                     )
                   ) : (
-                    <div>No coordinates available for this complaint.</div>
+                    <div>No complaints with valid coordinates match this search.</div>
                   )}
                 </div>
               </div>
@@ -210,9 +244,26 @@ const ViewLocation = ({ complaints, onBack }) => {
                       {selectedItem.photos?.site && <span className="vl-photo-badge">📷 Site Photo</span>}
                       {selectedItem.photos?.after && <span className="vl-photo-badge">📷 After Repair</span>}
                     </div>
-                    <p className="vl-photo-note">
-                      Review the photos in the dashboard to ensure the background, landmarks, and issue match the mapped coordinates.
-                    </p>
+                    <div className="vl-crosscheck-photos">
+                      {[
+                        ["Before Repair", selectedItem.photos?.before],
+                        ["Site Inspection", selectedItem.photos?.site],
+                        ["After Repair", selectedItem.photos?.after],
+                      ].filter(([, photo]) => photo).map(([label, photo]) => (
+                        <div className="vl-crosscheck-photo" key={label}>
+                          <span>{label}</span>
+                          <ComplaintImage
+                            key={`${selectedItem.id}-crosscheck-${label}`}
+                            src={photo}
+                            alt={`${label} cross-check evidence`}
+                            fallbackClassName="vl-crosscheck-photo-fallback"
+                          />
+                        </div>
+                      ))}
+                      {!selectedItem.photos?.before && !selectedItem.photos?.site && !selectedItem.photos?.after && (
+                        <p className="vl-photo-note">No complaint or work photographs are available to cross-check.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -234,6 +285,15 @@ const ViewLocation = ({ complaints, onBack }) => {
                   ))}
                 </div>
               </div>
+              <VerifierDecisionForm complaint={selectedItem} onVerify={onVerify} />
+              <NotificationComplaintActions
+                key={`${selectedItem.id}-${selectedItem.status}`}
+                complaint={selectedItem}
+                staffOptions={staffOptions}
+                onAcceptAssign={onAcceptAssign}
+                onReject={onReject}
+                onAssign={onAssign}
+              />
             </>
           ) : (
             <div className="vl-empty-main">

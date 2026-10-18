@@ -1,5 +1,6 @@
 import React from "react";
 import "./VerifierComplaintDetails.css";
+import ComplaintImage from "./ComplaintImage";
 
 const formatDate = (value) => {
   if (!value) return "Not recorded";
@@ -70,6 +71,16 @@ const VerifierComplaintDetails = ({ complaint }) => {
           </div>
         )}
       </div>
+      {complaint.photos?.verification && (
+        <div className="vcd-verification-photo">
+          <span>Physical verification evidence</span>
+          <ComplaintImage
+            src={complaint.photos.verification}
+            alt="Physical verification evidence"
+            fallbackClassName="vcd-photo-fallback"
+          />
+        </div>
+      )}
     </section>
   );
 };

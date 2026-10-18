@@ -1,0 +1,64 @@
+.nca-panel {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.nca-panel h4 {
+  margin: 0 0 14px;
+  color: #0b2447;
+}
+
+.nca-panel label {
+  display: block;
+  margin: 12px 0 6px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nca-panel select,
+.nca-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.nca-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.nca-actions button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #0b2447;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nca-actions button.nca-reject {
+  background: #b91c1c;
+}
+
+.nca-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.nca-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 13px;
+}

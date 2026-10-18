@@ -115,6 +115,7 @@ const toComplaintView = (complaint) => {
       before: images[0] || "",
       site: inspection.sitePhoto || images[0] || "",
       after: inspection.completionPhoto || "",
+      verification: inspection.verificationPhoto || "",
     },
     inspection: {
       ...inspection,
@@ -124,6 +125,7 @@ const toComplaintView = (complaint) => {
       actionTaken: inspection.actionTaken || "",
       sitePhoto: inspection.sitePhoto || "",
       completionPhoto: inspection.completionPhoto || "",
+      verificationPhoto: inspection.verificationPhoto || "",
     },
     log,
     activityLog: Array.isArray(value.activityLog) ? value.activityLog : [],
@@ -226,6 +228,7 @@ router.get("/:role", async (req, res) => {
         message: notification.message,
         isRead: notification.isRead,
         time: notification.createdAt,
+        complaintId: notification.complaintId?._id ? String(notification.complaintId._id) : null,
         complaintNumber: notification.complaintId?.complaintNumber || "",
         complaint: notification.complaintId
           ? toComplaintView(notification.complaintId)
@@ -447,7 +450,15 @@ router.patch("/complaints/:id", async (req, res) => {
           userId: staff._id,
           complaintId: complaint._id,
           type: "Staff Assigned",
-          message: `${complaintLabel} has been assigned to you for action.`,
+          message: `${complaintLabel} has been assigned to you for action.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Verifier remarks: ${req.body.remarks.trim()}` : ""}`,
+        });
+      }
+      if (updates.status === undefined || updates.status === previousStatus) {
+        notifications.push({
+          role: "admin",
+          complaintId: complaint._id,
+          type: "Staff Assignment Updated",
+          message: `${complaintLabel} was assigned to ${updates.assignedStaff || "a staff member"} by ${actorName || "the dashboard"}.`,
         });
       }
     }
@@ -495,6 +506,26 @@ router.patch("/complaints/:id", async (req, res) => {
         }
       );
     }
+    const verifierStatusMessages = {
+      "Under Action": "A verifier accepted the complaint and assigned it for staff action.",
+      Verified: "A verifier approved the completed work.",
+      Rejected: "A verifier rejected the submission and sent it for correction.",
+    };
+    if (
+      updates.status &&
+      updates.status !== previousStatus &&
+      verifierStatusMessages[updates.status]
+    ) {
+      const remarks = typeof req.body.remarks === "string" && req.body.remarks.trim()
+        ? ` Remarks: ${req.body.remarks.trim()}`
+        : "";
+      notifications.push({
+        role: "admin",
+        complaintId: complaint._id,
+        type: updates.status === "Under Action" ? "Complaint Assigned" : "Verifier Decision",
+        message: `${complaintLabel}: ${verifierStatusMessages[updates.status]}${remarks}`,
+      });
+    }
     if (updates.status === "Rejected" && updates.status !== previousStatus && (complaint.assignedStaff || complaint.assignedStaffId)) {
       const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
       if (staff) {
@@ -503,7 +534,7 @@ router.patch("/complaints/:id", async (req, res) => {
           userId: staff._id,
           complaintId: complaint._id,
           type: "Verification Rejected",
-          message: `${complaintLabel} was rejected during verification and requires further action.`,
+          message: `${complaintLabel} was rejected during verification and requires further action.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Remarks: ${req.body.remarks.trim()}` : ""}`,
         });
       }
     }
@@ -515,7 +546,7 @@ router.patch("/complaints/:id", async (req, res) => {
           userId: staff._id,
           complaintId: complaint._id,
           type: "Verification Approved",
-          message: `${complaintLabel} passed verifier review.`,
+          message: `${complaintLabel} passed verifier review.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Remarks: ${req.body.remarks.trim()}` : ""}`,
         });
       }
     }

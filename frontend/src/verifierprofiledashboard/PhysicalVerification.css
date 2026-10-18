@@ -326,6 +326,17 @@
   box-sizing: border-box;
 }
 
+.pv-verification-photo-preview {
+  display: block;
+  width: min(100%, 420px);
+  max-height: 280px;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: var(--white);
+}
+
 .pv-form-group textarea:focus, .pv-form-group input:focus {
   outline: none;
   border-color: var(--navy-700);

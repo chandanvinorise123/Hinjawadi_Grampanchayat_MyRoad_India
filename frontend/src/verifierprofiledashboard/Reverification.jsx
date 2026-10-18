@@ -3,7 +3,7 @@ import "./Reverification.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 
-const Reverification = ({ complaints, onBack, onReverify }) => {
+const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [dateTime, setDateTime] = useState("");
@@ -56,6 +56,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
       </div>
 
       <div className="rv-container">
+        {loadError && <div className="rv-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="rv-summary">
           <span>⚠️ Awaiting Re-verification: <b>{reverifyQueue.length}</b> complaint(s) resubmitted by staff.</span>
@@ -144,7 +145,7 @@ const Reverification = ({ complaints, onBack, onReverify }) => {
                 <div className="rv-section">
                   <h4> Staff Correction Log</h4>
                   <ul className="rv-log-list">
-                    {selectedItem.log.map((entry, idx) => (
+                    {(Array.isArray(selectedItem.log) ? selectedItem.log : []).map((entry, idx) => (
                       <li key={idx}>
                         <span className="rv-log-text">{entry.text}</span> 
                         <span className="rv-log-time">{entry.time}</span>

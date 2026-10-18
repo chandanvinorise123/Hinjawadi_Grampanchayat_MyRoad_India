@@ -1,0 +1,66 @@
+.vdf-panel {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.vdf-panel h4 {
+  margin: 0 0 16px;
+  color: #0b2447;
+}
+
+.vdf-panel label {
+  display: block;
+  margin-top: 12px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.vdf-panel textarea,
+.vdf-panel input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.vdf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.vdf-actions button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #0b2447;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vdf-actions button:first-child {
+  background: #b91c1c;
+}
+
+.vdf-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.vdf-error {
+  margin: 0 0 10px;
+  color: #b91c1c;
+  font-size: 13px;
+}

@@ -505,6 +505,65 @@
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
+.nc-review-actions {
+  margin: 0 32px 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.nc-review-actions label {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nc-review-actions select,
+.nc-review-actions textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font: inherit;
+}
+
+.nc-review-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.nc-review-buttons button {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--navy-900);
+  color: var(--white);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nc-review-buttons button:first-child {
+  background: var(--red);
+}
+
+.nc-review-buttons button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.nc-review-error {
+  margin: 0;
+  color: var(--red);
+  font-size: 13px;
+}
+
 .nc-modal-close-btn {
   padding: 10px 24px;
   background: var(--navy-900);
@@ -543,6 +602,10 @@
   .nc-modal-header, .nc-modal-body, .nc-modal-footer {
     padding-left: 20px;
     padding-right: 20px;
+  }
+  .nc-review-actions {
+    margin-right: 20px;
+    margin-left: 20px;
   }
   .nc-summary-cards {
     grid-template-columns: 1fr;

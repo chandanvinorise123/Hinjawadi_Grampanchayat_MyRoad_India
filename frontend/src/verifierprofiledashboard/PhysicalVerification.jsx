@@ -2,28 +2,48 @@ import React, { useState, useMemo } from "react";
 import "./PhysicalVerification.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
+import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
-const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
+const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerification }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [decision, setDecision] = useState("approve"); // 'approve' or 'reject'
   const [remarks, setRemarks] = useState("");
+  const [verificationPhoto, setVerificationPhoto] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [dateTime, setDateTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   // 1. Filter items ready for Physical Verification
   const verificationQueue = useMemo(() => {
-    return complaints.filter((c) => c.queue === "Completed Work");
+    return complaints.filter((c) => ["Completed Work", "Re-verification"].includes(c.queue));
   }, [complaints]);
 
   const handleSelect = (item) => {
     setSelectedItem(item);
     setDecision("approve");
     setRemarks("");
+    setVerificationPhoto(item.photos?.verification || "");
     // Auto-set current date/time
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     setDateTime(now.toISOString().slice(0, 16));
+  };
+
+  const handlePhotoChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setUploadingPhoto(true);
+    try {
+      const uploaded = await uploadDashboardPhoto(file);
+      setVerificationPhoto(uploaded.publicUrl);
+    } catch (uploadError) {
+      setError(uploadError.message || "Unable to upload the physical verification photo.");
+    } finally {
+      setUploadingPhoto(false);
+      event.target.value = "";
+    }
   };
 
   // 2. Submit Verification Result
@@ -36,11 +56,15 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
       alert("Please record the verification date and time.");
       return;
     }
+    if (!verificationPhoto) {
+      setError("Upload a physical verification photo before submitting your decision.");
+      return;
+    }
 
     setSaving(true);
     setError("");
     try {
-      await onSubmitVerification(selectedItem.id, decision, remarks, dateTime);
+      await onSubmitVerification(selectedItem.id, decision, remarks, dateTime, verificationPhoto);
       setSelectedItem(null);
     } catch (saveError) {
       setError(saveError.message || "Unable to save the verification decision.");
@@ -58,9 +82,10 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
       </div>
 
       <div className="pv-container">
+        {loadError && <div className="pv-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="pv-summary">
-          <span>📋 Items Awaiting Physical Verification: <b>{verificationQueue.length}</b></span>
+          <span>📋 Completed and corrected work awaiting physical verification: <b>{verificationQueue.length}</b></span>
         </div>
 
         <div className="pv-layout">
@@ -68,7 +93,7 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
           <div className="pv-list-panel">
             <h3>Verification Queue</h3>
             {verificationQueue.length === 0 ? (
-              <div className="pv-empty">No items currently require physical verification.</div>
+              <div className="pv-empty">No completed or corrected work currently requires physical verification.</div>
             ) : (
               <div className="pv-list">
                 {verificationQueue.map((item) => (
@@ -190,9 +215,28 @@ const PhysicalVerification = ({ complaints, onBack, onSubmitVerification }) => {
                     />
                   </div>
 
+                  <div className="pv-form-group">
+                    <label htmlFor="pv-verification-photo">Physical Verification Photo *</label>
+                    <input
+                      id="pv-verification-photo"
+                      type="file"
+                      accept="image/*"
+                      disabled={saving || uploadingPhoto}
+                      onChange={handlePhotoChange}
+                    />
+                    {uploadingPhoto && <p>Uploading verification photo...</p>}
+                    {verificationPhoto && (
+                      <img
+                        className="pv-verification-photo-preview"
+                        src={toMediaUrl(verificationPhoto)}
+                        alt="Physical verification evidence"
+                      />
+                    )}
+                  </div>
+
                   {/* Submit Button */}
-                  <button className="pv-submit-btn" disabled={saving} onClick={handleSubmit}>
-                    {saving ? "Saving..." : decision === 'approve' ? '✅ Submit Verification (Approve)' : '❌ Submit Verification (Reject)'}
+                  <button className="pv-submit-btn" disabled={saving || uploadingPhoto} onClick={handleSubmit}>
+                    {saving ? "Saving..." : decision === 'approve' ? '✅ Verify Work' : '❌ Reject / Send for Re-verification'}
                   </button>
                 </div>
               </>

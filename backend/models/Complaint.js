@@ -195,6 +195,7 @@ const complaintSchema = new mongoose.Schema(
       actionTaken: { type: String, default: "" },
       sitePhoto: { type: String, default: "" },
       completionPhoto: { type: String, default: "" },
+      verificationPhoto: { type: String, default: "" },
     },
 
     // ==========================================

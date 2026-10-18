@@ -47,3 +47,23 @@
 .vcd-wide {
   grid-column: 1 / -1;
 }
+
+.vcd-verification-photo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.vcd-verification-photo img,
+.vcd-photo-fallback {
+  width: min(100%, 420px);
+  max-height: 280px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #f8fafc;
+}

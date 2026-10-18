@@ -2,8 +2,9 @@ import React, { useState, useMemo } from "react";
 import "./ComplaintHistory.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
+import VerifierDecisionForm from "./VerifierDecisionForm";
 
-const ComplaintHistory = ({ complaints = [], onBack }) => {
+const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLog, setSelectedLog] = useState(null); // State for overlay modal
@@ -138,6 +139,7 @@ const ComplaintHistory = ({ complaints = [], onBack }) => {
                 </div>
               </div>
               <VerifierComplaintDetails complaint={selectedItem} />
+              <VerifierDecisionForm complaint={selectedItem} onVerify={onVerify} />
 
               {/* 2. Log Table */}
               <div className="ch-table-section">
