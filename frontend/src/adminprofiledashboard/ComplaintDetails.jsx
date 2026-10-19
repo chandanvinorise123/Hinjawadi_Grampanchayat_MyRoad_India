@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import "./ComplaintDetails.css";
 import { API_BASE_URL, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
+import ComplaintLocationMap from "../components/maps/ComplaintLocationMap";
+
+const toCoordinate = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    const coordinate = Number(value);
+    if (Number.isFinite(coordinate)) return coordinate;
+  }
+  return Number.NaN;
+};
 
 const formatDate = (complaint) =>
   complaint.date ||
@@ -37,8 +47,8 @@ const toDetailData = (complaint) => {
       address:
         location.address ||
         (typeof complaint.location === "string" ? complaint.location : ""),
-      lat: Number(location.lat ?? coordinates.lat ?? coordinates.latitude ?? complaint.lat),
-      lng: Number(location.lng ?? coordinates.lng ?? coordinates.longitude ?? complaint.lng),
+      lat: toCoordinate(location.lat, coordinates.lat, coordinates.latitude, complaint.lat),
+      lng: toCoordinate(location.lng, coordinates.lng, coordinates.longitude, complaint.lng),
     },
     inspection: {
       ...inspection,
@@ -257,6 +267,16 @@ const ComplaintDetails = ({
   // VIEW 3: DETAILED COMPLAINT VIEW
   // ==========================================
   const data = selectedComplaint;
+  const hasValidCoordinates =
+    Number.isFinite(data.location.lat) &&
+    data.location.lat >= -90 &&
+    data.location.lat <= 90 &&
+    Number.isFinite(data.location.lng) &&
+    data.location.lng >= -180 &&
+    data.location.lng <= 180;
+  const mapPosition = hasValidCoordinates
+    ? { lat: data.location.lat, lng: data.location.lng }
+    : null;
 
   return (
     <div className="cd-shell">
@@ -344,7 +364,7 @@ const ComplaintDetails = ({
         <div className="cd-card">
           <h3 className="cd-card-title">📍 Complaint Location</h3>
           <p className="cd-address">{data.location.address || "Address not provided"}</p>
-          {Number.isFinite(data.location.lat) && Number.isFinite(data.location.lng) && (
+          {mapPosition && (
             <p className="cd-coordinates">
               GPS: {data.location.lat}, {data.location.lng}
               {" · "}
@@ -358,17 +378,15 @@ const ComplaintDetails = ({
             </p>
           )}
           <div className="cd-map-container">
-            {Number.isFinite(data.location.lat) && Number.isFinite(data.location.lng) ? (
-              <iframe
-                title="Complaint Location Map"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                scrolling="no"
-                marginHeight="0"
-                marginWidth="0"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${data.location.lng - 0.01}%2C${data.location.lat - 0.01}%2C${data.location.lng + 0.01}%2C${data.location.lat + 0.01}&layer=mapnik&marker=${data.location.lat}%2C${data.location.lng}`}
-              ></iframe>
+            {mapPosition ? (
+              <ComplaintLocationMap
+                complaint={{
+                  ...data,
+                  images: data.photos,
+                  location: data.location.address,
+                }}
+                position={mapPosition}
+              />
             ) : (
               <div style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>Map coordinates not available.</div>
             )}

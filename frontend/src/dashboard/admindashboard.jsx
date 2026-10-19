@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./admindashboard.css";
 
@@ -13,10 +13,8 @@ import logo from '../assets/logo.jpeg';
 import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import NotificationMonitoring from "../adminprofiledashboard/Notification";
-import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
-import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
-import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
+import AdminComplaintsMap from "../components/maps/AdminComplaintsMap";
 
 /* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
@@ -58,6 +56,26 @@ const notifTone = {
 // Normalize MongoDB _id to id
 const normalizeId = (doc) => ({ ...doc, id: doc.id || doc._id });
 
+const complaintsAreUnchanged = (current, next) =>
+  current.length === next.length &&
+  current.every((complaint, index) =>
+    String(complaint.id || complaint._id) === String(next[index].id || next[index]._id) &&
+    complaint.updatedAt === next[index].updatedAt
+  );
+
+const notificationsAreUnchanged = (current, next) =>
+  current.length === next.length &&
+  current.every((notification, index) => {
+    const refreshed = next[index];
+    return notification.id === refreshed.id &&
+      notification.type === refreshed.type &&
+      notification.text === refreshed.text &&
+      notification.complaintId === refreshed.complaintId &&
+      notification.complaintNumber === refreshed.complaintNumber &&
+      notification.complaintStatus === refreshed.complaintStatus &&
+      notification.isRead === refreshed.isRead;
+  });
+
 // ✅ HELPER: Safely extract location string whether it's an object or plain string
 const getLocationString = (loc) => {
   if (!loc) return "Location pending";
@@ -92,34 +110,11 @@ const hasValidMapCoordinates = (complaint) => {
     Number(longitude) <= 180;
 };
 
-// Google Maps configuration
-const mapContainerStyle = {
-  width: "100%",
-  height: "500px",
-  borderRadius: "8px",
-};
-
-const defaultCenter = null;
-
-// ✅ Constants outside component so Google Maps script is NOT reloaded on every render
-const GOOGLE_MAPS_LIBRARIES = ["places"];
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-const mapOptions = {
-  styles: [
-    { featureType: "poi", stylers: [{ visibility: "off" }] },
-  ],
-};
+const defaultCenter = { lat: 18.5913, lng: 73.7389 };
 
 const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
-  // ✅ Load Google Maps script once (fast reload, no repeated script download)
-  const { isLoaded: isMapLoaded, loadError: mapLoadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
 
   const storedAdmin = getStoredUser();
   const [admin, setAdmin] = useState({
@@ -186,12 +181,9 @@ const AdminDashboard = () => {
 
   // ---------------- MAP DASHBOARD (NEW) ----------------
   const [mapComplaints, setMapComplaints] = useState([]);
-  const [mapLoading, setMapLoading] = useState(true);
   const [mapCategoryFilter, setMapCategoryFilter] = useState("All");
   const [mapStatusFilter, setMapStatusFilter] = useState("All");
   const [mapPriorityFilter, setMapPriorityFilter] = useState("All");
-  const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -306,6 +298,21 @@ const AdminDashboard = () => {
     setTimeout(() => setUserMessage({ type: "", text: "" }), 3000);
   };
 
+  const findComplaintForNotification = (notification) => {
+    const complaintId =
+      notification.complaintId ||
+      notification.complaint?._id ||
+      notification.complaint?.id;
+    const complaintNumber =
+      notification.complaintNumber ||
+      notification.complaint?.complaintNumber;
+
+    return complaints.find((item) =>
+      (complaintId && String(item.id || item._id) === String(complaintId)) ||
+      (complaintNumber && item.complaintNumber === complaintNumber)
+    );
+  };
+
   const handleInlineAssignment = async (complaint, role, accountId) => {
     const savingKey = String(complaint.id);
     const usersForRole = role === "staff" ? adminStaffOptions : adminVerifierOptions;
@@ -336,15 +343,12 @@ const AdminDashboard = () => {
   };
 
   const handleOpenNotificationComplaint = (notification) => {
-    const complaint = complaints.find((item) =>
-      String(item.id) === String(notification.complaintId) ||
-      item.complaintNumber === notification.complaintNumber
-    );
+    const complaint = findComplaintForNotification(notification);
     if (!complaint) {
       showMessage("error", "The complaint linked to this notification is not available in the current complaint list yet.");
       return;
     }
-    setSelectedId(complaint.id);
+    setSelectedId(complaint.id || complaint._id);
     setShowNotificationMonitoring(false);
     setShowComplaintDetails(true);
   };
@@ -408,7 +412,9 @@ const AdminDashboard = () => {
             lat: complaint.lat ?? complaint.coordinates?.latitude,
             lng: complaint.lng ?? complaint.coordinates?.longitude,
           }));
-          setComplaints(normalized);
+          setComplaints((current) =>
+            complaintsAreUnchanged(current, normalized) ? current : normalized
+          );
           if (normalized.length > 0) {
             setSelectedId((current) => (
               normalized.some((complaint) => String(complaint.id) === String(current))
@@ -441,7 +447,12 @@ const AdminDashboard = () => {
         });
         const data = await response.json();
         if (response.ok && data.success) {
-          if (active) setNotificationFeed(data.notifications.map(normalizeId));
+          if (active) {
+            const normalized = data.notifications.map(normalizeId);
+            setNotificationFeed((current) =>
+              notificationsAreUnchanged(current, normalized) ? current : normalized
+            );
+          }
         }
       } catch (err) {
         if (active) console.error("Failed to fetch notifications:", err);
@@ -482,7 +493,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchMapComplaints = async () => {
       try {
-        setMapLoading(true);
         const response = await fetch(`${API_BASE_URL}/complaints`, {
           headers: getAuthHeaders() // ✅ ADDED
         });
@@ -494,18 +504,9 @@ const AdminDashboard = () => {
             lng: complaint.lng ?? complaint.coordinates?.longitude ?? null,
           }));
           setMapComplaints(normalized);
-          const firstWithCoords = normalized.find(hasValidMapCoordinates);
-          if (firstWithCoords) {
-            setMapCenter({
-              lat: Number(firstWithCoords.lat),
-              lng: Number(firstWithCoords.lng),
-            });
-          }
         }
       } catch (err) {
         console.error("Failed to fetch map complaints:", err);
-      } finally {
-        setMapLoading(false);
       }
     };
     fetchMapComplaints();
@@ -817,15 +818,6 @@ const AdminDashboard = () => {
     });
   }, [mapComplaints, mapCategoryFilter, mapStatusFilter, mapPriorityFilter]);
 
-  const handleMarkerClick = useCallback((complaint) => {
-    setSelectedMapComplaint(complaint);
-    setMapCenter({ lat: Number(complaint.lat), lng: Number(complaint.lng) });
-  }, []);
-
-  const handleMapClick = useCallback(() => {
-    setSelectedMapComplaint(null);
-  }, []);
-
   const resetMapFilters = () => {
     setMapCategoryFilter("All");
     setMapStatusFilter("All");
@@ -949,7 +941,7 @@ const AdminDashboard = () => {
                     📈Reports Management
                   </button>
                   <button type="button" className="ad-sb-link" onClick={() => setShowNotificationMonitoring(true)}>
-                    🔔 Notification Monitoring
+                🔔NotificationMonitoring
                     <span className="ad-sb-badge">{notificationFeed.length}</span>
                   </button>
 
@@ -1644,39 +1636,10 @@ const AdminDashboard = () => {
                       <span style={{ marginLeft: "auto", color: "#666" }}>💡 Click a pin to view complaint details</span>
                     </div>
 
-                    {/* Google Map */}
-                    {mapLoadError ? (
-                      <div className="ad-loading">Failed to load Google Maps. Please check your API key / internet connection.</div>
-                    ) : !isMapLoaded ? (
-                      <div className="ad-loading">Loading map...</div>
-                    ) : !mapCenter ? (
-                      <div className="ad-loading">No complaint coordinates are available yet.</div>
-                    ) : (
-                      <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={13} onClick={handleMapClick} options={mapOptions}>
-                        {filteredMapComplaints.map((complaint) => (
-                          <Marker
-                            key={complaint.id}
-                            position={{ lat: Number(complaint.lat), lng: Number(complaint.lng) }}
-                            onClick={() => handleMarkerClick(complaint)}
-                            icon={getComplaintMapMarkerIcon(complaint)}
-                            title={`${complaint.complaintNumber} - ${complaint.issue}`}
-                          />
-                        ))}
-
-                                        {selectedMapComplaint && filteredMapComplaints.some(
-                                          (complaint) => complaint.id === selectedMapComplaint.id
-                                        ) && (
-                                          <ComplaintMapInfoWindow
-                                            complaint={selectedMapComplaint}
-                                            position={{
-                                              lat: Number(selectedMapComplaint.lat),
-                                              lng: Number(selectedMapComplaint.lng),
-                                            }}
-                                            onClose={() => setSelectedMapComplaint(null)}
-                                          />
-                                        )}
-                      </GoogleMap>
-                    )}
+                    <AdminComplaintsMap
+                      complaints={filteredMapComplaints}
+                      center={defaultCenter}
+                    />
 
                     {/* Complaints without coordinates */}
                     {mapComplaints.some((complaint) => !hasValidMapCoordinates(complaint)) && (
@@ -1725,7 +1688,13 @@ const AdminDashboard = () => {
                   <div className="ad-panel" id="notif-panel">
                     <div className="ad-panel-head">
                       <h3> Notification Monitoring</h3>
-                      <span className="ad-panel-link">Complete System Monitoring</span>
+                      <button
+                        type="button"
+                        className="ad-panel-link ad-notif-monitor-link"
+                        onClick={() => setShowNotificationMonitoring(true)}
+                      >
+                        Complete System Monitoring
+                      </button>
                     </div>
                     <div className="ad-notif-list">
                       {notifLoading ? (
@@ -1733,15 +1702,54 @@ const AdminDashboard = () => {
                       ) : notificationFeed.length === 0 ? (
                         <div className="ad-loading">No notifications yet.</div>
                       ) : (
-                        notificationFeed.map((note) => (
-                          <div className="ad-notif-item" key={note.id}>
-                            <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>{note.type}</span>
-                            <div>
-                              <b>{note.text}</b>
-                              <span>{note.time}</span>
-                            </div>
-                          </div>
-                        ))
+                        <table className="ad-notif-table">
+                          <thead>
+                            <tr>
+                              <th>Notification</th>
+                              <th>Complaint</th>
+                              <th>Status</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {notificationFeed.map((note) => {
+                              const complaint = findComplaintForNotification(note);
+                              const canOpenComplaint = Boolean(
+                                note.complaintId || note.complaintNumber || note.complaint
+                              );
+
+                              return (
+                                <tr key={note.id}>
+                                  <td className="ad-notif-message-cell">
+                                    <span className={`ad-badge ad-badge-${notifTone[note.type] || "navy"} ad-notif-type`}>
+                                      {note.type || "Notification"}
+                                    </span>
+                                    <b>{note.text || note.message || "No message provided."}</b>
+                                    <span className="ad-notif-time">{note.time || "Time unavailable"}</span>
+                                  </td>
+                                  <td className="ad-notif-complaint">
+                                    {note.complaintNumber || note.complaint?.complaintNumber || note.complaintId || note.complaint?._id || "—"}
+                                  </td>
+                                  <td>
+                                    <span className={`ad-notif-status ${note.complaintStatus || complaint?.status ? "has-status" : ""}`}>
+                                      {note.complaintStatus || complaint?.status || (note.isRead ? "Read" : "New")}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <button
+                                      type="button"
+                                      className="ad-notif-view-btn"
+                                      onClick={() => handleOpenNotificationComplaint(note)}
+                                      disabled={!canOpenComplaint}
+                                    >
+                                      View Details
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       )}
                     </div>
                   </div>

@@ -284,6 +284,11 @@
   background: #f1f5f9;
 }
 
+.cd-map-container .scd-map {
+  width: 100%;
+  height: 100%;
+}
+
 /* ================= BEFORE & AFTER ================= */
 
 .cd-comparison-grid {

@@ -25,8 +25,11 @@
   --radius-sm: 10px;
   --radius-md: 14px;
 
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: 264px 1fr;
+  grid-template-columns: 264px minmax(0, 1fr);
   min-height: 100vh;
   font-family: "Inter", sans-serif;
   color: var(--ink);
@@ -132,7 +135,7 @@
 .ad-tb-user b { font-size: 13px; color: var(--ink); display: block; }
 .ad-tb-user span { font-size: 11px; color: var(--ink-faint); }
 
-.ad-content { padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 32px) 50px; flex: 1; }
+.ad-content { min-width: 0; box-sizing: border-box; padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 32px) 50px; flex: 1; }
 .ad-title-row { margin-bottom: 24px; }
 .ad-title-row h1 { font-size: clamp(20px, 1.6rem + 0.5vw, 24px); margin-bottom: 4px; }
 .ad-title-row p { color: var(--ink-soft); font-size: 13.5px; }
@@ -371,6 +374,7 @@
 .ad-map-pins { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .ad-map-pin { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 .ad-map-ward-count { font-size: 11.5px; color: var(--ink-faint); font-weight: 600; }
+.ad-complaints-map { width: 100%; height: 500px; border-radius: 8px; background: #e9eef5; }
 
 /* Reports & analytics */
 .ad-reports-grid { display: grid; gap: 22px; padding: 20px 22px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
@@ -523,46 +527,6 @@
   min-width: 150px;
 }
 
-.ad-notif-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-}
-
-.ad-notif-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border-left: 4px solid #2e6cb0;
-}
-
-.ad-notif-type {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-}
-
-.ad-notif-item div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.ad-notif-item div b {
-  font-size: 0.9rem;
-  color: #1e293b;
-  font-weight: 600;
-}
-
-.ad-notif-item div span {
-  font-size: 0.8rem;
-  color: #64748b;
-}
-
 .ad-loading {
   text-align: center;
   padding: 20px;
@@ -588,7 +552,7 @@
   letter-spacing: 0.4px;
 
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 4px 12px rgba(207, 68, 56, 0.06);
 }
 
@@ -597,11 +561,9 @@
   color: #ffffff !important;
   border-color: #cf4438;
   box-shadow: 0 8px 20px rgba(207, 68, 56, 0.22);
-  transform: translateY(-2px);
 }
 
 .ad-button-link:active {
-  transform: translateY(0) scale(0.98);
   box-shadow: 0 3px 8px rgba(207, 68, 56, 0.14);
 }
 
@@ -636,16 +598,157 @@
 
 
 /* Notification monitoring */
-.ad-notif-list { padding: 16px 22px 20px; }
-.ad-notif-item { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--surface-2); }
-.ad-notif-item:last-child { border-bottom: none; padding-bottom: 0; }
-.ad-notif-type { flex-shrink: 0; margin-top: 1px; }
-.ad-notif-item b { display: block; font-size: 12.5px; color: var(--ink); font-weight: 600; }
-.ad-notif-item span:not(.ad-badge) { font-size: 11px; color: var(--ink-faint); }
+.ad-notif-list {
+  height: 340px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.ad-notif-list > .ad-loading {
+  display: grid;
+  height: 100%;
+  place-items: center;
+}
+
+.ad-notif-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.ad-notif-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 13px 16px;
+  background: #f4f7fb;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.ad-notif-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.ad-notif-table tbody tr {
+  background: #fff;
+  transition: background-color .15s ease;
+}
+
+.ad-notif-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.ad-notif-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ad-notif-message-cell {
+  min-width: 300px;
+}
+
+.ad-notif-message-cell .ad-notif-type {
+  display: table;
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.ad-notif-message-cell b {
+  display: block;
+  max-width: 520px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.ad-notif-time {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.ad-notif-complaint {
+  max-width: 180px;
+  overflow-wrap: anywhere;
+  color: var(--navy-800) !important;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px !important;
+  font-weight: 600;
+}
+
+.ad-notif-status {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ad-notif-status.has-status {
+  background: #eaf0fb;
+  color: var(--navy-800);
+}
+
+.ad-notif-view-btn {
+  padding: 7px 10px;
+  border: 1px solid #cbd8eb;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+
+.ad-notif-view-btn:hover:not(:disabled) {
+  border-color: var(--navy-700);
+  background: #eaf0fb;
+}
+
+.ad-notif-view-btn:focus-visible,
+.ad-notif-monitor-link:focus-visible {
+  outline: 2px solid var(--navy-700);
+  outline-offset: 2px;
+}
+
+.ad-notif-view-btn:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.ad-notif-monitor-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ad-notif-monitor-link:hover {
+  text-decoration: underline;
+}
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 860px) {
-  .ad-shell { grid-template-columns: 1fr; }
+  .ad-shell { grid-template-columns: minmax(0, 1fr); }
   .ad-sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px; gap: 10px; }
   .ad-sb-brand { border-bottom: none; margin-bottom: 0; padding: 0; }
   .ad-sb-label { display: none; }
