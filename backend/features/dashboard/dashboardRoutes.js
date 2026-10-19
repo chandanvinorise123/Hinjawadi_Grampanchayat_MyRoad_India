@@ -240,8 +240,7 @@ router.get("/:role", async (req, res) => {
         },
         photos: {
           before: notification.complaintId?.images?.[0] || "",
-          site: notification.complaintId?.images?.[0] || "",
-          after: notification.complaintId?.images?.[1] || "",
+          after: notification.complaintId?.inspection?.completionPhoto || "",
         },
       })),
       stats: { total: complaints.length, statusCounts },
@@ -584,7 +583,9 @@ router.patch("/complaints/:id", async (req, res) => {
         role: "citizen",
         userId: complaint.citizenId,
         complaintId: complaint._id,
-        type: "Complaint Status Updated",
+        type: ["Resolved", "Closed"].includes(updates.status)
+          ? "Complaint Resolved"
+          : "Complaint Status Updated",
         message: `${complaintLabel}: ${citizenStatusMessages[updates.status]}`,
       });
     }

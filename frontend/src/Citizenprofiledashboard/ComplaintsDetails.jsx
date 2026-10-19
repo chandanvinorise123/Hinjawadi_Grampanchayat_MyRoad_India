@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import "./ComplaintsDetails.css";
 import { toMediaUrl } from "../utils/dashboardApi";
+import ComplaintLocationMap from "../components/maps/ComplaintLocationMap";
 
 
 const priorityTone = {
@@ -35,6 +36,22 @@ const statusToneMap = {
 const ComplaintsDetails = ({ onBack, complaints = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const coordinates = selectedComplaint?.coordinates;
+  const latitude = Number(coordinates?.latitude);
+  const longitude = Number(coordinates?.longitude);
+  const mapPosition =
+    coordinates?.latitude !== null &&
+    coordinates?.latitude !== "" &&
+    coordinates?.longitude !== null &&
+    coordinates?.longitude !== "" &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+      ? { lat: latitude, lng: longitude }
+      : null;
   const complaintDetails = complaints.map((complaint) => ({
     ...complaint,
     imageUrls: Array.from(new Set([
@@ -172,34 +189,28 @@ const ComplaintsDetails = ({ onBack, complaints = [] }) => {
               {/* 2. Map Section */}
               <div className="cdp-cd-section">
                 <h4>🗺️ Complaint Location</h4>
-                {Number.isFinite(Number(selectedComplaint.coordinates?.latitude)) &&
-                  Number.isFinite(Number(selectedComplaint.coordinates?.longitude)) &&
-                  selectedComplaint.coordinates?.latitude !== null &&
-                  selectedComplaint.coordinates?.latitude !== "" &&
-                  selectedComplaint.coordinates?.longitude !== null &&
-                  selectedComplaint.coordinates?.longitude !== "" && (
-                    <p>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${Number(selectedComplaint.coordinates.latitude)},${Number(selectedComplaint.coordinates.longitude)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {Number(selectedComplaint.coordinates.latitude).toFixed(6)},{" "}
-                        {Number(selectedComplaint.coordinates.longitude).toFixed(6)} · Open exact location
-                      </a>
-                    </p>
-                  )}
+                {mapPosition && (
+                  <p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${mapPosition.lat},${mapPosition.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {mapPosition.lat.toFixed(6)},{" "}
+                      {mapPosition.lng.toFixed(6)} · Open exact location
+                    </a>
+                  </p>
+                )}
                 <div className="cdp-cd-map-container">
-                  <iframe 
-                    width="100%" 
-                    height="100%" 
-                    frameBorder="0" 
-                    scrolling="no" 
-                    src={selectedComplaint.coordinates
-                      ? `https://www.openstreetmap.org/export/embed.html?bbox=${selectedComplaint.coordinates.longitude - 0.02}%2C${selectedComplaint.coordinates.latitude - 0.02}%2C${selectedComplaint.coordinates.longitude + 0.02}%2C${selectedComplaint.coordinates.latitude + 0.02}&layer=mapnik&marker=${selectedComplaint.coordinates.latitude}%2C${selectedComplaint.coordinates.longitude}`
-                      : undefined}
-                    title="Complaint Location Map"
-                  ></iframe>
+                {mapPosition && (
+                  <ComplaintLocationMap
+                    complaint={{
+                      ...selectedComplaint,
+                      images: selectedComplaint.imageUrls,
+                    }}
+                    position={mapPosition}
+                  />
+                )}
                 </div>
               </div>
 

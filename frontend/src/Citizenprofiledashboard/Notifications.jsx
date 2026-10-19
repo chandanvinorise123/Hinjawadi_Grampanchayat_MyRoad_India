@@ -26,6 +26,11 @@ const typeFilterMap = {
   "Resolved/Closed": ["Resolved/Closed", "Complaint Resolved"],
 };
 
+const isResolutionNotification = (notification) =>
+  ["Complaint Resolved", "Resolved/Closed"].includes(notification.type) ||
+  (notification.type === "Complaint Status Updated" &&
+    /\b(resolved|closed)\b/i.test(notification.message || ""));
+
 const Notifications = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
@@ -206,8 +211,9 @@ const Notifications = ({ onBack }) => {
                 </div>
               </div>
 
-              {/* ✅ NEW: Photographic Evidence (Before/After/Site) */}
-              {(selectedNotification.photos?.before || selectedNotification.photos?.after || selectedNotification.photos?.site) && (
+              {/* Photographic Evidence */}
+              {(selectedNotification.photos?.before ||
+                (isResolutionNotification(selectedNotification) && selectedNotification.photos?.after)) && (
                 <div className="cdp-notif-modal-section">
                   <h4>📷 Photographic Evidence</h4>
                   <div className="cdp-notif-photo-grid">
@@ -217,13 +223,7 @@ const Notifications = ({ onBack }) => {
                         <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.before)} alt="Initial complaint evidence" />
                       </div>
                     )}
-                    {selectedNotification.photos.site && (
-                      <div className="cdp-notif-photo-card">
-                        <span className="cdp-notif-photo-label">After Repair</span>
-                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.site)} alt="Before-work site evidence" />
-                      </div>
-                    )}
-                    {selectedNotification.photos.after && (
+                    {isResolutionNotification(selectedNotification) && selectedNotification.photos?.after && (
                       <div className="cdp-notif-photo-card">
                         <span className="cdp-notif-photo-label">After Repair</span>
                         <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.after)} alt="After-work completion evidence" />
