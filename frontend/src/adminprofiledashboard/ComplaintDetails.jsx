@@ -16,6 +16,25 @@ const formatDate = (complaint) =>
   complaint.date ||
   (complaint.createdAt ? new Date(complaint.createdAt).toLocaleDateString() : "N/A");
 
+const getAssignmentTimestamp = (complaint) => {
+  const assignmentTimestamps = (Array.isArray(complaint.activityLog) ? complaint.activityLog : [])
+    .filter((entry) => /^(Assigned staff member|Assigned verifier)\b/i.test(String(entry.message || "")))
+    .map((entry) => new Date(entry.createdAt).getTime())
+    .filter(Number.isFinite);
+
+  if (assignmentTimestamps.length > 0) return Math.max(...assignmentTimestamps);
+
+  const fallbackTimestamp = new Date(complaint.updatedAt || complaint.createdAt || complaint.date || 0).getTime();
+  return Number.isFinite(fallbackTimestamp) ? fallbackTimestamp : 0;
+};
+
+const formatAssignmentDateTime = (complaint) => {
+  const timestamp = getAssignmentTimestamp(complaint);
+  return timestamp
+    ? new Date(timestamp).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+    : "N/A";
+};
+
 const toDetailData = (complaint) => {
   const coordinates = complaint.coordinates || {};
   const location =
@@ -74,6 +93,7 @@ const toDetailData = (complaint) => {
 
 const ComplaintDetails = ({
   complaint: initialComplaint,
+  listType = "new",
   staffOptions = [],
   verifierOptions = [],
   assignmentsLoading = false,
@@ -82,6 +102,7 @@ const ComplaintDetails = ({
   onBack,
 }) => {
   const [complaintsList, setComplaintsList] = useState([]);
+  const [listError, setListError] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState(
     initialComplaint ? toDetailData(initialComplaint) : null
   );
@@ -109,6 +130,7 @@ const ComplaintDetails = ({
     // Fetch all complaints for the table view directly from the API
     const fetchAllComplaints = async () => {
       try {
+        setListError("");
         const token = localStorage.getItem("token");
         const response = await fetch(`${API_BASE_URL}/complaints`, {
           headers: {
@@ -117,11 +139,13 @@ const ComplaintDetails = ({
         });
         const data = await response.json();
 
-        if (data.success) {
-          setComplaintsList(data.complaints || []);
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Failed to load complaints.");
         }
+        setComplaintsList(data.complaints || []);
       } catch (error) {
         console.error("Failed to load complaints list:", error);
+        setListError(error.message || "Failed to load complaints.");
       } finally {
         setLoading(false);
       }
@@ -159,6 +183,11 @@ const ComplaintDetails = ({
       });
       const updated = toDetailData(result.complaint);
       setSelectedComplaint(updated);
+      setComplaintsList((current) => current.map((complaint) =>
+        String(complaint._id || complaint.id) === String(result.complaint._id || result.complaint.id)
+          ? result.complaint
+          : complaint
+      ));
       setStaffSelection(null);
       setVerifierSelection(null);
       onComplaintUpdated?.(result.complaint);
@@ -179,6 +208,31 @@ const ComplaintDetails = ({
     };
     return colors[status] || "navy";
   };
+
+  const isAssignedList = listType === "assigned";
+  const visibleComplaints = complaintsList.filter(
+    (complaint) => {
+      if (isAssignedList) {
+        return [
+          complaint.assignedStaff,
+          complaint.assignedStaffId,
+          complaint.assignedVerifier,
+          complaint.assignedVerifierId,
+        ].some((assignment) => String(assignment || "").trim());
+      }
+      return String(complaint.status || "").toLowerCase() === "new";
+    }
+  );
+  if (isAssignedList) {
+    visibleComplaints.sort((left, right) =>
+      getAssignmentTimestamp(right) - getAssignmentTimestamp(left)
+    );
+  }
+  const listTitle = isAssignedList ? "Assigned Complaints" : "New Complaints";
+  const emptyListMessage = isAssignedList
+    ? "No assigned complaints found."
+    : "No new complaints found.";
+  const visibleColumnCount = isAssignedList ? 9 : 7;
 
   // ==========================================
   // VIEW 1: LOADING STATE
@@ -201,48 +255,55 @@ const ComplaintDetails = ({
         <div className="cd-header">
           <button className="cd-back-btn" onClick={onBack}>← Back to Dashboard</button>
           <div className="cd-header-info">
-            <h2>All Complaints</h2>
+            <h2>{listTitle}</h2>
           </div>
         </div>
 
         <div className="cd-grid">
           <div className="cd-card cd-card-full">
-            <h3 className="cd-card-title">Complaint List</h3>
+            <h3 className="cd-card-title">{listTitle}</h3>
+            {listError && <p className="cd-list-error" role="alert">{listError}</p>}
             <div className="cd-table-container">
               <table className="cd-table">
                 <thead>
                   <tr>
                     <th>Complaint No.</th>
+                    <th>Citizen</th>
                     <th>Category</th>
+                    <th>Location</th>
+                    {isAssignedList && <th>Assigned Staff</th>}
+                    {isAssignedList && <th>Assigned Verifier</th>}
                     <th>Priority</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th>{isAssignedList ? "Assigned Date & Time" : "Date"}</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {complaintsList.length === 0 ? (
+                  {visibleComplaints.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
-                        No complaints found in the system.
+                      <td colSpan={visibleColumnCount} style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
+                        {listError ? `${listTitle} could not be loaded.` : emptyListMessage}
                       </td>
                     </tr>
                   ) : (
-                    complaintsList.map((complaint) => (
+                    visibleComplaints.map((complaint) => (
                       <tr key={complaint._id || complaint.id}>
                         <td style={{ fontWeight: "600", color: "#2e6cb0" }}>{complaint.complaintNumber}</td>
+                        <td>{complaint.citizenName || "Guest"}</td>
                         <td>{complaint.category}</td>
+                        <td>{typeof complaint.location === "string" ? complaint.location : complaint.location?.address || "Location pending"}</td>
+                        {isAssignedList && (
+                          <>
+                            <td>{complaint.assignedStaff || (complaint.assignedStaffId ? "Assigned (name unavailable)" : "Not assigned")}</td>
+                            <td>{complaint.assignedVerifier || (complaint.assignedVerifierId ? "Assigned (name unavailable)" : "Not assigned")}</td>
+                          </>
+                        )}
                         <td>
                           <span className={`cd-badge cd-priority-${String(complaint.priority || "Normal").toLowerCase()}`}>
                             {complaint.priority || "Normal"}
                           </span>
                         </td>
-                        <td>
-                          <span className={`cd-badge cd-status-${getStatusColor(complaint.status)}`}>
-                            {complaint.status}
-                          </span>
-                        </td>
-                        <td>{formatDate(complaint)}</td>
+                        <td>{isAssignedList ? formatAssignmentDateTime(complaint) : formatDate(complaint)}</td>
                         <td>
                           <button
                             className="cd-view-btn"

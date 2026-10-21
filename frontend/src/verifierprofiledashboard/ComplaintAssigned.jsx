@@ -296,93 +296,113 @@ const ComplaintAssigned = ({
               <button type="button" aria-label="Close details" onClick={closeDetails}>×</button>
             </header>
             <div className="cm-modal-body">
-              <div className="cm-summary-grid">
-                <div><span>Issue</span><b>{selectedComplaint.issue || selectedComplaint.category || "Not specified"}</b></div>
-                <div><span>Priority</span><b>{selectedComplaint.priority || "Normal"}</b></div>
-                <div><span>Status</span><b>{formatStatus(selectedComplaint.status)}</b></div>
-                <div><span>Queue</span><b>{selectedComplaint.queue}</b></div>
-                <div><span>Verifier</span><b>{selectedComplaint.assignedVerifier || "Not assigned"}</b></div>
-                <div><span>Staff</span><b>{selectedComplaint.assignedStaff || "Not assigned"}</b></div>
-                <div className="cm-wide"><span>Description</span><b>{selectedComplaint.description || "No description provided."}</b></div>
-              </div>
-              <VerifierComplaintDetails complaint={selectedComplaint} />
-
-              <section className="cm-evidence">
-                <h3>Complaint and verification images</h3>
-                <div className="cm-images">
-                  {[
-                    ["Before repair", selectedComplaint.photos?.before],
-                    ["Site photo", selectedComplaint.photos?.site],
-                    ["After repair", selectedComplaint.photos?.after],
-                    ["Verifier image", evidencePhoto],
-                  ].filter(([, url]) => url).map(([label, url]) => (
-                    <figure key={label}>
-                      <ComplaintImage src={url} alt={label} />
-                      <figcaption>{label}</figcaption>
-                    </figure>
-                  ))}
-                  {!selectedComplaint.photos?.before &&
-                    !selectedComplaint.photos?.site &&
-                    !selectedComplaint.photos?.after &&
-                    !evidencePhoto && <p>No images have been uploaded for this complaint.</p>}
+              <div className="cm-detail-column cm-detail-primary">
+                <div className="cm-summary-grid">
+                  <div><span>Issue</span><b>{selectedComplaint.issue || selectedComplaint.category || "Not specified"}</b></div>
+                  <div><span>Priority</span><b>{selectedComplaint.priority || "Normal"}</b></div>
+                  <div><span>Status</span><b>{formatStatus(selectedComplaint.status)}</b></div>
+                  <div><span>Queue</span><b>{selectedComplaint.queue || "Not assigned"}</b></div>
+                  <div className="cm-wide"><span>Description</span><b>{selectedComplaint.description || "No description provided."}</b></div>
                 </div>
-                <label className="cm-upload">
-                  {uploadingPhoto ? "Uploading verifier image..." : "Add an optional verifier image"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploadingPhoto || saving}
-                    onChange={handlePhotoUpload}
-                  />
-                </label>
-              </section>
 
-              {["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
-                <section className="cm-actions">
-                  <h3>Review and assignment</h3>
-                  {error && <p className="cm-error" role="alert">{error}</p>}
-                  <label htmlFor="cm-staff">Assign staff</label>
-                  <select
-                    id="cm-staff"
-                    value={staffId}
-                    disabled={saving || uploadingPhoto}
-                    onChange={(event) => setStaffId(event.target.value)}
-                  >
-                    <option value="">Select staff member</option>
-                    {staffOptions.map((staff) => (
-                      <option key={staff._id} value={staff._id}>
-                        {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedComplaint.status === "pending" && (
-                    <>
-                      <label htmlFor="cm-remarks">Rejection remarks (required to reject)</label>
-                      <textarea
-                        id="cm-remarks"
-                        rows="3"
-                        value={remarks}
-                        disabled={saving || uploadingPhoto}
-                        onChange={(event) => setRemarks(event.target.value)}
-                        placeholder="Explain why the complaint should be rejected."
-                      />
-                    </>
-                  )}
-                  <div className="cm-action-buttons">
-                    {selectedComplaint.status === "pending" ? (
-                      <>
-                        <button type="button" className="vd-btn-danger" disabled={saving || uploadingPhoto} onClick={() => handleDecision("reject")}>Reject Complaint</button>
-                        <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={() => handleDecision("accept")}>{saving ? "Saving..." : "Accept & Assign"}</button>
-                      </>
-                    ) : (
-                      <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={handleStaffAssignment}>{saving ? "Saving..." : "Assign / Reassign Staff"}</button>
-                    )}
+                <section className="cm-evidence">
+                  <div className="cm-section-heading">
+                    <div>
+                      <span className="cm-section-kicker">Visual evidence</span>
+                      <h3>Complaint and verification images</h3>
+                    </div>
+                    <span className="cm-image-count">
+                      {[
+                        selectedComplaint.photos?.before,
+                        selectedComplaint.photos?.site,
+                        selectedComplaint.photos?.after,
+                        evidencePhoto,
+                      ].filter(Boolean).length} photos
+                    </span>
                   </div>
+                  <div className="cm-images">
+                    {[
+                      ["Before repair", selectedComplaint.photos?.before],
+                      ["Site photo", selectedComplaint.photos?.site],
+                      ["After repair", selectedComplaint.photos?.after],
+                      ["Verifier image", evidencePhoto],
+                    ].filter(([, url]) => url).map(([label, url]) => (
+                      <figure key={label}>
+                        <ComplaintImage src={url} alt={label} />
+                        <figcaption>{label}</figcaption>
+                      </figure>
+                    ))}
+                    {!selectedComplaint.photos?.before &&
+                      !selectedComplaint.photos?.site &&
+                      !selectedComplaint.photos?.after &&
+                      !evidencePhoto && <p className="cm-no-images">No images have been uploaded for this complaint.</p>}
+                  </div>
+                  <label className="cm-upload">
+                    {uploadingPhoto ? "Uploading verifier image..." : "Add an optional verifier image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingPhoto || saving}
+                      onChange={handlePhotoUpload}
+                    />
+                  </label>
                 </section>
-              )}
-              {error && !["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
-                <p className="cm-error" role="alert">{error}</p>
-              )}
+              </div>
+              <div className="cm-detail-column cm-detail-secondary">
+                <VerifierComplaintDetails complaint={selectedComplaint} />
+
+                {["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
+                  <section className="cm-actions">
+                    <div className="cm-section-heading">
+                      <div>
+                        <span className="cm-section-kicker">Next step</span>
+                        <h3>Review and assignment</h3>
+                      </div>
+                    </div>
+                    {error && <p className="cm-error" role="alert">{error}</p>}
+                    <label htmlFor="cm-staff">Assign staff</label>
+                    <select
+                      id="cm-staff"
+                      value={staffId}
+                      disabled={saving || uploadingPhoto}
+                      onChange={(event) => setStaffId(event.target.value)}
+                    >
+                      <option value="">Select staff member</option>
+                      {staffOptions.map((staff) => (
+                        <option key={staff._id} value={staff._id}>
+                          {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedComplaint.status === "pending" && (
+                      <>
+                        <label htmlFor="cm-remarks">Rejection remarks (required to reject)</label>
+                        <textarea
+                          id="cm-remarks"
+                          rows="3"
+                          value={remarks}
+                          disabled={saving || uploadingPhoto}
+                          onChange={(event) => setRemarks(event.target.value)}
+                          placeholder="Explain why the complaint should be rejected."
+                        />
+                      </>
+                    )}
+                    <div className="cm-action-buttons">
+                      {selectedComplaint.status === "pending" ? (
+                        <>
+                          <button type="button" className="vd-btn-danger" disabled={saving || uploadingPhoto} onClick={() => handleDecision("reject")}>Reject Complaint</button>
+                          <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={() => handleDecision("accept")}>{saving ? "Saving..." : "Accept & Assign"}</button>
+                        </>
+                      ) : (
+                        <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={handleStaffAssignment}>{saving ? "Saving..." : "Assign / Reassign Staff"}</button>
+                      )}
+                    </div>
+                  </section>
+                )}
+                {error && !["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
+                  <p className="cm-error" role="alert">{error}</p>
+                )}
+              </div>
             </div>
             <footer className="cm-modal-footer">
               <button type="button" className="vd-btn-outline" onClick={closeDetails}>Close</button>

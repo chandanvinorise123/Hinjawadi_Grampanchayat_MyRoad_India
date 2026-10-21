@@ -7,10 +7,12 @@ import { fetchDashboard, fetchDashboardUsers, getStoredUser, getUserId, updateDa
 import MyProfile from "../verifierprofiledashboard/MyProfile";
 import NewComplaints from "../verifierprofiledashboard/NewComplaints";
 import CompletedWork from "../verifierprofiledashboard/CompletedWork";
+import WorkVerification from "../verifierprofiledashboard/WorkVerification";
 import Reverification from "../verifierprofiledashboard/Reverification";
 import PhysicalVerification from "../verifierprofiledashboard/PhysicalVerification";
 import ComplaintHistory from "../verifierprofiledashboard/ComplaintHistory";
 import ComplaintAssigned from "../verifierprofiledashboard/ComplaintAssigned";
+import UpdatedComplaints from "../adminprofiledashboard/UpdatedComplaints";
 import Notifications from "../verifierprofiledashboard/Notifications";
 import ViewLocation from "../verifierprofiledashboard/ViewLocation";
 import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
@@ -201,6 +203,8 @@ const VerifierDashboard = () => {
   const [showNewComplaints, setShowNewComplaints] = useState(false);
   const [showComplaintAssigned, setShowComplaintAssigned] = useState(false);
   const [showCompletedWork, setShowCompletedWork] = useState(false);
+  const [showWorkVerification, setShowWorkVerification] = useState(false);
+  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
   const [showReverification, setShowReverification] = useState(false);
   const [showPhysicalVerification, setShowPhysicalVerification] = useState(false);
   const [showComplaintHistory, setShowComplaintHistory] = useState(false);
@@ -247,6 +251,8 @@ const VerifierDashboard = () => {
     setShowNewComplaints(false);
     setShowComplaintAssigned(false);
     setShowCompletedWork(false);
+    setShowWorkVerification(false);
+    setShowUpdatedComplaints(false);
     setShowReverification(false);
     setShowPhysicalVerification(false);
     setShowComplaintHistory(false);
@@ -267,6 +273,8 @@ const VerifierDashboard = () => {
     setShowNewComplaints(false);
     setShowComplaintAssigned(false);
     setShowCompletedWork(false);
+    setShowWorkVerification(false);
+    setShowUpdatedComplaints(false);
     setShowReverification(false);
     setShowPhysicalVerification(false);
     setShowComplaintHistory(false);
@@ -755,6 +763,30 @@ const VerifierDashboard = () => {
     );
   }
 
+  if (showWorkVerification) {
+    return (
+      <WorkVerification
+        complaints={items}
+        loadError={loadError}
+        onBack={returnToDashboard}
+        onVerify={handleCompletedWorkVerify}
+      />
+    );
+  }
+
+  if (showUpdatedComplaints) {
+    return (
+      <UpdatedComplaints
+        complaints={items}
+        actorRoles={["staff", "admin", "verifier"]}
+        audienceLabel="Staff, admin & verifier activity"
+        listTitle="Staff, Admin & Verifier Updates"
+        showUpdateHistory={false}
+        onBack={returnToDashboard}
+      />
+    );
+  }
+
   if (showReverification) {
     return (
       <Reverification
@@ -1225,18 +1257,25 @@ const VerifierDashboard = () => {
           <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
             👤 My Profile
           </button>
+          <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new", setShowNewComplaints)}>
+            🆕 New Complaints
+            <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
+          </button>
           <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
             📋 Complaint Assigned
             <span className="vd-sb-badge">{assignedComplaints.length}</span>
+          </button>
+          <button type="button" className={`vd-sb-link ${activeNav === "work-verification" ? "active" : ""}`} onClick={() => selectView("work-verification", setShowWorkVerification)}>
+            ✅ Work Verification
+            <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
+          </button>
+          <button type="button" className={`vd-sb-link ${activeNav === "updated-complaints" ? "active" : ""}`} onClick={() => selectView("updated-complaints", setShowUpdatedComplaints)}>
+            📋 Updated Complaints
           </button>
         </nav>
 
         <div className="vd-sb-label">Verification Queues</div>
         <nav className="vd-sb-nav">
-          <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new", setShowNewComplaints)}>
-            🆕 New Complaints
-            <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
-          </button>
           <button type="button" className={`vd-sb-link ${activeNav === "completed" ? "active" : ""}`} onClick={() => selectView("completed", setShowCompletedWork)}>
             🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>

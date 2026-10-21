@@ -2,16 +2,44 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./Notifications.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 
-const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead }) => {
+const formatNotificationTime = (value) => {
+  if (!value) return "Time not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+};
+
+const Notifications = ({
+  notifications = [],
+  initialSelectedNotification = null,
+  onInitialSelectionHandled,
+  onBack,
+  onMarkAsRead,
+  onMarkAllRead,
+}) => {
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [selectedNotif, setSelectedNotif] = useState(null);
+  const [selectedNotif, setSelectedNotif] = useState(initialSelectedNotification);
   const [actionError, setActionError] = useState("");
   const modalRef = useRef(null);
 
   // Notification Type Config
   const typeConfig = {
-    "New Assignment": { icon: "", color: "notif-navy", label: "NEW ASSIGNMENT" },
+    "New Assignment": { icon: "🗂️", color: "notif-navy", label: "NEW ASSIGNMENT" },
+    "Staff Assigned": { icon: "👷", color: "notif-purple", label: "STAFF ASSIGNED" },
+    "Work Updated": { icon: "🛠️", color: "notif-green", label: "WORK UPDATED" },
+    "Work Completed": { icon: "✅", color: "notif-green", label: "WORK COMPLETED" },
+    "Complaint Registered": { icon: "📝", color: "notif-navy", label: "COMPLAINT REGISTERED" },
+    "Complaint Status Updated": { icon: "🔔", color: "notif-amber", label: "STATUS UPDATED" },
+    "Verifier Decision": { icon: "🔎", color: "notif-amber", label: "VERIFIER DECISION" },
     "Critical Priority": { icon: "🚨", color: "notif-red", label: "CRITICAL PRIORITY" },
     "Reassignment": { icon: "🔄", color: "notif-purple", label: "REASSIGNMENT" },
     "Pending Reminder": { icon: "⏰", color: "notif-amber", label: "PENDING REMINDER" },
@@ -33,6 +61,10 @@ const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead
       document.body.style.overflow = "auto";
     };
   }, [selectedNotif]);
+
+  useEffect(() => {
+    if (initialSelectedNotification) onInitialSelectionHandled?.();
+  }, [initialSelectedNotification, onInitialSelectionHandled]);
 
   // Close modal when clicking outside
   const handleBackdropClick = (e) => {
@@ -58,6 +90,11 @@ const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead
         (filterStatus === "Unread" && !n.isRead) ||
         (filterStatus === "Read" && n.isRead);
       return matchesType && matchesStatus;
+    }).sort((first, second) => {
+      const firstTime = new Date(first.time || 0).getTime();
+      const secondTime = new Date(second.time || 0).getTime();
+      return (Number.isFinite(secondTime) ? secondTime : 0) -
+        (Number.isFinite(firstTime) ? firstTime : 0);
     });
   }, [notifications, filterType, filterStatus]);
 
@@ -209,7 +246,7 @@ const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead
                         <td>
                           {!notif.isRead && <span className="nt-unread-dot"></span>}
                         </td>
-                        <td className="nt-mono">{notif.time}</td>
+                        <td className="nt-mono">{formatNotificationTime(notif.time)}</td>
                         <td>
                           <span className={`nt-type-badge ${config.color}`}>
                             <span className="nt-type-icon">{config.icon}</span>
@@ -224,14 +261,13 @@ const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead
                           </span>
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
-                          {!notif.isRead && (
-                            <button
-                              className="nt-mark-read-btn"
-                              onClick={() => handleMarkRead(notif.id)}
-                            >
-                              Mark Read
-                            </button>
-                          )}
+                          <button
+                            className="nt-view-details-btn"
+                            type="button"
+                            onClick={() => setSelectedNotif(notif)}
+                          >
+                            View Details
+                          </button>
                         </td>
                       </tr>
                     );
@@ -273,36 +309,59 @@ const Notifications = ({ notifications = [], onBack, onMarkAsRead, onMarkAllRead
 
             {/* Modal Body */}
             <div className="nt-modal-body">
-              {/* 3-Column Info Row */}
-              <div className="nt-modal-info-row">
-                <div className="nt-modal-info-item">
-                  <span className="nt-modal-label">Complaint Number</span>
-                  <b className="nt-mono">{selectedNotif.complaintNumber || "N/A"}</b>
-                </div>
-                <div className="nt-modal-info-item">
-                  <span className="nt-modal-label">Received At</span>
-                  <b>{selectedNotif.time}</b>
-                </div>
-                <div className="nt-modal-info-item">
-                  <span className="nt-modal-label">Read Status</span>
-                  <b className="nt-read-status-display">
-                    {selectedNotif.isRead ? "✅ Read" : "🔴 Unread"}
-                  </b>
-                </div>
-              </div>
+              <div className="nt-detail-layout">
+                <section className="nt-detail-panel" aria-label="Complaint information">
+                  <header className="nt-detail-panel-heading">
+                    <span className="nt-detail-eyebrow">Related report</span>
+                    <h4>Complaint Information</h4>
+                  </header>
+                  <div className="nt-detail-panel-content">
+                    {selectedNotif.complaint ? (
+                      <StaffComplaintDetails
+                        complaint={selectedNotif.complaint}
+                        layout="complaint-only"
+                        showMap={false}
+                        showActivity={false}
+                      />
+                    ) : (
+                      <p className="nt-detail-empty">
+                        No linked complaint details are available for this notification.
+                      </p>
+                    )}
+                  </div>
+                </section>
 
-              {/* Full Message Section */}
-              <div className="nt-modal-message-section">
-                <span className="nt-modal-label">Full Message</span>
-                <div className="nt-modal-message-box">
-                  {selectedNotif.text}
-                </div>
+                <section className="nt-detail-panel" aria-label="Notification information">
+                  <header className="nt-detail-panel-heading">
+                    <span className="nt-detail-eyebrow">Alert details</span>
+                    <h4>Notification Information</h4>
+                  </header>
+                  <div className="nt-detail-panel-content">
+                    <dl className="nt-notification-facts">
+                      <div>
+                        <dt>Complaint Number</dt>
+                        <dd className="nt-mono">{selectedNotif.complaintNumber || "N/A"}</dd>
+                      </div>
+                      <div>
+                        <dt>Received At</dt>
+                        <dd>{formatNotificationTime(selectedNotif.time)}</dd>
+                      </div>
+                      <div>
+                        <dt>Read Status</dt>
+                        <dd className="nt-read-status-display">
+                          {selectedNotif.isRead ? "✅ Read" : "🔴 Unread"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="nt-modal-message-section">
+                      <span className="nt-modal-label">Full Message</span>
+                      <div className="nt-modal-message-box">
+                        {selectedNotif.text || "No message provided."}
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
-              {selectedNotif.complaint && (
-                <div className="nt-linked-complaint">
-                  <StaffComplaintDetails complaint={selectedNotif.complaint} />
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}

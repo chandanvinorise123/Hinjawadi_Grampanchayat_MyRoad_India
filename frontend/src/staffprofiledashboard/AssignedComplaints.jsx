@@ -10,6 +10,7 @@ const AssignedComplaints = ({
   staffUserId = "",
   onBack,
   allAssigned = false,
+  newAssignments = false,
   loadError = "",
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,10 +36,26 @@ const AssignedComplaints = ({
       (assignedStaff && !["unassigned", "not assigned", "none", "null"].includes(assignedStaff))
     );
   };
+  const isAvailableForStaff = (complaint) =>
+    !hasStaffAssignment(complaint) &&
+    ["new", "pending"].includes(String(complaint.status || "").trim().toLowerCase());
   const staffComplaints = allAssigned
     ? complaints.filter(hasStaffAssignment)
-    : complaints.filter(isAssignedToStaff);
+    : newAssignments
+      ? complaints.filter(isAvailableForStaff)
+      : complaints.filter(isAssignedToStaff);
+  const visibleComplaints = newAssignments
+    ? staffComplaints.filter((complaint) =>
+        ["new", "pending", "assigned", "under action", "rejected"].includes(
+          String(complaint.status || "").trim().toLowerCase()
+        )
+      )
+    : staffComplaints;
   const assignmentTime = (complaint) => {
+    if (newAssignments) {
+      const createdTimestamp = new Date(complaint.createdAt || complaint.date || 0).getTime();
+      return Number.isFinite(createdTimestamp) ? createdTimestamp : 0;
+    }
     const latestAssignment = (complaint.log || []).reduce((latest, entry) => {
       if (!/assigned/i.test(entry.text || "")) return latest;
       const timestamp = new Date(entry.time || 0).getTime();
@@ -48,7 +65,7 @@ const AssignedComplaints = ({
     const timestamp = new Date(complaint.updatedAt || complaint.createdAt || 0).getTime();
     return Number.isFinite(timestamp) ? timestamp : 0;
   };
-  const sortedComplaints = [...staffComplaints].sort((first, second) =>
+  const sortedComplaints = [...visibleComplaints].sort((first, second) =>
     assignmentTime(second) - assignmentTime(first)
   );
   const statuses = [...new Set(sortedComplaints.map((complaint) => complaint.status).filter(Boolean))];
@@ -94,9 +111,17 @@ const AssignedComplaints = ({
           ← Back to Dashboard
         </button>
         <div>
-          <h2>{allAssigned ? "Complaint Assigned" : "Assigned Complaints"}</h2>
+          <h2>
+            {allAssigned
+              ? "Complaint Assigned"
+              : newAssignments
+                ? "New Complaints"
+                : "My Assigned Complaints"}
+          </h2>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", margin: "4px 0 0 0" }}>
-            Showing {staffComplaints.length} {allAssigned ? "complaints assigned to staff" : "complaints assigned to you"}
+            {newAssignments
+              ? `Showing ${visibleComplaints.length} new or recently assigned complaints for you`
+              : `Showing ${staffComplaints.length} ${allAssigned ? "complaints assigned to staff" : "complaints assigned to you"}`}
           </p>
         </div>
       </div>
@@ -147,10 +172,12 @@ const AssignedComplaints = ({
             {filteredComplaints.length === 0 ? (
               <tr>
                 <td colSpan="7" className="ac-empty">
-                  {staffComplaints.length === 0
+                  {visibleComplaints.length === 0
                     ? allAssigned
                       ? "No complaints assigned to staff are available yet."
-                      : "No complaints are assigned to you yet."
+                      : newAssignments
+                        ? "No unassigned new complaints are currently available."
+                        : "No complaints are assigned to you yet."
                     : "No complaints match your search or filters."}
                 </td>
               </tr>
@@ -211,7 +238,7 @@ const AssignedComplaints = ({
 
             {/* Modal Body */}
             <div className="ac-modal-body">
-              <StaffComplaintDetails complaint={viewingComplaint} />
+              <StaffComplaintDetails complaint={viewingComplaint} layout="split" showActivity={false} />
             </div>
 
             {/* Modal Footer */}

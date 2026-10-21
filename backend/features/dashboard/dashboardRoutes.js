@@ -188,6 +188,40 @@ router.get("/staff-assigned-complaints", async (req, res) => {
   }
 });
 
+router.get("/staff-new-complaints", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId || !isObjectId(userId)) {
+      return res.status(400).json({ success: false, message: "A valid staff userId is required" });
+    }
+
+    const staffProfile = await getProfile(userId, "staff");
+    if (!staffProfile || staffProfile.role !== "staff") {
+      return res.status(403).json({ success: false, message: "Staff access is required" });
+    }
+
+    const complaints = await Complaint.find({
+      assignedStaffId: { $in: [null, ""] },
+      assignedStaff: { $in: [null, ""] },
+      status: { $in: ["New", "Pending"] },
+    })
+      .populate("citizenId", "name email mobile contact")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      complaints: complaints.map(toComplaintView),
+    });
+  } catch (error) {
+    console.error("Failed to fetch new staff complaints:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch new complaints",
+    });
+  }
+});
+
 router.get("/:role", async (req, res) => {
   try {
     const { role } = req.params;
@@ -413,6 +447,9 @@ router.patch("/complaints/:id", async (req, res) => {
     };
     const activityEntries = [];
     const sameValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+    const inspectionUpdated = Boolean(
+      updates.inspection && !sameValue(updates.inspection, previousComplaint.inspection || {})
+    );
 
     if (staffAssignmentChanged) {
       activityEntries.push({
@@ -442,7 +479,7 @@ router.patch("/complaints/:id", async (req, res) => {
         createdAt: new Date(),
       });
     }
-    if (updates.inspection && !sameValue(updates.inspection, previousComplaint.inspection || {})) {
+    if (inspectionUpdated) {
       const workDescription = updates.inspection.actionTaken || updates.inspection.remarks;
       activityEntries.push({
         actor: actorName || "Staff",
@@ -623,6 +660,49 @@ router.patch("/complaints/:id", async (req, res) => {
           : "Complaint Status Updated",
         message: `${complaintLabel}: ${citizenStatusMessages[updates.status]}`,
       });
+    }
+    if (
+      inspectionUpdated &&
+      !(updates.status === "Under Verification" && updates.status !== previousStatus)
+    ) {
+      notifications.push(
+        {
+          role: "admin",
+          complaintId: complaint._id,
+          type: "Work Updated",
+          message: `${complaintLabel} work details were updated by staff.`,
+        },
+        {
+          role: "verifier",
+          complaintId: complaint._id,
+          type: "Work Updated",
+          message: `${complaintLabel} work details were updated and are available for review.`,
+        }
+      );
+      if (
+        complaint.citizenId &&
+        !(updates.status && updates.status !== previousStatus && citizenStatusMessages[updates.status])
+      ) {
+        notifications.push({
+          role: "citizen",
+          userId: complaint.citizenId,
+          complaintId: complaint._id,
+          type: "Work Updated",
+          message: `${complaintLabel}: staff updated the work details for your complaint.`,
+        });
+      }
+    }
+    if (inspectionUpdated && actorRole === "staff" && (complaint.assignedStaffId || complaint.assignedStaff)) {
+      const assignedStaff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
+      if (assignedStaff) {
+        notifications.push({
+          role: "staff",
+          userId: assignedStaff._id,
+          complaintId: complaint._id,
+          type: "Work Updated",
+          message: `${complaintLabel} work details were updated successfully.`,
+        });
+      }
     }
     if (notifications.length) await Notification.insertMany(notifications);
     res.json({ success: true, complaint: toComplaintView(complaint) });

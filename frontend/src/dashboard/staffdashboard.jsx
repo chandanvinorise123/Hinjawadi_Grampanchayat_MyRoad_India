@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
-import { fetchDashboard, fetchStaffAssignedComplaints, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto, toMediaUrl } from "../utils/dashboardApi";
+import { fetchDashboard, fetchStaffAssignedComplaints, fetchStaffNewComplaints, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
 
 // ✅ Import all full-page components
 import MyProfile from "../staffprofiledashboard/MyProfile";
@@ -100,6 +100,8 @@ const StaffDashboard = () => {
 
   // ✅ State Management
   const [complaints, setComplaints] = useState([]);
+  const [newComplaints, setNewComplaints] = useState([]);
+  const [newComplaintsError, setNewComplaintsError] = useState("");
   const [allAssignedComplaints, setAllAssignedComplaints] = useState([]);
   const [assignedComplaintsError, setAssignedComplaintsError] = useState("");
   const [notifications, setNotifications] = useState([]);
@@ -108,12 +110,11 @@ const StaffDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showMapView, setShowMapView] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [inspectionDraft, setInspectionDraft] = useState(null);
-  const [inspectionError, setInspectionError] = useState("");
 
   // ✅ Full Page Navigation States
   const [showProfile, setShowProfile] = useState(false);
   const [showAssignedComplaints, setShowAssignedComplaints] = useState(false);
+  const [showNewComplaints, setShowNewComplaints] = useState(false);
   const [showAllAssignedComplaints, setShowAllAssignedComplaints] = useState(false);
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
   const [showPhysicalInspection, setShowPhysicalInspection] = useState(false);
@@ -121,11 +122,13 @@ const StaffDashboard = () => {
   const [showComplaintStatus, setShowComplaintStatus] = useState(false);
   const [showComplaintHistory, setShowComplaintHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationToOpen, setNotificationToOpen] = useState(null);
   const [showLocationMap, setShowLocationMap] = useState(false);
 
   const openView = (setter) => {
     setShowProfile(false);
     setShowAssignedComplaints(false);
+    setShowNewComplaints(false);
     setShowAllAssignedComplaints(false);
     setShowComplaintDetails(false);
     setShowPhysicalInspection(false);
@@ -187,6 +190,29 @@ const StaffDashboard = () => {
     };
     loadDashboard();
     const refreshTimer = window.setInterval(loadDashboard, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadNewComplaints = async () => {
+      try {
+        const result = await fetchStaffNewComplaints(getUserId(getStoredUser()));
+        if (!active) return;
+        setNewComplaints((result.complaints || []).map(mapStaffComplaint));
+        setNewComplaintsError("");
+      } catch (error) {
+        if (!active) return;
+        console.error("Failed to load unassigned complaints for staff:", error);
+        setNewComplaintsError(error.message || "Unable to load new complaints.");
+      }
+    };
+
+    loadNewComplaints();
+    const refreshTimer = window.setInterval(loadNewComplaints, 30000);
     return () => {
       active = false;
       window.clearInterval(refreshTimer);
@@ -295,59 +321,6 @@ const StaffDashboard = () => {
     setComplaints((current) => current.map((complaint) => (
       complaint.id === id ? { ...complaint, ...mappedComplaint } : complaint
     )));
-  };
-
-  const startInspection = (c) => {
-    setSelectedId(c.id);
-    setInspectionError("");
-    setInspectionDraft({
-      id: c.id,
-      remarks: c.inspection.remarks,
-      sitePhoto: c.inspection.sitePhoto,
-      actionTaken: c.inspection.actionTaken,
-      completionPhoto: c.inspection.completionPhoto,
-      inspectionDate: c.inspection.inspectionDate || new Date().toISOString().slice(0, 16),
-      completionDate: c.inspection.completionDate || "",
-    });
-  };
-
-  const saveInspection = async (e) => {
-    e.preventDefault();
-    if (!inspectionDraft) return;
-    const nextStatus = inspectionDraft.completionPhoto && inspectionDraft.actionTaken.trim()
-      ? "Under Verification"
-      : "Under Action";
-    setInspectionError("");
-    try {
-      const result = await updateDashboardComplaint(inspectionDraft.id, {
-        status: nextStatus,
-        inspection: {
-          remarks: inspectionDraft.remarks,
-          sitePhoto: inspectionDraft.sitePhoto,
-          actionTaken: inspectionDraft.actionTaken,
-          completionPhoto: inspectionDraft.completionPhoto,
-          inspectionDate: inspectionDraft.inspectionDate,
-          completionDate: inspectionDraft.completionDate,
-        },
-      });
-      applyComplaintUpdate(inspectionDraft.id, result.complaint);
-    } catch (error) {
-      console.error("Failed to save inspection:", error);
-      setInspectionError(error.message || "Unable to save the inspection record.");
-      return;
-    }
-    setInspectionDraft(null);
-  };
-
-  const attachPhoto = async (field, file) => {
-    if (!file) return;
-    try {
-      const uploaded = await uploadDashboardPhoto(file);
-      setInspectionDraft((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
-    } catch (error) {
-      console.error("Failed to upload inspection photo:", error);
-      setInspectionError(error.message || "Unable to upload the inspection photo.");
-    }
   };
 
   const advanceStage = async (id) => {
@@ -487,18 +460,6 @@ const StaffDashboard = () => {
     }
   };
 
-  const handleStatusUpdate = async (complaintId, newStage) => {
-    const status = ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][newStage] || "New";
-    try {
-      const result = await updateDashboardComplaint(complaintId, { status });
-      applyComplaintUpdate(complaintId, result.complaint);
-      return result;
-    } catch (error) {
-      console.error("Failed to update complaint status:", error);
-      throw error;
-    }
-  };
-
   /* ============================================
    ✅ FULL PAGE CONDITIONAL RENDERING
    ============================================ */
@@ -521,6 +482,20 @@ const StaffDashboard = () => {
         staffName={staff.name}
         staffUserId={getUserId(storedUser)}
         onBack={() => setShowAssignedComplaints(false)}
+      />
+    );
+  }
+
+  if (showNewComplaints) {
+    return (
+      <AssignedComplaints
+        complaints={newComplaints}
+        staffId={staff.staffId}
+        staffName={staff.name}
+        staffUserId={getUserId(storedUser)}
+        onBack={() => setShowNewComplaints(false)}
+        newAssignments
+        loadError={newComplaintsError}
       />
     );
   }
@@ -552,7 +527,6 @@ const StaffDashboard = () => {
     return (
       <PhysicalInspection
         complaints={complaints}
-        selectedId={selectedId}
         onBack={() => setShowPhysicalInspection(false)}
         onSaveInspection={handleSaveInspection}
       />
@@ -563,7 +537,6 @@ const StaffDashboard = () => {
     return (
       <ActionWorkManagement
         complaints={complaints}
-        selectedId={selectedId}
         onBack={() => setShowActionWorkManagement(false)}
         onUpdateWork={handleUpdateWork}
       />
@@ -574,9 +547,8 @@ const StaffDashboard = () => {
     return (
       <ComplaintStatus
         complaints={complaints}
-        selectedId={selectedId}
         onBack={() => setShowComplaintStatus(false)}
-        onStatusUpdate={handleStatusUpdate}
+        onWorkUpdate={handleUpdateWork}
       />
     );
   }
@@ -595,6 +567,8 @@ const StaffDashboard = () => {
     return (
       <Notifications
         notifications={notifications}
+        initialSelectedNotification={notificationToOpen}
+        onInitialSelectionHandled={() => setNotificationToOpen(null)}
         onBack={() => setShowNotifications(false)}
         onMarkAsRead={handleMarkAsRead}
         onMarkAllRead={handleMarkAllRead}
@@ -648,9 +622,20 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
+            onClick={() => openView(setShowNewComplaints)}
+          >
+            🆕 New Complaints
+            <span className="sd-sb-badge">
+              {newComplaints.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="sd-sb-link"
             onClick={() => openView(setShowAssignedComplaints)}
           >
-            🗂️ Complaint Register
+          🗂️MyComplaints
             <span className="sd-sb-badge">
               {complaints.length}
             </span>
@@ -663,20 +648,8 @@ const StaffDashboard = () => {
             📋 Complaint Assigned
             <span className="sd-sb-badge">{allAssignedComplaints.length}</span>
           </button>
-          <button
-            type="button"
-            className="sd-sb-link"
-            onClick={() => openView(setShowComplaintDetails)}
-          >
-            📋 ComplaintUpdatedDetails
-          </button>
-          <button
-            type="button"
-            className="sd-sb-link"
-            onClick={() => openView(setShowPhysicalInspection)}
-          >
-            🔎 Physical Inspection
-          </button>
+
+
           <button
             type="button"
             className="sd-sb-link"
@@ -684,6 +657,17 @@ const StaffDashboard = () => {
           >
             ⚙️Action/Work Management
           </button>
+
+
+          <button
+            type="button"
+            className="sd-sb-link"
+            onClick={() => openView(setShowComplaintDetails)}
+          >
+            📋UpdatedComplaint
+          </button>
+
+          
           <button
             type="button"
             className="sd-sb-link"
@@ -691,6 +675,19 @@ const StaffDashboard = () => {
           >
             ⚙️ Complaint Status Update
           </button>
+
+          <button
+            type="button"
+            className="sd-sb-link"
+            onClick={() => openView(setShowPhysicalInspection)}
+          >
+            🔎 Physical Inspection
+          </button>
+
+
+
+
+
         </nav>
 
         <div className="sd-sb-label">Activity & Alerts</div>
@@ -861,15 +858,6 @@ const StaffDashboard = () => {
                             >
                               View Details
                             </button>
-                            <button
-                              className="sd-icon-btn small"
-                              type="button"
-                              onClick={() => startInspection(c)}
-                              title="Physical Inspection"
-                              aria-label={`Physical inspection for ${c.complaintNumber}`}
-                            >
-                              🔎
-                            </button>
                             {c.stage === 0 && c.isDraft && (
                               <button
                                 className="sd-icon-btn small danger"
@@ -917,7 +905,7 @@ const StaffDashboard = () => {
 
           {/* TWO COLUMN: LIFECYCLE + DETAILS */}
           <div className="sd-dash-grid">
-            {/* LEFT: Lifecycle + Work History */}
+            {/* LEFT: Lifecycle */}
             <div className="sd-side-col">
               <div className="sd-panel" id="lifecycle-panel">
                 <div className="sd-panel-head">
@@ -961,23 +949,6 @@ const StaffDashboard = () => {
                 </div>
               </div>
 
-              <div className="sd-panel" id="history-panel">
-                <div className="sd-panel-head">
-                  <h3>Work History</h3>
-                </div>
-                <div className="sd-notif-list">
-                  {[...(selected.log || [])].reverse().map((note, i) => (
-                    <div className="sd-notif-item" key={`${note.time || "activity"}-${i}`}>
-                      <span className="sd-notif-dot"></span>
-                      <div>
-                        <b>{note.actor || "Dashboard"}: {note.text}</b>
-                        <span>{note.time && !Number.isNaN(new Date(note.time).getTime()) ? new Date(note.time).toLocaleString() : "Time not recorded"}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {!selected.log?.length && <p className="sd-empty-note">No activity has been recorded for this complaint yet.</p>}
-                </div>
-              </div>
             </div>
 
             {/* RIGHT: Complaint Details */}
@@ -1104,177 +1075,6 @@ const StaffDashboard = () => {
             </div>
           </div>
 
-          {/* PHYSICAL INSPECTION */}
-          <div
-            className="sd-panel sd-form-panel"
-            id="inspection-panel"
-            style={{ marginTop: "24px" }}
-          >
-            <div className="sd-panel-head">
-              <h3>Physical Inspection & Action Taken — {selected.complaintNumber}</h3>
-              {!inspectionDraft && (
-                <button
-                  className="sd-btn-primary small"
-                  type="button"
-                  onClick={() => startInspection(selected)}
-                >
-                  {selected.inspection.remarks ? "Update Record" : "Create Inspection Record"}
-                </button>
-              )}
-            </div>
-            {inspectionError && <p className="sd-empty-note" role="alert">{inspectionError}</p>}
-
-            {inspectionDraft && inspectionDraft.id === selected.id ? (
-              <form className="sd-new-form" onSubmit={saveInspection}>
-                <div className="sd-form-row">
-                  <div className="sd-field">
-                    <label htmlFor="insp-date">Inspection Date & Time</label>
-                    <input
-                      id="insp-date"
-                      type="datetime-local"
-                      value={inspectionDraft.inspectionDate}
-                      onChange={(e) =>
-                        setInspectionDraft({ ...inspectionDraft, inspectionDate: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="sd-field">
-                    <label htmlFor="comp-date">Work Completion Date & Time</label>
-                    <input
-                      id="comp-date"
-                      type="datetime-local"
-                      value={inspectionDraft.completionDate}
-                      onChange={(e) =>
-                        setInspectionDraft({ ...inspectionDraft, completionDate: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="sd-field">
-                  <label htmlFor="insp-remarks">Inspection Remarks</label>
-                  <textarea
-                    id="insp-remarks"
-                    rows="3"
-                    placeholder="Site inspection findings"
-                    value={inspectionDraft.remarks}
-                    onChange={(e) =>
-                      setInspectionDraft({ ...inspectionDraft, remarks: e.target.value })
-                    }
-                    required
-                  ></textarea>
-                </div>
-                <div className="sd-form-row">
-                  <div className="sd-field">
-                    <label htmlFor="insp-site-photo">Before-Work / Site Photograph</label>
-                    <label className="sd-photo-upload">
-                      {inspectionDraft.sitePhoto
-                        ? "Replace site photo"
-                        : " Click to attach site photo"}
-                      <input
-                        id="insp-site-photo"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => attachPhoto("sitePhoto", e.target.files?.[0])}
-                      />
-                    </label>
-                    {inspectionDraft.sitePhoto && <img className="sd-inspection-preview" src={toMediaUrl(inspectionDraft.sitePhoto)} alt="Before-work site evidence preview" />}
-                  </div>
-                  <div className="sd-field">
-                    <label htmlFor="insp-completion-photo">
-                      After-Work / Completion Photograph
-                    </label>
-                    <label className="sd-photo-upload">
-                      {inspectionDraft.completionPhoto
-                        ? "Replace after-repair photo"
-                        : "📷 Click to attach after-repair photo"}
-                      <input
-                        id="insp-completion-photo"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          attachPhoto("completionPhoto", e.target.files?.[0])
-                        }
-                      />
-                    </label>
-                    {inspectionDraft.completionPhoto && <img className="sd-inspection-preview" src={toMediaUrl(inspectionDraft.completionPhoto)} alt="After-work completion evidence preview" />}
-                  </div>
-                </div>
-                <div className="sd-field">
-                  <label htmlFor="insp-action">Action Taken / Work Remarks</label>
-                  <textarea
-                    id="insp-action"
-                    rows="2"
-                    placeholder="Repair / action carried out"
-                    value={inspectionDraft.actionTaken}
-                    onChange={(e) =>
-                      setInspectionDraft({ ...inspectionDraft, actionTaken: e.target.value })
-                    }
-                  ></textarea>
-                </div>
-                <div className="sd-form-actions">
-                  <button
-                    className="sd-btn-outline"
-                    type="button"
-                    onClick={() => setInspectionDraft(null)}
-                  >
-                    Cancel
-                  </button>
-                  <button className="sd-btn-primary" type="submit">
-                    Save Record →
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="sd-inspection-view">
-                {selected.inspection.remarks || selected.inspection.sitePhoto || selected.inspection.completionPhoto || selected.inspection.actionTaken ? (
-                  <>
-                    <div className="sd-detail-grid" style={{ marginBottom: "16px" }}>
-                      <div className="sd-detail-item">
-                        <span>Inspection Date/Time</span>
-                        <b>
-                          {selected.inspection.inspectionDate
-                            ? new Date(selected.inspection.inspectionDate).toLocaleString()
-                            : "Not recorded"}
-                        </b>
-                      </div>
-                      <div className="sd-detail-item">
-                        <span>Completion Date/Time</span>
-                        <b>
-                          {selected.inspection.completionDate
-                            ? new Date(selected.inspection.completionDate).toLocaleString()
-                            : "Pending"}
-                        </b>
-                      </div>
-                    </div>
-                    <div className="sd-detail-item sd-detail-wide">
-                      <span>Inspection Remarks</span>
-                      <b>{selected.inspection.remarks}</b>
-                    </div>
-                    <div className="sd-detail-item">
-                      <span>Before-Work Photo</span>
-                      {selected.inspection.sitePhoto
-                        ? <img className="sd-inspection-preview" src={toMediaUrl(selected.inspection.sitePhoto)} alt="Before-work site evidence" />
-                        : <b>Not attached</b>}
-                    </div>
-                    <div className="sd-detail-item">
-                      <span>After-Work Photo</span>
-                      {selected.inspection.completionPhoto
-                        ? <img className="sd-inspection-preview" src={toMediaUrl(selected.inspection.completionPhoto)} alt="After-work completion evidence" />
-                        : <b>Not attached</b>}
-                    </div>
-                    <div className="sd-detail-item sd-detail-wide">
-                      <span>Action Taken</span>
-                      <b>{selected.inspection.actionTaken || "Not recorded"}</b>
-                    </div>
-                  </>
-                ) : (
-                  <p className="sd-empty-note">No inspection record yet for this complaint.</p>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* NOTIFICATIONS PANEL */}
           <div
             className="sd-panel sd-form-panel"
@@ -1287,29 +1087,66 @@ const StaffDashboard = () => {
                 {notifications.filter((n) => !n.isRead).length} Unread
               </span>
             </div>
-            <div className="sd-notif-list">
-              {notifications.map((note) => (
-                <div
-                  className="sd-notif-item"
-                  key={note.id}
-                  style={{
-                    background: !note.isRead ? "#fff6ea" : "transparent",
-                    borderLeft: !note.isRead ? "4px solid var(--saffron)" : "4px solid transparent",
-                  }}
-                >
-                  <span
-                    className="sd-notif-dot"
-                    style={{ background: !note.isRead ? "var(--saffron)" : "#ccc" }}
-                  ></span>
-                  <div style={{ flex: 1 }}>
-                    <b>{note.type}</b>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#4b5567" }}>
-                      {note.text}
-                    </p>
-                    <span style={{ fontSize: "11px", color: "#8a93a6" }}>{note.time}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="sd-notif-table-wrap">
+              {notifications.length ? (
+                <table className="sd-notif-table">
+                  <thead>
+                    <tr>
+                      <th>Notification</th>
+                      <th>Complaint</th>
+                      <th>Date & Time</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...notifications]
+                      .sort((first, second) => (
+                        new Date(second.time || 0).getTime() - new Date(first.time || 0).getTime()
+                      ))
+                      .map((note) => (
+                        <tr key={note.id} className={!note.isRead ? "sd-notif-row-unread" : ""}>
+                          <td>
+                            <b>{note.type || "Notification"}</b>
+                            <span className="sd-notif-table-message">{note.text || "No message provided."}</span>
+                          </td>
+                          <td>{note.complaintNumber || "—"}</td>
+                          <td>
+                            {note.time && !Number.isNaN(new Date(note.time).getTime())
+                              ? new Date(note.time).toLocaleString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                              : note.time || "Time unavailable"}
+                          </td>
+                          <td>
+                            <span className={`sd-notif-table-status ${note.isRead ? "is-read" : "is-unread"}`}>
+                              {note.isRead ? "Read" : "Unread"}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="sd-notif-view-btn"
+                              onClick={() => {
+                                setNotificationToOpen(note);
+                                openView(setShowNotifications);
+                              }}
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="sd-notif-empty">No notifications have arrived yet.</div>
+              )}
             </div>
           </div>
 
@@ -1461,17 +1298,6 @@ const StaffDashboard = () => {
               <div>
                 <h5>View Assigned Complaints</h5>
                 <p>Your assignments, evidence & status</p>
-              </div>
-            </button>
-            <button
-              className="sd-quick-card"
-              type="button"
-              onClick={() => startInspection(selected)}
-            >
-              <div className="sd-quick-ic saffron">🔎</div>
-              <div>
-                <h5>Log Physical Inspection</h5>
-                <p>Remarks, site & after-repair photos</p>
               </div>
             </button>
             <button

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import "./ComplaintHistory.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
+import { toMediaUrl } from "../utils/dashboardApi";
 
 const ComplaintHistory = ({ complaints, onBack }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -109,7 +110,7 @@ const ComplaintHistory = ({ complaints, onBack }) => {
       </div>
 
       <div className="ch-container">
-        {/* 1. Overview Stats */}
+        {/* Overview cards stay above the history table. */}
         <div className="ch-stats-row">
           <div className="ch-stat-card ch-stat-navy">
             <div className="ch-stat-num">{stats.totalAssigned}</div>
@@ -159,7 +160,7 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                 </tr>
               </thead>
               <tbody>
-                {filteredLog.map((event) => (
+                {filteredLog.length ? filteredLog.map((event) => (
                   <tr key={event.id}>
                     <td className="ch-mono">{event.date}</td>
                     <td className="ch-mono ch-complaint-link">{event.complaintNumber}</td>
@@ -182,7 +183,11 @@ const ComplaintHistory = ({ complaints, onBack }) => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td className="ch-empty-row" colSpan="6">No complaint history matches this filter.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -209,31 +214,58 @@ const ComplaintHistory = ({ complaints, onBack }) => {
 
             {/* Modal Body */}
             <div className="ch-modal-body">
-              {/* Top Info Row */}
-              <div className="ch-modal-info-row">
-                <div className="ch-modal-info-item">
-                  <span className="ch-modal-label">Update Type</span>
-                  <b>{selectedEvent.type}</b>
-                </div>
-                <div className="ch-modal-info-item">
-                  <span className="ch-modal-label">Date Recorded</span>
-                  <b>{selectedEvent.date}</b>
-                </div>
-                <div className="ch-modal-info-item">
-                  <span className="ch-modal-label">Current Status</span>
-                  <b>{selectedEvent.complaintRef.status || "Not recorded"}</b>
-                </div>
-              </div>
+              <div className="ch-detail-layout">
+                <section className="ch-detail-panel">
+                  <header className="ch-detail-panel-heading">
+                    <span className="ch-eyebrow">Original report</span>
+                    <h4>Complaint Information</h4>
+                  </header>
+                  <div className="ch-complaint-information">
+                    <StaffComplaintDetails
+                      complaint={selectedEvent.complaintRef}
+                      layout="complaint-only"
+                      showActivity={false}
+                    />
+                  </div>
+                </section>
 
-              {/* Remarks / Description */}
-              <div className="ch-modal-section">
-                <span className="ch-modal-section-label">Remarks / Description</span>
-                <p className="ch-modal-description">{selectedEvent.description}</p>
-              </div>
-
-              <div className="ch-modal-section">
-                <span className="ch-modal-section-label">Complete Complaint Record</span>
-                <StaffComplaintDetails complaint={selectedEvent.complaintRef} />
+                <section className="ch-detail-panel">
+                  <header className="ch-detail-panel-heading">
+                    <span className="ch-eyebrow">Timeline entry</span>
+                    <h4>{selectedEvent.type} Details</h4>
+                  </header>
+                  <div className="ch-event-information">
+                    <dl className="ch-event-facts">
+                      <div><dt>Recorded by</dt><dd>{selectedEvent.actor || "Dashboard"}</dd></div>
+                      <div><dt>Date recorded</dt><dd>{selectedEvent.date}</dd></div>
+                      <div><dt>Current complaint status</dt><dd>{selectedEvent.complaintRef.status || "Not recorded"}</dd></div>
+                      <div className="ch-event-wide"><dt>History update</dt><dd>{selectedEvent.description}</dd></div>
+                      <div className="ch-event-wide"><dt>Staff work performed</dt><dd>{selectedEvent.complaintRef.inspection?.actionTaken || "No staff work details recorded."}</dd></div>
+                      <div className="ch-event-wide"><dt>Staff remarks</dt><dd>{selectedEvent.complaintRef.inspection?.remarks || "No staff remarks recorded."}</dd></div>
+                      <div><dt>Inspection date</dt><dd>{selectedEvent.complaintRef.inspection?.inspectionDate ? new Date(selectedEvent.complaintRef.inspection.inspectionDate).toLocaleString() : "Not recorded"}</dd></div>
+                      <div><dt>Completion date</dt><dd>{selectedEvent.complaintRef.inspection?.completionDate ? new Date(selectedEvent.complaintRef.inspection.completionDate).toLocaleString() : "Not recorded"}</dd></div>
+                    </dl>
+                    <div className="ch-event-evidence">
+                      <h5>Work Evidence</h5>
+                      {[
+                        ["Before / Site", selectedEvent.complaintRef.inspection?.sitePhoto || selectedEvent.complaintRef.photos?.site],
+                        ["After Work", selectedEvent.complaintRef.inspection?.completionPhoto || selectedEvent.complaintRef.photos?.after],
+                      ].some(([, photo]) => photo) ? (
+                        <div className="ch-event-photos">
+                          {[
+                            ["Before / Site", selectedEvent.complaintRef.inspection?.sitePhoto || selectedEvent.complaintRef.photos?.site],
+                            ["After Work", selectedEvent.complaintRef.inspection?.completionPhoto || selectedEvent.complaintRef.photos?.after],
+                          ].filter(([, photo]) => photo).map(([label, photo]) => (
+                            <a href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={label}>
+                              <img src={toMediaUrl(photo)} alt={label} loading="lazy" />
+                              <span>{label}</span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : <p className="ch-event-no-evidence">No staff work photographs attached.</p>}
+                    </div>
+                  </div>
+                </section>
               </div>
             </div>
 

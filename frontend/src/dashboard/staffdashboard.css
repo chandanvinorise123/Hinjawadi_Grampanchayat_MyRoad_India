@@ -533,17 +533,21 @@
 }
 
 /* Work history */
-.sd-notif-list { padding: 16px 22px 20px; }
-.sd-notif-item { 
-  display: flex; 
-  gap: 12px; 
-  padding: 12px 0; 
-  border-bottom: 1px solid var(--surface-2); 
-}
-.sd-notif-item:last-child { border-bottom: none; padding-bottom: 0; }
-.sd-notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--saffron); margin-top: 6px; flex-shrink: 0; }
-.sd-notif-item b { display: block; font-size: 12.5px; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
-.sd-notif-item span { font-size: 11px; color: var(--ink-faint); }
+.sd-notif-table-wrap { overflow-x: auto; padding: 0 18px 18px; }
+.sd-notif-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
+.sd-notif-table th { padding: 12px 14px; background: var(--surface); color: var(--ink-soft); font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.sd-notif-table td { padding: 13px 14px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 12px; vertical-align: middle; }
+.sd-notif-table tbody tr { transition: background .16s ease; }
+.sd-notif-table tbody tr:hover { background: #f8fbff; }
+.sd-notif-table .sd-notif-row-unread { background: #fff9f0; }
+.sd-notif-table td b { display: block; margin-bottom: 4px; color: var(--ink); font-size: 12px; }
+.sd-notif-table-message { display: block; max-width: 420px; color: var(--ink-soft); line-height: 1.5; }
+.sd-notif-table-status { display: inline-block; padding: 5px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+.sd-notif-table-status.is-read { background: var(--surface-2); color: var(--ink-faint); }
+.sd-notif-table-status.is-unread { background: #fff0d9; color: #9a5a13; }
+.sd-notif-view-btn { padding: 8px 11px; border: 1px solid #d5e1ed; border-radius: 8px; background: #fff; color: var(--navy-700); font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
+.sd-notif-view-btn:hover { border-color: #a9c4dd; background: #eef6fd; }
+.sd-notif-empty { padding: 30px 16px; color: var(--ink-soft); font-size: 13px; text-align: center; }
 
 /* Complaint details / inspection read view */
 .sd-form-panel { margin-bottom: 24px; }

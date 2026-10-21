@@ -11,6 +11,7 @@ import ComplaintsDetails from "../Citizenprofiledashboard/ComplaintsDetails";
 import IssueMap from "../Citizenprofiledashboard/IssueMap";
 import Notifications from "../Citizenprofiledashboard/Notifications";
 import RecentActivity from "../Citizenprofiledashboard/RecentActivity";
+import UpdatedComplaints from "../adminprofiledashboard/UpdatedComplaints";
 import { API_BASE_URL, markDashboardNotificationRead } from "../utils/dashboardApi";
 
 const API_URL = `${API_BASE_URL}/complaints`;
@@ -225,6 +226,7 @@ const CitizenDashboard = () => {
   // Page visibility states
   const [showProfile, setShowProfile] = useState(false);
   const [showMyComplaints, setShowMyComplaints] = useState(false);
+  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
   const [showTrackComplaint, setShowTrackComplaint] = useState(false);
   const [initialTrackComplaintNumber, setInitialTrackComplaintNumber] = useState("");
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
@@ -245,6 +247,7 @@ const CitizenDashboard = () => {
   const openView = (setter) => {
     setShowProfile(false);
     setShowMyComplaints(false);
+    setShowUpdatedComplaints(false);
     setShowTrackComplaint(false);
     setShowComplaintDetails(false);
     setShowIssueMap(false);
@@ -267,18 +270,20 @@ const CitizenDashboard = () => {
     }
   };
 
-  const fetchMyComplaints = async () => {
+  const fetchMyComplaints = async ({ silent = false } = {}) => {
     const user = getStoredUser();
     const citizenId = getCitizenId(user);
 
     if (!citizenId) {
-      setComplaints([]);
-      setSelectedId(null);
+      if (!silent) {
+        setComplaints([]);
+        setSelectedId(null);
+      }
       setComplaintsError("Citizen information was not found. Please log in again.");
       return;
     }
 
-    setComplaintsLoading(true);
+    if (!silent) setComplaintsLoading(true);
     setComplaintsError("");
     const requestUrl = `${API_URL}/my/${encodeURIComponent(String(citizenId))}`;
 
@@ -317,11 +322,13 @@ const CitizenDashboard = () => {
       });
     } catch (error) {
       console.error("Fetch complaints error:", error);
-      setComplaints([]);
-      setSelectedId(null);
+      if (!silent) {
+        setComplaints([]);
+        setSelectedId(null);
+      }
       setComplaintsError(error.message || "Unable to load complaints. Please try again.");
     } finally {
-      setComplaintsLoading(false);
+      if (!silent) setComplaintsLoading(false);
     }
   };
 
@@ -529,6 +536,8 @@ const CitizenDashboard = () => {
   // ---------------- EFFECTS ----------------
   useEffect(() => {
     fetchMyComplaints();
+    const refreshTimer = window.setInterval(() => fetchMyComplaints({ silent: true }), 30000);
+    return () => window.clearInterval(refreshTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -536,12 +545,18 @@ const CitizenDashboard = () => {
     const citizenId = getCitizenId(getStoredUser());
     if (!citizenId) return;
 
-    // ✅ UPDATED: Added getAuthHeaders()
-    fetch(`${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`, {
-      headers: getAuthHeaders()
-    })
-      .then((response) => response.json())
-      .then((result) => {
+    let active = true;
+    const loadCitizenDashboard = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/dashboard/citizen?userId=${encodeURIComponent(citizenId)}`,
+          { headers: getAuthHeaders() }
+        );
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Failed to load citizen notifications.");
+        }
+        if (!active) return;
         setNotifications(result.notifications || []);
         if (result.profile) {
           setProfile((current) => ({
@@ -552,8 +567,16 @@ const CitizenDashboard = () => {
             profilePhoto: result.profile.profilePhoto || current.profilePhoto,
           }));
         }
-      })
-      .catch((error) => console.error("Fetch citizen notifications error:", error));
+      } catch (error) {
+        if (active) console.error("Fetch citizen dashboard error:", error);
+      }
+    };
+    loadCitizenDashboard();
+    const refreshTimer = window.setInterval(loadCitizenDashboard, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -593,6 +616,16 @@ const CitizenDashboard = () => {
   // ✅ CONDITIONAL RENDERING (Must be AFTER all hooks, BEFORE main return)
   if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
   if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} onDelete={handleDelete} />;
+  if (showUpdatedComplaints) return (
+    <UpdatedComplaints
+      complaints={complaints}
+      actorRoles={["staff", "admin", "verifier"]}
+      audienceLabel="Staff, admin & verifier activity"
+      listTitle="Staff, Admin & Verifier Updates"
+      showUpdateHistory={false}
+      onBack={() => setShowUpdatedComplaints(false)}
+    />
+  );
   if (showTrackComplaint) return (
     <TrackComplaint
       onBack={() => setShowTrackComplaint(false)}
@@ -646,6 +679,9 @@ const CitizenDashboard = () => {
           <button type="button" className="cdp-sb-link" onClick={() => openView(setShowMyComplaints)}>
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
+          </button>
+          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowUpdatedComplaints)}>
+            <Icons.Details /> Updated Complaints
           </button>
           <button
             type="button"

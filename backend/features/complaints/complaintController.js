@@ -383,6 +383,12 @@ const getMyComplaints = async (req, res) => {
           complaint.complaintNumber ||
           complaint._id.toString(),
 
+        citizenName:
+          complaint.citizenName || "",
+
+        citizenContact:
+          complaint.citizenMobile || "",
+
         category: complaint.category,
 
         // Frontend compatibility
@@ -413,6 +419,9 @@ const getMyComplaints = async (req, res) => {
         images:
           complaint.images || [],
 
+        inspection:
+          complaint.inspection || {},
+
         photos:
           complaint.photos || 0,
 
@@ -439,6 +448,15 @@ const getMyComplaints = async (req, res) => {
 
         statusHistory:
           complaint.statusHistory || [],
+
+        activityLog:
+          complaint.activityLog || [],
+
+        verifierRemarks:
+          complaint.verifierRemarks || "",
+
+        previousRemarks:
+          complaint.previousRemarks || "",
       })
     );
 

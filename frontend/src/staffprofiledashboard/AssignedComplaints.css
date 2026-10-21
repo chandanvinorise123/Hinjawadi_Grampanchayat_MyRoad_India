@@ -362,6 +362,14 @@
   .ac-details-grid {
     grid-template-columns: 1fr;
   }
+
+  .ac-modal-body {
+    padding: 20px;
+  }
+
+  .ac-modal-body > .scd-split-layout {
+    gap: 24px;
+  }
 }
 
 /* ============================================
@@ -394,7 +402,7 @@
   background: var(--white);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 900px;
+  max-width: 1240px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 24px 60px -20px rgba(11, 36, 71, 0.4);
@@ -453,7 +461,17 @@
 
 /* Modal Body */
 .ac-modal-body {
-  padding: 32px;
+  padding: 26px 30px;
+}
+
+.ac-modal-body > .scd-split-layout {
+  gap: 34px;
+}
+
+.ac-modal-footer {
+  padding: 12px 30px;
+  border-top: 1px solid var(--line);
+  text-align: right;
 }
 
 /* Info Row (4 columns) */

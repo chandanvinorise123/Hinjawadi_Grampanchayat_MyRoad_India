@@ -31,6 +31,11 @@ export const fetchStaffAssignedComplaints = (userId) => {
   return request(`/dashboard/staff-assigned-complaints?userId=${encodeURIComponent(userId)}`);
 };
 
+export const fetchStaffNewComplaints = (userId) => {
+  if (!userId) throw new Error("A logged-in staff user is required");
+  return request(`/dashboard/staff-new-complaints?userId=${encodeURIComponent(userId)}`);
+};
+
 export const fetchDashboardUsers = (role) =>
   request(`/users?role=${encodeURIComponent(role)}`);
 

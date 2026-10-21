@@ -507,6 +507,15 @@
   background-color: #1e4d82;
 }
 
+.cd-list-error {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+  background: #fef2f2;
+}
+
 /* Fallback for missing photos in detail view */
 .cd-photo-placeholder {
   width: 100%;

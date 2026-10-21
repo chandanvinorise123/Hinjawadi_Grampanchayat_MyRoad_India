@@ -7,6 +7,7 @@ import AdminManagement from "../adminprofiledashboard/AdminManagement";
 import StaffVerifierProfile from "../adminprofiledashboard/StaffVerifierProfile";
 import ComplaintManagement from "../adminprofiledashboard/ComplaintManagement";
 import StaffWorkMonitoring from "../adminprofiledashboard/StaffWorkMonitoring";
+import UpdatedComplaints from "../adminprofiledashboard/UpdatedComplaints";
 import ComplaintVerification from "../adminprofiledashboard/ComplaintVerification";
 import ReportsManagement from "../adminprofiledashboard/ReportsManagement";
 import logo from '../assets/logo.jpeg';
@@ -222,6 +223,7 @@ const AdminDashboard = () => {
   const [newPassword, setNewPassword] = useState("");
 
   const [showProfile, setShowProfile] = useState(false);
+  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
 
   const openView = (setter) => {
     setShowProfile(false);
@@ -230,6 +232,7 @@ const AdminDashboard = () => {
     setShowComplaintVerification(false);
     setShowComplaintDetails(false);
     setShowStaffMonitoring(false);
+    setShowUpdatedComplaints(false);
     setShowReports(false);
     setter(true);
   };
@@ -247,6 +250,7 @@ const AdminDashboard = () => {
   const [showAdminManagement, setShowAdminManagement] = useState(false);
   const [showComplaintManagement, setShowComplaintManagement] = useState(false);
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
+  const [complaintListType, setComplaintListType] = useState("new");
   const [showReports, setShowReports] = useState(false);
   const [showNotificationMonitoring, setShowNotificationMonitoring] = useState(false);
 
@@ -349,6 +353,7 @@ const AdminDashboard = () => {
       return;
     }
     setSelectedId(complaint.id || complaint._id);
+    setComplaintListType(null);
     setShowNotificationMonitoring(false);
     setShowComplaintDetails(true);
   };
@@ -837,17 +842,29 @@ const AdminDashboard = () => {
         <ComplaintVerification onBack={() => setShowComplaintVerification(false)} />
       ) : showComplaintDetails ? (
         <ComplaintDetails
-          key={String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "all-complaints")}
-          complaint={complaints.find((complaint) => String(complaint.id) === String(selectedId))}
+          listType={complaintListType || "new"}
+          key={`${complaintListType || "detail"}-${String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "list")}`}
+          complaint={complaintListType ? null : complaints.find((complaint) => String(complaint.id) === String(selectedId))}
           staffOptions={adminStaffOptions}
           verifierOptions={adminVerifierOptions}
           assignmentsLoading={usersLoading}
           assignmentsError={usersLoadError}
           onComplaintUpdated={handleComplaintUpdated}
-          onBack={() => setShowComplaintDetails(false)}
+          onBack={() => {
+            setShowComplaintDetails(false);
+            setSelectedId(null);
+          }}
         />
       ) : showStaffMonitoring ? (
         <StaffWorkMonitoring onBack={() => setShowStaffMonitoring(false)} />
+      ) : showUpdatedComplaints ? (
+        <UpdatedComplaints
+          complaints={complaints}
+          actorRoles={["staff", "admin", "verifier"]}
+          audienceLabel="Staff, admin & verifier activity"
+          listTitle="Staff, Admin & Verifier Updates"
+          onBack={() => setShowUpdatedComplaints(false)}
+        />
       ) : showReports ? (
         <ReportsManagement onBack={() => setShowReports(false)} />
       ) : showAdminManagement ? (
@@ -922,13 +939,39 @@ const AdminDashboard = () => {
                     <span className="ad-sb-badge">{complaints.length}</span>
                   </button>
 
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintDetails)}>
-                  📈Complaint Details
+                  <button
+                    type="button"
+                    className="ad-sb-link"
+                    onClick={() => {
+                      setSelectedId(null);
+                      setComplaintListType("new");
+                      openView(setShowComplaintDetails);
+                    }}
+                  >
+                    📈 New Complaints
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ad-sb-link"
+                    onClick={() => {
+                      setSelectedId(null);
+                      setComplaintListType("assigned");
+                      openView(setShowComplaintDetails);
+                    }}
+                  >
+                    📋 Assigned Complaints
+                  </button>
+
+                  
+                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowUpdatedComplaints)}>
+                    📋 Updated Complaints
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
                     🧑‍ Staff & Work Monitoring
                   </button>
+
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
                     📈 Complaint Verification
@@ -1485,6 +1528,7 @@ const AdminDashboard = () => {
                                         className="ad-btn-primary small" 
                                         onClick={() => {
                                           setSelectedId(c.id);
+                                          setComplaintListType(null);
                                           setShowComplaintDetails(true);
                                         }}
                                       >
