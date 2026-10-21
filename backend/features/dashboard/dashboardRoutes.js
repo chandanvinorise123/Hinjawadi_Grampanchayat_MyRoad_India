@@ -153,6 +153,41 @@ const getProfile = async (userId, role) => {
   return User.findById(userId).select("-password").lean();
 };
 
+router.get("/staff-assigned-complaints", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId || !isObjectId(userId)) {
+      return res.status(400).json({ success: false, message: "A valid staff userId is required" });
+    }
+
+    const staffProfile = await getProfile(userId, "staff");
+    if (!staffProfile || staffProfile.role !== "staff") {
+      return res.status(403).json({ success: false, message: "Staff access is required" });
+    }
+
+    const complaints = await Complaint.find({
+      $or: [
+        { assignedStaffId: { $exists: true, $nin: [null, ""] } },
+        { assignedStaff: { $exists: true, $nin: [null, ""] } },
+      ],
+    })
+      .populate("citizenId", "name email mobile contact")
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      complaints: complaints.map(toComplaintView),
+    });
+  } catch (error) {
+    console.error("Failed to fetch staff assigned complaints:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch assigned complaints",
+    });
+  }
+});
+
 router.get("/:role", async (req, res) => {
   try {
     const { role } = req.params;

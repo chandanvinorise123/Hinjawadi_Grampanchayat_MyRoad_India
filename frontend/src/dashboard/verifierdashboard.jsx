@@ -10,6 +10,7 @@ import CompletedWork from "../verifierprofiledashboard/CompletedWork";
 import Reverification from "../verifierprofiledashboard/Reverification";
 import PhysicalVerification from "../verifierprofiledashboard/PhysicalVerification";
 import ComplaintHistory from "../verifierprofiledashboard/ComplaintHistory";
+import ComplaintAssigned from "../verifierprofiledashboard/ComplaintAssigned";
 import Notifications from "../verifierprofiledashboard/Notifications";
 import ViewLocation from "../verifierprofiledashboard/ViewLocation";
 import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
@@ -159,6 +160,15 @@ const mapVerifierComplaint = (complaint) => {
 
 const queueTone = { "New Complaints": "navy", "Staff Work in Progress": "orange", "Completed Work": "orange", "Awaiting Staff Correction": "red", "Re-verification": "red", "Resolution Requests": "amber", "Resolved / Closed": "green" };
 
+const hasComplaintAssignee = (value) => {
+  const assignee = typeof value === "object"
+    ? value?._id || value?.name || ""
+    : value;
+  const normalized = String(assignee || "").trim().toLowerCase();
+  return normalized !== "" &&
+    !["unassigned", "not assigned", "none", "null"].includes(normalized);
+};
+
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
   let hash = 0;
@@ -189,6 +199,7 @@ const VerifierDashboard = () => {
   const [remarksDraft, setRemarksDraft] = useState("");
   const [showProfile, setShowProfile] = useState(false);
   const [showNewComplaints, setShowNewComplaints] = useState(false);
+  const [showComplaintAssigned, setShowComplaintAssigned] = useState(false);
   const [showCompletedWork, setShowCompletedWork] = useState(false);
   const [showReverification, setShowReverification] = useState(false);
   const [showPhysicalVerification, setShowPhysicalVerification] = useState(false);
@@ -204,10 +215,37 @@ const VerifierDashboard = () => {
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [activityComplaint, setActivityComplaint] = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
+  const verifierId = getUserId(storedUser);
+  const assignedComplaints = items.filter((complaint) =>
+    hasComplaintAssignee(complaint.assignedStaffId) ||
+    hasComplaintAssignee(complaint.assignedStaff) ||
+    hasComplaintAssignee(complaint.assignedVerifierId) ||
+    hasComplaintAssignee(complaint.assignedVerifier)
+  );
+
+  const verifierAssignmentUpdates = (complaint) => {
+    if (!verifierId || !verifier.name) return {};
+
+    const existingVerifierId = String(complaint?.assignedVerifierId || "");
+    const existingVerifierName = String(complaint?.assignedVerifier || "").trim();
+    const isAssignedToAnotherVerifier =
+      (existingVerifierId && existingVerifierId !== String(verifierId)) ||
+      (!existingVerifierId &&
+        existingVerifierName &&
+        existingVerifierName.toLowerCase() !== verifier.name.trim().toLowerCase());
+
+    if (isAssignedToAnotherVerifier) return {};
+
+    return {
+      assignedVerifier: existingVerifierName || verifier.name,
+      assignedVerifierId: existingVerifierId || String(verifierId),
+    };
+  };
 
   const openView = (setter) => {
     setShowProfile(false);
     setShowNewComplaints(false);
+    setShowComplaintAssigned(false);
     setShowCompletedWork(false);
     setShowReverification(false);
     setShowPhysicalVerification(false);
@@ -227,6 +265,7 @@ const VerifierDashboard = () => {
   const returnToDashboard = () => {
     setShowProfile(false);
     setShowNewComplaints(false);
+    setShowComplaintAssigned(false);
     setShowCompletedWork(false);
     setShowReverification(false);
     setShowPhysicalVerification(false);
@@ -419,7 +458,9 @@ const VerifierDashboard = () => {
   };
 
   const persistComplaintStatus = async (id, status, remarks = "", dateTime = "", additionalUpdates = {}) => {
+    const complaint = items.find((item) => item.id === id);
     const result = await updateDashboardComplaint(id, {
+      ...verifierAssignmentUpdates(complaint),
       ...additionalUpdates,
       status,
       remarks,
@@ -440,6 +481,7 @@ const VerifierDashboard = () => {
       const result = await updateDashboardComplaint(complaint.id, {
         assignedStaff: assignedStaff?.name || "",
         assignedStaffId: assignedStaff?._id || "",
+        ...verifierAssignmentUpdates(complaint),
         ...(assignedStaff && ["pending", "rejected"].includes(complaint.status) ? { status: "Under Action" } : {}),
       });
       const updatedComplaint = mapVerifierComplaint(result.complaint);
@@ -452,12 +494,42 @@ const VerifierDashboard = () => {
     }
   };
 
+  const handleManagementAssignStaff = async (complaint, staffId) => {
+    const assignedStaff = staffOptions.find(
+      (staff) => String(staff._id) === String(staffId)
+    );
+    if (!assignedStaff) {
+      throw new Error("Select a valid staff member for this complaint.");
+    }
+
+    const result = await updateDashboardComplaint(complaint.id, {
+      assignedStaff: assignedStaff.name,
+      assignedStaffId: assignedStaff._id,
+      ...verifierAssignmentUpdates(complaint),
+      ...(["pending", "rejected"].includes(complaint.status)
+        ? { status: "Under Action" }
+        : {}),
+    });
+    const updatedComplaint = mapVerifierComplaint(result.complaint);
+    setItems((current) => current.map((item) => (
+      item.id === complaint.id ? updatedComplaint : item
+    )));
+    return updatedComplaint;
+  };
+
   const handleCompletedWorkVerify = (id, action, remarks, dateTime) =>
     persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
 
   const handleNewComplaintAction = async (id, action, details = {}) => {
+    const complaint = items.find((item) => item.id === id);
     if (action === "reject") {
-      return persistComplaintStatus(id, "Rejected", details.remarks);
+      return persistComplaintStatus(
+        id,
+        "Rejected",
+        details.remarks,
+        "",
+        verifierAssignmentUpdates(complaint)
+      );
     }
     const assignedStaff = staffOptions.find((staff) => String(staff._id) === String(details.staffId));
     if (!assignedStaff) {
@@ -466,11 +538,30 @@ const VerifierDashboard = () => {
     const result = await updateDashboardComplaint(id, {
       assignedStaff: assignedStaff.name,
       assignedStaffId: assignedStaff._id,
+      ...verifierAssignmentUpdates(complaint),
       status: "Under Action",
     });
     const updatedComplaint = mapVerifierComplaint(result.complaint);
     setItems((current) => current.map((complaint) => (
       complaint.id === id ? updatedComplaint : complaint
+    )));
+    return updatedComplaint;
+  };
+
+  const handleSaveVerifierEvidence = async (id, photoUrl) => {
+    const complaint = items.find((item) => item.id === id);
+    if (!complaint) throw new Error("Complaint could not be found.");
+
+    const result = await updateDashboardComplaint(id, {
+      ...verifierAssignmentUpdates(complaint),
+      inspection: {
+        ...(complaint.inspection || {}),
+        verificationPhoto: photoUrl,
+      },
+    });
+    const updatedComplaint = mapVerifierComplaint(result.complaint);
+    setItems((current) => current.map((item) => (
+      item.id === id ? updatedComplaint : item
     )));
     return updatedComplaint;
   };
@@ -494,6 +585,7 @@ const VerifierDashboard = () => {
     const result = await updateDashboardComplaint(complaint.id, {
       assignedStaff: assignedStaff.name,
       assignedStaffId: assignedStaff._id,
+      ...verifierAssignmentUpdates(complaint),
       status: "Under Action",
       remarks,
     });
@@ -616,6 +708,21 @@ const VerifierDashboard = () => {
     );
   }
 
+  if (showComplaintAssigned) {
+    return (
+      <ComplaintAssigned
+        complaints={assignedComplaints}
+        staffOptions={staffOptions}
+        verifier={verifier}
+        loadError={loadError}
+        onBack={returnToDashboard}
+        onAction={handleNewComplaintAction}
+        onAssignStaff={handleManagementAssignStaff}
+        onSaveEvidence={handleSaveVerifierEvidence}
+      />
+    );
+  }
+
   if (showComplaintHistory) {
     return (
       <ComplaintHistory
@@ -711,6 +818,10 @@ const VerifierDashboard = () => {
             </button>
             <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
               👤 My Profile
+            </button>
+            <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
+              📋 Complaint Assigned
+              <span className="vd-sb-badge">{assignedComplaints.length}</span>
             </button>
           </nav>
 
@@ -1113,6 +1224,10 @@ const VerifierDashboard = () => {
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
             👤 My Profile
+          </button>
+          <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
+            📋 Complaint Assigned
+            <span className="vd-sb-badge">{assignedComplaints.length}</span>
           </button>
         </nav>
 

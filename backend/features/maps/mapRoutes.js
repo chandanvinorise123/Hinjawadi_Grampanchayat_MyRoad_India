@@ -9,25 +9,40 @@ const Complaint = require("../../models/Complaint");
 // =====================================================
 router.get("/complaints", async (req, res) => {
   try {
-    const complaints = await Complaint.find({
-      $or: [
-        { "coordinates.latitude": { $exists: true } },
-        { "location.coordinates": { $exists: true, $ne: [0, 0] } }
-      ]
-    }).select("complaintNumber category issueType location coordinates status priority citizenName createdAt description photos images");
+    const query = req.query.includeUnlocated === "true"
+      ? {}
+      : {
+          $or: [
+            { "coordinates.latitude": { $exists: true } },
+            { "location.coordinates": { $exists: true, $ne: [0, 0] } }
+          ]
+        };
+    const complaints = await Complaint.find(query).select(
+      "complaintNumber category issueType location landmark coordinates status priority citizenName assignedStaff assignedStaffId assignedVerifier assignedVerifierId createdAt description photos images inspection"
+    );
     
     const formattedComplaints = complaints.map(c => {
       const data = c.toObject();
-      const lat = data.coordinates?.latitude ?? data.location?.coordinates?.[1];
-      const lng = data.coordinates?.longitude ?? data.location?.coordinates?.[0];
+      const locationCoordinates = Array.isArray(data.location?.coordinates)
+        ? data.location.coordinates
+        : [];
+      const locationTextCoordinates = typeof data.location === "string"
+        ? data.location.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/)
+        : null;
+      const lat = data.coordinates?.latitude ?? data.coordinates?.lat ??
+        data.location?.latitude ?? data.location?.lat ??
+        locationCoordinates[1] ?? locationTextCoordinates?.[1] ?? null;
+      const lng = data.coordinates?.longitude ?? data.coordinates?.lng ??
+        data.location?.longitude ?? data.location?.lng ??
+        locationCoordinates[0] ?? locationTextCoordinates?.[2] ?? null;
 
       return {
         ...data,
         id: c._id,
         issue: data.issueType,
         date: data.createdAt,
-        lat,
-        lng
+        lat: lat === null ? null : Number(lat),
+        lng: lng === null ? null : Number(lng)
       };
     });
 

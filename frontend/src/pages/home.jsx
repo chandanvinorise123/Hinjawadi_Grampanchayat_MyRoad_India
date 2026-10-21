@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./home.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
+import HomeComplaintsMap from "../components/maps/HomeComplaintsMap";
 const REPORT_ROUTE = "/reportissue";
 
 const findComplaintByNumber = async (complaintNumber) => {
@@ -26,7 +27,7 @@ import heroImage4 from "../assets/r4.png";
 import heroImage5 from "../assets/r5.jpg";
 
 // TV preview video
-import tvDemoVideo from "../assets/myRoadvideo.mp4";
+// import tvDemoVideo from "../assets/myRoadvideo.mp4";
 
 // Gallery images
 import gallery1 from "../assets/r1.jpg";
@@ -77,33 +78,28 @@ const quickActions = [
 
 const liveStats = [
   {
-    value: "17,438",
+    key: "totalReportedIssues",
     label: "totalReported",
-    trend: "+4.2%",
     color: "blue",
   },
   {
-    value: "1,742",
+    key: "underVerification",
     label: "underVerification",
-    trend: "-1.1%",
     color: "amber",
   },
   {
-    value: "2,317",
+    key: "actionRequired",
     label: "actionRequired",
-    trend: "+2.6%",
     color: "orange",
   },
   {
-    value: "1,987",
+    key: "underRepair",
     label: "underRepair",
-    trend: "+6.8%",
     color: "saffron",
   },
   {
-    value: "15,932",
+    key: "resolved",
     label: "resolved",
-    trend: "+9.3%",
     color: "green",
   },
 ];
@@ -256,6 +252,8 @@ const Home = () => {
   const [trackLoading, setTrackLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tvPlaying, setTvPlaying] = useState(true);
+  const [complaintStats, setComplaintStats] = useState(null);
+  const [complaintStatsError, setComplaintStatsError] = useState(false);
   const videoRef = useRef(null);
 
   // Gallery lightbox
@@ -372,6 +370,44 @@ const Home = () => {
     recordVisit();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchComplaintStats = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/stats/overview`);
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Unable to load complaint statistics");
+        }
+
+        const fetchedStats = {
+          totalReportedIssues: result.data?.totalReportedIssues,
+          ...result.data?.complaintStatusCounts,
+        };
+        if (!liveStats.every(({ key }) => Number.isFinite(fetchedStats[key]))) {
+          throw new Error("The complaint statistics response is incomplete");
+        }
+
+        if (isMounted) {
+          setComplaintStats(fetchedStats);
+          setComplaintStatsError(false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch home complaint statistics:", error);
+        if (isMounted) setComplaintStatsError(true);
+      }
+    };
+
+    fetchComplaintStats();
+    const interval = window.setInterval(fetchComplaintStats, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
   // Lightbox keyboard controls and scroll locking
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -411,30 +447,33 @@ const Home = () => {
 
         <div className="hero-scrim"></div>
 
-        <div className="hero-content">
-          <div className="hero-badge">
-            <span className="live-dot"></span>
-            {t("home.liveNetwork")}
+        <div className="hero-main-layout">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span className="live-dot"></span>
+              {t("home.liveNetwork")}
+            </div>
+
+            <h1>
+              {t("home.heroTitle")}{" "}
+              <span>{t("home.heroTitleHighlight")}</span>
+            </h1>
+
+            <p className="hero-description">
+              {t("home.heroDescription")}
+            </p>
+
+            <div className="hero-buttons">
+              <button
+                className="primary-btn"
+                type="button"
+                onClick={() => navigate(REPORT_ROUTE)}
+              >
+                {t("home.reportIssue")} <span>→</span>
+              </button>
+            </div>
           </div>
-
-          <h1>
-            {t("home.heroTitle")}{" "}
-            <span>{t("home.heroTitleHighlight")}</span>
-          </h1>
-
-          <p className="hero-description">
-            {t("home.heroDescription")}
-          </p>
-
-          <div className="hero-buttons">
-            <button
-              className="primary-btn"
-              type="button"
-              onClick={() => navigate(REPORT_ROUTE)}
-            >
-              {t("home.reportIssue")} <span>→</span>
-            </button>
-          </div>
+          <HomeComplaintsMap t={t} />
         </div>
 
         {/* Slider dots */}
@@ -456,19 +495,35 @@ const Home = () => {
           </div>
         )}
 
-        {/* TV preview panel */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+{/* 
+        
         <div className="tv-unit">
           <div className={`tv-frame ${!tvPlaying ? "tv-paused" : ""}`}>
-            <div className="tv-topbar">
+
+            
+             <div className="tv-topbar">
               <div className="tv-live">
                 <span className="dot"></span>{" "}
                 {t("home.livePreview")}
               </div>
 
               <div className="tv-brand">MYROAD · DEMO</div>
-            </div>
+            </div> 
 
-            <div className="tv-screen">
+           <div className="tv-screen">
               <video ref={videoRef} autoPlay muted loop playsInline>
                 <source src={tvDemoVideo} type="video/mp4" />
               </video>
@@ -490,19 +545,44 @@ const Home = () => {
                 <b>#MRI-2026-08341</b>
                 <span>{t("home.underRepair")}</span>
               </div>
-            </div>
+            </div> 
+
 
             <div className="tv-bottombar">
               {Array.from({ length: 6 }).map((_, i) => (
                 <span key={i} className="speaker-dot"></span>
               ))}
-            </div>
+            </div> 
+
+
+
+
+
           </div>
 
           <div className="tv-stand-neck"></div>
           <div className="tv-stand-base"></div>
+
+
+           
         </div>
+ */}
+
+
+
+
+
       </section>
+
+
+
+
+
+
+
+
+
+
 
       {/* ================= QUICK ACTIONS ================= */}
       <section className="quick-actions-section">
@@ -537,10 +617,13 @@ const Home = () => {
             <div className="stat-cell" key={i}>
               <div className="stat-top">
                 <span className={`stat-dot dot-${stat.color}`}></span>
-                <span className="stat-trend">{stat.trend}</span>
               </div>
 
-              <div className="stat-num">{stat.value}</div>
+              <div className="stat-num">
+                {complaintStats
+                  ? complaintStats[stat.key].toLocaleString()
+                  : "—"}
+              </div>
 
               <div className="stat-label">
                 {t(`home.${stat.label}`)}
@@ -548,6 +631,11 @@ const Home = () => {
             </div>
           ))}
         </div>
+        {complaintStatsError && (
+          <p className="stats-error" role="alert">
+            {t("home.statsLoadError")}
+          </p>
+        )}
       </section>
 
       {/* ================= CATEGORIES ================= */}

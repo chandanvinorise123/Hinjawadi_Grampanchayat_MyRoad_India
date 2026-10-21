@@ -1,42 +1,79 @@
 import React, { useEffect } from "react";
-import { divIcon, latLngBounds } from "leaflet";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { divIcon, geoJSON, latLngBounds } from "leaflet";
+import {
+  GeoJSON,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import { toMediaUrl } from "../../utils/dashboardApi";
-import { getComplaintMapMarkerSvg } from "./complaintMapMarker";
+import {
+  getComplaintMapMarkerSvg,
+  getComplaintMapPinType,
+} from "./complaintMapMarker";
 import "./ComplaintLocationMap.css";
 import "leaflet/dist/leaflet.css";
 
-const MapBounds = ({ complaints, center }) => {
+const MapBounds = ({ complaints, center, boundaryGeoJson }) => {
   const map = useMap();
-  const coordinatesKey = complaints
-    .map((complaint) => `${complaint.lat},${complaint.lng}`)
-    .join("|");
+  const coordinatesKey = complaints.length
+    ? [...new Set(complaints.map((complaint) =>
+        `${Number(complaint.lat)},${Number(complaint.lng)}`
+      ))]
+        .sort()
+        .join("|")
+    : "";
 
   useEffect(() => {
-    if (complaints.length === 0) {
-      map.setView(center, 12);
-      return;
+    let bounds = null;
+
+    if (boundaryGeoJson) {
+      const boundaryBounds = geoJSON(boundaryGeoJson).getBounds();
+      if (boundaryBounds.isValid()) bounds = boundaryBounds;
     }
 
-    const bounds = latLngBounds(
-      complaints.map((complaint) => [
-        Number(complaint.lat),
-        Number(complaint.lng),
-      ])
-    );
-    map.fitBounds(bounds, {
-      padding: [32, 32],
-      maxZoom: 14,
-    });
-  }, [center, complaints, coordinatesKey, map]);
+    if (coordinatesKey) {
+      const complaintBounds = latLngBounds(
+        coordinatesKey.split("|").map((coordinate) =>
+          coordinate.split(",").map(Number)
+        )
+      );
+      if (bounds) bounds.extend(complaintBounds);
+      else bounds = complaintBounds;
+    }
+
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        padding: [32, 32],
+        maxZoom: 14,
+      });
+    } else {
+      map.setView([center.lat, center.lng], 12);
+    }
+  }, [boundaryGeoJson, center.lat, center.lng, coordinatesKey, map]);
 
   return null;
 };
 
-const AdminComplaintsMap = ({ complaints, center }) => {
+const AdminComplaintsMap = ({
+  complaints,
+  center,
+  boundaryGeoJson = null,
+  mapClassName = "ad-complaints-map",
+  detailedHomePopups = false,
+  translate = (key) => key,
+}) => {
+  const markersByLocation = complaints.reduce((groups, complaint) => {
+    const key = `${Number(complaint.lat)},${Number(complaint.lng)}`;
+    groups.set(key, [...(groups.get(key) || []), complaint.id || complaint._id]);
+    return groups;
+  }, new Map());
+
   return (
     <MapContainer
-      className="ad-complaints-map"
+      className={mapClassName}
       center={center}
       zoom={12}
       scrollWheelZoom={false}
@@ -45,19 +82,84 @@ const AdminComplaintsMap = ({ complaints, center }) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <MapBounds complaints={complaints} center={center} />
+      <MapBounds
+        complaints={complaints}
+        center={center}
+        boundaryGeoJson={boundaryGeoJson}
+      />
+      {boundaryGeoJson && (
+        <GeoJSON
+          data={boundaryGeoJson}
+          style={{
+            color: "#d21919",
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0,
+          }}
+          interactive={false}
+        />
+      )}
       {complaints.map((complaint) => {
         const position = {
           lat: Number(complaint.lat),
           lng: Number(complaint.lng),
         };
+        const sameLocationIds = markersByLocation.get(
+          `${position.lat},${position.lng}`
+        );
+        const sameLocationIndex = sameLocationIds.indexOf(
+          complaint.id || complaint._id
+        );
+        const markerPosition =
+          detailedHomePopups && sameLocationIds.length > 1
+            ? {
+                lat: position.lat + (sameLocationIndex - (sameLocationIds.length - 1) / 2) * 0.00018,
+                lng: position.lng,
+              }
+            : position;
         const location = typeof complaint.location === "string"
           ? complaint.location
           : complaint.location?.address || complaint.location?.name || "";
-        const photos = [
+        const images = [
           ...(Array.isArray(complaint.images) ? complaint.images : []),
           ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
         ].filter((photo, index, allPhotos) => photo && allPhotos.indexOf(photo) === index);
+        const pinType = getComplaintMapPinType(complaint);
+        const beforePhoto = detailedHomePopups && pinType === "open"
+          ? images[0] || complaint.photos?.before || ""
+          : complaint.inspection?.sitePhoto ||
+            complaint.photos?.site ||
+            complaint.photos?.before ||
+            images[0] ||
+            "";
+        const afterPhoto =
+          complaint.inspection?.completionPhoto ||
+          complaint.photos?.after ||
+          "";
+        const isResolved = pinType === "resolved";
+        const popupPhotos = detailedHomePopups
+          ? pinType === "open"
+            ? beforePhoto
+              ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
+              : []
+            : [
+                ...(!isResolved && beforePhoto
+                  ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
+                  : []),
+                ...(!isResolved && afterPhoto
+                  ? [{ label: translate("home.mapAfterPhoto"), url: afterPhoto }]
+                  : []),
+                ...images
+                  .filter((photo) => photo !== beforePhoto && photo !== afterPhoto)
+                  .map((url, index) => ({
+                    label: `Complaint photo ${index + 1}`,
+                    url,
+                  })),
+              ]
+          : images.map((url, index) => ({
+              label: `Complaint photo ${index + 1}`,
+              url,
+            }));
         const reportedAt = complaint.createdAt || complaint.date;
         const parsedReportedAt = reportedAt ? new Date(reportedAt) : null;
         const reportDate = parsedReportedAt && !Number.isNaN(parsedReportedAt.getTime())
@@ -74,18 +176,38 @@ const AdminComplaintsMap = ({ complaints, center }) => {
         return (
           <Marker
             key={complaint.id || complaint._id}
-            position={position}
+            position={markerPosition}
             icon={markerIcon}
             title={`${complaint.complaintNumber || "Complaint"} - ${complaint.issue || complaint.issueType || "Reported issue"}`}
           >
-            <Popup>
+            <Popup
+              maxWidth={detailedHomePopups ? 430 : 300}
+              minWidth={detailedHomePopups ? 300 : 0}
+              className={detailedHomePopups ? "home-map-popup" : undefined}
+            >
               <div className="scm-popup">
-                <strong>{complaint.complaintNumber || "Complaint"}</strong>
+                <div className="home-map-popup-heading">
+                  <strong>{complaint.complaintNumber || "Complaint"}</strong>
+                  {detailedHomePopups && (
+                    <span className={`home-map-status ${pinType}`}>
+                      {complaint.status || "Status unavailable"}
+                    </span>
+                  )}
+                </div>
                 <p><b>Issue:</b> {complaint.issue || complaint.issueType || "Reported issue"}</p>
                 <p><b>Category:</b> {complaint.category || "Not available"}</p>
-                <p><b>Status:</b> {complaint.status || "Status unavailable"}</p>
+                {!detailedHomePopups && (
+                  <p><b>Status:</b> {complaint.status || "Status unavailable"}</p>
+                )}
                 <p><b>Location:</b> {location || "Address not provided"}</p>
+                {complaint.landmark && <p><b>Landmark:</b> {complaint.landmark}</p>}
                 <p><b>Reported:</b> {reportDate}</p>
+                {complaint.citizenName && (
+                  <p><b>Reported by:</b> {complaint.citizenName}</p>
+                )}
+                {complaint.assignedStaff && (
+                  <p><b>Assigned staff:</b> {complaint.assignedStaff}</p>
+                )}
                 <p>
                   <b>Coordinates:</b>{" "}
                   <a
@@ -97,21 +219,50 @@ const AdminComplaintsMap = ({ complaints, center }) => {
                   </a>
                 </p>
                 {complaint.description && <p>{complaint.description}</p>}
-                {photos.length > 0 && (
+                {detailedHomePopups && isResolved && (
+                  <div className="home-map-resolution-photos">
+                    {[
+                      {
+                        label: translate("home.mapBeforePhoto"),
+                        url: beforePhoto,
+                      },
+                      {
+                        label: translate("home.mapAfterPhoto"),
+                        url: afterPhoto,
+                      },
+                    ].map((photo) => (
+                      <div key={photo.label}>
+                        <strong>{photo.label}</strong>
+                        {photo.url ? (
+                          <a
+                            href={toMediaUrl(photo.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <img src={toMediaUrl(photo.url)} alt={photo.label} loading="lazy" />
+                          </a>
+                        ) : (
+                          <p>{translate("home.mapPhotoUnavailable")}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {popupPhotos.length > 0 && (
                   <div className="scm-popup-photos">
-                    {photos.map((photo, index) => (
+                    {popupPhotos.map((photo, index) => (
                       <a
-                        href={toMediaUrl(photo)}
+                        href={toMediaUrl(photo.url)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        key={`${photo}-${index}`}
+                        key={`${photo.url}-${index}`}
                       >
                         <img
-                          src={toMediaUrl(photo)}
-                          alt={`Complaint photo ${index + 1}`}
+                          src={toMediaUrl(photo.url)}
+                          alt={photo.label}
                           loading="lazy"
                         />
-                        <span>Complaint photo {index + 1}</span>
+                        <span>{photo.label}</span>
                       </a>
                     ))}
                   </div>

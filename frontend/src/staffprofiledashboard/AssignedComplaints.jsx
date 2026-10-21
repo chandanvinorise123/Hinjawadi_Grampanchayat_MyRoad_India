@@ -3,7 +3,15 @@ import "./AssignedComplaints.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 
 
-const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", staffUserId = "", onBack }) => {
+const AssignedComplaints = ({
+  complaints = [],
+  staffId = "",
+  staffName = "",
+  staffUserId = "",
+  onBack,
+  allAssigned = false,
+  loadError = "",
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -19,16 +27,40 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", sta
     const assignee = String(complaint.assignedStaff || "").trim().toLowerCase();
     return Boolean(assignee && [normalizedStaffName, normalizedStaffId, normalizedUserId].includes(assignee));
   };
-  const staffComplaints = complaints.filter(isAssignedToStaff);
-  const statuses = [...new Set(staffComplaints.map((complaint) => complaint.status).filter(Boolean))];
+  const hasStaffAssignment = (complaint) => {
+    const assignedStaffId = String(complaint.assignedStaffId || "").trim().toLowerCase();
+    const assignedStaff = String(complaint.assignedStaff || "").trim().toLowerCase();
+    return Boolean(
+      (assignedStaffId && !["unassigned", "not assigned", "none", "null"].includes(assignedStaffId)) ||
+      (assignedStaff && !["unassigned", "not assigned", "none", "null"].includes(assignedStaff))
+    );
+  };
+  const staffComplaints = allAssigned
+    ? complaints.filter(hasStaffAssignment)
+    : complaints.filter(isAssignedToStaff);
+  const assignmentTime = (complaint) => {
+    const latestAssignment = (complaint.log || []).reduce((latest, entry) => {
+      if (!/assigned/i.test(entry.text || "")) return latest;
+      const timestamp = new Date(entry.time || 0).getTime();
+      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+    }, 0);
+    if (latestAssignment) return latestAssignment;
+    const timestamp = new Date(complaint.updatedAt || complaint.createdAt || 0).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+  const sortedComplaints = [...staffComplaints].sort((first, second) =>
+    assignmentTime(second) - assignmentTime(first)
+  );
+  const statuses = [...new Set(sortedComplaints.map((complaint) => complaint.status).filter(Boolean))];
 
-  const filteredComplaints = staffComplaints.filter((c) => {
+  const filteredComplaints = sortedComplaints.filter((c) => {
     const matchesSearch =
       String(c.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.issue || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.citizenName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.assignedStaff || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(c.assignedStaffId || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(c.assignedVerifier || "").toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesPriority = filterPriority === "All" || c.priority === filterPriority;
@@ -62,12 +94,13 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", sta
           ← Back to Dashboard
         </button>
         <div>
-          <h2>Assigned Complaints</h2>
+          <h2>{allAssigned ? "Complaint Assigned" : "Assigned Complaints"}</h2>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", margin: "4px 0 0 0" }}>
-            Showing {staffComplaints.length} complaints assigned to you
+            Showing {staffComplaints.length} {allAssigned ? "complaints assigned to staff" : "complaints assigned to you"}
           </p>
         </div>
       </div>
+      {loadError && <p className="ac-load-error" role="alert">{loadError}</p>}
 
       {/* Search and Filter Bar */}
       <div className="ac-controls">
@@ -115,7 +148,9 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", sta
               <tr>
                 <td colSpan="7" className="ac-empty">
                   {staffComplaints.length === 0
-                    ? "No complaints are assigned to you yet."
+                    ? allAssigned
+                      ? "No complaints assigned to staff are available yet."
+                      : "No complaints are assigned to you yet."
                     : "No complaints match your search or filters."}
                 </td>
               </tr>
@@ -140,7 +175,11 @@ const AssignedComplaints = ({ complaints = [], staffId = "", staffName = "", sta
                     <td>
                       <span className="ac-badge ac-badge-orange">{c.status || "Unknown"}</span>
                     </td>
-                    <td>{c.assignedStaff ? `${c.assignedStaff}${isAssignedToStaff(c) ? " (You)" : ""}` : "Not assigned"}</td>
+                    <td>
+                      {c.assignedStaff || c.assignedStaffId
+                        ? `${c.assignedStaff || c.assignedStaffId}${isAssignedToStaff(c) ? " (You)" : ""}`
+                        : "Not assigned"}
+                    </td>
                     <td>
                       <button 
                         className="ac-view-btn" 

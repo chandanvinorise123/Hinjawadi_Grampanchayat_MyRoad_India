@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
-import { fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto, toMediaUrl } from "../utils/dashboardApi";
+import { fetchDashboard, fetchStaffAssignedComplaints, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, uploadDashboardPhoto, toMediaUrl } from "../utils/dashboardApi";
 
 // ✅ Import all full-page components
 import MyProfile from "../staffprofiledashboard/MyProfile";
@@ -100,6 +100,8 @@ const StaffDashboard = () => {
 
   // ✅ State Management
   const [complaints, setComplaints] = useState([]);
+  const [allAssignedComplaints, setAllAssignedComplaints] = useState([]);
+  const [assignedComplaintsError, setAssignedComplaintsError] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
@@ -112,6 +114,7 @@ const StaffDashboard = () => {
   // ✅ Full Page Navigation States
   const [showProfile, setShowProfile] = useState(false);
   const [showAssignedComplaints, setShowAssignedComplaints] = useState(false);
+  const [showAllAssignedComplaints, setShowAllAssignedComplaints] = useState(false);
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
   const [showPhysicalInspection, setShowPhysicalInspection] = useState(false);
   const [showActionWorkManagement, setShowActionWorkManagement] = useState(false);
@@ -123,6 +126,7 @@ const StaffDashboard = () => {
   const openView = (setter) => {
     setShowProfile(false);
     setShowAssignedComplaints(false);
+    setShowAllAssignedComplaints(false);
     setShowComplaintDetails(false);
     setShowPhysicalInspection(false);
     setShowActionWorkManagement(false);
@@ -183,6 +187,33 @@ const StaffDashboard = () => {
     };
     loadDashboard();
     const refreshTimer = window.setInterval(loadDashboard, 30000);
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadAllAssignedComplaints = async () => {
+      try {
+        const result = await fetchStaffAssignedComplaints(getUserId(getStoredUser()));
+        if (!active) return;
+        setAllAssignedComplaints(
+          (result.complaints || []).map(mapStaffComplaint)
+        );
+        setAssignedComplaintsError("");
+      } catch (error) {
+        if (!active) return;
+        console.error("Failed to load all staff-assigned complaints:", error);
+        setAssignedComplaintsError(
+          error.message || "Unable to load assigned complaints."
+        );
+      }
+    };
+
+    loadAllAssignedComplaints();
+    const refreshTimer = window.setInterval(loadAllAssignedComplaints, 30000);
     return () => {
       active = false;
       window.clearInterval(refreshTimer);
@@ -494,10 +525,24 @@ const StaffDashboard = () => {
     );
   }
 
+  if (showAllAssignedComplaints) {
+    return (
+      <AssignedComplaints
+        complaints={allAssignedComplaints}
+        staffId={staff.staffId}
+        staffName={staff.name}
+        staffUserId={getUserId(storedUser)}
+        onBack={() => setShowAllAssignedComplaints(false)}
+        allAssigned
+        loadError={assignedComplaintsError}
+      />
+    );
+  }
+
   if (showComplaintDetails) {
     return (
       <ComplaintDetails
-        complaint={selected}
+        complaints={complaints}
         onBack={() => setShowComplaintDetails(false)}
       />
     );
@@ -613,9 +658,17 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
+            onClick={() => openView(setShowAllAssignedComplaints)}
+          >
+            📋 Complaint Assigned
+            <span className="sd-sb-badge">{allAssignedComplaints.length}</span>
+          </button>
+          <button
+            type="button"
+            className="sd-sb-link"
             onClick={() => openView(setShowComplaintDetails)}
           >
-            📋 Complaint Details
+            📋 ComplaintUpdatedDetails
           </button>
           <button
             type="button"

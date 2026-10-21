@@ -881,6 +881,7 @@ const ReportIssue = () => {
                             Loading Hinjawadi boundary...
                           </p>
                         )}
+                        
 
                         {selectedLocation.lat !== null &&
                           selectedLocation.lng !== null && (

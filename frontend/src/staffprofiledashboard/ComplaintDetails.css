@@ -72,6 +72,132 @@
   margin: 0 auto;
 }
 
+.cd-subtitle {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.cd-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  box-shadow: 0 4px 12px rgba(11, 36, 71, 0.04);
+}
+
+.cd-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.cd-table th,
+.cd-table td {
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.cd-table th {
+  background: var(--surface-2);
+  color: var(--navy-900);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cd-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cd-status {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff4e0;
+  color: #8a6500;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cd-view-btn {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--navy-900);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cd-view-btn:hover {
+  background: var(--navy-700);
+}
+
+.cd-empty {
+  padding: 32px !important;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.cd-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(11, 23, 41, 0.68);
+}
+
+.cd-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.cd-modal-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+}
+
+.cd-modal-header h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 16px;
+}
+
+.cd-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #d13438;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cd-modal-body {
+  overflow: auto;
+  padding: 20px;
+}
+
 /* Top Info Bar */
 .cd-info-bar {
   display: grid;

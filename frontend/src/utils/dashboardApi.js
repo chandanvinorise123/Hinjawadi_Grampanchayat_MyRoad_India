@@ -26,6 +26,11 @@ const request = async (path, options = {}) => {
 export const fetchDashboard = (role, userId) =>
   request(`/dashboard/${role}${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`);
 
+export const fetchStaffAssignedComplaints = (userId) => {
+  if (!userId) throw new Error("A logged-in staff user is required");
+  return request(`/dashboard/staff-assigned-complaints?userId=${encodeURIComponent(userId)}`);
+};
+
 export const fetchDashboardUsers = (role) =>
   request(`/users?role=${encodeURIComponent(role)}`);
 

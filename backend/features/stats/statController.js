@@ -1,12 +1,12 @@
 const SystemStat = require("../../models/SystemStat");
+const Complaint = require("../../models/Complaint");
 
-// Safely try to load Complaint model (prevents crash if file is missing/named differently)
-let Complaint;
-try {
-  Complaint = require("../../models/Complaint");
-} catch (err) {
-  console.warn("⚠️ Complaint model not found. Reported issues will default to 0.");
-}
+const statusGroups = {
+  underVerification: ["Under Verification", "Under Review"],
+  actionRequired: ["New", "Pending", "Submitted", "Verified", "Assigned", "Under Action"],
+  underRepair: ["In Progress"],
+  resolved: ["Resolved", "Closed"],
+};
 
 const getOrCreateStats = async () => {
   let stats = await SystemStat.findOne();
@@ -43,22 +43,31 @@ exports.incrementLogin = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const stats = await getOrCreateStats();
-    
-    let totalReportedIssues = 0;
-    if (Complaint) {
-      try {
-        totalReportedIssues = await Complaint.countDocuments();
-      } catch (err) {
-        console.warn("Error counting complaints:", err.message);
-      }
-    }
+    const complaintStatusCounts = await Complaint.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+    const countsByStatus = new Map(
+      complaintStatusCounts.map(({ _id, count }) => [_id, count])
+    );
+    const totalReportedIssues = complaintStatusCounts.reduce(
+      (total, statusCount) => total + statusCount.count,
+      0
+    );
+    const countStatuses = (statuses) =>
+      statuses.reduce((total, status) => total + (countsByStatus.get(status) || 0), 0);
 
     res.json({
       success: true,
       data: {
         totalCitizenVisits: stats.totalVisits,
         totalCitizenLogins: stats.totalLogins,
-        totalReportedIssues: totalReportedIssues,
+        totalReportedIssues,
+        complaintStatusCounts: Object.fromEntries(
+          Object.entries(statusGroups).map(([group, statuses]) => [
+            group,
+            countStatuses(statuses),
+          ])
+        ),
       },
     });
   } catch (error) {
