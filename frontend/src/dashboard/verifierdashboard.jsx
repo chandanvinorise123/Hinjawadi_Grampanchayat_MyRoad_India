@@ -171,6 +171,11 @@ const hasComplaintAssignee = (value) => {
     !["unassigned", "not assigned", "none", "null"].includes(normalized);
 };
 
+const isNewVerifierComplaint = (complaint) =>
+  complaint.queue === "New Complaints" &&
+  !hasComplaintAssignee(complaint.assignedStaffId) &&
+  !hasComplaintAssignee(complaint.assignedStaff);
+
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
   let hash = 0;
@@ -708,7 +713,7 @@ const VerifierDashboard = () => {
   if (showNewComplaints) {
     return (
       <NewComplaints
-        complaints={items}
+        complaints={items.filter(isNewVerifierComplaint)}
         staffOptions={staffOptions}
         onAction={handleNewComplaintAction}
         onBack={returnToDashboard}
@@ -1259,7 +1264,7 @@ const VerifierDashboard = () => {
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new", setShowNewComplaints)}>
             🆕 New Complaints
-            <span className="vd-sb-badge">{items.filter((c) => c.queue === "New Complaints").length}</span>
+            <span className="vd-sb-badge">{items.filter(isNewVerifierComplaint).length}</span>
           </button>
           <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
             📋 Complaint Assigned

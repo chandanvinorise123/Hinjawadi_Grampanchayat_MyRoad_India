@@ -12,6 +12,7 @@ import ComplaintVerification from "../adminprofiledashboard/ComplaintVerificatio
 import ReportsManagement from "../adminprofiledashboard/ReportsManagement";
 import logo from '../assets/logo.jpeg';
 import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
+import { countUpdatedComplaints } from "../adminprofiledashboard/updatedComplaintsUtils";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import NotificationMonitoring from "../adminprofiledashboard/Notification";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
@@ -533,6 +534,19 @@ const AdminDashboard = () => {
     { role: "verifier", label: "Verifier (Sarpanch)", count: users.filter((u) => u.role === "verifier").length },
     { role: "admin", label: "Admin", count: admins.length },
   ];
+  const newComplaintCount = complaints.filter(
+    (complaint) => String(complaint.status || "").toLowerCase() === "new"
+  ).length;
+  const assignedComplaintCount = complaints.filter((complaint) =>
+    [
+      complaint.assignedStaff,
+      complaint.assignedStaffId,
+    ].some((assignment) => String(assignment || "").trim())
+  ).length;
+  const updatedComplaintCount = countUpdatedComplaints(complaints, ["staff", "admin", "verifier"]);
+  const verificationComplaintCount = complaints.filter((complaint) =>
+    ["Under Verification", "Verified", "Resolved", "Closed", "Rejected"].includes(complaint.status)
+  ).length;
 
   // ---------------- GENERATE PASSWORD ----------------
   const generatePassword = () => {
@@ -843,7 +857,7 @@ const AdminDashboard = () => {
       ) : showComplaintDetails ? (
         <ComplaintDetails
           listType={complaintListType || "new"}
-          key={`${complaintListType || "detail"}-${String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "list")}`}
+          key={complaintListType || `detail-${String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "list")}`}
           complaint={complaintListType ? null : complaints.find((complaint) => String(complaint.id) === String(selectedId))}
           staffOptions={adminStaffOptions}
           verifierOptions={adminVerifierOptions}
@@ -949,6 +963,7 @@ const AdminDashboard = () => {
                     }}
                   >
                     📈 New Complaints
+                    <span className="ad-sb-badge">{newComplaintCount}</span>
                   </button>
 
                   <button
@@ -961,20 +976,24 @@ const AdminDashboard = () => {
                     }}
                   >
                     📋 Assigned Complaints
+                    <span className="ad-sb-badge">{assignedComplaintCount}</span>
                   </button>
 
                   
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowUpdatedComplaints)}>
                     📋 Updated Complaints
+                    <span className="ad-sb-badge">{updatedComplaintCount}</span>
                   </button>
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
-                    🧑‍ Staff & Work Monitoring
+                    🧑‍Staff&Work Monitoring
+                    <span className="ad-sb-badge">{users.filter((user) => user.role === "staff").length}</span>
                   </button>
 
 
                   <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
                     📈 Complaint Verification
+                    <span className="ad-sb-badge">{verificationComplaintCount}</span>
                   </button>
                 </nav>
 

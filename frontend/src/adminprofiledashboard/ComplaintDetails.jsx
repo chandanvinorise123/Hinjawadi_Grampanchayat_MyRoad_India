@@ -18,7 +18,7 @@ const formatDate = (complaint) =>
 
 const getAssignmentTimestamp = (complaint) => {
   const assignmentTimestamps = (Array.isArray(complaint.activityLog) ? complaint.activityLog : [])
-    .filter((entry) => /^(Assigned staff member|Assigned verifier)\b/i.test(String(entry.message || "")))
+    .filter((entry) => /^Assigned staff member\b/i.test(String(entry.message || "")))
     .map((entry) => new Date(entry.createdAt).getTime())
     .filter(Number.isFinite);
 
@@ -54,6 +54,7 @@ const toDetailData = (complaint) => {
 
   return {
     ...complaint,
+    id: complaint.id || complaint._id,
     date: formatDate(complaint),
     citizen: {
       name: complaint.citizenName || complaint.citizenProfile?.name || "Guest",
@@ -109,6 +110,7 @@ const ComplaintDetails = ({
   const [loading, setLoading] = useState(!initialComplaint);
   const [staffSelection, setStaffSelection] = useState(null);
   const [verifierSelection, setVerifierSelection] = useState(null);
+  const [editingAssignments, setEditingAssignments] = useState(false);
   const [savingAssignments, setSavingAssignments] = useState(false);
   const [assignmentError, setAssignmentError] = useState("");
   const selectedStaffId = staffSelection ?? (
@@ -158,6 +160,7 @@ const ComplaintDetails = ({
   const handleViewDetails = (complaint) => {
     setStaffSelection(null);
     setVerifierSelection(null);
+    setEditingAssignments(false);
     setSelectedComplaint(toDetailData(complaint));
   };
 
@@ -165,14 +168,22 @@ const ComplaintDetails = ({
     setSelectedComplaint(null);
   };
 
+  const handleCancelAssignmentEdit = () => {
+    setStaffSelection(null);
+    setVerifierSelection(null);
+    setAssignmentError("");
+    setEditingAssignments(false);
+  };
+
   const handleSaveAssignments = async () => {
-    if (!selectedComplaint?.id) return;
+    const complaintId = selectedComplaint?.id || selectedComplaint?._id;
+    if (!complaintId) return;
     const staff = staffOptions.find((user) => String(user.id || user._id) === String(selectedStaffId));
     const verifier = verifierOptions.find((user) => String(user.id || user._id) === String(selectedVerifierId));
     setSavingAssignments(true);
     setAssignmentError("");
     try {
-      const result = await updateDashboardComplaint(selectedComplaint.id, {
+      const result = await updateDashboardComplaint(complaintId, {
         assignedStaff: staff?.name || "",
         assignedStaffId: staff ? String(staff.id || staff._id) : "",
         assignedVerifier: verifier?.name || "",
@@ -190,6 +201,7 @@ const ComplaintDetails = ({
       ));
       setStaffSelection(null);
       setVerifierSelection(null);
+      setEditingAssignments(false);
       onComplaintUpdated?.(result.complaint);
     } catch (error) {
       console.error("Failed to assign complaint:", error);
@@ -216,8 +228,6 @@ const ComplaintDetails = ({
         return [
           complaint.assignedStaff,
           complaint.assignedStaffId,
-          complaint.assignedVerifier,
-          complaint.assignedVerifierId,
         ].some((assignment) => String(assignment || "").trim());
       }
       return String(complaint.status || "").toLowerCase() === "new";
@@ -362,47 +372,74 @@ const ComplaintDetails = ({
 
       <div className="cd-grid">
 
-        {/* 1 & 2. Citizen, Complaint Info, Category & Description */}
-        <div className="cd-card cd-card-full">
-          <h3 className="cd-card-title"> Complaint & Citizen Information</h3>
-          <div className="cd-info-grid">
-            <div className="cd-info-item">
-              <label>Citizen Name</label>
-              <p>{data.citizen.name}</p>
+        <div className="cd-overview-grid">
+          <section className="cd-card">
+            <h3 className="cd-card-title">Complaint & Citizen Information</h3>
+            <div className="cd-info-grid">
+              <div className="cd-info-item">
+                <label>Citizen Name</label>
+                <p>{data.citizen.name}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Report Source</label>
+                <p>{data.citizenProfile || data.citizenId ? "Registered citizen" : "Guest submission"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Contact Number</label>
+                <p>{data.citizen.contact}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Email Address</label>
+                <p>{data.citizen.email || data.citizenProfile?.email || "N/A"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Issue Category</label>
+                <p>{data.category}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Department</label>
+                <p>{data.department || "Not provided"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Specific Issue</label>
+                <p>{data.issueType || data.issue}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Date Reported</label>
+                <p>{data.date}</p>
+              </div>
+              <div className="cd-info-item cd-full-width">
+                <label>Detailed Description</label>
+                <p className="cd-description">{data.description}</p>
+              </div>
             </div>
-            <div className="cd-info-item">
-              <label>Report Source</label>
-              <p>{data.citizenProfile || data.citizenId ? "Registered citizen" : "Guest submission"}</p>
+          </section>
+
+          <section className="cd-card">
+            <h3 className="cd-card-title">🛠️ Inspection & Action Details</h3>
+            <div className="cd-info-grid">
+              <div className="cd-info-item">
+                <label>Assigned Staff</label>
+                <p>{data.inspection.assignedStaff || "Not assigned"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Staff Contact</label>
+                <p>{data.inspection.staffContact || data.assignedStaffContact || "N/A"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Assigned Date</label>
+                <p>{data.inspection.assignedDate || "N/A"}</p>
+              </div>
+              <div className="cd-info-item">
+                <label>Expected Completion</label>
+                <p>{data.inspection.expectedCompletion || "N/A"}</p>
+              </div>
+              <div className="cd-info-item cd-full-width">
+                <label>Action Taken / Remarks</label>
+                <p className="cd-description">{data.inspection.actionTaken || "No remarks yet."}</p>
+              </div>
             </div>
-            <div className="cd-info-item">
-              <label>Contact Number</label>
-              <p>{data.citizen.contact}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Email Address</label>
-              <p>{data.citizen.email || data.citizenProfile?.email || "N/A"}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Issue Category</label>
-              <p>{data.category}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Department</label>
-              <p>{data.department || "Not provided"}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Specific Issue</label>
-              <p>{data.issueType || data.issue}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Date Reported</label>
-              <p>{data.date}</p>
-            </div>
-            <div className="cd-info-item cd-full-width">
-              <label>Detailed Description</label>
-              <p className="cd-description">{data.description}</p>
-            </div>
-          </div>
+          </section>
         </div>
 
         {/* 3. Initial Photographs */}
@@ -454,36 +491,24 @@ const ComplaintDetails = ({
           </div>
         </div>
 
-        {/* 5. Inspection & Action Details */}
         <div className="cd-card cd-card-full">
-          <h3 className="cd-card-title">🛠️ Inspection & Action Details</h3>
-          <div className="cd-info-grid">
-            <div className="cd-info-item">
-              <label>Assigned Staff</label>
-              <p>{data.inspection.assignedStaff || "Not assigned"}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Staff Contact</label>
-              <p>{data.inspection.staffContact || data.assignedStaffContact || "N/A"}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Assigned Date</label>
-              <p>{data.inspection.assignedDate || "N/A"}</p>
-            </div>
-            <div className="cd-info-item">
-              <label>Expected Completion</label>
-              <p>{data.inspection.expectedCompletion || "N/A"}</p>
-            </div>
-            <div className="cd-info-item cd-full-width">
-              <label>Action Taken / Remarks</label>
-              <p className="cd-description">{data.inspection.actionTaken || "No remarks yet."}</p>
-            </div>
+          <div className="cd-assignment-heading">
+            <h3 className="cd-card-title">👥 Staff & Verifier Assignment</h3>
+            {!editingAssignments && (
+              <button
+                className="cd-view-btn"
+                type="button"
+                onClick={() => {
+                  setAssignmentError("");
+                  setEditingAssignments(true);
+                }}
+                disabled={assignmentsLoading || Boolean(assignmentsError)}
+              >
+                Edit Assignments
+              </button>
+            )}
           </div>
-        </div>
-
-        <div className="cd-card cd-card-full">
-          <h3 className="cd-card-title">👥 Staff & Verifier Assignment</h3>
-          <div className="cd-assignment-grid">
+          {editingAssignments ? <div className="cd-assignment-grid">
             <div className="cd-assignment-field">
               <label htmlFor="cd-assigned-staff">Assigned Staff</label>
               <select
@@ -527,8 +552,35 @@ const ComplaintDetails = ({
               >
                 {assignmentsLoading ? "Loading accounts..." : savingAssignments ? "Saving..." : "Save Assignments"}
               </button>
+              <button
+                className="cd-back-btn"
+                type="button"
+                onClick={handleCancelAssignmentEdit}
+                disabled={savingAssignments}
+              >
+                Cancel
+              </button>
             </div>
-          </div>
+          </div> : (
+            <div className="cd-assignment-grid cd-assignment-readonly">
+              <div className="cd-info-item">
+                <label>Assigned Staff</label>
+                <p>
+                  {data.assignedStaff ||
+                    staffOptions.find((staff) => String(staff.id || staff._id) === String(selectedStaffId))?.name ||
+                    (selectedComplaint.assignedStaffId ? "Assigned (name unavailable)" : "Not assigned")}
+                </p>
+              </div>
+              <div className="cd-info-item">
+                <label>Assigned Verifier</label>
+                <p>
+                  {data.assignedVerifier ||
+                    verifierOptions.find((verifier) => String(verifier.id || verifier._id) === String(selectedVerifierId))?.name ||
+                    (selectedComplaint.assignedVerifierId ? "Assigned (name unavailable)" : "Not assigned")}
+                </p>
+              </div>
+            </div>
+          )}
           {assignmentsError && <p className="cd-assignment-error" role="alert">{assignmentsError}</p>}
           {assignmentError && <p className="cd-assignment-error" role="alert">{assignmentError}</p>}
         </div>

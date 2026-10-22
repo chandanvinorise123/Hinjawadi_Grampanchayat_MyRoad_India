@@ -201,17 +201,31 @@ router.get("/staff-new-complaints", async (req, res) => {
     }
 
     const complaints = await Complaint.find({
-      assignedStaffId: { $in: [null, ""] },
-      assignedStaff: { $in: [null, ""] },
       status: { $in: ["New", "Pending"] },
     })
       .populate("citizenId", "name email mobile contact")
       .sort({ createdAt: -1 })
       .lean();
+    const hasAssignment = (value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      return normalized !== "" && !["unassigned", "not assigned", "none", "null"].includes(normalized);
+    };
+    const wasActedOnByAdminOrVerifier = (complaint) =>
+      [...(complaint.activityLog || []), ...(complaint.statusHistory || [])]
+        .some((entry) => /\b(admin|verifier)\b/i.test(String(entry.actor || "")));
+    const availableComplaints = complaints.filter((complaint) =>
+      ![
+        complaint.assignedStaffId,
+        complaint.assignedStaff,
+        complaint.assignedVerifierId,
+        complaint.assignedVerifier,
+      ].some(hasAssignment) &&
+      !wasActedOnByAdminOrVerifier(complaint)
+    );
 
     return res.json({
       success: true,
-      complaints: complaints.map(toComplaintView),
+      complaints: availableComplaints.map(toComplaintView),
     });
   } catch (error) {
     console.error("Failed to fetch new staff complaints:", error);
