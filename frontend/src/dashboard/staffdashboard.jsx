@@ -416,6 +416,7 @@ const StaffDashboard = () => {
 
   const handleUpdateWork = async (complaintId, formData) => {
     try {
+      const complaint = complaints.find((item) => String(item.id) === String(complaintId));
       const result = await updateDashboardComplaint(complaintId, {
         status: ["New", "Pending", "Under Action", "In Progress", "Under Verification", "Resolved"][formData.newStage],
         inspection: {
@@ -423,7 +424,7 @@ const StaffDashboard = () => {
           completionDate: formData.completionDateTime,
           remarks: formData.remarks,
           actionTaken: formData.actionTaken,
-          sitePhoto: formData.beforePhoto,
+          sitePhoto: complaint?.inspection?.sitePhoto || "",
           completionPhoto: formData.afterPhoto,
         },
       });
@@ -615,6 +616,18 @@ const StaffDashboard = () => {
           <button type="button" className="sd-sb-link" onClick={() => openView(setShowProfile)}>
             👤 My Profile
           </button>
+
+          <button
+            type="button"
+            className="sd-sb-link"
+            onClick={() => openView(setShowAllAssignedComplaints)}
+          >
+            📋 Complaint Assigned
+            <span className="sd-sb-badge">{allAssignedComplaints.length}</span>
+          </button>
+
+
+
         </nav>
 
         <div className="sd-sb-label">Assigned Work</div>
@@ -640,14 +653,8 @@ const StaffDashboard = () => {
               {complaints.length}
             </span>
           </button>
-          <button
-            type="button"
-            className="sd-sb-link"
-            onClick={() => openView(setShowAllAssignedComplaints)}
-          >
-            📋 Complaint Assigned
-            <span className="sd-sb-badge">{allAssignedComplaints.length}</span>
-          </button>
+
+          
 
 
           <button
@@ -657,6 +664,15 @@ const StaffDashboard = () => {
           >
             ⚙️Action/Work Management
           </button>
+
+          <button
+            type="button"
+            className="sd-sb-link"
+            onClick={() => openView(setShowComplaintStatus)}
+          >
+            ⚙️ Complaint Status Update
+          </button>
+
 
 
           <button
@@ -668,14 +684,7 @@ const StaffDashboard = () => {
           </button>
 
           
-          <button
-            type="button"
-            className="sd-sb-link"
-            onClick={() => openView(setShowComplaintStatus)}
-          >
-            ⚙️ Complaint Status Update
-          </button>
-
+          
           <button
             type="button"
             className="sd-sb-link"

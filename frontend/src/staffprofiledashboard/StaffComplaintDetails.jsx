@@ -30,8 +30,9 @@ const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true,
   const citizenPhotos = Array.isArray(complaint.citizenPhotos)
     ? complaint.citizenPhotos
     : Array.isArray(complaint.images) ? complaint.images : [];
+  const beforeWorkPhoto = citizenPhotos[0] || complaint.photos?.before;
   const workPhotos = [
-    ["Before / Site", complaint.inspection?.sitePhoto || complaint.photos?.site],
+    ["Before Work (Citizen / Guest)", beforeWorkPhoto],
     ["After Work", complaint.inspection?.completionPhoto || complaint.photos?.after],
   ].filter(([, photo]) => photo);
   const activity = showActivity && Array.isArray(complaint.log) ? [...complaint.log].reverse() : [];
@@ -213,6 +214,26 @@ const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true,
               ))}
             </div>
           ) : <p className="scd-empty">No citizen photographs attached.</p>}
+        </div>
+        <div className="scd-split-evidence">
+          <h5>After-Work Photograph</h5>
+          {complaint.inspection?.completionPhoto ? (
+            <div className="scd-photo-grid">
+              <a
+                className="scd-photo"
+                href={toMediaUrl(complaint.inspection.completionPhoto)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src={toMediaUrl(complaint.inspection.completionPhoto)}
+                  alt="Staff after-work completion evidence"
+                  loading="lazy"
+                />
+                <span>Work completed</span>
+              </a>
+            </div>
+          ) : <p className="scd-empty">No after-work photograph attached.</p>}
         </div>
       </div>
     );

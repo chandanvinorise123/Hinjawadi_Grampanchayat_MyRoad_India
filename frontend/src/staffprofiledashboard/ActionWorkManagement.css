@@ -505,6 +505,34 @@
   object-fit: contain;
 }
 
+.awm-citizen-photo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.awm-citizen-photo-list a {
+  display: flex;
+  width: min(180px, 100%);
+  flex-direction: column;
+  gap: 6px;
+  color: #52657c;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.awm-citizen-photo-list .awm-photo-preview {
+  height: 132px;
+  margin: 0;
+  object-fit: cover;
+}
+
+.awm-no-photo {
+  margin: 0;
+  color: #7a8798;
+  font-size: 12px;
+}
+
 .awm-form-error {
   margin: 0 0 18px;
   padding: 12px 14px;

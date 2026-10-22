@@ -36,9 +36,13 @@ const AssignedComplaints = ({
       (assignedStaff && !["unassigned", "not assigned", "none", "null"].includes(assignedStaff))
     );
   };
-  const isAvailableForStaff = (complaint) =>
-    !hasStaffAssignment(complaint) &&
-    ["new", "pending"].includes(String(complaint.status || "").trim().toLowerCase());
+  const isAvailableForStaff = (complaint) => {
+    const status = String(complaint.status || "").trim().toLowerCase();
+    if (["new", "pending"].includes(status)) {
+      return !hasStaffAssignment(complaint);
+    }
+    return status === "under action" && isAssignedToStaff(complaint);
+  };
   const staffComplaints = allAssigned
     ? complaints.filter(hasStaffAssignment)
     : newAssignments

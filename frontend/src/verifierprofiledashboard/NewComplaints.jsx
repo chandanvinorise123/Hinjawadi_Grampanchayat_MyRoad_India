@@ -297,7 +297,7 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
               </div>
             </div>
 
-            {selectedComplaint.status === "pending" && (
+            {["pending", "in_action"].includes(selectedComplaint.status) && (
               <div className="nc-review-actions">
                 {actionError && <p className="nc-review-error" role="alert">{actionError}</p>}
                 <label htmlFor="nc-assigned-staff">Assign staff to accept this complaint *</label>

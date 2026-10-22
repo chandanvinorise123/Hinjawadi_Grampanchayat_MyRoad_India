@@ -86,6 +86,15 @@ const normalizeVerifierStatus = (status) => {
 const mapVerifierComplaint = (complaint) => {
   let status = normalizeVerifierStatus(complaint.status);
   const history = Array.isArray(complaint.statusHistory) ? complaint.statusHistory : [];
+  const activityLog = Array.isArray(complaint.activityLog) ? complaint.activityLog : [];
+  const hasStaffOrVerifierAction = [...history, ...activityLog].some(
+    (entry) => /\b(staff|verifier)\b/i.test(String(entry.actor || ""))
+  );
+  const wasAssignedByAdmin = activityLog.some(
+    (entry) =>
+      /\badmin\b/i.test(String(entry.actor || "")) &&
+      /^Assigned staff member\b/i.test(String(entry.message || ""))
+  );
   const historyStatus = (entry) =>
     String(entry.status || "").trim().toLowerCase().replace(/[_-]+/g, " ");
   const wasRejected = history.some((entry) => historyStatus(entry) === "rejected");
@@ -102,7 +111,14 @@ const mapVerifierComplaint = (complaint) => {
     String(inspection.completionPhoto || complaint.completionPhoto || "").trim() &&
     String(inspection.actionTaken || complaint.actionTaken || "").trim()
   );
-  if (["in_action", "pending"].includes(status) && hasSubmittedWork) {
+  const latestStatusEntry = history[history.length - 1];
+  const staffSubmittedResolvedWork = Boolean(
+    latestStatusEntry &&
+    /\bstaff\b/i.test(String(latestStatusEntry.actor || "")) &&
+    ["resolved", "closed"].includes(historyStatus(latestStatusEntry)) &&
+    hasSubmittedWork
+  );
+  if (staffSubmittedResolvedWork || (["in_action", "pending"].includes(status) && hasSubmittedWork)) {
     status = "in_review";
   }
   const storedPhotos = Array.isArray(complaint.images)
@@ -126,6 +142,9 @@ const mapVerifierComplaint = (complaint) => {
     queue = "Resolution Requests";
   } else if (status === "resolved" || status === "notified") {
     queue = "Resolved / Closed";
+  }
+  if (status === "in_action" && wasAssignedByAdmin && !hasStaffOrVerifierAction) {
+    queue = "New Complaints";
   }
 
   return {
@@ -173,8 +192,9 @@ const hasComplaintAssignee = (value) => {
 
 const isNewVerifierComplaint = (complaint) =>
   complaint.queue === "New Complaints" &&
-  !hasComplaintAssignee(complaint.assignedStaffId) &&
-  !hasComplaintAssignee(complaint.assignedStaff);
+  ![...(complaint.statusHistory || []), ...(complaint.activityLog || [])].some(
+    (entry) => /\b(staff|verifier)\b/i.test(String(entry.actor || ""))
+  );
 
 const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
 const colorForCategory = (category) => {
@@ -553,6 +573,7 @@ const VerifierDashboard = () => {
       assignedStaffId: assignedStaff._id,
       ...verifierAssignmentUpdates(complaint),
       status: "Under Action",
+      remarks: "Accepted by verifier and assigned for staff action.",
     });
     const updatedComplaint = mapVerifierComplaint(result.complaint);
     setItems((current) => current.map((complaint) => (

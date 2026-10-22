@@ -7,7 +7,6 @@ const createFormData = (complaint) => ({
   actionTaken: complaint?.inspection?.actionTaken || "",
   remarks: complaint?.inspection?.remarks || "",
   newStage: complaint?.stage ?? 0,
-  beforePhoto: complaint?.inspection?.sitePhoto || "",
   afterPhoto: complaint?.inspection?.completionPhoto || "",
   completionDateTime: complaint?.inspection?.completionDate || "",
 });
@@ -18,6 +17,9 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
   const currentComplaint = complaints.find((complaint) =>
     String(complaint.id) === String(currentComplaintId)
   ) || null;
+  const beforeWorkPhotos = Array.isArray(currentComplaint?.citizenPhotos) && currentComplaint.citizenPhotos.length
+    ? currentComplaint.citizenPhotos
+    : Array.isArray(currentComplaint?.images) ? currentComplaint.images : [];
   const sortedComplaints = useMemo(
     () => [...complaints].sort((first, second) => {
       const firstTime = new Date(first.updatedAt || first.createdAt || 0).getTime();
@@ -208,7 +210,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                 <div className="awm-form-header">
                   <span className="awm-eyebrow">Work update</span>
                   <h3>Update assigned work</h3>
-                  <p>Record the work performed and attach clear before/after evidence.</p>
+                  <p>Record the work performed and attach an after-work photograph. Before-work evidence comes from the citizen or guest complaint.</p>
                 </div>
                 {formError && <p className="awm-form-error" role="alert">{formError}</p>}
 
@@ -267,19 +269,19 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
 
                 <div className="awm-photo-grid">
                   <div className="awm-field">
-                    <label>Before-Work Photograph</label>
-                    <div className="awm-photo-upload">
-                      <span>{uploadingPhoto === "beforePhoto" ? "Uploading..." : formData.beforePhoto ? "Replace before-work photo" : "Choose a before-work photo"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={Boolean(uploadingPhoto) || saving}
-                        onChange={(event) => handlePhotoChange("beforePhoto", event)}
-                      />
+                    <label>Before-Work Photograph (Citizen / Guest)</label>
+                    <div className="awm-citizen-photo-list">
+                      {beforeWorkPhotos.length ? (
+                        beforeWorkPhotos.map((photo, index) => (
+                          <a key={`${photo}-${index}`} href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer">
+                            <img className="awm-photo-preview" src={toMediaUrl(photo)} alt={`Citizen or guest before-work evidence ${index + 1}`} />
+                            <span>Complaint photo {index + 1}</span>
+                          </a>
+                        ))
+                      ) : (
+                        <p className="awm-no-photo">No before-work photograph was uploaded with this complaint.</p>
+                      )}
                     </div>
-                    {formData.beforePhoto && (
-                      <img className="awm-photo-preview" src={toMediaUrl(formData.beforePhoto)} alt="Before-work evidence" />
-                    )}
                   </div>
 
                   <div className="awm-field">

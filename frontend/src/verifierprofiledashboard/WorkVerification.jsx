@@ -202,12 +202,6 @@ const WorkVerification = ({ complaints, loadError, onBack, onVerify }) => {
                       ? <ComplaintImage src={selectedComplaint.photos.after} alt="After repair" />
                       : <div className="wv-photo-empty">No after photo provided</div>}
                   </figure>
-                  {selectedComplaint.photos?.site && (
-                    <figure>
-                      <figcaption>Staff site photo</figcaption>
-                      <ComplaintImage src={selectedComplaint.photos.site} alt="Staff site inspection" />
-                    </figure>
-                  )}
                 </div>
               </section>
 

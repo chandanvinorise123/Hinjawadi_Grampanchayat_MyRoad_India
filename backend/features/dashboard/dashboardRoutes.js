@@ -201,7 +201,7 @@ router.get("/staff-new-complaints", async (req, res) => {
     }
 
     const complaints = await Complaint.find({
-      status: { $in: ["New", "Pending"] },
+      status: { $in: ["New", "Pending", "Under Action"] },
     })
       .populate("citizenId", "name email mobile contact")
       .sort({ createdAt: -1 })
@@ -210,17 +210,30 @@ router.get("/staff-new-complaints", async (req, res) => {
       const normalized = String(value || "").trim().toLowerCase();
       return normalized !== "" && !["unassigned", "not assigned", "none", "null"].includes(normalized);
     };
-    const wasActedOnByAdminOrVerifier = (complaint) =>
+    const wasActedOnByStaffOrVerifier = (complaint) =>
       [...(complaint.activityLog || []), ...(complaint.statusHistory || [])]
-        .some((entry) => /\b(admin|verifier)\b/i.test(String(entry.actor || "")));
+        .some((entry) => /\b(staff|verifier)\b/i.test(String(entry.actor || "")));
+    const staffIdentifiers = [userId, staffProfile.staffId, staffProfile.name]
+      .filter(Boolean)
+      .map((identifier) => String(identifier).trim().toLowerCase());
     const availableComplaints = complaints.filter((complaint) =>
-      ![
-        complaint.assignedStaffId,
-        complaint.assignedStaff,
-        complaint.assignedVerifierId,
-        complaint.assignedVerifier,
-      ].some(hasAssignment) &&
-      !wasActedOnByAdminOrVerifier(complaint)
+      !wasActedOnByStaffOrVerifier(complaint) &&
+      (
+        (
+          ["New", "Pending"].includes(complaint.status) &&
+          !hasAssignment(complaint.assignedStaffId) &&
+          !hasAssignment(complaint.assignedStaff)
+        ) ||
+        (
+          complaint.status === "Under Action" &&
+          (
+            (hasAssignment(complaint.assignedStaffId) &&
+              String(complaint.assignedStaffId).trim().toLowerCase() === String(userId).toLowerCase()) ||
+            (!hasAssignment(complaint.assignedStaffId) &&
+              staffIdentifiers.includes(String(complaint.assignedStaff || "").trim().toLowerCase()))
+          )
+        )
+      )
     );
 
     return res.json({
