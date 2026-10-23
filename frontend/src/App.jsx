@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // ================================
 // COMPONENTS
@@ -24,6 +24,7 @@ import Blog from "./pages/blog";
 import Dashboard from "./pages/dashboard"; // Main gateway dashboard
 import GuestComplaintDetails from "./pages/GuestComplaintDetails";
 import ComplaintMapPage from "./pages/complaintmap";
+import ComplaintProgress from "./pages/complaintprogress";
 
 // ================================
 // ROLE-SPECIFIC DASHBOARDS
@@ -33,12 +34,15 @@ import StaffDashboard from "./dashboard/staffdashboard";
 import VerifierDashboard from "./dashboard/verifierdashboard";
 import AdminDashboard from "./dashboard/admindashboard";
 
-function App() {
+function AppRoutes() {
+  const location = useLocation();
+  const backgroundLocation = location.state?.backgroundLocation;
+
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
 
-      <Routes>
+      <Routes location={backgroundLocation || location}>
         {/* ================================
             PUBLIC ROUTES
         ================================= */}
@@ -54,6 +58,7 @@ function App() {
         <Route path="/reportissue" element={<ReportIssue />} />
         <Route path="/guest-details" element={<GuestComplaintDetails />} />
         <Route path="/complaint-map" element={<ComplaintMapPage />} />
+        <Route path="/complaint-progress" element={<ComplaintProgress />} />
         
         {/* Main Dashboard Gateway Page */}
         <Route path="/dashboard" element={<Dashboard />} />
@@ -101,7 +106,24 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
+      {backgroundLocation && (
+        <Routes>
+          <Route
+            path="/complaint-progress"
+            element={<ComplaintProgress isOverlay />}
+          />
+        </Routes>
+      )}
+
       <Footer />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

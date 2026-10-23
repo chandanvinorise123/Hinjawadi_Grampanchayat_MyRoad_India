@@ -8,17 +8,6 @@ import { API_BASE_URL } from "../utils/dashboardApi";
 import HomeComplaintsMap from "../components/maps/HomeComplaintsMap";
 const REPORT_ROUTE = "/reportissue";
 
-const findComplaintByNumber = async (complaintNumber) => {
-  const response = await fetch(
-    `${API_BASE_URL}/complaints/track/${encodeURIComponent(complaintNumber)}`
-  );
-  const result = await response.json();
-  if (!response.ok || !result.success) {
-    throw new Error(result.message || "Complaint not found. Please check the ID.");
-  }
-  return result.data;
-};
-
 // Hero background slider images
 import heroImage1 from "../assets/r1.jpg";
 import heroImage2 from "../assets/r2.jpg";
@@ -52,27 +41,22 @@ const quickActions = [
   {
     icon: "📍",
     title: "reportIssue",
-    desc: "submitPhoto",
+    destination: REPORT_ROUTE,
   },
   {
     icon: "🔍",
     title: "trackComplaint",
-    desc: "checkStatus",
+    action: "track",
   },
   {
     icon: "🗺️",
     title: "issuesOnMap",
-    desc: "viewNearby",
-  },
-  {
-    icon: "📷",
-    title: "scanQRCode",
-    desc: "reportQR",
+    destination: "/complaint-map",
   },
   {
     icon: "⚠️",
     title: "roadSafety",
-    desc: "guidelinesAlerts",
+    destination: "/issues-category",
   },
 ];
 
@@ -110,36 +94,108 @@ const categories = [
     title: "roadIssues",
     desc: "roadIssuesDesc",
     count: "4,812",
+    issues: [
+      "Road Potholes",
+      "Damaged Road",
+      "Road Cracks",
+      "Damaged Surface",
+      "Damaged Road Edges",
+      "Waterlogging",
+      "Uneven Surface",
+      "Road Obstruction",
+      "Traffic Obstruction",
+      "Accident-Prone Area",
+      "Other Road Issue",
+    ],
   },
   {
     icon: "🌊",
     title: "sewerageDrainage",
     desc: "sewerageDesc",
     count: "2,145",
+    issues: [
+      "Sewerage Choked",
+      "Broken Sewerage",
+      "Improper Water Flow",
+      "Sewage Overflow",
+      "Rainwater Waterlogging",
+      "Drainage Issues",
+      "Damaged Covers",
+      "Damaged Culvert",
+      "Leaking Pipeline",
+      "Cleaning Required",
+      "Bad Odour / Mosquito",
+      "New Drain Required",
+      "Broken Manhole",
+    ],
   },
   {
     icon: "💧",
     title: "drinkingWater",
     desc: "waterDesc",
     count: "1,760",
+    issues: [
+      "Pipeline Leakage",
+      "New Pipeline",
+      "Low Water Pressure",
+      "Irregular Supply",
+      "Water Disruption",
+      "Contaminated Water",
+      "Bad Odour",
+      "Broken Pipeline",
+      "No Tap Water",
+      "Supply Timing",
+      "Insufficient Supply",
+      "New Water Connection",
+      "Damaged Public Tap",
+      "Water Quality Testing",
+    ],
   },
   {
     icon: "💡",
     title: "streetlights",
     desc: "streetlightsDesc",
     count: "3,398",
+    issues: [
+      "Light Not Working",
+      "Damaged Pole",
+      "Broken Light",
+      "Missing Streetlight",
+      "Electrical Issue",
+      "Other Streetlight Issue",
+    ],
   },
   {
     icon: "⚠️",
     title: "roadSafetyCategory",
     desc: "roadSafetyDesc",
     count: "1,204",
+    issues: [
+      "Damaged Signboards",
+      "Missing Signboards",
+      "Speed Breaker Issues",
+      "Road Marking Issues",
+      "Pedestrian Signage",
+      "Safety Barrier Issues",
+      "Dangerous Turn / Curve",
+      "Accident-Prone Area",
+      "Other Safety Issue",
+    ],
   },
   {
     icon: "🌉",
     title: "bridgesCulverts",
     desc: "bridgesDesc",
     count: "419",
+    issues: [
+      "Bridge Damage",
+      "Culvert Damage",
+      "Damaged Railing",
+      "Water Flow Issues",
+      "Drainage Issues",
+      "Obstruction Around Bridge/Culvert",
+      "Other Bridge Issue",
+    ],
   },
 ];
 
@@ -247,11 +303,9 @@ const Home = () => {
   const { t } = useTranslation();
 
   const [trackId, setTrackId] = useState("");
-  const [trackedComplaint, setTrackedComplaint] = useState(null);
-  const [trackError, setTrackError] = useState("");
-  const [trackLoading, setTrackLoading] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [tvPlaying, setTvPlaying] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [complaintStats, setComplaintStats] = useState(null);
   const [complaintStatsError, setComplaintStatsError] = useState(false);
   const videoRef = useRef(null);
@@ -260,46 +314,27 @@ const Home = () => {
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const lightboxOpen = lightboxIndex !== null;
 
-  const handleTrackComplaint = async (complaintNumber) => {
-    const requestedId = String(complaintNumber || "").trim();
-    if (!requestedId) {
-      setTrackError("Enter a complaint number to track.");
-      setTrackedComplaint(null);
-      return;
-    }
-
-    setTrackLoading(true);
-    setTrackError("");
-    setTrackedComplaint(null);
-    setTrackId(requestedId);
-    try {
-      setTrackedComplaint(await findComplaintByNumber(requestedId));
-    } catch (error) {
-      console.error("Track complaint error:", error);
-      setTrackError(error.message || "Unable to track this complaint.");
-    } finally {
-      setTrackLoading(false);
-    }
-  };
-
   const submitComplaintTracking = (event) => {
     event.preventDefault();
-    handleTrackComplaint(trackId);
+    const requestedId = trackId.trim();
+    if (!requestedId) return;
+    navigate("/complaint-progress", {
+      state: {
+        trackComplaintNumber: requestedId,
+        backgroundLocation: location,
+      },
+    });
   };
 
   useEffect(() => {
-    const complaintNumber = location.state?.trackComplaintNumber;
-    if (!complaintNumber) return;
+    if (!selectedCategory) return undefined;
 
-    handleTrackComplaint(complaintNumber);
-    window.setTimeout(() => {
-      document.getElementById("home-complaint-tracker")?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 0);
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSelectedCategory(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [selectedCategory]);
 
   const openLightbox = (index) => setLightboxIndex(index);
   const closeLightbox = () => setLightboxIndex(null);
@@ -462,18 +497,100 @@ const Home = () => {
             <p className="hero-description">
               {t("home.heroDescription")}
             </p>
-
-            <div className="hero-buttons">
+          </div>
+          <div className="hero-feature-layout">
+            <section className="home-report-panel" aria-labelledby="home-report-title">
               <button
-                className="primary-btn"
+                className="home-report-panel-header"
                 type="button"
                 onClick={() => navigate(REPORT_ROUTE)}
               >
-                {t("home.reportIssue")} <span>→</span>
+                <span className="home-report-icon" aria-hidden="true">📣</span>
+                <span id="home-report-title">{t("home.reportIssue")}</span>
+                <span className="home-report-arrow" aria-hidden="true">→</span>
               </button>
-            </div>
+              <div className="home-report-panel-body">
+                <h2>{t("home.selectIssueCategory", { defaultValue: "Select Issue Category" })}</h2>
+                <div className="home-report-category-grid">
+                  {categories.map((category) => (
+                    <button
+                      className="home-report-category"
+                      key={category.title}
+                      type="button"
+                      onClick={() => navigate(REPORT_ROUTE)}
+                    >
+                      <span aria-hidden="true" />
+                      {t(`home.${category.title}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+            <HomeComplaintsMap t={t} />
           </div>
-          <HomeComplaintsMap t={t} />
+          <nav className="home-hero-social" aria-label="MyRoad India social media and contact links">
+            <h2 className="home-hero-social-heading">Follow Us On</h2>
+            <div className="home-hero-social-links">
+              <a
+                href="https://share.google/HsIlui1qbOCUediGM"
+                className="home-hero-social-link instagram"
+                aria-label="Instagram"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none" />
+                </svg>
+              </a>
+              <a
+                href="mailto:grampanchayat.hinjawadi@gmail.com"
+                className="home-hero-social-link email"
+                aria-label="Email grampanchayat.hinjawadi@gmail.com"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m4 7 8 6 8-6" />
+                </svg>
+              </a>
+              <a
+                href="https://share.google/06M6t0lK3LVaspijN"
+                className="home-hero-social-link website"
+                aria-label="Website"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+                </svg>
+              </a>
+              <a
+                href="https://share.google/znXEMLnf71s7vCaPG"
+                className="home-hero-social-link facebook"
+                aria-label="Facebook"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M13.5 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V13h2.8v8z" />
+                </svg>
+              </a>
+              <a
+                href="https://wa.me/919834206559"
+                className="home-hero-social-link whatsapp"
+                aria-label="WhatsApp"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M12 3a9 9 0 00-7.8 13.5L3 21l4.7-1.2A9 9 0 1012 3z" />
+                  <path d="M8.4 7.6c.2-.5.5-.5.7-.5h.5c.2 0 .4 0 .6.4.2.5.7 1.7.7 1.8.1.1.1.3 0 .4-.1.2-.2.3-.3.4l-.4.5c-.1.1-.2.2-.1.5.2.4.8 1.3 1.7 2.1 1.1 1 1.1 1 1.4.9.2 0 .4-.2.5-.3l.5-.6c.2-.2.3-.2.5-.1l1.7.8c.2.1.3.2.4.3.1.2.1 1-.3 1.5-.3.5-1.4 1-2 1-.5 0-1.7-.2-3.5-1.7-2.1-1.8-2.9-3.4-3.1-3.9-.2-.5-.7-1.6-.5-2.6.1-.6.4-1 .6-1.2z" />
+                </svg>
+              </a>
+            </div>
+          </nav>
         </div>
 
         {/* Slider dots */}
@@ -594,8 +711,19 @@ const Home = () => {
         </div>
 
         <div className="quick-actions-grid">
-          {quickActions.map((item, i) => (
-            <button className="qa-card" key={i} type="button">
+          {quickActions.map((item) => (
+            <button
+              className="qa-card"
+              key={item.title}
+              type="button"
+              onClick={() => {
+                if (item.action === "track") {
+                  navigate("/complaint-progress");
+                  return;
+                }
+                navigate(item.destination);
+              }}
+            >
               <div className="qa-icon">{item.icon}</div>
               <h4>{t(`home.${item.title}`)}</h4>
             </button>
@@ -648,8 +776,14 @@ const Home = () => {
         </div>
 
         <div className="categories-grid">
-          {categories.map((cat, i) => (
-            <div className="cat-card" key={i}>
+          {categories.map((cat) => (
+            <button
+              className="cat-card"
+              key={cat.title}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              aria-haspopup="dialog"
+            >
               <div className="cat-top">
                 <div className="cat-icon">{cat.icon}</div>
 
@@ -663,10 +797,49 @@ const Home = () => {
               {/* <span className="cat-link">
                 {t("home.viewIssues")} →
               </span> */}
-            </div>
+            </button>
           ))}
         </div>
       </section>
+
+      {selectedCategory && (
+        <div
+          className="category-issues-overlay"
+          onClick={() => setSelectedCategory(null)}
+        >
+          <section
+            className="category-issues-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t(`home.${selectedCategory.title}`)}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="category-issues-close"
+              type="button"
+              aria-label={t("Close", { defaultValue: "Close" })}
+              onClick={() => setSelectedCategory(null)}
+            >
+              ×
+            </button>
+            <h2 className="category-issues-title">
+              {t(`home.${selectedCategory.title}`)}
+            </h2>
+            <ul className="category-issues-list">
+              {selectedCategory.issues.map((issue) => (
+                <li key={issue}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(REPORT_ROUTE, { state: { issueType: issue } })}
+                  >
+                    {t(issue)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
 
       {/* ================= HOW IT WORKS ================= */}
       <section className="steps-section">
@@ -686,98 +859,6 @@ const Home = () => {
               <p>{t(`home.${step.desc}`)}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ================= TRACK COMPLAINT ================= */}
-      <section className="track-section" id="home-complaint-tracker">
-        <div className="track-shell">
-          {/* Left card: search */}
-          <div className="track-card track-form-card">
-            <div className="track-icon">🔍</div>
-
-            <h3>{t("home.trackYourComplaint")}</h3>
-            <p>{t("home.trackDescription")}</p>
-
-            <form
-              className="track-form"
-              onSubmit={submitComplaintTracking}
-            >
-              <label htmlFor="track-id" className="sr-only">
-                {t("home.complaintNumber")}
-              </label>
-
-              <input
-                id="track-id"
-                type="text"
-                placeholder={t("home.complaintPlaceholder")}
-                value={trackId}
-                onChange={(event) => {
-                  setTrackId(event.target.value);
-                  setTrackError("");
-                }}
-                required
-              />
-
-              <button
-                className="primary-btn track-btn"
-                type="submit"
-                disabled={trackLoading}
-              >
-                {trackLoading ? "Tracking..." : t("home.trackStatus")}
-              </button>
-            </form>
-            <button
-              className="guest-details-btn"
-              type="button"
-              onClick={() => navigate("/guest-details")}
-            >
-              {t("home.guestDetailsButton")}
-            </button>
-            {trackError && <p className="track-error" role="alert">{trackError}</p>}
-          </div>
-
-          {/* Right card: timeline */}
-          <div className="track-card timeline-card">
-            {trackedComplaint ? (
-              <>
-                <div className="tl-head">
-                  <b>{trackedComplaint.complaintNumber}</b>
-                  <span>{trackedComplaint.status || "New"}</span>
-                </div>
-                <p>
-                  {trackedComplaint.category} · {trackedComplaint.issueType}
-                </p>
-                <p>{trackedComplaint.location}</p>
-                <div className="tl-updates">
-                  <b>Work updates</b>
-                  {(trackedComplaint.statusHistory || []).length > 0 ? (
-                    [...trackedComplaint.statusHistory].reverse().map((update, index) => (
-                      <div className="tl-item" key={`${update.updatedAt || update.status}-${index}`}>
-                        <div className={`tl-dot ${index === 0 ? "now" : "done"}`}></div>
-                        <div className="tl-body">
-                          <b>{update.status}</b>
-                          <span>
-                            {update.updatedAt
-                              ? new Date(update.updatedAt).toLocaleString()
-                              : ""}
-                          </span>
-                          {update.remarks && <span>{update.remarks}</span>}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No status updates are available yet.</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="tl-head">
-                <b>Complaint progress</b>
-                <span>Enter a complaint number to view updates</span>
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
@@ -821,6 +902,40 @@ const Home = () => {
               <span>{t(`home.${img.caption}`)}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ================= TRACK COMPLAINT ================= */}
+      <section className="track-section" id="home-complaint-tracker">
+        <div className="track-shell track-shell-single">
+          <div className="track-card track-form-card track-card-featured">
+            <div className="track-icon" aria-hidden="true">🔍</div>
+            <h3>{t("home.trackYourComplaint")}</h3>
+            <p>{t("home.trackDescription")}</p>
+            <form className="track-form" onSubmit={submitComplaintTracking}>
+              <label htmlFor="home-track-id" className="sr-only">
+                {t("home.complaintNumber")}
+              </label>
+              <input
+                id="home-track-id"
+                type="text"
+                placeholder={t("home.complaintPlaceholder")}
+                value={trackId}
+                onChange={(event) => setTrackId(event.target.value)}
+                required
+              />
+              <button className="primary-btn track-btn" type="submit">
+                {t("home.trackStatus")}
+              </button>
+            </form>
+            <button
+              className="guest-details-btn"
+              type="button"
+              onClick={() => navigate("/guest-details")}
+            >
+              {t("home.guestDetailsButton")}
+            </button>
+          </div>
         </div>
       </section>
 

@@ -254,6 +254,7 @@ const AdminDashboard = () => {
   const [complaintListType, setComplaintListType] = useState("new");
   const [showReports, setShowReports] = useState(false);
   const [showNotificationMonitoring, setShowNotificationMonitoring] = useState(false);
+  const [initialNotification, setInitialNotification] = useState(null);
 
   // ---------------- LOGOUT FUNCTION ----------------
   const handleLogout = () => {
@@ -348,6 +349,12 @@ const AdminDashboard = () => {
   };
 
   const handleOpenNotificationComplaint = (notification) => {
+    if (notification.contactMessageId || notification.contactMessage) {
+      setInitialNotification(notification);
+      setShowNotificationMonitoring(true);
+      return;
+    }
+
     const complaint = findComplaintForNotification(notification);
     if (!complaint) {
       showMessage("error", "The complaint linked to this notification is not available in the current complaint list yet.");
@@ -898,8 +905,12 @@ const AdminDashboard = () => {
 
         : showNotificationMonitoring ? (
           <NotificationMonitoring
-            onBack={() => setShowNotificationMonitoring(false)}
+            onBack={() => {
+              setShowNotificationMonitoring(false);
+              setInitialNotification(null);
+            }}
             onOpenComplaint={handleOpenNotificationComplaint}
+            initialNotification={initialNotification}
           />
         )
 
@@ -1466,7 +1477,7 @@ const AdminDashboard = () => {
                           </colgroup>
                           <thead>
                             <tr>
-                              <th>Complaint</th>
+                              <th>Complaint / Subject</th>
                               <th>Category</th>
                               <th>Location</th>
                               <th>Priority</th>
@@ -1777,8 +1788,12 @@ const AdminDashboard = () => {
                           <tbody>
                             {notificationFeed.map((note) => {
                               const complaint = findComplaintForNotification(note);
-                              const canOpenComplaint = Boolean(
-                                note.complaintId || note.complaintNumber || note.complaint
+                              const canViewNotification = Boolean(
+                                note.contactMessageId ||
+                                note.contactMessage ||
+                                note.complaintId ||
+                                note.complaintNumber ||
+                                note.complaint
                               );
 
                               return (
@@ -1791,7 +1806,12 @@ const AdminDashboard = () => {
                                     <span className="ad-notif-time">{note.time || "Time unavailable"}</span>
                                   </td>
                                   <td className="ad-notif-complaint">
-                                    {note.complaintNumber || note.complaint?.complaintNumber || note.complaintId || note.complaint?._id || "—"}
+                                    {note.contactMessage?.subject ||
+                                      note.complaintNumber ||
+                                      note.complaint?.complaintNumber ||
+                                      note.complaintId ||
+                                      note.complaint?._id ||
+                                      "—"}
                                   </td>
                                   <td>
                                     <span className={`ad-notif-status ${note.complaintStatus || complaint?.status ? "has-status" : ""}`}>
@@ -1803,7 +1823,7 @@ const AdminDashboard = () => {
                                       type="button"
                                       className="ad-notif-view-btn"
                                       onClick={() => handleOpenNotificationComplaint(note)}
-                                      disabled={!canOpenComplaint}
+                                      disabled={!canViewNotification}
                                     >
                                       View Details
                                     </button>

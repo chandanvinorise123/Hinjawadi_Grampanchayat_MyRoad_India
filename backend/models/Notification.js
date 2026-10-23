@@ -16,6 +16,11 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId, 
       ref: "Complaint" 
     }, // Link to the complaint
+    contactMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ContactMessage",
+      default: null,
+    },
     type: { 
       type: String, 
       required: true 

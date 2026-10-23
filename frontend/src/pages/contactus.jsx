@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./contactus.css";
+import { API_BASE_URL } from "../utils/dashboardApi";
 // import bannerImage from "../assets/cu.png";
 import bannerImageEn from "../assets/cu.png";
 import bannerImageHi from "../assets/cu-hi.png";
@@ -64,6 +65,8 @@ const bannerImage =
   
   const [formData, setFormData] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,9 +77,28 @@ const bannerImage =
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/contact-messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to send your message.");
+      }
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Contact form submission error:", error);
+      setSubmitError(error.message || "Unable to send your message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const contactCards = [
@@ -287,11 +309,17 @@ const bannerImage =
                     </div>
 
                     {/* Submit */}
+                    {submitError && (
+                      <p className="contact-submit-error" role="alert">
+                        {submitError}
+                      </p>
+                    )}
                     <button
                       className="primary-btn submit-btn"
                       type="submit"
+                      disabled={submitting}
                     >
-                      {t("contact.submit")}
+                      {submitting ? "Sending..." : t("contact.submit")}
                     </button>
                   </form>
                 </>

@@ -238,14 +238,7 @@ router.get("/analytics", async (req, res) => {
 // GET COMPLAINTS FOR A CITIZEN
 // GET /api/complaints/my/:citizenId
 // =====================================================
-router.get("/my/:citizenId", (req, res, next) => {
-  console.log("======================================");
-  console.log("✅ MY COMPLAINTS ROUTE HIT");
-  console.log("Citizen ID:", req.params.citizenId);
-  console.log("======================================");
-
-  next();
-}, getMyComplaints);
+router.get("/my/:citizenId", getMyComplaints);
 
 // =====================================================
 // TRACK / GET SINGLE COMPLAINT

@@ -50,6 +50,7 @@ router.get("/", async (req, res) => {
 
     const notifications = await Notification.find(query)
       .populate("complaintId", "complaintNumber status createdAt date")
+      .populate("contactMessageId", "name email mobile subject message createdAt")
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -62,6 +63,18 @@ router.get("/", async (req, res) => {
       complaintId: n.complaintId?._id ? String(n.complaintId._id) : null,
       complaintNumber: n.complaintId?.complaintNumber || "",
       complaintStatus: n.complaintId?.status || "",
+      contactMessageId: n.contactMessageId?._id ? String(n.contactMessageId._id) : null,
+      contactMessage: n.contactMessageId?._id
+        ? {
+            id: String(n.contactMessageId._id),
+            name: n.contactMessageId.name,
+            email: n.contactMessageId.email,
+            mobile: n.contactMessageId.mobile,
+            subject: n.contactMessageId.subject,
+            message: n.contactMessageId.message,
+            createdAt: n.contactMessageId.createdAt,
+          }
+        : null,
       recipientId: n.userId ? String(n.userId) : null,
       isRead: n.isRead,
     }));

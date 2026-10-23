@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import "./Notification.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
 
-const NotificationMonitoring = ({ onBack, onOpenComplaint }) => {
+const NotificationMonitoring = ({
+  onBack,
+  onOpenComplaint,
+  initialNotification = null,
+}) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedNotif, setSelectedNotif] = useState(null);
+  const [selectedNotif, setSelectedNotif] = useState(initialNotification);
   const [filterType, setFilterType] = useState("All");
 
   // Fetch notifications dynamically from backend
@@ -124,7 +128,7 @@ const NotificationMonitoring = ({ onBack, onOpenComplaint }) => {
                   <th>Date & Time</th>
                   <th>Type</th>
                   <th>Message</th>
-                  <th>Complaint ID</th>
+                  <th>Complaint / Subject</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -143,7 +147,9 @@ const NotificationMonitoring = ({ onBack, onOpenComplaint }) => {
                       {notif.text || notif.message}
                     </td>
                     <td className="nm-mono">
-                      {notif.complaintNumber ? (
+                      {notif.contactMessage ? (
+                        notif.contactMessage.subject
+                      ) : notif.complaintNumber ? (
                         <button
                           className="nm-complaint-link"
                           type="button"
@@ -191,27 +197,56 @@ const NotificationMonitoring = ({ onBack, onOpenComplaint }) => {
 
             <div className="nm-modal-body">
               <div className="nm-detail-section">
-                <h4>📢 Full Message</h4>
-                <p className="nm-full-message">{selectedNotif.text || selectedNotif.message}</p>
+                <h4>{selectedNotif.contactMessage ? "✉️ Citizen Message" : "📢 Full Message"}</h4>
+                <p className="nm-full-message">
+                  {selectedNotif.contactMessage?.message ||
+                    selectedNotif.text ||
+                    selectedNotif.message}
+                </p>
               </div>
 
               <div className="nm-detail-grid">
                 <div className="nm-detail-item">
                   <span>Date & Time</span>
-                  <b className="nm-mono">{formatDate(selectedNotif.createdAt || selectedNotif.time)}</b>
+                  <b className="nm-mono">
+                    {formatDate(selectedNotif.contactMessage?.createdAt || selectedNotif.createdAt || selectedNotif.time)}
+                  </b>
                 </div>
-                <div className="nm-detail-item">
-                  <span>Complaint Number</span>
-                  <b className="nm-mono">{selectedNotif.complaintNumber || "N/A"}</b>
-                </div>
-                <div className="nm-detail-item">
-                  <span>Complaint ID (Internal)</span>
-                  <b className="nm-mono">{selectedNotif.complaintId || "N/A"}</b>
-                </div>
-                <div className="nm-detail-item">
-                  <span>Recipient ID</span>
-                  <b className="nm-mono">{selectedNotif.recipientId || "N/A"}</b>
-                </div>
+                {selectedNotif.contactMessage ? (
+                  <>
+                    <div className="nm-detail-item">
+                      <span>Citizen Name</span>
+                      <b>{selectedNotif.contactMessage.name}</b>
+                    </div>
+                    <div className="nm-detail-item">
+                      <span>Email</span>
+                      <b>{selectedNotif.contactMessage.email}</b>
+                    </div>
+                    <div className="nm-detail-item">
+                      <span>Mobile</span>
+                      <b>{selectedNotif.contactMessage.mobile}</b>
+                    </div>
+                    <div className="nm-detail-item">
+                      <span>Subject</span>
+                      <b>{selectedNotif.contactMessage.subject}</b>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="nm-detail-item">
+                      <span>Complaint Number</span>
+                      <b className="nm-mono">{selectedNotif.complaintNumber || "N/A"}</b>
+                    </div>
+                    <div className="nm-detail-item">
+                      <span>Complaint ID (Internal)</span>
+                      <b className="nm-mono">{selectedNotif.complaintId || "N/A"}</b>
+                    </div>
+                    <div className="nm-detail-item">
+                      <span>Recipient ID</span>
+                      <b className="nm-mono">{selectedNotif.recipientId || "N/A"}</b>
+                    </div>
+                  </>
+                )}
                 <div className="nm-detail-item">
                   <span>Read Status</span>
                   <b className={selectedNotif.isRead ? "nm-text-success" : "nm-text-warning"}>

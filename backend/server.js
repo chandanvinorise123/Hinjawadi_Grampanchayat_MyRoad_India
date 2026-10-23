@@ -20,6 +20,7 @@ const photoRoutes = require("./features/photos/photoRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 const adminManagementRoutes = require("./features/admin/adminManagementRoutes");
 const dashboardRoutes = require("./features/dashboard/dashboardRoutes");
+const contactRoutes = require("./features/contact/contactRoutes");
 
 // =====================================================
 // APP
@@ -108,6 +109,8 @@ try {
 app.use("/api/stats", statRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+
+app.use("/api/contact-messages", contactRoutes);
 
 app.use("/api/admin", adminProfileRoutes);
 

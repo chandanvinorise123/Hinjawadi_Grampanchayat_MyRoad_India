@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./issuecategory.css";
@@ -30,7 +30,6 @@ const issueCategories = [
     num: "01",
     icon: icons.road,
     title: "Road Issues",
-    summary: "Potholes, cracks, and other problems affecting road surfaces.",
     issues: [
       "Road Potholes",
       "Damaged Road",
@@ -49,7 +48,6 @@ const issueCategories = [
     num: "02",
     icon: icons.drain,
     title: "Sewerage & Drain Issues",
-    summary: "Blocked drains, sewage overflow, and related infrastructure faults.",
     issues: [
       "Sewerage Choked",
       "Broken Sewerage",
@@ -70,7 +68,6 @@ const issueCategories = [
     num: "03",
     icon: icons.water,
     title: "Drinking Water Issues",
-    summary: "Supply, quality, and pipeline issues affecting drinking water access.",
     issues: [
       "Pipeline Leakage",
       "New Pipeline",
@@ -92,7 +89,6 @@ const issueCategories = [
     num: "04",
     icon: icons.light,
     title: "Streetlight Issues",
-    summary: "Non-functional or damaged streetlights and related electrical faults.",
     issues: [
       "Light Not Working",
       "Damaged Pole",
@@ -106,7 +102,6 @@ const issueCategories = [
     num: "05",
     icon: icons.safety,
     title: "Road Safety Issues",
-    summary: "Signage, markings, and safety hazards along roads.",
     issues: [
       "Damaged Signboards",
       "Missing Signboards",
@@ -123,7 +118,6 @@ const issueCategories = [
     num: "06",
     icon: icons.bridge,
     title: "Bridge & Culvert Issues",
-    summary: "Structural and drainage issues affecting bridges and culverts.",
     issues: [
       "Bridge Damage",
       "Culvert Damage",
@@ -140,8 +134,7 @@ const IssueCategory = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const [activeCategory, setActiveCategory] = useState(0);
-  const [activeIssue, setActiveIssue] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Detect the currently selected language
   const currentLanguage = (
@@ -156,13 +149,21 @@ const IssueCategory = () => {
       mr: bannerImageMr,
     }[currentLanguage] || bannerImageEn;
 
-  const handleCategorySelect = (index) => {
-    setActiveCategory(index);
-    setActiveIssue(0);
-  };
+  useEffect(() => {
+    if (!selectedCategory) return undefined;
 
-  const currentCategory = issueCategories[activeCategory];
-  const currentIssue = currentCategory.issues[activeIssue];
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSelectedCategory(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedCategory]);
 
   return (
     <main className="issue-category-page">
@@ -213,129 +214,75 @@ const IssueCategory = () => {
         </div>
 
         <div className="category-grid">
-          {issueCategories.map((category, i) => (
+          {issueCategories.map((category) => (
             <button
-              key={i}
+              key={category.num}
               type="button"
-              className={`category-card ${
-                activeCategory === i ? "active" : ""
-              }`}
-              onClick={() => handleCategorySelect(i)}
-              aria-pressed={activeCategory === i}
+              className="category-card"
+              onClick={() => setSelectedCategory(category)}
+              aria-haspopup="dialog"
+              aria-label={t("Select issues in {{category}}", {
+                category: t(category.title),
+                defaultValue: `Select issues in ${t(category.title)}`,
+              })}
             >
               <div className="category-icon">{category.icon}</div>
 
               <h4>{t(category.title)}</h4>
-
-              <p>{t(category.summary)}</p>
             </button>
           ))}
         </div>
       </section>
 
-      {/* ================= SUB-ISSUE SELECTION ================= */}
-      <section className="section surface">
-        <div className="detail-shell">
-          <div className="detail-heading">
-            <span className="category-number lg">
-              {currentCategory.num}
-            </span>
-
-            <div>
-              <p className="eyebrow">{t("Step 2")}</p>
-              <h3>
-                {t("Select a specific issue in {{category}}", {
-                  category: t(currentCategory.title),
-                })}
-              </h3>
-            </div>
-          </div>
-
-          <div className="issue-chip-grid">
-            {currentCategory.issues.map((issue, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`issue-chip ${
-                  activeIssue === i ? "active" : ""
-                }`}
-                onClick={() => setActiveIssue(i)}
-                aria-pressed={activeIssue === i}
-              >
-                <span className="check">
-                  {activeIssue === i ? "✓" : ""}
-                </span>
-                {t(issue)}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================= ISSUE INFORMATION ================= */}
-      <section className="section">
-        <div className="section-heading">
-          <p className="eyebrow">{t("Step 3")}</p>
-          <h2>{t("Issue information")}</h2>
-        </div>
-
-        <div className="info-shell">
-          <div className="info-card">
-            <span className="info-label">{t("Issue Name")}</span>
-            <h3>{t(currentIssue)}</h3>
-          </div>
-
-          <div className="info-card">
-            <span className="info-label">{t("Issue Description")}</span>
-            <p>
-              {t(
-                'Provide a short description of the "{{issue}}" problem — what you observed, its extent, and how long it has persisted.',
-                { issue: t(currentIssue) }
-              )}
-            </p>
-          </div>
-
-          <div className="info-card">
-            <span className="info-label">{t("Related Guidance")}</span>
-            <ul className="guidance-list">
-              <li>
-                {t("Add clear photographs from more than one angle")}
-              </li>
-              <li>{t("Capture GPS location at the exact site")}</li>
-              <li>
-                {t("Mention nearby landmarks for easier identification")}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= CTA ================= */}
-      <section className="section cta-section">
-        <div className="cta-shell">
-          <div>
-            <h3>
-              {t('Ready to report "{{issue}}"?', {
-                issue: t(currentIssue),
-              })}
-            </h3>
-
-            <p>
-              {t(
-                "Confirm the category and issue, then continue to submit your report."
-              )}
-            </p>
-          </div>
-
-          <button
-            className="primary-btn"
-            type="button"
-            onClick={() => navigate(REPORT_ROUTE)}
+      {selectedCategory && (
+        <div
+          className="category-issues-backdrop"
+          role="presentation"
+          onClick={() => setSelectedCategory(null)}
+        >
+          <section
+            className="category-issues-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-issues-title"
+            onClick={(event) => event.stopPropagation()}
           >
-            {t("Continue to Report")} <span>→</span>
-          </button>
+            <header className="category-issues-header">
+              <div>
+                <p className="eyebrow">{t("Select an issue")}</p>
+                <h2 id="category-issues-title">
+                  {t(selectedCategory.title)}
+                </h2>
+              </div>
+              <button
+                className="category-issues-close"
+                type="button"
+                aria-label={t("Close")}
+                onClick={() => setSelectedCategory(null)}
+                autoFocus
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="category-issues-list">
+              {selectedCategory.issues.map((issue) => (
+                <button
+                  className="category-issue-option"
+                  key={issue}
+                  type="button"
+                  onClick={() =>
+                    navigate(REPORT_ROUTE, { state: { issueType: issue } })
+                  }
+                >
+                  {t(issue)}
+                  <span aria-hidden="true">→</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+      )}
     </main>
   );
 };
