@@ -347,7 +347,7 @@
 .services-page .services-grid {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -782,14 +782,15 @@
 
 .services-page .detail-heading {
   display: flex;
-
   align-items: center;
-
+  justify-content: center;
   gap: 18px;
-
   margin-bottom: 26px;
-
   flex-wrap: wrap;
+}
+
+.services-page .detail-heading > div {
+  text-align: center;
 }
 
 .services-page .detail-heading h3 {
@@ -1040,6 +1041,10 @@
   align-items: center;
 }
 
+.services-page .legend-shell > div:first-child {
+  text-align: center;
+}
+
 .services-page .legend-grid {
   display: grid;
 
@@ -1239,6 +1244,10 @@
   grid-template-columns: 1fr auto 1fr;  /* button sits in the middle column */
   align-items: center;
   gap: 20px;
+}
+
+.services-page .cta-shell > div {
+  text-align: center;
 }
 
 .services-page .cta-shell h3 {

@@ -177,6 +177,7 @@ const ReportIssue = () => {
   const [locationStatus, setLocationStatus] = useState("idle");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("idle");
+  const [mapTypeId, setMapTypeId] = useState("roadmap");
   const [map, setMap] = useState(null);
   const [autocomplete, setAutocomplete] = useState(null);
   const geocodeRequestId = useRef(0);
@@ -1145,6 +1146,27 @@ const ReportIssue = () => {
                       </div>
 
                       <div className="google-map-container">
+                        <button
+                          className="report-map-type-button"
+                          type="button"
+                          aria-label={t(
+                            mapTypeId === "satellite"
+                              ? "home.mapRoadmapView"
+                              : "home.mapSatelliteView"
+                          )}
+                          aria-pressed={mapTypeId === "satellite"}
+                          onClick={() =>
+                            setMapTypeId((currentType) =>
+                              currentType === "satellite" ? "roadmap" : "satellite"
+                            )
+                          }
+                        >
+                          {t(
+                            mapTypeId === "satellite"
+                              ? "home.mapRoadmapView"
+                              : "home.mapSatelliteView"
+                          )}
+                        </button>
                         <GoogleMap
                           mapContainerStyle={mapContainerStyle}
                           defaultCenter={defaultCenter}
@@ -1155,6 +1177,7 @@ const ReportIssue = () => {
                           options={{
                             streetViewControl: false,
                             mapTypeControl: false,
+                            mapTypeId,
                             fullscreenControl: true,
                             zoomControl: false,
                           }}

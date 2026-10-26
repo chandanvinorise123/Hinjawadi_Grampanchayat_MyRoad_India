@@ -9,20 +9,74 @@ import bannerImageEn from "../assets/ic.png";
 import bannerImageHi from "../assets/ic-hi.png";
 import bannerImageMr from "../assets/ic-mr.jpeg";
 
-// Realistic full-colour icons (emoji style)
-const Emoji = ({ symbol }) => (
-  <span className="emoji-icon" role="img" aria-hidden="true">
-    {symbol}
-  </span>
-);
+const CategoryIcon = ({ name }) => {
+  const artwork = {
+    road: (
+      <>
+        <path d="m6 21 3.2-18h5.6L18 21" />
+        <path d="M12 5v3m0 4v3m0 4v2" />
+        <path d="M4 21h16" />
+      </>
+    ),
+    drain: (
+      <>
+        <path d="M3 7h18M5 7v12m14-12v12M5 19h14" />
+        <path d="M8 10v6m4-6v6m4-6v6" />
+        <path d="M3 4h18" />
+      </>
+    ),
+    water: (
+      <>
+        <path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11Z" />
+        <path d="M9 15a3 3 0 0 0 3 3" />
+      </>
+    ),
+    light: (
+      <>
+        <path d="M9 18h6m-5 3h4" />
+        <path d="M8.5 14.5A7 7 0 1 1 15.5 14.5c-.8.7-1.2 1.5-1.4 2.5h-4.2c-.2-1-.6-1.8-1.4-2.5Z" />
+        <path d="M12 1v2m9 9h-2M5 12H3m15.4-6.4L17 7M7 7 5.6 5.6" />
+      </>
+    ),
+    safety: (
+      <>
+        <path d="m12 22 1.8-.8A11 11 0 0 0 20 11V5l-8-3-8 3v6a11 11 0 0 0 6.2 10.2L12 22Z" />
+        <path d="m9 12 2 2 4-4" />
+      </>
+    ),
+    bridge: (
+      <>
+        <path d="M3 19h18M4 19v-5m16 5v-5M3 14h18" />
+        <path d="M4 14a8 8 0 0 1 16 0M8 14v5m8-5v5" />
+        <path d="M2 21h20" />
+      </>
+    ),
+  }[name];
+
+  return (
+    <svg
+      className="category-icon-svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {artwork}
+    </svg>
+  );
+};
 
 const icons = {
-  road: <Emoji symbol="🛣️" />,
-  drain: <Emoji symbol="🕳️" />,
-  water: <Emoji symbol="🚰" />,
-  light: <Emoji symbol="💡" />,
-  safety: <Emoji symbol="⚠️" />,
-  bridge: <Emoji symbol="🌉" />,
+  road: <CategoryIcon name="road" />,
+  drain: <CategoryIcon name="drain" />,
+  water: <CategoryIcon name="water" />,
+  light: <CategoryIcon name="light" />,
+  safety: <CategoryIcon name="safety" />,
+  bridge: <CategoryIcon name="bridge" />,
 };
 
 const issueCategories = [
@@ -196,19 +250,9 @@ const IssueCategory = () => {
       </section>
 
 
-
-
-
-
-
-
-
-
-      
-
       {/* ================= CATEGORY GRID ================= */}
       <section className="section">
-        <div className="section-heading">
+        <div className="section-heading center">
           <p className="eyebrow">{t("Step 1")}</p>
           <h2>{t("Select the main issue category")}</h2>
         </div>

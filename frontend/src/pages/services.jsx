@@ -19,9 +19,9 @@ const icons = {
   report: <Emoji symbol="📍" />,
   track: <Emoji symbol="🔍" />,
   map: <Emoji symbol="🗺️" />,
-  field: <Emoji symbol="👷" />,
-  admin: <Emoji symbol="🛡️" />,
-  analytics: <Emoji symbol="📊" />,
+  issueCategories: <Emoji symbol="🗂️" />,
+  contact: <Emoji symbol="📞" />,
+  help: <Emoji symbol="❓" />,
 };
 
 // Translation keys for core services
@@ -31,6 +31,7 @@ const coreServices = [
     icon: icons.report,
     titleKey: "services.items.report.title",
     summaryKey: "services.items.report.summary",
+    routeTo: "/reportissue",
     featureKeys: [
       "services.items.report.features.category",
       "services.items.report.features.description",
@@ -46,6 +47,7 @@ const coreServices = [
     icon: icons.track,
     titleKey: "services.items.track.title",
     summaryKey: "services.items.track.summary",
+    routeTo: "/complaint-progress",
     featureKeys: [
       "services.items.track.features.number",
       "services.items.track.features.status",
@@ -60,6 +62,7 @@ const coreServices = [
     icon: icons.map,
     titleKey: "services.items.map.title",
     summaryKey: "services.items.map.summary",
+    routeTo: "/complaint-map",
     featureKeys: [
       "services.items.map.features.gps",
       "services.items.map.features.coordinates",
@@ -71,48 +74,21 @@ const coreServices = [
   },
   {
     num: "04",
-    icon: icons.field,
-    titleKey: "services.items.field.title",
-    summaryKey: "services.items.field.summary",
-    featureKeys: [
-      "services.items.field.features.assigned",
-      "services.items.field.features.location",
-      "services.items.field.features.inspection",
-      "services.items.field.features.photos",
-      "services.items.field.features.action",
-      "services.items.field.features.status",
-      "services.items.field.features.records",
-    ],
+    icon: icons.issueCategories,
+    titleKey: "navbar.issuesCategory",
+    routeTo: "/issues-category",
   },
   {
     num: "05",
-    icon: icons.admin,
-    titleKey: "services.items.admin.title",
-    summaryKey: "services.items.admin.summary",
-    featureKeys: [
-      "services.items.admin.features.dashboard",
-      "services.items.admin.features.total",
-      "services.items.admin.features.verify",
-      "services.items.admin.features.assign",
-      "services.items.admin.features.priority",
-      "services.items.admin.features.monitor",
-      "services.items.admin.features.lifecycle",
-    ],
+    icon: icons.contact,
+    titleKey: "navbar.contactUs",
+    routeTo: "/contactus",
   },
   {
     num: "06",
-    icon: icons.analytics,
-    titleKey: "services.items.analytics.title",
-    summaryKey: "services.items.analytics.summary",
-    featureKeys: [
-      "services.items.analytics.features.registration",
-      "services.items.analytics.features.assignment",
-      "services.items.analytics.features.resolution",
-      "services.items.analytics.features.periodic",
-      "services.items.analytics.features.category",
-      "services.items.analytics.features.priority",
-      "services.items.analytics.features.analytics",
-    ],
+    icon: icons.help,
+    titleKey: "navbar.helpFaq",
+    routeTo: "/helpfaq",
   },
 ];
 
@@ -185,7 +161,7 @@ const Services = () => {
 
 
       <section className="section">
-        <div className="section-heading">
+        <div className="section-heading center">
           <p className="eyebrow">
             {t("services.coreServices")}
           </p>
@@ -196,10 +172,16 @@ const Services = () => {
             <button
               key={service.num}
               type="button"
-              className={`service-card ${activeService === i ? "active" : ""
+              className={`service-card ${!service.routeTo && activeService === i ? "active" : ""
                 }`}
-              onClick={() => setActiveService(i)}
-              aria-pressed={activeService === i}
+              onClick={() => {
+                if (service.routeTo) {
+                  navigate(service.routeTo);
+                  return;
+                }
+                setActiveService(i);
+              }}
+              aria-pressed={service.routeTo ? undefined : activeService === i}
             >
               <div className="service-icon">{service.icon}</div>
               <h4>{t(service.titleKey)}</h4>

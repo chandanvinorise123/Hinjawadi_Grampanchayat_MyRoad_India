@@ -160,16 +160,6 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
           </span>
         </div>
       </div>
-      {!fullPage && (
-        <button
-          className="home-map-view-button"
-          type="button"
-          onClick={() => navigate("/complaint-map")}
-        >
-          {t("home.mapViewFull")}
-        </button>
-      )}
-
       {loadError && (
         <p className="home-map-message" role="alert">
           {t("home.mapLoadError")}
@@ -195,6 +185,7 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
         boundaryGeoJson={boundaryGeoJson}
         mapClassName="home-live-complaints-map"
         translate={t}
+        showSatelliteToggle
       />
       {unlocatedComplaints.length > 0 && (
         <details className="home-map-unlocated">

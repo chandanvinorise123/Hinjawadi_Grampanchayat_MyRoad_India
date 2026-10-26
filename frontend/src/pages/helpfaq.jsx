@@ -176,7 +176,7 @@ const bannerImage =
 
       {/* ================= CITIZEN GUIDANCE ================= */}
       <section className="section surface">
-        <div className="section-heading">
+        <div className="section-heading center">
           <p className="eyebrow">
             {t("helpFaq.citizenGuidance")}
           </p>

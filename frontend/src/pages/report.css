@@ -420,6 +420,31 @@ body .pac-container {
   border-radius: var(--radius-sm);
 }
 
+.report-page .report-map-type-button {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid rgba(11, 36, 71, .16);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--navy-900);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .24);
+  font: 500 13px/20px Arial, sans-serif;
+  cursor: pointer;
+}
+
+.report-page .report-map-type-button:hover {
+  background: #f4f6f9;
+}
+
+.report-page .report-map-type-button:focus-visible {
+  outline: 3px solid rgba(176, 24, 69, .45);
+  outline-offset: 2px;
+}
+
 .report-page .map-zoom-controls {
   position: absolute;
   right: 12px;

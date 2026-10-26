@@ -26,7 +26,8 @@ export const getComplaintMapPinType = (complaint = {}) => {
 export const getComplaintMapMarkerSvg = (
   complaint,
   pinTypeOverride,
-  dimensional = false
+  dimensional = false,
+  scale = 1
 ) => {
   const glyph = markerGlyphForComplaint(complaint);
   const pinType = pinTypeOverride || getComplaintMapPinType(complaint);
@@ -52,7 +53,7 @@ export const getComplaintMapMarkerSvg = (
       resolved: "#07552b",
     }[pinType];
     return `
-      <svg xmlns="http://www.w3.org/2000/svg" width="52" height="66" viewBox="0 0 52 66">
+      <svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(52 * scale)}" height="${Math.round(66 * scale)}" viewBox="0 0 52 66">
         <defs>
           <linearGradient id="pin-${pinType}" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="${lightColor}"/>
@@ -110,13 +111,14 @@ export const getComplaintMapMarkerIcon = (
   complaint,
   maps = window.google?.maps,
   pinTypeOverride,
-  dimensional = false
+  dimensional = false,
+  scale = 1
 ) => {
   if (!maps?.Size || !maps?.Point) return undefined;
 
   return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(getComplaintMapMarkerSvg(complaint, pinTypeOverride, dimensional))}`,
-    scaledSize: dimensional ? new maps.Size(52, 66) : new maps.Size(44, 56),
-    anchor: dimensional ? new maps.Point(26, 63) : new maps.Point(22, 54),
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(getComplaintMapMarkerSvg(complaint, pinTypeOverride, dimensional, scale))}`,
+    scaledSize: dimensional ? new maps.Size(52 * scale, 66 * scale) : new maps.Size(44, 56),
+    anchor: dimensional ? new maps.Point(26 * scale, 63 * scale) : new maps.Point(22, 54),
   };
 };

@@ -13,6 +13,9 @@ import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
 
 const libraries = ["places"];
 const defaultCenter = { lat: 18.5913, lng: 73.7389 };
+const MARKER_BASE_ZOOM = 15;
+const getMarkerScale = (zoom) =>
+  Math.min(1.5, Math.max(0.22, 1.25 ** (zoom - MARKER_BASE_ZOOM)));
 const mapOptions = {
   streetViewControl: false,
   mapTypeControl: false,
@@ -35,6 +38,7 @@ const HomeGoogleComplaintsMap = ({
   boundaryGeoJson,
   mapClassName,
   translate,
+  showSatelliteToggle,
 }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
@@ -43,6 +47,8 @@ const HomeGoogleComplaintsMap = ({
   });
   const [map, setMap] = useState(null);
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
+  const [zoom, setZoom] = useState(12);
+  const [mapTypeId, setMapTypeId] = useState("roadmap");
   const fallbackLat = center?.lat ?? defaultCenter.lat;
   const fallbackLng = center?.lng ?? defaultCenter.lng;
 
@@ -78,6 +84,19 @@ const HomeGoogleComplaintsMap = ({
       clickable: false,
     });
   }, [map, boundaryGeoJson]);
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const updateZoom = () => {
+      const currentZoom = map.getZoom();
+      if (typeof currentZoom === "number") setZoom(currentZoom);
+    };
+    updateZoom();
+    const listener = map.addListener("zoom_changed", updateZoom);
+
+    return () => listener?.remove();
+  }, [map]);
 
   useEffect(() => {
     if (!map) return;
@@ -120,14 +139,34 @@ const HomeGoogleComplaintsMap = ({
   }
 
   return (
-    <GoogleMap
-      mapContainerClassName={mapClassName}
-      center={center || defaultCenter}
-      zoom={12}
-      options={mapOptions}
-      onLoad={setMap}
-      onUnmount={() => setMap(null)}
-    >
+    <div className="home-google-map-shell">
+      {showSatelliteToggle && (
+        <button
+          className="home-google-map-type-button"
+          type="button"
+          aria-label={translate(
+            mapTypeId === "satellite" ? "home.mapRoadmapView" : "home.mapSatelliteView"
+          )}
+          aria-pressed={mapTypeId === "satellite"}
+          onClick={() =>
+            setMapTypeId((currentType) =>
+              currentType === "satellite" ? "roadmap" : "satellite"
+            )
+          }
+        >
+          {translate(
+            mapTypeId === "satellite" ? "home.mapRoadmapView" : "home.mapSatelliteView"
+          )}
+        </button>
+      )}
+      <GoogleMap
+        mapContainerClassName={mapClassName}
+        center={center || defaultCenter}
+        zoom={12}
+        options={{ ...mapOptions, mapTypeId }}
+        onLoad={setMap}
+        onUnmount={() => setMap(null)}
+      >
       {complaints.map((complaint) => {
         const id = complaint.id || complaint._id;
         const position = {
@@ -152,6 +191,14 @@ const HomeGoogleComplaintsMap = ({
           ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
         ].filter((photo, index, allPhotos) => photo && allPhotos.indexOf(photo) === index);
         const pinType = getHomeComplaintMapPinType(complaint);
+        const markerScale = getMarkerScale(zoom);
+        const scaledMarkerIcon = getComplaintMapMarkerIcon(
+          complaint,
+          undefined,
+          pinType,
+          true,
+          markerScale
+        );
         const beforePhoto = pinType === "open"
           ? images[0] || complaint.photos?.before || ""
           : complaint.inspection?.sitePhoto ||
@@ -185,7 +232,7 @@ const HomeGoogleComplaintsMap = ({
           <React.Fragment key={id}>
             <Marker
               position={markerPosition}
-              icon={getComplaintMapMarkerIcon(complaint, undefined, pinType, true)}
+              icon={scaledMarkerIcon}
               title={`${complaint.complaintNumber || "Complaint"} - ${complaint.issue || complaint.issueType || "Reported issue"}`}
               onClick={() => setSelectedComplaintId(id)}
             />
@@ -259,7 +306,8 @@ const HomeGoogleComplaintsMap = ({
           </React.Fragment>
         );
       })}
-    </GoogleMap>
+      </GoogleMap>
+    </div>
   );
 };
 
