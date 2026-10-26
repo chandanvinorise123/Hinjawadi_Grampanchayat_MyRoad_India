@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./contactus.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
+import HelpFaq from "./helpfaq";
 // import bannerImage from "../assets/cu.png";
 import bannerImageEn from "../assets/cu.png";
 import bannerImageHi from "../assets/cu-hi.png";
@@ -50,19 +51,19 @@ const initialForm = {
 };
 
 const ContactUs = () => {
-const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
-const currentLanguage = (
-  i18n.resolvedLanguage || i18n.language || "en"
-).split("-")[0];
+  const currentLanguage = (
+    i18n.resolvedLanguage || i18n.language || "en"
+  ).split("-")[0];
 
-const bannerImage =
-  {
-    en: bannerImageEn,
-    hi: bannerImageHi,
-    mr: bannerImageMr,
-  }[currentLanguage] || bannerImageEn;
-  
+  const bannerImage =
+    {
+      en: bannerImageEn,
+      hi: bannerImageHi,
+      mr: bannerImageMr,
+    }[currentLanguage] || bannerImageEn;
+
   const [formData, setFormData] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -373,6 +374,8 @@ const bannerImage =
           </div>
         </div>
       </section>
+
+      <HelpFaq embedded />
     </main>
   );
 };

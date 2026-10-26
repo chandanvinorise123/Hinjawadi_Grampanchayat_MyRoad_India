@@ -1,7 +1,8 @@
 
 {
   "navbar": {
-    "governmentPortal": "Government Digital Service · Gram Panchayat Portal",
+    "governmentPortal": "Government Digital Service",
+    "panchayatName": "Hinjawadi Gram Panchayat",
     "screenReader": "Screen Reader Access",
     "tagline": "Report · Track · Resolve",
     "home": "Home",
@@ -97,7 +98,7 @@
     "noUpdates": "No progress updates are available yet."
   },
   "home": {
-    "liveNetwork": "Live Civic Reporting Network — Gram Panchayat",
+    "liveNetwork": "Live Civic Reporting Network — Hinjawadi Gram Panchayat",
     "heroTitle": "Report Road & Public",
     "heroTitleHighlight": "Infrastructure Issues",
     "heroDescription": "Photograph the problem, share your location, and get a complaint number in seconds. Track every step — from verification to repair — until it's resolved.",

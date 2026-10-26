@@ -8,6 +8,7 @@ import { API_BASE_URL } from "../utils/dashboardApi";
 import HomeComplaintsMap from "../components/maps/HomeComplaintsMap";
 const REPORT_ROUTE = "/reportissue";
 
+
 // Hero background slider images
 import heroImage1 from "../assets/r1.jpg";
 import heroImage2 from "../assets/r2.jpg";
@@ -43,16 +44,19 @@ const quickActions = [
     title: "reportIssue",
     destination: REPORT_ROUTE,
   },
+
   {
     icon: "search",
     title: "trackComplaint",
     action: "track",
   },
+
   {
     icon: "map",
     title: "issuesOnMap",
     destination: "/complaint-map",
   },
+
   {
     icon: "warning",
     title: "roadSafety",

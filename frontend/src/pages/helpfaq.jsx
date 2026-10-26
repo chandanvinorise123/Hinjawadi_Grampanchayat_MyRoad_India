@@ -64,20 +64,22 @@ const citizenGuidance = [
   },
 ];
 
-const HelpFaq = () => {
-const { t, i18n } = useTranslation();
-const navigate = useNavigate();
+const HelpFaq = ({ embedded = false }) => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
-const currentLanguage = (
-  i18n.resolvedLanguage || i18n.language || "en"
-).split("-")[0];
+  const currentLanguage = (
+    i18n.resolvedLanguage || i18n.language || "en"
+  ).split("-")[0];
 
-const bannerImage =
-  {
-    en: bannerImageEn,
-    hi: bannerImageHi,
-    mr: bannerImageMr,
-  }[currentLanguage] || bannerImageEn;
+  const bannerImage =
+    {
+      en: bannerImageEn,
+      hi: bannerImageHi,
+      mr: bannerImageMr,
+    }[currentLanguage] || bannerImageEn;
+
+  const PageWrapper = embedded ? "div" : "main";
 
   const [activeCategory, setActiveCategory] = useState(0);
   const [openIndex, setOpenIndex] = useState(0);
@@ -94,25 +96,25 @@ const bannerImage =
   };
 
   return (
-    <main className="help-page">
+    <PageWrapper className="help-page">
       {/* ================= PAGE HERO ================= */}
 
+      {!embedded && (
+        <section className="page-hero-section">
+          <div
+            className="page-hero"
+            style={{
+              backgroundImage: `url("${bannerImage}")`,
+            }}
+          >
+            <div className="hero-scrim"></div>
 
-      
-      <section className="page-hero-section">
-        <div
-          className="page-hero"
-          style={{
-            backgroundImage: `url("${bannerImage}")`,
-          }}
-        >
-          <div className="hero-scrim"></div>
-
-          <div className="page-hero-inner">
-            {/* Existing hero content remains hidden */}
+            <div className="page-hero-inner">
+              {/* Existing hero content remains hidden */}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ================= FAQ CATEGORIES ================= */}
       <section className="section">
@@ -128,9 +130,8 @@ const bannerImage =
             <button
               key={category.key}
               type="button"
-              className={`faq-tab ${
-                activeCategory === i ? "active" : ""
-              }`}
+              className={`faq-tab ${activeCategory === i ? "active" : ""
+                }`}
               onClick={() => handleCategorySelect(i)}
             >
               <span className="faq-tab-icon">
@@ -145,9 +146,8 @@ const bannerImage =
           {faqCategories[activeCategory].questions.map(
             (item, i) => (
               <div
-                className={`faq-item ${
-                  openIndex === i ? "open" : ""
-                }`}
+                className={`faq-item ${openIndex === i ? "open" : ""
+                  }`}
                 key={item.key}
               >
                 <button
@@ -219,13 +219,22 @@ const bannerImage =
           <button
             className="primary-btn"
             type="button"
-            onClick={() => navigate(CONTACT_ROUTE)}
+            onClick={() => {
+              if (embedded) {
+                document.getElementById("contact-form")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+                return;
+              }
+
+              navigate(CONTACT_ROUTE);
+            }}
           >
             {t("helpFaq.contactUs")} <span>→</span>
           </button>
         </div>
       </section>
-    </main>
+    </PageWrapper>
   );
 };
 

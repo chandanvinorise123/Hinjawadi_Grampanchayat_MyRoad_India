@@ -147,11 +147,11 @@ const Navbar = () => {
 
     return roleKeys[normalizedRole]
       ? t(roleKeys[normalizedRole], {
-          defaultValue: normalizedRole
-            ? normalizedRole.charAt(0).toUpperCase() +
-              normalizedRole.slice(1)
-            : "",
-        })
+        defaultValue: normalizedRole
+          ? normalizedRole.charAt(0).toUpperCase() +
+          normalizedRole.slice(1)
+          : "",
+      })
       : String(role || "");
   };
 
@@ -226,13 +226,6 @@ const Navbar = () => {
         </NavLink>
       )}
 
-      <NavLink
-        to="/helpfaq"
-        onClick={closeMobileMenu}
-        className={({ isActive }) => isActive ? "active" : ""}
-      >
-        {t("navbar.helpFaq", { defaultValue: "Help / FAQ" })}
-      </NavLink>
     </>
   );
 
@@ -392,12 +385,12 @@ const Navbar = () => {
               >
                 {user?.role
                   ? t("navbar.roleDashboard", {
-                      role: getTranslatedRole(user.role),
-                      defaultValue: `${getTranslatedRole(user.role)} Dashboard`,
-                    })
+                    role: getTranslatedRole(user.role),
+                    defaultValue: `${getTranslatedRole(user.role)} Dashboard`,
+                  })
                   : t("navbar.dashboard", {
-                      defaultValue: "Dashboard",
-                    })}
+                    defaultValue: "Dashboard",
+                  })}
               </button>
 
               {/* Edit Profile */}
@@ -407,16 +400,6 @@ const Navbar = () => {
               >
                 {t("navbar.editProfile", {
                   defaultValue: "Edit Profile",
-                })}
-              </button>
-
-              {/* Help */}
-              <button
-                type="button"
-                onClick={() => goTo("/helpfaq")}
-              >
-                {t("navbar.helpCenter", {
-                  defaultValue: "Help Center",
                 })}
               </button>
 
@@ -449,23 +432,17 @@ const Navbar = () => {
 
             {t("navbar.governmentPortal", {
               defaultValue:
-                "Government Digital Service · Gram Panchayat Portal",
+                "Government Digital Service",
+            })}
+          </span>
+
+          <span className="topbar-title">
+            {t("navbar.panchayatName", {
+              defaultValue: "Hinjawadi Gram Panchayat",
             })}
           </span>
 
           <div className="topbar-right">
-            <a
-              href="#"
-              className="sr-link"
-              onClick={(event) => event.preventDefault()}
-            >
-              {t("navbar.screenReader", {
-                defaultValue: "Screen Reader Access",
-              })}
-            </a>
-
-            <span className="sep">·</span>
-
             <button
               type="button"
               className="font-btn"
@@ -519,6 +496,17 @@ const Navbar = () => {
             >
               मराठी
             </button>
+
+            <span className="sep">·</span>
+
+            <button
+              type="button"
+              className="lang-btn"
+              onClick={() => handleLanguageChange("en")}
+              aria-pressed={currentLangLabel === "EN"}
+            >
+              English
+            </button>
           </div>
         </div>
       </div>
@@ -543,7 +531,7 @@ const Navbar = () => {
               onClick={closeMobileMenu}
             >
               <b>My Road India</b>
-              
+
               <span>
                 {t("navbar.tagline", {
                   defaultValue: "Report · Track · Resolve",
@@ -613,9 +601,8 @@ const Navbar = () => {
 
           {/* Mobile Dropdown: all navigation links and actions */}
           <div
-            className={`mobile-navigation ${
-              isMobileMenuOpen ? "mobile-navigation-open" : ""
-            }`}
+            className={`mobile-navigation ${isMobileMenuOpen ? "mobile-navigation-open" : ""
+              }`}
             id="mobile-navigation"
             aria-hidden={!isMobileMenuOpen}
           >
