@@ -21,6 +21,7 @@ const complaintRoutes = require("./routes/complaintRoutes");
 const adminManagementRoutes = require("./features/admin/adminManagementRoutes");
 const dashboardRoutes = require("./features/dashboard/dashboardRoutes");
 const contactRoutes = require("./features/contact/contactRoutes");
+const blogRoutes = require("./features/blog/blogRoutes");
 
 // =====================================================
 // APP
@@ -82,6 +83,7 @@ app.use("/api/users", userRoutes);
 // =====================================================
 
 app.use("/api/complaints", complaintRoutes);
+app.use("/api/blog", blogRoutes);
 
 // =====================================================
 // MAP ROUTES
