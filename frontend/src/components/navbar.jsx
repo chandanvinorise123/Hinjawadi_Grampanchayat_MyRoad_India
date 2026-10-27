@@ -34,6 +34,16 @@ const Navbar = () => {
   )
     .split("-")[0]
     .toUpperCase();
+  const panchayatName = t("navbar.panchayatName", {
+    defaultValue: "Hinjawadi Gram Panchayat",
+  });
+  const panchayatNameBreak = panchayatName.lastIndexOf(" ");
+  const panchayatNameLines = panchayatNameBreak > 0
+    ? [
+      panchayatName.slice(0, panchayatNameBreak),
+      panchayatName.slice(panchayatNameBreak + 1),
+    ]
+    : [panchayatName];
 
   // Load logged-in user
   useEffect(() => {
@@ -470,6 +480,11 @@ const Navbar = () => {
                 {t("navbar.tagline", {
                   defaultValue: "Report · Track · Resolve",
                 })}
+              </span>
+              <span className="mobile-brand-title">
+                {panchayatNameLines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
               </span>
             </NavLink>
           </div>
