@@ -7,10 +7,6 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toMediaUrl } from "../utils/dashboardApi";
 
-const MIN_FONT_SIZE = 80;
-const MAX_FONT_SIZE = 130;
-const FONT_STEP = 10;
-
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,34 +16,6 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
-
-  // Restore the saved font size
-  const [fontSize, setFontSize] = useState(() => {
-    const savedSize = Number(
-      localStorage.getItem("myroad-font-size")
-    );
-
-    return savedSize >= MIN_FONT_SIZE &&
-      savedSize <= MAX_FONT_SIZE
-      ? savedSize
-      : 100;
-  });
-
-  // Apply font size throughout the application
-  useEffect(() => {
-    document.documentElement.style.fontSize = `${fontSize}%`;
-    localStorage.setItem("myroad-font-size", String(fontSize));
-  }, [fontSize]);
-
-  // Decrease, reset, or increase font size
-  const changeFontSize = (newSize) => {
-    const size = Math.max(
-      MIN_FONT_SIZE,
-      Math.min(MAX_FONT_SIZE, newSize)
-    );
-
-    setFontSize(size);
-  };
 
   // Change language
   const handleLanguageChange = async (langCode) => {
@@ -443,40 +411,6 @@ const Navbar = () => {
           </span>
 
           <div className="topbar-right">
-            <button
-              type="button"
-              className="font-btn"
-              onClick={() => changeFontSize(fontSize - FONT_STEP)}
-              disabled={fontSize <= MIN_FONT_SIZE}
-              aria-label="Decrease font size"
-              title="Decrease font size"
-            >
-              A−
-            </button>
-
-            <button
-              type="button"
-              className="font-btn"
-              onClick={() => changeFontSize(100)}
-              aria-label="Reset font size"
-              title="Reset font size"
-            >
-              A
-            </button>
-
-            <button
-              type="button"
-              className="font-btn"
-              onClick={() => changeFontSize(fontSize + FONT_STEP)}
-              disabled={fontSize >= MAX_FONT_SIZE}
-              aria-label="Increase font size"
-              title="Increase font size"
-            >
-              A+
-            </button>
-
-            <span className="sep">·</span>
-
             <button
               type="button"
               className="lang-btn"

@@ -443,6 +443,19 @@
   border-radius: 999px;
   text-transform: uppercase;
   margin-bottom: 20px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-badge:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.hero-badge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 .live-dot {
@@ -1936,8 +1949,10 @@
 .home-page .hero-badge {
   margin: 0 auto 8px;
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: 0.2px;
   color: #fff;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .home-page .hero-content h1 {
@@ -1948,8 +1963,8 @@
 }
 
 .home-page .hero-content h1 span {
-  display: inline;
-  margin: 0;
+  display: block;
+  margin: 8px 0 0;
 }
 
 .home-page .hero-description {

@@ -731,10 +731,14 @@ const Home = () => {
 
         <div className="hero-main-layout">
           <div className="hero-content">
-            <div className="hero-badge">
+            <button
+              className="hero-badge"
+              type="button"
+              onClick={() => navigate(REPORT_ROUTE)}
+            >
               <span className="live-dot"></span>
               {t("home.liveNetwork")}
-            </div>
+            </button>
 
             <h1>
               {t("home.heroTitle")}{" "}

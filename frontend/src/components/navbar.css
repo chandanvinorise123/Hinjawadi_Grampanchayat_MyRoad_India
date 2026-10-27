@@ -11,9 +11,9 @@
     #f4941f 100%
   );
   color: #ffffff;
-  font-size: 15px;
+  font-size: 17px;
   font-family: 'Inter', sans-serif;
-  padding: 14px 0;
+  padding: 18px 0;
 }
 
 .topbar-inner {
@@ -33,24 +33,36 @@
   letter-spacing: 0.3px;
 }
 
+.topbar-government {
+  font-size: 13px;
+}
+
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   justify-self: end;
 }
 
 .topbar-title {
   justify-self: center;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 4px 14px;
+  border: 1px solid #f4c96b;
+  border-radius: 8px;
+  background: #fff3d4;
+  color: #102a5c;
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   white-space: nowrap;
 }
 
 .sr-link {
   color: #ffffff;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 700;
   opacity: 0.95;
 }
 
@@ -60,34 +72,18 @@
 
 .sep {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-}
-
-.font-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'Inter', sans-serif;
-}
-
-.font-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .lang-btn {
   background: #041575;
   border: 1px solid #0e0f14;
   color: #f2f2f5;
-  padding: 4px 12px;
+  padding: 2px 8px;
   border-radius: 999px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
   font-family: 'Inter', sans-serif;
 }
@@ -126,11 +122,12 @@
 
 .header-inner {
 
+  position: relative;
   max-width: 1280px;
 
   margin: 0 auto;
 
-  padding: 14px 24px;
+  padding: 10px 24px;
 
   display: flex;
 
@@ -164,9 +161,8 @@
 
 .brand-logo {
 
-  width: 44px;
-
-  height: 44px;
+  width: 40px;
+  height: 40px;
 
   display: flex;
 
@@ -180,9 +176,8 @@
 
 .brand-logo img {
 
-  width: 44px;
-
-  height: 44px;
+  width: 40px;
+  height: 40px;
 
   object-fit: contain;
 
@@ -210,7 +205,7 @@
 
 .brand-text b {
 
-  font-size: 18px;
+  font-size: 16px;
 
   font-weight: 700;
 
@@ -239,17 +234,13 @@
 /* Primary Nav */
 
 .primary {
-
   display: flex;
-
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   align-items: center;
-
   gap: 6px;
-
-  flex: 1;
-
   justify-content: center;
-
 }
 
 .primary a {
@@ -264,7 +255,7 @@
 
   font-family: 'Inter', sans-serif;
 
-  padding: 8px 14px;
+  padding: 7px 12px;
 
   border-radius: 8px;
 
@@ -398,7 +389,7 @@
 
   border: none;
 
-  padding: 10px 15px;
+  padding: 8px 13px;
 
   white-space: nowrap;
 
