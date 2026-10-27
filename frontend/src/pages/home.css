@@ -73,6 +73,23 @@
   margin-top: 8px; 
 }
 
+
+
+/* Dotted background on all sections except the hero */
+.home-page section:not(.hero-section) {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 0.85px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%) !important;
+  background-size: 20px 20px, 100% 100% !important;
+  border-top: 1px solid #d4e3f3;
+  border-bottom: 1px solid #d4e3f3;
+}
+
+
+
+
+
 /* ================= HERO ================= */
 .hero-section {
   position: relative;
