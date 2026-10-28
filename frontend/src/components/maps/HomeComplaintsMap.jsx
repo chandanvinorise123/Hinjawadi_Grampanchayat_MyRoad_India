@@ -186,6 +186,7 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
         mapClassName="home-live-complaints-map"
         translate={t}
         showSatelliteToggle
+        fullscreenFitBoundaryOnly={!fullPage}
       />
       {unlocatedComplaints.length > 0 && (
         <details className="home-map-unlocated">

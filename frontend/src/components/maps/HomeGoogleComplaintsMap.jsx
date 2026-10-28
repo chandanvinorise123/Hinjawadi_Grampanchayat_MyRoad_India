@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   GoogleMap,
   InfoWindow,
@@ -39,6 +40,7 @@ const HomeGoogleComplaintsMap = ({
   mapClassName,
   translate,
   showSatelliteToggle,
+  fullscreenFitBoundaryOnly = false,
 }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
@@ -46,11 +48,49 @@ const HomeGoogleComplaintsMap = ({
     libraries,
   });
   const [map, setMap] = useState(null);
+  const [mapTypeControlContainer, setMapTypeControlContainer] = useState(null);
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
   const [zoom, setZoom] = useState(12);
   const [mapTypeId, setMapTypeId] = useState("roadmap");
   const fallbackLat = center?.lat ?? defaultCenter.lat;
   const fallbackLng = center?.lng ?? defaultCenter.lng;
+  const wasMapFullscreen = useRef(false);
+  const fullscreenFitTimeout = useRef(null);
+
+  const toggleMapType = () => {
+    const nextMapTypeId = mapTypeId === "satellite" ? "roadmap" : "satellite";
+    setMapTypeId(nextMapTypeId);
+    map?.setMapTypeId(nextMapTypeId);
+  };
+
+  const handleMapLoad = (loadedMap) => {
+    setMap(loadedMap);
+
+    if (showSatelliteToggle) {
+      const controlContainer = document.createElement("div");
+      loadedMap.controls[window.google.maps.ControlPosition.TOP_LEFT].push(
+        controlContainer
+      );
+      setMapTypeControlContainer(controlContainer);
+    }
+  };
+
+  const handleMapUnmount = (unmountedMap) => {
+    if (mapTypeControlContainer) {
+      const controlPosition = window.google?.maps?.ControlPosition?.TOP_LEFT;
+      const controls = controlPosition === undefined
+        ? null
+        : unmountedMap.controls?.[controlPosition];
+      const controlArray = controls?.getArray?.();
+      const controlIndex = controlArray?.indexOf(mapTypeControlContainer);
+      if (typeof controlIndex === "number" && controlIndex !== -1) {
+        controls.removeAt(controlIndex);
+      }
+    }
+
+    setMapTypeControlContainer(null);
+    setMap(null);
+  };
 
   const coordinatesKey = useMemo(
     () => complaints
@@ -68,6 +108,56 @@ const HomeGoogleComplaintsMap = ({
     }, new Map()),
     [complaints]
   );
+
+  const fitMapToContent = useCallback(() => {
+    if (!map) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasBounds = false;
+
+    map.data.forEach((feature) => {
+      const geometry = feature.getGeometry();
+      if (!geometry) return;
+      geometry.forEachLatLng((point) => {
+        bounds.extend(point);
+        hasBounds = true;
+      });
+    });
+    coordinatesKey.split("|").filter(Boolean).forEach((coordinate) => {
+      const [lat, lng] = coordinate.split(",").map(Number);
+      bounds.extend({ lat, lng });
+      hasBounds = true;
+    });
+
+    if (hasBounds) {
+      map.fitBounds(bounds, 32);
+    } else {
+      map.setCenter({ lat: fallbackLat, lng: fallbackLng });
+      map.setZoom(12);
+    }
+  }, [map, coordinatesKey, fallbackLat, fallbackLng]);
+
+  const fitMapToBoundary = useCallback(() => {
+    if (!map) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasBounds = false;
+
+    map.data.forEach((feature) => {
+      const geometry = feature.getGeometry();
+      if (!geometry) return;
+      geometry.forEachLatLng((point) => {
+        bounds.extend(point);
+        hasBounds = true;
+      });
+    });
+
+    if (hasBounds) {
+      map.fitBounds(bounds, 32);
+    } else {
+      fitMapToContent();
+    }
+  }, [map, fitMapToContent]);
 
   useEffect(() => {
     if (!map || !boundaryGeoJson) return;
@@ -99,32 +189,44 @@ const HomeGoogleComplaintsMap = ({
   }, [map]);
 
   useEffect(() => {
-    if (!map) return;
+    fitMapToContent();
+  }, [fitMapToContent, boundaryGeoJson]);
 
-    const bounds = new window.google.maps.LatLngBounds();
-    let hasBounds = false;
+  useEffect(() => {
+    if (!map) return undefined;
 
-    map.data.forEach((feature) => {
-      const geometry = feature.getGeometry();
-      if (!geometry) return;
-      geometry.forEachLatLng((point) => {
-        bounds.extend(point);
-        hasBounds = true;
-      });
-    });
-    coordinatesKey.split("|").filter(Boolean).forEach((coordinate) => {
-      const [lat, lng] = coordinate.split(",").map(Number);
-      bounds.extend({ lat, lng });
-      hasBounds = true;
-    });
+    const mapElement = map.getDiv();
+    const handleFullscreenChange = () => {
+      const fullscreenElement = document.fullscreenElement;
+      const isMapFullscreen = Boolean(
+        fullscreenElement &&
+          (
+            fullscreenElement === mapElement ||
+            mapElement.contains(fullscreenElement) ||
+            fullscreenElement.contains(mapElement)
+          )
+      );
 
-    if (hasBounds) {
-      map.fitBounds(bounds, 32);
-    } else {
-      map.setCenter({ lat: fallbackLat, lng: fallbackLng });
-      map.setZoom(12);
-    }
-  }, [map, coordinatesKey, boundaryGeoJson, fallbackLat, fallbackLng]);
+      if (wasMapFullscreen.current !== isMapFullscreen) {
+        wasMapFullscreen.current = isMapFullscreen;
+        window.clearTimeout(fullscreenFitTimeout.current);
+        fullscreenFitTimeout.current = window.setTimeout(() => {
+          window.google.maps.event.trigger(map, "resize");
+          window.requestAnimationFrame(
+            isMapFullscreen && fullscreenFitBoundaryOnly
+              ? fitMapToBoundary
+              : fitMapToContent
+          );
+        }, 300);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      window.clearTimeout(fullscreenFitTimeout.current);
+    };
+  }, [map, fitMapToContent, fitMapToBoundary, fullscreenFitBoundaryOnly]);
 
   if (loadError) {
     return (
@@ -140,7 +242,7 @@ const HomeGoogleComplaintsMap = ({
 
   return (
     <div className="home-google-map-shell">
-      {showSatelliteToggle && (
+      {mapTypeControlContainer && createPortal(
         <button
           className="home-google-map-type-button"
           type="button"
@@ -148,24 +250,21 @@ const HomeGoogleComplaintsMap = ({
             mapTypeId === "satellite" ? "home.mapRoadmapView" : "home.mapSatelliteView"
           )}
           aria-pressed={mapTypeId === "satellite"}
-          onClick={() =>
-            setMapTypeId((currentType) =>
-              currentType === "satellite" ? "roadmap" : "satellite"
-            )
-          }
+          onClick={toggleMapType}
         >
           {translate(
             mapTypeId === "satellite" ? "home.mapRoadmapView" : "home.mapSatelliteView"
           )}
-        </button>
+        </button>,
+        mapTypeControlContainer
       )}
       <GoogleMap
         mapContainerClassName={mapClassName}
         center={center || defaultCenter}
         zoom={12}
         options={{ ...mapOptions, mapTypeId }}
-        onLoad={setMap}
-        onUnmount={() => setMap(null)}
+        onLoad={handleMapLoad}
+        onUnmount={handleMapUnmount}
       >
       {complaints.map((complaint) => {
         const id = complaint.id || complaint._id;

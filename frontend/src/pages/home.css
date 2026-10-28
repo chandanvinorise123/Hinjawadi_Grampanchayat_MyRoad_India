@@ -258,27 +258,24 @@
 }
 
 .home-google-map-type-button {
-  position: absolute;
-  z-index: 2;
-  top: 10px;
-  left: 10px;
-  min-height: 36px;
-  padding: 7px 12px;
-  border: 1px solid rgba(11, 36, 71, .16);
-  border-radius: 6px;
-  background: #fff;
-  color: #0b2447;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .24);
-  font: 500 13px/20px Arial, sans-serif;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 2px solid #8a9ba8;
+  border-radius: 8px;
+  background: #e3f2fb;
+  color: #173b57;
+  box-shadow: 0 2px 6px rgba(42, 75, 96, .3);
+  font: 700 15px/20px Arial, sans-serif;
   cursor: pointer;
 }
 
 .home-google-map-type-button:hover {
-  background: #f4f6f9;
+  background: #cce8f8;
+  box-shadow: 0 3px 8px rgba(42, 75, 96, .36);
 }
 
 .home-google-map-type-button:focus-visible {
-  outline: 3px solid rgba(176, 24, 69, .45);
+  outline: 3px solid #68b7e3;
   outline-offset: 2px;
 }
 

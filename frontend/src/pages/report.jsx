@@ -179,6 +179,7 @@ const ReportIssue = () => {
   const [searchStatus, setSearchStatus] = useState("idle");
   const [mapTypeId, setMapTypeId] = useState("roadmap");
   const [map, setMap] = useState(null);
+  const mapTypeButtonRef = useRef(null);
   const [autocomplete, setAutocomplete] = useState(null);
   const geocodeRequestId = useRef(0);
   const searchRequestId = useRef(0);
@@ -380,9 +381,52 @@ const ReportIssue = () => {
       liveLocationRef.current.lat !== "" && liveLocationRef.current.lng !== "";
   };
 
-  const handleMapUnmount = () => {
-    setMap(null);
-  };
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const controlContainer = document.createElement("div");
+    const button = document.createElement("button");
+    const controls = map.controls[window.google.maps.ControlPosition.TOP_LEFT];
+    const handleClick = () => {
+      setMapTypeId((currentType) => {
+        const nextType = currentType === "satellite" ? "roadmap" : "satellite";
+        map.setMapTypeId(nextType);
+        return nextType;
+      });
+    };
+
+    button.className = "report-map-type-button";
+    button.type = "button";
+    button.addEventListener("click", handleClick);
+    controlContainer.appendChild(button);
+    controls.push(controlContainer);
+    mapTypeButtonRef.current = button;
+
+    return () => {
+      button.removeEventListener("click", handleClick);
+      button.remove();
+      const controlArray = controls?.getArray?.();
+      const controlIndex = controlArray?.indexOf(controlContainer);
+      if (typeof controlIndex === "number" && controlIndex !== -1) {
+        controls.removeAt(controlIndex);
+      }
+      mapTypeButtonRef.current = null;
+    };
+  }, [map]);
+
+  useEffect(() => {
+    const button = mapTypeButtonRef.current;
+    if (!button) return;
+
+    const label = t(
+      mapTypeId === "satellite"
+        ? "home.mapRoadmapView"
+        : "home.mapSatelliteView"
+    );
+    button.textContent = label;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("aria-pressed", String(mapTypeId === "satellite"));
+  }, [map, mapTypeId, t]);
 
   const changeMapZoom = (amount) => {
     if (!map) return;
@@ -1146,33 +1190,11 @@ const ReportIssue = () => {
                       </div>
 
                       <div className="google-map-container">
-                        <button
-                          className="report-map-type-button"
-                          type="button"
-                          aria-label={t(
-                            mapTypeId === "satellite"
-                              ? "home.mapRoadmapView"
-                              : "home.mapSatelliteView"
-                          )}
-                          aria-pressed={mapTypeId === "satellite"}
-                          onClick={() =>
-                            setMapTypeId((currentType) =>
-                              currentType === "satellite" ? "roadmap" : "satellite"
-                            )
-                          }
-                        >
-                          {t(
-                            mapTypeId === "satellite"
-                              ? "home.mapRoadmapView"
-                              : "home.mapSatelliteView"
-                          )}
-                        </button>
                         <GoogleMap
                           mapContainerStyle={mapContainerStyle}
                           defaultCenter={defaultCenter}
                           defaultZoom={INITIAL_LIVE_LOCATION_ZOOM}
                           onLoad={handleMapLoad}
-                          onUnmount={handleMapUnmount}
                           onClick={handleMapClick}
                           options={{
                             streetViewControl: false,
