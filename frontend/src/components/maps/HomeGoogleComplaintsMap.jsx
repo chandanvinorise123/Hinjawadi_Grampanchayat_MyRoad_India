@@ -6,7 +6,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { toMediaUrl } from "../../utils/dashboardApi";
+import { API_BASE_URL, toMediaUrl } from "../../utils/dashboardApi";
 import {
   getComplaintMapMarkerIcon,
 } from "./complaintMapMarker";
@@ -33,6 +33,189 @@ const formatDate = (value) => {
     : "Not available";
 };
 
+const HomeComplaintPopup = ({
+  clientId,
+  complaint,
+  onClose,
+  translate,
+  isMapFullscreen,
+}) => {
+  const [sawThisCount, setSawThisCount] = useState(complaint.sawThisCount || 0);
+  const [hasSeenThis, setHasSeenThis] = useState(Boolean(complaint.hasSeenThis));
+  const [submittingSawThis, setSubmittingSawThis] = useState(false);
+  const [sawThisError, setSawThisError] = useState(false);
+  const pinType = getHomeComplaintMapPinType(complaint);
+  const isResolved = pinType === "resolved";
+  const images = [
+    ...(Array.isArray(complaint.images) ? complaint.images : []),
+    ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
+  ].filter((photo, index, allPhotos) => photo && allPhotos.indexOf(photo) === index);
+  const beforePhoto = pinType === "open"
+    ? images[0] || complaint.photos?.before || ""
+    : complaint.inspection?.sitePhoto ||
+      complaint.photos?.site ||
+      complaint.photos?.before ||
+      images[0] ||
+      "";
+  const afterPhoto =
+    complaint.inspection?.completionPhoto || complaint.photos?.after || "";
+  const popupPhotos = isResolved
+    ? []
+    : pinType === "open"
+      ? beforePhoto
+        ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
+        : []
+      : [
+        ...(!isResolved && beforePhoto
+          ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
+          : []),
+        ...(!isResolved && afterPhoto
+          ? [{ label: translate("home.mapAfterPhoto"), url: afterPhoto }]
+          : []),
+        ...images
+          .filter((photo) => photo !== beforePhoto && photo !== afterPhoto)
+          .map((url, index) => ({
+            label: `Complaint photo ${index + 1}`,
+            url,
+          })),
+      ];
+  const location = typeof complaint.location === "string"
+    ? complaint.location
+    : complaint.location?.address || complaint.location?.name || "";
+  const position = {
+    lat: Number(complaint.lat),
+    lng: Number(complaint.lng),
+  };
+
+  const handleSawThis = async () => {
+    if (!clientId || hasSeenThis || submittingSawThis) return;
+
+    setSubmittingSawThis(true);
+    setSawThisError(false);
+    try {
+      const complaintId = complaint.id || complaint._id;
+      const response = await fetch(
+        `${API_BASE_URL}/map/complaints/${encodeURIComponent(complaintId)}/saw-this`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ clientId }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to record acknowledgement");
+      }
+
+      setSawThisCount(result.sawThisCount);
+      setHasSeenThis(result.hasSeenThis);
+    } catch (error) {
+      console.error("Failed to record map complaint acknowledgement:", error);
+      setSawThisError(true);
+    } finally {
+      setSubmittingSawThis(false);
+    }
+  };
+
+  return (
+    <div
+      className={`scm-popup home-map-google-popup${
+        isMapFullscreen ? " home-map-google-popup-fullscreen" : ""
+      }`}
+    >
+      <div className="home-map-google-popup-toolbar">
+        <button
+          className="home-map-google-popup-close"
+          type="button"
+          aria-label={translate("home.mapCloseComplaint")}
+          onClick={onClose}
+        >
+          ×
+        </button>
+      </div>
+      {isResolved && (
+        <div className="home-map-resolution-photos">
+          {[
+            { label: translate("home.mapBeforePhoto"), url: beforePhoto },
+            { label: translate("home.mapAfterPhoto"), url: afterPhoto },
+          ].map((photo) => (
+            <div key={photo.label}>
+              <strong>{photo.label}</strong>
+              {photo.url ? (
+                <a href={toMediaUrl(photo.url)} target="_blank" rel="noopener noreferrer">
+                  <img src={toMediaUrl(photo.url)} alt={photo.label} loading="lazy" />
+                </a>
+              ) : (
+                <p>{translate("home.mapPhotoUnavailable")}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {popupPhotos.length > 0 && (
+        <div className="scm-popup-photos">
+          {popupPhotos.map((photo, index) => (
+            <a
+              href={toMediaUrl(photo.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              key={`${photo.url}-${index}`}
+            >
+              <img src={toMediaUrl(photo.url)} alt={photo.label} loading="lazy" />
+              <span>{photo.label}</span>
+            </a>
+          ))}
+        </div>
+      )}
+      <div className="home-map-popup-details">
+        <div className="home-map-popup-heading">
+          <strong>{complaint.complaintNumber || "Complaint"}</strong>
+          <span className={`home-map-status ${pinType}`}>
+            {complaint.status || "Status unavailable"}
+          </span>
+        </div>
+        <p><b>Issue:</b> {complaint.issue || complaint.issueType || "Reported issue"}</p>
+        <p><b>Category:</b> {complaint.category || "Not available"}</p>
+        <p><b>Location:</b> {location || "Address not provided"}</p>
+        {complaint.landmark && <p><b>Landmark:</b> {complaint.landmark}</p>}
+        <p><b>Reported:</b> {formatDate(complaint.createdAt || complaint.date)}</p>
+        {complaint.citizenName && <p><b>Reported by:</b> **** </p>}
+        {complaint.assignedStaff && <p><b>Assigned staff:</b> {complaint.assignedStaff}</p>}
+        <p>
+          <b>Coordinates:</b>{" "}
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${position.lat},${position.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+          </a>
+        </p>
+        {complaint.description && <p>{complaint.description}</p>}
+      </div>
+      <div className="home-map-saw-this">
+        <button
+          type="button"
+          onClick={handleSawThis}
+          disabled={!clientId || hasSeenThis || submittingSawThis}
+          aria-pressed={hasSeenThis}
+        >
+          {translate("home.mapSawThis")}
+        </button>
+        <span className="home-map-view-count">
+          {translate("home.mapViewCount", { count: sawThisCount })}
+        </span>
+        {(sawThisError || !clientId) && (
+          <span role="alert">{translate("home.mapSawThisError")}</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const HomeGoogleComplaintsMap = ({
   complaints,
   center,
@@ -40,7 +223,10 @@ const HomeGoogleComplaintsMap = ({
   mapClassName,
   translate,
   showSatelliteToggle,
+  clientId,
+  fitBoundaryOnly = false,
   fullscreenFitBoundaryOnly = false,
+  popupExpanded = false,
 }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
@@ -50,17 +236,36 @@ const HomeGoogleComplaintsMap = ({
   const [map, setMap] = useState(null);
   const [mapTypeControlContainer, setMapTypeControlContainer] = useState(null);
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const isPopupExpanded = popupExpanded || isMapFullscreen;
   const [zoom, setZoom] = useState(12);
   const [mapTypeId, setMapTypeId] = useState("roadmap");
   const fallbackLat = center?.lat ?? defaultCenter.lat;
   const fallbackLng = center?.lng ?? defaultCenter.lng;
+  const selectedComplaint = complaints.find(
+    (complaint) => (complaint.id || complaint._id) === selectedComplaintId
+  );
   const wasMapFullscreen = useRef(false);
   const fullscreenFitTimeout = useRef(null);
+  const selectedComplaintIdRef = useRef(null);
 
   const toggleMapType = () => {
     const nextMapTypeId = mapTypeId === "satellite" ? "roadmap" : "satellite";
     setMapTypeId(nextMapTypeId);
     map?.setMapTypeId(nextMapTypeId);
+  };
+
+  const handleComplaintMarkerClick = async (complaint) => {
+    const complaintId = String(complaint.id || complaint._id);
+    if (selectedComplaintIdRef.current === complaintId) return;
+
+    selectedComplaintIdRef.current = complaintId;
+    setSelectedComplaintId(complaintId);
+  };
+
+  const closeSelectedComplaint = () => {
+    selectedComplaintIdRef.current = null;
+    setSelectedComplaintId(null);
   };
 
   const handleMapLoad = (loadedMap) => {
@@ -108,6 +313,22 @@ const HomeGoogleComplaintsMap = ({
     }, new Map()),
     [complaints]
   );
+  const selectedComplaintPosition = useMemo(() => {
+    if (!selectedComplaint) return null;
+
+    const lat = Number(selectedComplaint.lat);
+    const lng = Number(selectedComplaint.lng);
+    const sameLocationIds = markersByLocation.get(`${lat},${lng}`) || [];
+    const selectedId = selectedComplaint.id || selectedComplaint._id;
+    const sameLocationIndex = sameLocationIds.indexOf(selectedId);
+
+    return sameLocationIds.length > 1
+      ? {
+          lat: lat + (sameLocationIndex - (sameLocationIds.length - 1) / 2) * 0.00018,
+          lng,
+        }
+      : { lat, lng };
+  }, [selectedComplaint, markersByLocation]);
 
   const fitMapToContent = useCallback(() => {
     if (!map) return;
@@ -189,8 +410,8 @@ const HomeGoogleComplaintsMap = ({
   }, [map]);
 
   useEffect(() => {
-    fitMapToContent();
-  }, [fitMapToContent, boundaryGeoJson]);
+    (fitBoundaryOnly ? fitMapToBoundary : fitMapToContent)();
+  }, [fitBoundaryOnly, fitMapToBoundary, fitMapToContent, boundaryGeoJson]);
 
   useEffect(() => {
     if (!map) return undefined;
@@ -209,6 +430,11 @@ const HomeGoogleComplaintsMap = ({
 
       if (wasMapFullscreen.current !== isMapFullscreen) {
         wasMapFullscreen.current = isMapFullscreen;
+        setIsMapFullscreen(isMapFullscreen);
+        if (!isMapFullscreen) {
+          selectedComplaintIdRef.current = null;
+          setSelectedComplaintId(null);
+        }
         window.clearTimeout(fullscreenFitTimeout.current);
         fullscreenFitTimeout.current = window.setTimeout(() => {
           window.google.maps.event.trigger(map, "resize");
@@ -282,13 +508,6 @@ const HomeGoogleComplaintsMap = ({
               lng: position.lng,
             }
           : position;
-        const location = typeof complaint.location === "string"
-          ? complaint.location
-          : complaint.location?.address || complaint.location?.name || "";
-        const images = [
-          ...(Array.isArray(complaint.images) ? complaint.images : []),
-          ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
-        ].filter((photo, index, allPhotos) => photo && allPhotos.indexOf(photo) === index);
         const pinType = getHomeComplaintMapPinType(complaint);
         const markerScale = getMarkerScale(zoom);
         const scaledMarkerIcon = getComplaintMapMarkerIcon(
@@ -298,113 +517,38 @@ const HomeGoogleComplaintsMap = ({
           true,
           markerScale
         );
-        const beforePhoto = pinType === "open"
-          ? images[0] || complaint.photos?.before || ""
-          : complaint.inspection?.sitePhoto ||
-            complaint.photos?.site ||
-            complaint.photos?.before ||
-            images[0] ||
-            "";
-        const afterPhoto =
-          complaint.inspection?.completionPhoto || complaint.photos?.after || "";
-        const isResolved = pinType === "resolved";
-        const popupPhotos = pinType === "open"
-          ? beforePhoto
-            ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
-            : []
-          : [
-              ...(!isResolved && beforePhoto
-                ? [{ label: translate("home.mapBeforePhoto"), url: beforePhoto }]
-                : []),
-              ...(!isResolved && afterPhoto
-                ? [{ label: translate("home.mapAfterPhoto"), url: afterPhoto }]
-                : []),
-              ...images
-                .filter((photo) => photo !== beforePhoto && photo !== afterPhoto)
-                .map((url, index) => ({
-                  label: `Complaint photo ${index + 1}`,
-                  url,
-                })),
-            ];
-
         return (
           <React.Fragment key={id}>
             <Marker
               position={markerPosition}
               icon={scaledMarkerIcon}
               title={`${complaint.complaintNumber || "Complaint"} - ${complaint.issue || complaint.issueType || "Reported issue"}`}
-              onClick={() => setSelectedComplaintId(id)}
+              onClick={() => handleComplaintMarkerClick(complaint)}
             />
-            {selectedComplaintId === id && (
-              <InfoWindow
-                position={markerPosition}
-                onCloseClick={() => setSelectedComplaintId(null)}
-              >
-                <div className="scm-popup home-map-google-popup">
-                  <div className="home-map-popup-heading">
-                    <strong>{complaint.complaintNumber || "Complaint"}</strong>
-                    <span className={`home-map-status ${pinType}`}>
-                      {complaint.status || "Status unavailable"}
-                    </span>
-                  </div>
-                  <p><b>Issue:</b> {complaint.issue || complaint.issueType || "Reported issue"}</p>
-                  <p><b>Category:</b> {complaint.category || "Not available"}</p>
-                  <p><b>Location:</b> {location || "Address not provided"}</p>
-                  {complaint.landmark && <p><b>Landmark:</b> {complaint.landmark}</p>}
-                  <p><b>Reported:</b> {formatDate(complaint.createdAt || complaint.date)}</p>
-                  {complaint.citizenName && <p><b>Reported by:</b> {complaint.citizenName}</p>}
-                  {complaint.assignedStaff && <p><b>Assigned staff:</b> {complaint.assignedStaff}</p>}
-                  <p>
-                    <b>Coordinates:</b>{" "}
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${position.lat},${position.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-                    </a>
-                  </p>
-                  {complaint.description && <p>{complaint.description}</p>}
-                  {isResolved && (
-                    <div className="home-map-resolution-photos">
-                      {[
-                        { label: translate("home.mapBeforePhoto"), url: beforePhoto },
-                        { label: translate("home.mapAfterPhoto"), url: afterPhoto },
-                      ].map((photo) => (
-                        <div key={photo.label}>
-                          <strong>{photo.label}</strong>
-                          {photo.url ? (
-                            <a href={toMediaUrl(photo.url)} target="_blank" rel="noopener noreferrer">
-                              <img src={toMediaUrl(photo.url)} alt={photo.label} loading="lazy" />
-                            </a>
-                          ) : (
-                            <p>{translate("home.mapPhotoUnavailable")}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {popupPhotos.length > 0 && (
-                    <div className="scm-popup-photos">
-                      {popupPhotos.map((photo, index) => (
-                        <a
-                          href={toMediaUrl(photo.url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          key={`${photo.url}-${index}`}
-                        >
-                          <img src={toMediaUrl(photo.url)} alt={photo.label} loading="lazy" />
-                          <span>{photo.label}</span>
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </InfoWindow>
-            )}
           </React.Fragment>
         );
       })}
+      {selectedComplaint && selectedComplaintPosition && (
+        <InfoWindow
+          key={`${selectedComplaint.id || selectedComplaint._id}-${isPopupExpanded ? "expanded" : "normal"}`}
+          position={selectedComplaintPosition}
+          options={{
+            disableAutoPan: true,
+            headerDisabled: true,
+            maxWidth: isPopupExpanded ? 620 : 380,
+          }}
+          onCloseClick={closeSelectedComplaint}
+        >
+          <HomeComplaintPopup
+            key={`${selectedComplaint.id || selectedComplaint._id}-${selectedComplaint.sawThisCount || 0}-${Boolean(selectedComplaint.hasSeenThis)}`}
+            clientId={clientId}
+            complaint={selectedComplaint}
+            onClose={closeSelectedComplaint}
+            translate={translate}
+            isMapFullscreen={isPopupExpanded}
+          />
+        </InfoWindow>
+      )}
       </GoogleMap>
     </div>
   );

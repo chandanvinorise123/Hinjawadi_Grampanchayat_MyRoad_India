@@ -199,30 +199,53 @@
   color: #b91c1c;
   font-size: 13px;
 }
+.ad-pdf-message {
+  margin: 8px 22px 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ad-pdf-message.success { background: #e8f6ec; color: #166534; }
+.ad-pdf-message.warning { background: #fff4e0; color: #92400e; }
+.ad-pdf-message.error { background: #fef2f2; color: #b91c1c; }
 .ad-assignment-saving { display: block; margin-top: 4px; color: var(--ink-faint); font-size: 10px; }
 .ad-shell .ad-all-complaints-table {
-  width: max(100%, 1570px);
-  min-width: 1570px;
+  width: 100%;
+  min-width: 1120px;
   table-layout: fixed;
 }
-.ad-all-complaints-table .ad-col-complaint { width: 15%; }
-.ad-all-complaints-table .ad-col-category { width: 9%; }
+.ad-all-complaints-table .ad-col-complaint { width: 16%; }
+.ad-all-complaints-table .ad-col-category { width: 12%; }
 .ad-all-complaints-table .ad-col-location { width: 17%; }
-.ad-all-complaints-table .ad-col-priority { width: 7%; }
-.ad-all-complaints-table .ad-col-status { width: 11%; }
-.ad-all-complaints-table .ad-col-assignee { width: 12%; }
-.ad-all-complaints-table .ad-col-photos { width: 5%; }
-.ad-all-complaints-table .ad-col-action { width: 12%; }
+.ad-all-complaints-table .ad-col-status { width: 8%; }
+.ad-all-complaints-table .ad-col-staff-assignee { width: 16%; }
+.ad-all-complaints-table .ad-col-verifier-assignee { width: 12%; }
+.ad-all-complaints-table .ad-col-action { width: 11%; }
+.ad-all-complaints-table .ad-col-pdf { width: 8%; }
 .ad-shell .ad-all-complaints-table th,
-.ad-shell .ad-all-complaints-table td { padding: 12px; }
+.ad-shell .ad-all-complaints-table td { padding: 10px 8px; }
+.ad-shell .ad-all-complaints-table th { white-space: nowrap; }
 .ad-shell .ad-all-complaints-table td { overflow-wrap: normal; }
 .ad-shell .ad-all-complaints-table td:first-child { white-space: nowrap; }
 .ad-shell .ad-all-complaints-table td:nth-child(3) { overflow-wrap: anywhere; }
-.ad-shell .ad-all-complaints-table td:nth-child(4),
-.ad-shell .ad-all-complaints-table td:nth-child(5),
-.ad-shell .ad-all-complaints-table td:nth-child(8) { white-space: nowrap; }
+.ad-shell .ad-all-complaints-table td:nth-child(n+4) { white-space: nowrap; }
+.ad-shell .ad-all-complaints-table td:last-child { white-space: normal; }
 .ad-all-complaints-table .ad-badge { white-space: nowrap; }
 .ad-all-complaints-table .ad-btn-primary { white-space: nowrap; }
+.ad-pdf-btn {
+  padding: 6px 5px;
+  border: 1px solid #cbd8eb;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ad-pdf-btn:hover:not(:disabled) { background: #eaf0fb; }
+.ad-pdf-btn:disabled { opacity: .65; cursor: wait; }
 .ad-assignment-select {
   width: 100%;
   min-width: 0;

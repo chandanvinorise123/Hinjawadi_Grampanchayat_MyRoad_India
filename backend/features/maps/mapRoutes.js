@@ -1,14 +1,33 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
+const mongoose = require("mongoose");
 
 // ✅ FIXED: Changed "../models/Map" to "../models/Complaint"
 const Complaint = require("../../models/Complaint");
+const ComplaintSawThis = require("../../models/ComplaintSawThis");
+
+const isValidClientId = (clientId) =>
+  typeof clientId === "string" && /^[a-zA-Z0-9-]{8,100}$/.test(clientId);
+
+const hashClientId = (clientId) =>
+  crypto.createHash("sha256").update(clientId).digest("hex");
 
 // =====================================================
 // ✅ ADDED: GET ALL COMPLAINTS FOR MAP (For Admin Dashboard)
 // =====================================================
 router.get("/complaints", async (req, res) => {
   try {
+    const clientId = typeof req.query.clientId === "string"
+      ? req.query.clientId
+      : null;
+    if (clientId && !isValidClientId(clientId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid client ID is required",
+      });
+    }
+
     const query = req.query.includeUnlocated === "true"
       ? {}
       : {
@@ -19,6 +38,33 @@ router.get("/complaints", async (req, res) => {
         };
     const complaints = await Complaint.find(query).select(
       "complaintNumber category issueType location landmark coordinates status priority citizenName assignedStaff assignedStaffId assignedVerifier assignedVerifierId createdAt description photos images inspection"
+    );
+    const complaintIds = complaints.map((complaint) => complaint._id);
+    const sawThisCounts = complaintIds.length
+      ? await ComplaintSawThis.aggregate([
+          { $match: { complaintId: { $in: complaintIds } } },
+          {
+            $project: {
+              complaintId: 1,
+              count: { $size: { $ifNull: ["$sawThisBy", []] } },
+            },
+          },
+        ])
+      : [];
+    const seenComplaintIds = clientId && complaintIds.length
+      ? await ComplaintSawThis.find({
+          complaintId: { $in: complaintIds },
+          sawThisBy: hashClientId(clientId),
+        }).select("complaintId").lean()
+      : [];
+    const countByComplaintId = new Map(
+      sawThisCounts.map(({ complaintId, count }) => [
+        String(complaintId),
+        count,
+      ])
+    );
+    const seenComplaintIdSet = new Set(
+      seenComplaintIds.map(({ complaintId }) => String(complaintId))
     );
     
     const formattedComplaints = complaints.map(c => {
@@ -41,6 +87,8 @@ router.get("/complaints", async (req, res) => {
         id: c._id,
         issue: data.issueType,
         date: data.createdAt,
+        sawThisCount: countByComplaintId.get(String(c._id)) || 0,
+        hasSeenThis: seenComplaintIdSet.has(String(c._id)),
         lat: lat === null ? null : Number(lat),
         lng: lng === null ? null : Number(lng)
       };
@@ -55,6 +103,74 @@ router.get("/complaints", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch map complaints"
+    });
+  }
+});
+
+router.post("/complaints/:id/saw-this", async (req, res) => {
+  try {
+    const { clientId } = req.body || {};
+    if (!isValidClientId(clientId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid client ID is required",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    const complaintExists = await Complaint.exists({ _id: req.params.id });
+    if (!complaintExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    const hashedClientId = hashClientId(clientId);
+    let engagement;
+    try {
+      engagement = await ComplaintSawThis.findOneAndUpdate(
+        {
+          complaintId: req.params.id,
+          sawThisBy: { $ne: hashedClientId },
+        },
+        {
+          $addToSet: { sawThisBy: hashedClientId },
+          $setOnInsert: { complaintId: req.params.id },
+        },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      ).select("sawThisBy");
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+      engagement = await ComplaintSawThis.findOne({
+        complaintId: req.params.id,
+      }).select("sawThisBy");
+    }
+
+    if (!engagement) {
+      throw new Error("Unable to load complaint acknowledgement");
+    }
+
+    return res.status(200).json({
+      success: true,
+      sawThisCount: engagement.sawThisBy.length,
+      hasSeenThis: engagement.sawThisBy.includes(hashedClientId),
+    });
+  } catch (error) {
+    console.error("Complaint saw-this update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to record that you saw this complaint",
     });
   }
 });

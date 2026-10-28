@@ -158,11 +158,7 @@ const ReportIssue = () => {
     lat: null,
     lng: null,
   });
-  const [showSelectedLocationInfo, setShowSelectedLocationInfo] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState("");
-  const [manualAddress, setManualAddress] = useState("");
-  const [addressStatus, setAddressStatus] = useState("idle");
-  const [locationConfirmed, setLocationConfirmed] = useState(false);
 
   const [liveLocation, setLiveLocation] = useState({
     lat: "",
@@ -439,11 +435,7 @@ const ReportIssue = () => {
     searchRequestId.current += 1;
     setLocationMode("map");
     setSelectedLocation({ lat, lng });
-    setShowSelectedLocationInfo(true);
     setSelectedAddress(address);
-    setManualAddress("");
-    setAddressStatus(address ? "found" : "loading");
-    setLocationConfirmed(false);
     setErrorMessage("");
 
     const requestId = ++geocodeRequestId.current;
@@ -456,7 +448,6 @@ const ReportIssue = () => {
 
       if (status === window.google.maps.GeocoderStatus.OK && results?.[0]) {
         setSelectedAddress(results[0].formatted_address);
-        setAddressStatus("found");
         return;
       }
 
@@ -464,7 +455,6 @@ const ReportIssue = () => {
         console.error("Reverse geocoding failed:", status);
       }
       setSelectedAddress("");
-      setAddressStatus("unavailable");
     });
   };
 
@@ -888,11 +878,6 @@ const ReportIssue = () => {
     const latitude = Number(selectedLocation.lat);
     const longitude = Number(selectedLocation.lng);
 
-    if (!locationConfirmed) {
-      setErrorMessage("Please confirm the selected issue location before submitting.");
-      return;
-    }
-
     if (
       !Number.isFinite(latitude) ||
       !Number.isFinite(longitude) ||
@@ -928,7 +913,7 @@ const ReportIssue = () => {
     complaintData.append("description", description.trim());
     complaintData.append("location", `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
     complaintData.append("locationUrl", "Google Maps selected location");
-    complaintData.append("landmark", manualAddress.trim() || selectedAddress.trim());
+    complaintData.append("landmark", selectedAddress.trim());
     complaintData.append("coordinates", JSON.stringify({ latitude, longitude }));
     if (user?.id || user?._id) {
       complaintData.append("citizenId", user.id || user._id);
@@ -1011,11 +996,7 @@ const ReportIssue = () => {
     setMobile("");
     setLocationMode("live");
     setSelectedLocation({ lat: null, lng: null });
-    setShowSelectedLocationInfo(false);
     setSelectedAddress("");
-    setManualAddress("");
-    setAddressStatus("idle");
-    setLocationConfirmed(false);
     setLocationStatus(
       liveLocation.lat !== "" && liveLocation.lng !== "" ? "captured" : "loading"
     );
@@ -1286,30 +1267,7 @@ const ReportIssue = () => {
                                 icon={getComplaintMapMarkerIcon({ issue: issueType })}
                                 draggable
                                 onDragEnd={handleMarkerDragEnd}
-                                onClick={() => setShowSelectedLocationInfo(true)}
                               />
-                            )}
-                          {showSelectedLocationInfo &&
-                            selectedLocation.lat !== null &&
-                            selectedLocation.lng !== null && (
-                              <InfoWindow
-                                position={selectedLocation}
-                                onCloseClick={() => setShowSelectedLocationInfo(false)}
-                              >
-                                <div>
-                                  <strong>Selected issue location</strong>
-                                  <p>
-                                    {selectedAddress || `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`}
-                                  </p>
-                                  <a
-                                    href={`https://www.google.com/maps/search/?api=1&query=${selectedLocation.lat},${selectedLocation.lng}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Open exact area in Google Maps
-                                  </a>
-                                </div>
-                              </InfoWindow>
                             )}
                         </GoogleMap>
                         <div className="map-zoom-controls" aria-label="Map zoom controls">
@@ -1352,14 +1310,6 @@ const ReportIssue = () => {
                       {locationStatus === "captured" && (
                         <div className="location-status success">
                           <p>Current location: {liveLocation.lat}, {liveLocation.lng}</p>
-                          <p>GPS accuracy radius: ±{Math.round(liveLocationAccuracy)} m</p>
-                          <button
-                            type="button"
-                            className="location-retry-button"
-                            onClick={handleUseLiveLocation}
-                          >
-                            Retry GPS location
-                          </button>
                         </div>
                       )}
 
@@ -1379,65 +1329,6 @@ const ReportIssue = () => {
                         <p className="location-status">Loading Hinjawadi boundary...</p>
                       )}
 
-                      {selectedLocation.lat !== null &&
-                        selectedLocation.lng !== null && (
-                          <div className="location-review">
-                            <p className="location-review-heading">
-                              {addressStatus === "loading"
-                                ? "Finding the nearest address..."
-                                : selectedAddress || manualAddress || "No address found for this point"}
-                            </p>
-                            <p className="location-coordinates">
-                              {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
-                            </p>
-
-                            {addressStatus === "unavailable" && (
-                              <div className="manual-address-field">
-                                <label htmlFor="manualLocationAddress">
-                                  Add a nearby landmark or directions (optional)
-                                </label>
-                                <input
-                                  id="manualLocationAddress"
-                                  type="text"
-                                  value={manualAddress}
-                                  onChange={(event) => setManualAddress(event.target.value)}
-                                  placeholder="e.g. Near Wipro Circle, Hinjawadi"
-                                />
-                              </div>
-                            )}
-
-                            {liveLocationAccuracy !== null && (
-                              <p className="location-gps-accuracy">
-                                Your GPS reference accuracy: ±{Math.round(liveLocationAccuracy)} m
-                              </p>
-                            )}
-
-                            {!locationConfirmed ? (
-                              <button
-                                type="button"
-                                className="confirm-location-button"
-                                onClick={() => setLocationConfirmed(true)}
-                                disabled={addressStatus === "loading"}
-                              >
-                                Confirm Location
-                              </button>
-                            ) : (
-                              <div className="location-confirmed">
-                                <span>Location confirmed</span>
-                                <button
-                                  type="button"
-                                  className="location-retry-button"
-                                  onClick={() => {
-                                    setLocationConfirmed(false);
-                                    setLocationMode("map");
-                                  }}
-                                >
-                                  Change Location
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
                     </>
                   )}
                 </div>
@@ -1468,14 +1359,11 @@ const ReportIssue = () => {
                     {categories.map((category) => (
                       <optgroup
                         key={category.title}
-                        label={t(
-                          `issueCategories.${category.title}`,
-                          { defaultValue: category.title }
-                        )}
+                        label={t(category.title, { defaultValue: category.title })}
                       >
                         {category.issues.map((issue) => (
                           <option key={issue} value={issue}>
-                            {t(`issueTypes.${issue}`, {
+                            {t(issue, {
                               defaultValue: issue,
                             })}
                           </option>

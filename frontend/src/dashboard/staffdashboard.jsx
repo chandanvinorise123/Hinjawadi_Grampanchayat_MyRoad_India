@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
-import { fetchDashboard, fetchStaffAssignedComplaints, fetchStaffNewComplaints, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
+import { fetchDashboard, fetchStaffAssignedComplaints, fetchStaffNewComplaints, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead } from "../utils/dashboardApi";
 
 // ✅ Import all full-page components
 import MyProfile from "../staffprofiledashboard/MyProfile";
@@ -260,6 +260,7 @@ const StaffDashboard = () => {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const staffDisplayRole = String(staff.role || "").replace(/\bstaff\b/gi, "Staff/Contractor");
 
   // ✅ Dashboard Stats
   const currentStaffId = String(staff._id || getUserId(storedUser) || "").trim().toLowerCase();
@@ -604,7 +605,7 @@ const StaffDashboard = () => {
           </div>
           <div>
             <b>My Road India</b>
-            <span>Staff Portal</span>
+            <span>Staff/Contractor Portal</span>
           </div>
         </div>
 
@@ -746,7 +747,7 @@ const StaffDashboard = () => {
             </div>
           </div>
           <div className="sd-sb-ward">
-            {staff.role} · {staff.ward}
+            {staffDisplayRole} · {staff.ward}
           </div>
         </div>
       </aside>
@@ -778,7 +779,7 @@ const StaffDashboard = () => {
               </div>
               <div>
                 <b>{staff.name}</b>
-                <span>{staff.role}</span>
+                <span>{staffDisplayRole}</span>
               </div>
             </div>
           </div>
@@ -790,7 +791,7 @@ const StaffDashboard = () => {
             <div>
               <h1>Welcome back, {staff.name.split(" ")[0]}</h1>
               <p>
-                {staff.role} · {staff.ward} · {staff.contact}
+                {staffDisplayRole} · {staff.ward} · {staff.contact}
               </p>
             </div>
           </div>
@@ -821,7 +822,7 @@ const StaffDashboard = () => {
                     <th style={{ minWidth: "200px" }}>Location</th>
                     <th style={{ minWidth: "100px" }}>Priority</th>
                     <th style={{ minWidth: "160px" }}>Status</th>
-                    <th style={{ minWidth: "150px" }}>Assigned Staff</th>
+                    <th style={{ minWidth: "150px" }}>Assigned Staff/Contractor</th>
                     <th style={{ minWidth: "180px" }}>Actions</th>
                   </tr>
                 </thead>
@@ -912,8 +913,8 @@ const StaffDashboard = () => {
             </div>
           </div>
 
-          {/* TWO COLUMN: LIFECYCLE + DETAILS */}
-          <div className="sd-dash-grid">
+          {/* LIFECYCLE */}
+          <div className="sd-dash-grid" style={{ gridTemplateColumns: "1fr" }}>
             {/* LEFT: Lifecycle */}
             <div className="sd-side-col">
               <div className="sd-panel" id="lifecycle-panel">
@@ -958,129 +959,6 @@ const StaffDashboard = () => {
                 </div>
               </div>
 
-            </div>
-
-            {/* RIGHT: Complaint Details */}
-            <div className="sd-panel sd-form-panel" id="complaint-details">
-              <div className="sd-panel-head">
-                <h3>Complaint Details</h3>
-                <span className="sd-panel-link">{selected.complaintNumber}</span>
-              </div>
-              <div className="sd-detail-grid">
-                <div className="sd-detail-item">
-                  <span>Category</span>
-                  <b>{selected.category}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Specific Issue</span>
-                  <b>{selected.issue}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Priority</span>
-                  <b>{selected.priority}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Submitted</span>
-                  <b>{selected.createdAt ? new Date(selected.createdAt).toLocaleString() : selected.date || "Not recorded"}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Current Status</span>
-                  <b>{selected.status || "Not recorded"}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Assigned Staff</span>
-                  <b>{selected.assignedStaff || "Not assigned"}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Assigned Verifier</span>
-                  <b>{selected.assignedVerifier || "Not assigned"}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Department</span>
-                  <b>{selected.department || "Not recorded"}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Citizen</span>
-                  <b>{selected.citizenName}</b>
-                </div>
-                <div className="sd-detail-item">
-                  <span>Citizen Contact</span>
-                  <b>{selected.citizenContact}</b>
-                </div>
-                <div className="sd-detail-item sd-detail-wide">
-                  <span>Description</span>
-                  <b>{selected.description}</b>
-                </div>
-                {selected.verifierRemarks && (
-                  <div className="sd-verifier-feedback">
-                    <b>Verifier requested correction</b>
-                    <p>{selected.verifierRemarks}</p>
-                  </div>
-                )}
-                <div className="sd-detail-item sd-detail-wide">
-                  <span>Citizen Uploaded Photos</span>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                    {selected.citizenPhotos && selected.citizenPhotos.length > 0 ? (
-                      selected.citizenPhotos.map((photo, idx) => (
-                        <a
-                          key={idx}
-                          href={toMediaUrl(photo)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ display: "block", width: "96px", height: "76px", borderRadius: "8px", border: "1px solid #e2e6ee", overflow: "hidden" }}
-                        >
-                          <img src={toMediaUrl(photo)} alt={`Citizen evidence ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        </a>
-                      ))
-                    ) : (
-                      <span style={{ color: "#888", fontSize: "13px" }}>
-                        No photos uploaded by citizen.
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="sd-detail-item sd-detail-wide">
-                  <span>Before & After Work Photos</span>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-                    {[
-                      ["Before / Site", selected.inspection?.sitePhoto],
-                      ["After Work", selected.inspection?.completionPhoto],
-                    ].filter(([, photo]) => photo).length ? (
-                      [
-                        ["Before / Site", selected.inspection?.sitePhoto],
-                        ["After Work", selected.inspection?.completionPhoto],
-                      ].filter(([, photo]) => photo).map(([label, photo]) => (
-                        <a key={label} href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" style={{ width: "120px", color: "#1b4586", fontSize: "12px" }}>
-                          <img src={toMediaUrl(photo)} alt={`${label} work photo`} style={{ width: "120px", height: "84px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e6ee" }} />
-                          <span>{label}</span>
-                        </a>
-                      ))
-                    ) : <span style={{ color: "#888", fontSize: "13px" }}>No staff work photos attached.</span>}
-                  </div>
-                </div>
-                <div className="sd-detail-item sd-detail-wide" style={{ alignItems: "center" }}>
-                  <span>Location</span>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center", width: "100%" }}>
-                    <b>{selected.location}</b>
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                        selected.location
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="sd-btn-outline small"
-                      style={{
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                       Navigate to Location
-                    </a>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -1173,12 +1051,12 @@ const StaffDashboard = () => {
                 <b>{staff.name}</b>
               </div>
               <div className="sd-detail-item">
-                <span>Staff ID</span>
+                <span>Staff/Contractor ID</span>
                 <b>{staff.staffId}</b>
               </div>
               <div className="sd-detail-item">
                 <span>Role / Designation</span>
-                <b>{staff.role}</b>
+                <b>{staffDisplayRole}</b>
               </div>
               <div className="sd-detail-item">
                 <span>Department</span>

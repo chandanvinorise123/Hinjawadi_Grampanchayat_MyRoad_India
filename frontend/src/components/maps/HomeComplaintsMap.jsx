@@ -7,8 +7,25 @@ import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
 
 const DEFAULT_CENTER = { lat: 18.5913, lng: 73.7389 };
 
+const getHomeMapClientId = () => {
+  try {
+    const storedId = window.localStorage.getItem("homeMapClientId");
+    if (storedId) return storedId;
+
+    const clientId = window.crypto?.randomUUID
+      ? window.crypto.randomUUID()
+      : `map-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem("homeMapClientId", clientId);
+    return clientId;
+  } catch (error) {
+    console.error("Unable to persist map visitor ID:", error);
+    return null;
+  }
+};
+
 const HomeComplaintsMap = ({ t, fullPage = false }) => {
   const navigate = useNavigate();
+  const [clientId] = useState(getHomeMapClientId);
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -55,7 +72,9 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
     const fetchComplaints = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/map/complaints?includeUnlocated=true`,
+          `${API_BASE_URL}/map/complaints?includeUnlocated=true${
+            clientId ? `&clientId=${encodeURIComponent(clientId)}` : ""
+          }`,
           { cache: "no-store" }
         );
         const result = await response.json();
@@ -82,7 +101,7 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
       isMounted = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [clientId]);
 
   const locatedComplaints = useMemo(
     () => complaints.filter((complaint) => {
@@ -186,7 +205,10 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
         mapClassName="home-live-complaints-map"
         translate={t}
         showSatelliteToggle
-        fullscreenFitBoundaryOnly={!fullPage}
+        fitBoundaryOnly={fullPage}
+        fullscreenFitBoundaryOnly
+        popupExpanded={fullPage}
+        clientId={clientId}
       />
       {unlocatedComplaints.length > 0 && (
         <details className="home-map-unlocated">

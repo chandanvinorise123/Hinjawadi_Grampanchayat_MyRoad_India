@@ -29,7 +29,6 @@ const bannerImage =
   }[currentLanguage] || bannerImageEn;
   
   const [signupData, setSignupData] = useState({
-    role: "citizen",
     name: "",
     email: "",
     mobile: "",
@@ -41,13 +40,6 @@ const bannerImage =
   const [signupStatus, setSignupStatus] = useState(null);
   const [signupError, setSignupError] = useState("");
   const [signupLoading, setSignupLoading] = useState(false);
-
-  const roles = [
-    { value: "citizen", label: t("signup.roles.citizen") },
-    { value: "staff", label: t("signup.roles.staff") },
-    { value: "verifier", label: t("signup.roles.verifier") },
-    { value: "admin", label: t("signup.roles.admin") },
-  ];
 
   // Handle input changes
   const handleChange = (e) => {
@@ -167,24 +159,6 @@ const bannerImage =
 
             {/* SIGNUP FORM */}
             <form onSubmit={handleSubmit}>
-
-              {/* ROLE */}
-              <div className="input-group">
-                <select
-                  name="role"
-                  value={signupData.role}
-                  onChange={handleChange}
-                  aria-label={t("signup.registerAs")}
-                  required
-                >
-                  {roles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {t("signup.registerAs")} {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* FULL NAME */}
               <div className="input-group">
                 <input

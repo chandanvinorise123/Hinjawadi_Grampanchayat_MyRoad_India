@@ -1,13 +1,20 @@
 export const markerGlyphForComplaint = (complaint = {}) => {
-  const issue = `${complaint.category || ""} ${complaint.issue || ""} ${complaint.issueType || ""}`.toLowerCase();
+  const category = String(complaint.category || "").toLowerCase();
+  const issue = `${complaint.issue || ""} ${complaint.issueType || ""}`.toLowerCase();
 
-  if (/water|pipeline|leak|pressure|tap|contaminat/.test(issue)) return "≈";
-  if (/sewer|drain|manhole|choked|sewage/.test(issue)) return "≋";
-  if (/streetlight|street light|light|pole/.test(issue)) return "✦";
-  if (/safety|signboard|signage|speed breaker|dangerous|curve/.test(issue)) return "!";
-  if (/bridge|culvert|railing/.test(issue)) return "⌒";
-  if (/pothole|crack|damaged road|road issue|road/.test(issue)) return "↔";
-  return "•";
+
+  const categoryEmoji = (value) => {
+    if (/sewer|drain/.test(value)) return "🚰";
+    if (/drinking water|water supply/.test(value)) return "💧";
+    if (/street ?lights?/.test(value)) return "💡";
+    if (/road safety|traffic safety/.test(value)) return "🚦";
+    if (/bridge|culvert/.test(value)) return "🌉";
+    if (/road/.test(value)) return "🛣️";
+    return null;
+};
+
+
+  return categoryEmoji(category) || categoryEmoji(issue) || "📍";
 };
 
 export const getComplaintMapPinType = (complaint = {}) => {
@@ -35,11 +42,6 @@ export const getComplaintMapMarkerSvg = (
     open: "#e11d2e",
     assigned: "#e0a800",
     resolved: "#16803c",
-  }[pinType];
-  const glyphColor = {
-    open: "#b01827",
-    assigned: "#8a6500",
-    resolved: "#12632f",
   }[pinType];
   if (dimensional) {
     const lightColor = {
@@ -84,12 +86,10 @@ export const getComplaintMapMarkerSvg = (
         <circle cx="26" cy="24" r="12.5" fill="#f8fafc"/>
         <text
           x="26"
-          y="29"
+          y="30"
           text-anchor="middle"
-          font-family="Arial,sans-serif"
-          font-size="16"
-          font-weight="700"
-          fill="${glyphColor}"
+          font-family="Arial,'Segoe UI Emoji','Noto Color Emoji',sans-serif"
+          font-size="18"
         >${glyph}</text>
         <ellipse cx="26" cy="61.5" rx="4.5" ry="1.5" fill="#10243b" opacity=".18"/>
       </svg>
@@ -101,8 +101,9 @@ export const getComplaintMapMarkerSvg = (
       <path d="M22 54C18.7 48.8 3 32.8 3 21a19 19 0 1 1 38 0c0 11.8-15.7 27.8-19 33Z"
         fill="${pinColor}" stroke="#ffffff" stroke-width="2"/>
       <circle cx="22" cy="21" r="13" fill="#ffffff"/>
-      <text x="22" y="26" text-anchor="middle" font-family="Arial,sans-serif"
-        font-size="16" font-weight="700" fill="${glyphColor}">${glyph}</text>
+      <text x="22" y="27" text-anchor="middle"
+        font-family="Arial,'Segoe UI Emoji','Noto Color Emoji',sans-serif"
+        font-size="18">${glyph}</text>
     </svg>
   `;
 };

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import "./admindashboard.css";
 
 import AdminProfile from "../adminprofiledashboard/AdminProfile";
@@ -15,12 +17,12 @@ import ComplaintDetails from "../adminprofiledashboard/ComplaintDetails";
 import { countUpdatedComplaints } from "../adminprofiledashboard/updatedComplaintsUtils";
 import VisitorsOverview from "../components/visitoroverview/VisitorsOverview";
 import NotificationMonitoring from "../adminprofiledashboard/Notification";
-import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
+import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
 import AdminComplaintsMap from "../components/maps/AdminComplaintsMap";
 
 /* Complaint pipeline status */
 const statusOptions = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
-const statusTone = { New: "navy", Pending: "amber", "Under Verification": "orange", "Under Action": "orange", Resolved: "green" };
+const statusTone = { New: "navy", Assigned: "orange", Pending: "amber", "Under Verification": "orange", "Under Action": "orange", Resolved: "green" };
 
 const priorityOptions = ["Critical", "Urgent", "Normal"];
 const priorityTone = { Critical: "red", Urgent: "amber", Normal: "green" };
@@ -85,14 +87,68 @@ const getLocationString = (loc) => {
   return String(loc);
 };
 
-const getPhotoCount = (complaint) => {
-  if (Array.isArray(complaint.photos)) return complaint.photos.length;
-  if (Array.isArray(complaint.images)) return complaint.images.length;
-  if (typeof complaint.photos === "number") return complaint.photos;
-  if (complaint.photos && typeof complaint.photos === "object") {
-    return new Set(Object.values(complaint.photos).filter(Boolean)).size;
+const getComplaintDisplayStatus = (complaint) => {
+  const status = String(complaint.status || "").trim().toLowerCase();
+  if (["resolved", "closed"].includes(status)) return "Resolved";
+  if (
+    ["new", "submitted"].includes(status) &&
+    !complaint.assignedStaff &&
+    !complaint.assignedStaffId
+  ) {
+    return "New";
   }
-  return 0;
+  return "Assigned";
+};
+
+const getComplaintPdfPhotos = (complaint) => {
+  const inspection = complaint.inspection || {};
+  const photoEntries = [
+    ...(Array.isArray(complaint.images)
+      ? complaint.images.map((image, index) => [`Citizen photo ${index + 1}`, image])
+      : []),
+    ...(Array.isArray(complaint.citizenPhotos)
+      ? complaint.citizenPhotos.map((image, index) => [`Citizen photo ${index + 1}`, image])
+      : []),
+    ...(Array.isArray(complaint.photos)
+      ? complaint.photos.map((image, index) => [`Complaint photo ${index + 1}`, image])
+      : []),
+    ...(["before", "site", "after", "verification"].flatMap((key) => (
+      typeof complaint.photos?.[key] === "string" && complaint.photos[key]
+        ? [[`${key.charAt(0).toUpperCase()}${key.slice(1)} photo`, complaint.photos[key]]]
+        : []
+    ))),
+    ["Before / site inspection photo", inspection.sitePhoto || complaint.sitePhoto || ""],
+    ["After work photo", inspection.completionPhoto || complaint.completionPhoto || ""],
+    ["Verification photo", inspection.verificationPhoto || complaint.verificationPhoto || ""],
+  ];
+  const seen = new Set();
+  return photoEntries.filter(([, path]) => {
+    if (typeof path !== "string" || !path.trim() || seen.has(path.trim())) return false;
+    seen.add(path.trim());
+    return true;
+  });
+};
+
+const loadPdfImage = async (path) => {
+  const response = await fetch(toMediaUrl(path));
+  if (!response.ok) {
+    throw new Error(`Image request failed (${response.status})`);
+  }
+
+  const bitmap = await createImageBitmap(await response.blob());
+  const maxDimension = 1400;
+  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    throw new Error("Could not prepare image for the PDF");
+  }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/png");
 };
 
 const hasValidMapCoordinates = (complaint) => {
@@ -170,6 +226,8 @@ const AdminDashboard = () => {
   const [complaintsLoading, setComplaintsLoading] = useState(true);
   const [assignmentSavingKey, setAssignmentSavingKey] = useState("");
   const [assignmentError, setAssignmentError] = useState("");
+  const [pdfGeneratingId, setPdfGeneratingId] = useState("");
+  const [pdfMessage, setPdfMessage] = useState({ type: "", text: "" });
   const [selectedId, setSelectedId] = useState(null);
   const [showMapView, setShowMapView] = useState(false);
 
@@ -776,6 +834,211 @@ const AdminDashboard = () => {
     const matchesPriority = priorityFilter === "All" || c.priority === priorityFilter;
     return matchesSearch && matchesCategory && matchesPriority;
   });
+
+  const handleGenerateComplaintPdf = async (complaint) => {
+    const complaintId = String(complaint.id || complaint._id || "");
+    setPdfGeneratingId(complaintId);
+    setPdfMessage({ type: "", text: "" });
+
+    try {
+      const location = getLocationString(complaint.location);
+      const coordinates = complaint.coordinates || {};
+      const inspection = complaint.inspection || {};
+      const photoEntries = getComplaintPdfPhotos(complaint);
+      const formatHistory = (entries, formatEntry) =>
+        Array.isArray(entries) && entries.length
+          ? entries.map(formatEntry).join("\n")
+          : "No records";
+      const detailRows = [
+        ["Complaint record ID", complaint.id || complaint._id],
+        ["Complaint number", complaint.complaintNumber],
+        ["Category", complaint.category],
+        ["Specific issue", complaint.issue || complaint.issueType],
+        ["Description", complaint.description || complaint.issueDescription],
+        ["Citizen name", complaint.citizenName || complaint.citizenProfile?.name],
+        ["Citizen account ID", complaint.citizenId],
+        ["Citizen contact", complaint.citizenContact || complaint.citizenMobile || complaint.citizenProfile?.mobile],
+        ["Citizen email", complaint.citizenEmail || complaint.citizenProfile?.email],
+        ["Location", location],
+        ["Landmark", complaint.landmark],
+        ["Coordinates", [
+          coordinates.latitude ?? complaint.lat,
+          coordinates.longitude ?? complaint.lng,
+        ].filter((value) => value !== undefined && value !== null && value !== "").join(", ")],
+        ["Department", complaint.department],
+        ["Attached photo count", photoEntries.length],
+        ["Priority", complaint.priority],
+        ["Current status", complaint.status],
+        ["Assigned staff/contractor", complaint.assignedStaff],
+        ["Staff/contractor ID", complaint.assignedStaffId],
+        ["Assigned verifier", complaint.assignedVerifier],
+        ["Verifier ID", complaint.assignedVerifierId],
+        ["Submitted date", complaint.date || complaint.createdAt],
+        ["Created at", complaint.createdAt],
+        ["Last updated", complaint.updatedAt],
+        ["Inspection date", inspection.inspectionDate || complaint.inspectionDate],
+        ["Work completion date", inspection.completionDate || complaint.completionDate],
+        ["Work performed", inspection.actionTaken || complaint.actionTaken],
+        ["Staff remarks", inspection.remarks || complaint.staffRemarks || complaint.remarks],
+        ["Status history", formatHistory(
+          complaint.statusHistory,
+          (entry) => `${entry.status || "Status"} - ${entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : "Date not recorded"}${entry.actor ? ` (${entry.actor})` : ""}${entry.remarks ? `: ${entry.remarks}` : ""}`
+        )],
+        ["Activity log", formatHistory(
+          complaint.activityLog,
+          (entry) => `${entry.createdAt ? new Date(entry.createdAt).toLocaleString() : "Date not recorded"}${entry.actor ? ` (${entry.actor})` : ""}: ${entry.message || ""}`
+        )],
+      ].map(([label, value]) => [
+        label,
+        value === undefined || value === null || value === "" ? "Not provided" : String(value),
+      ]);
+
+      const images = await Promise.all(
+        photoEntries.map(async ([label, path]) => {
+          try {
+            return { label, dataUrl: await loadPdfImage(path), error: "" };
+          } catch (error) {
+            console.error(`Failed to include complaint photo "${label}" in PDF:`, error);
+            return { label, dataUrl: "", error: "Could not load this image" };
+          }
+        })
+      );
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const saffron = [230, 126, 34];
+      const indiaGreen = [19, 110, 67];
+      const navy = [20, 45, 80];
+      doc.setFillColor(...saffron);
+      doc.rect(0, 0, pageWidth, 34, "F");
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 32, pageWidth, 2, "F");
+      doc.setFillColor(...indiaGreen);
+      doc.rect(0, 34, pageWidth, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("MyRoad India", 14, 14);
+      doc.setFontSize(12);
+      doc.text("Official Complaint Report", 14, 23);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`Complaint: ${complaint.complaintNumber || "N/A"}`, 14, 30);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 14, 30, { align: "right" });
+
+      autoTable(doc, {
+        startY: 44,
+        head: [["Complaint information", "Details"]],
+        body: detailRows,
+        theme: "grid",
+        margin: { left: 14, right: 14 },
+        styles: {
+          fontSize: 8.5,
+          cellPadding: 3,
+          overflow: "linebreak",
+          valign: "top",
+          lineColor: [220, 224, 228],
+          textColor: [40, 45, 52],
+        },
+        headStyles: { fillColor: navy, textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        columnStyles: {
+          0: { cellWidth: 48, fontStyle: "bold", textColor: indiaGreen },
+          1: { cellWidth: "auto", textColor: [40, 45, 52] },
+        },
+      });
+
+      let photoTableStartY = doc.lastAutoTable.finalY + 10;
+      if (photoTableStartY > pageHeight - 35) {
+        doc.addPage();
+        photoTableStartY = 18;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(...indiaGreen);
+      doc.text("Complaint photos", 14, photoTableStartY);
+      autoTable(doc, {
+        startY: photoTableStartY + 4,
+        head: [["Photo type", "Image"]],
+        body: images.length
+          ? images.map((image) => [image.label, image.error || ""])
+          : [["Photos", "No complaint photos attached"]],
+        theme: "grid",
+        margin: { left: 14, right: 14 },
+        styles: {
+          fontSize: 8.5,
+          cellPadding: 3,
+          minCellHeight: 38,
+          valign: "middle",
+          lineColor: [220, 224, 228],
+          textColor: [40, 45, 52],
+        },
+        headStyles: { fillColor: indiaGreen, textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        columnStyles: {
+          0: { cellWidth: 48, fontStyle: "bold", textColor: indiaGreen },
+          1: { cellWidth: "auto" },
+        },
+        didDrawCell: (data) => {
+          if (data.section !== "body" || data.column.index !== 1) return;
+          const image = images[data.row.index];
+          if (!image?.dataUrl) return;
+
+          const imageProperties = doc.getImageProperties(image.dataUrl);
+          const maxWidth = data.cell.width - 6;
+          const maxHeight = data.cell.height - 6;
+          const scale = Math.min(maxWidth / imageProperties.width, maxHeight / imageProperties.height);
+          const width = imageProperties.width * scale;
+          const height = imageProperties.height * scale;
+          doc.addImage(
+            image.dataUrl,
+            "PNG",
+            data.cell.x + (data.cell.width - width) / 2,
+            data.cell.y + (data.cell.height - height) / 2,
+            width,
+            height
+          );
+        },
+      });
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let page = 1; page <= pageCount; page += 1) {
+        doc.setPage(page);
+        doc.setFontSize(8);
+        doc.setTextColor(120, 132, 150);
+        doc.setDrawColor(...indiaGreen);
+        doc.setLineWidth(0.7);
+        doc.line(14, pageHeight - 13, pageWidth - 14, pageHeight - 13);
+        doc.text(
+          `Page ${page} of ${pageCount} | MyRoad India Gram Panchayat Portal`,
+          pageWidth / 2,
+          pageHeight - 8,
+          { align: "center" }
+        );
+      }
+
+      const safeComplaintNumber = String(complaint.complaintNumber || complaintId || "complaint")
+        .replace(/[^a-z0-9-_]/gi, "_");
+      doc.save(`MyRoad_Complaint_${safeComplaintNumber}.pdf`);
+      const failedImages = images.filter((image) => image.error).length;
+      setPdfMessage({
+        type: failedImages ? "warning" : "success",
+        text: failedImages
+          ? `PDF downloaded, but ${failedImages} photo(s) could not be loaded.`
+          : `PDF downloaded for complaint ${complaint.complaintNumber || ""}.`,
+      });
+    } catch (error) {
+      console.error("Failed to generate complaint PDF:", error);
+      setPdfMessage({
+        type: "error",
+        text: error.message || "Could not generate the complaint PDF.",
+      });
+    } finally {
+      setPdfGeneratingId("");
+    }
+  };
 
   const mapGroups = complaints.reduce((groups, c) => {
     const key = getLocationString(c.location);
@@ -1458,6 +1721,11 @@ const AdminDashboard = () => {
                     </div>
 
                     {assignmentError && <div className="ad-assignment-error" role="alert">{assignmentError}</div>}
+                    {pdfMessage.text && (
+                      <div className={`ad-pdf-message ${pdfMessage.type}`} role={pdfMessage.type === "error" ? "alert" : "status"}>
+                        {pdfMessage.text}
+                      </div>
+                    )}
 
                     <div className="ad-table-wrap">
                       {complaintsLoading ? (
@@ -1468,29 +1736,27 @@ const AdminDashboard = () => {
                             <col className="ad-col-complaint" />
                             <col className="ad-col-category" />
                             <col className="ad-col-location" />
-                            <col className="ad-col-priority" />
                             <col className="ad-col-status" />
-                            <col className="ad-col-assignee" />
-                            <col className="ad-col-assignee" />
-                            <col className="ad-col-photos" />
+                            <col className="ad-col-staff-assignee" />
+                            <col className="ad-col-verifier-assignee" />
                             <col className="ad-col-action" />
+                            <col className="ad-col-pdf" />
                           </colgroup>
                           <thead>
                             <tr>
                               <th>Complaint / Subject</th>
                               <th>Category</th>
                               <th>Location</th>
-                              <th>Priority</th>
                               <th>Status</th>
-                              <th>Assigned Staff</th>
+                              <th>Assigned Staff/Contractor</th>
                               <th>Verifier</th>
-                              <th>Photos</th>
                               <th>Action</th>
+                              <th>PDF</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredComplaints.length === 0 ? (
-                              <tr><td colSpan={9} style={{ textAlign: "center", padding: "20px", color: "#888" }}>No complaints found.</td></tr>
+                              <tr><td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#888" }}>No complaints found.</td></tr>
                             ) : (
                               filteredComplaints.map((c) => (
                                 <React.Fragment key={c.id}>
@@ -1516,8 +1782,11 @@ const AdminDashboard = () => {
                                         </a>
                                       )}
                                     </td>
-                                    <td><span className={`ad-badge ad-badge-${priorityTone[c.priority]}`}>{c.priority}</span></td>
-                                    <td><span className={`ad-badge ad-badge-${statusTone[c.status]}`}>{c.status}</span></td>
+                                    <td>
+                                      <span className={`ad-badge ad-badge-${statusTone[getComplaintDisplayStatus(c)]}`}>
+                                        {getComplaintDisplayStatus(c)}
+                                      </span>
+                                    </td>
                                     <td onClick={(event) => event.stopPropagation()}>
                                       <select
                                         className="ad-assignment-select"
@@ -1552,7 +1821,6 @@ const AdminDashboard = () => {
                                       </select>
                                       {assignmentSavingKey === String(c.id) && <small className="ad-assignment-saving">Saving…</small>}
                                     </td>
-                                    <td className="ad-mono">{getPhotoCount(c)}</td>
                                     <td onClick={(e) => e.stopPropagation()}>
                                       <button 
                                         className="ad-btn-primary small" 
@@ -1568,10 +1836,21 @@ const AdminDashboard = () => {
                                         <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteComplaintId(c.id)} title="Remove eligible record" style={{ marginLeft: "8px" }}>🗑️</button>
                                       )}
                                     </td>
+                                    <td onClick={(event) => event.stopPropagation()}>
+                                      <button
+                                        className="ad-pdf-btn"
+                                        type="button"
+                                        onClick={() => handleGenerateComplaintPdf(c)}
+                                        disabled={Boolean(pdfGeneratingId)}
+                                        aria-label={`Generate full PDF for complaint ${c.complaintNumber}`}
+                                      >
+                                        {pdfGeneratingId === String(c.id) ? "..." : "PDF"}
+                                      </button>
+                                    </td>
                                   </tr>
                                   {confirmDeleteComplaintId === c.id && (
                                     <tr className="ad-edit-row">
-                                      <td colSpan={9}>
+                                      <td colSpan={8}>
                                         <div className="ad-delete-confirm">
                                           <span>Remove complaint {c.complaintNumber}? Only eligible new records can be removed.</span>
                                           <div>

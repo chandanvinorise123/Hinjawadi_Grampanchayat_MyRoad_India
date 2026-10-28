@@ -26,7 +26,6 @@ const bannerImage =
   }[currentLanguage] || bannerImageEn;
   
   const [loginData, setLoginData] = useState({
-    role: "citizen",
     identifier: "",
     password: "",
     remember: false,
@@ -35,13 +34,6 @@ const bannerImage =
   const [loginStatus, setLoginStatus] = useState(null);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
-
-  const roles = [
-    { value: "citizen", label: t("login.roles.citizen") },
-    { value: "staff", label: t("login.roles.staff") },
-    { value: "verifier", label: t("login.roles.verifier") },
-    { value: "admin", label: t("login.roles.admin") },
-  ];
 
   // Handle input changes
   const handleChange = (e) => {
@@ -68,8 +60,8 @@ const bannerImage =
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...loginData,
           identifier: loginData.identifier.trim(),
+          password: loginData.password,
         }),
       });
 
@@ -180,23 +172,6 @@ const bannerImage =
 
             {/* LOGIN FORM */}
             <form onSubmit={handleSubmit}>
-              {/* ROLE */}
-              <div className="input-group">
-                <select
-                  name="role"
-                  value={loginData.role}
-                  onChange={handleChange}
-                  aria-label={t("login.loginAs")}
-                  required
-                >
-                  {roles.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {t("login.loginAs")} {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* EMAIL / MOBILE NUMBER */}
               <div className="input-group">
                 <input
