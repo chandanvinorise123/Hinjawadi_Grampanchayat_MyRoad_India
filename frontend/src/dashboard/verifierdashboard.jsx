@@ -551,7 +551,7 @@ const VerifierDashboard = () => {
   };
 
   const handleCompletedWorkVerify = (id, action, remarks, dateTime) =>
-    persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
+    persistComplaintStatus(id, action === "approve" ? "Resolved" : "Rejected", remarks, dateTime);
 
   const handleNewComplaintAction = async (id, action, details = {}) => {
     const complaint = items.find((item) => item.id === id);
