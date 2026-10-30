@@ -1,7 +1,7 @@
 
 const mongoose = require("mongoose");
 const Complaint = require("../../models/Complaint");
-const Notification = require("../../models/Notification");
+const { createNotifications } = require("../../services/notificationService");
 const departmentMapping = require("../../constants/departmentMapping");
 const { isInsideHinjawadiBoundary } = require("../../utils/boundaryValidator");
 
@@ -261,12 +261,12 @@ const createComplaint = async (req, res) => {
       {
         role: "verifier",
         complaintId: complaint._id,
-        type: "Complaint Registered",
+        type: "New Complaint Received",
         message: `${complaint.complaintNumber} is ready for verification.`,
       },
     ];
 
-    await Notification.insertMany(notifications);
+    await createNotifications(notifications);
 
     return res.status(201).json({
       success: true,

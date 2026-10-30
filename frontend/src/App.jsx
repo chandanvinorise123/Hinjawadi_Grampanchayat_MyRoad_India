@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PushNotificationEnrollment from "./components/PushNotificationEnrollment";
 
 // ================================
 // PUBLIC PAGES
@@ -41,6 +42,7 @@ function AppRoutes() {
   return (
     <>
       <Navbar />
+      <PushNotificationEnrollment />
 
       <Routes location={backgroundLocation || location}>
         {/* ================================

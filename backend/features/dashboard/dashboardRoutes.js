@@ -4,6 +4,7 @@ const Complaint = require("../../models/Complaint");
 const Notification = require("../../models/Notification");
 const User = require("../../models/user");
 const Admin = require("../../models/Admin");
+const { createNotifications } = require("../../services/notificationService");
 
 const router = express.Router();
 const roles = new Set(["admin", "citizen", "staff", "verifier"]);
@@ -540,198 +541,229 @@ router.patch("/complaints/:id", async (req, res) => {
     const complaintLabel = complaint.complaintNumber || String(complaint._id);
 
     const notifications = [];
-    if (staffAssignmentChanged && (updates.assignedStaffId || updates.assignedStaff)) {
-      const staff = await findAssignedUser("staff", updates.assignedStaffId || updates.assignedStaff);
-      if (staff) {
-        notifications.push({
-          role: "staff",
-          userId: staff._id,
-          complaintId: complaint._id,
-          type: "Staff Assigned",
-          message: `${complaintLabel} has been assigned to you for action.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Verifier remarks: ${req.body.remarks.trim()}` : ""}`,
-        });
+    const notificationKeys = new Set();
+    const addNotification = (role, userId, type, message) => {
+      if (role === "citizen" && !complaint.citizenId) return;
+      const recipientId = userId ? String(userId) : "";
+      const key = `${role}:${recipientId}:${type}`;
+      if (notificationKeys.has(key)) return;
+      notificationKeys.add(key);
+      notifications.push({
+        role,
+        ...(userId ? { userId } : {}),
+        complaintId: complaint._id,
+        type,
+        message,
+      });
+    };
+    const addAssignedNotification = (role, user, type, message) => {
+      if (user) addNotification(role, user._id, type, message);
+    };
+    const oldStaffUser = staffAssignmentChanged && (previousAssignedStaffId || previousAssignedStaff)
+      ? await findAssignedUser("staff", previousAssignedStaffId || previousAssignedStaff)
+      : null;
+    const newStaffUser = complaint.assignedStaffId || complaint.assignedStaff
+      ? await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff)
+      : null;
+    const oldVerifierUser = verifierAssignmentChanged && (previousAssignedVerifierId || previousAssignedVerifier)
+      ? await findAssignedUser("verifier", previousAssignedVerifierId || previousAssignedVerifier)
+      : null;
+    const newVerifierUser = complaint.assignedVerifierId || complaint.assignedVerifier
+      ? assignedVerifierUser || await findAssignedUser("verifier", complaint.assignedVerifierId || complaint.assignedVerifier)
+      : null;
+    const staffReassigned = Boolean(
+      oldStaffUser && newStaffUser && String(oldStaffUser._id) !== String(newStaffUser._id)
+    );
+    const verifierReassigned = Boolean(
+      oldVerifierUser && newVerifierUser && String(oldVerifierUser._id) !== String(newVerifierUser._id)
+    );
+    const remarks = typeof req.body.remarks === "string" && req.body.remarks.trim()
+      ? ` Remarks: ${req.body.remarks.trim()}`
+      : "";
+
+    if (staffAssignmentChanged) {
+      if (oldStaffUser && (staffReassigned || !newStaffUser)) {
+        addAssignedNotification(
+          "staff",
+          oldStaffUser,
+          staffReassigned ? "Complaint Reassigned" : "Complaint Assignment Changed",
+          staffReassigned
+            ? `${complaintLabel} has been reassigned to another staff member.`
+            : `${complaintLabel} is no longer assigned to you.`
+        );
       }
-      if (updates.status === undefined || updates.status === previousStatus) {
-        notifications.push({
-          role: "admin",
-          complaintId: complaint._id,
-          type: "Staff Assignment Updated",
-          message: `${complaintLabel} was assigned to ${updates.assignedStaff || "a staff member"} by ${actorName || "the dashboard"}.`,
-        });
+      if (newStaffUser) {
+        const staffAssignmentType = staffReassigned
+          ? "Complaint Reassigned"
+          : oldStaffUser
+            ? "Complaint Assignment Changed"
+            : "New Complaint Assigned";
+        addAssignedNotification(
+          "staff",
+          newStaffUser,
+          staffAssignmentType,
+          `${complaintLabel} ${staffReassigned ? "has been reassigned to you" : "has been assigned to you"} for action.${remarks}`
+        );
+      }
+      const assignmentType = staffReassigned
+        ? "Complaint Reassigned"
+        : newStaffUser
+          ? "Complaint Assigned"
+          : "Complaint Assignment Changed";
+      const assignmentText = staffReassigned
+        ? `${complaintLabel} was reassigned to ${complaint.assignedStaff || "another staff member"}.`
+        : complaint.assignedStaff
+          ? `${complaintLabel} was assigned to ${complaint.assignedStaff}.`
+          : `${complaintLabel} staff assignment was removed.`;
+      addNotification("admin", null, assignmentType, assignmentText);
+      addNotification(
+        "citizen",
+        complaint.citizenId,
+        assignmentType,
+        assignmentText
+      );
+      if (newVerifierUser) {
+        addAssignedNotification("verifier", newVerifierUser, "Complaint Assignment Changed", `${complaintLabel} staff responsibility changed.`);
       }
     }
-    if (verifierAssignmentChanged && (updates.assignedVerifierId || updates.assignedVerifier)) {
-      const verifier = assignedVerifierUser || await findAssignedUser("verifier", updates.assignedVerifierId || updates.assignedVerifier);
-      if (verifier) {
-        notifications.push({
-          role: "verifier",
-          userId: verifier._id,
-          complaintId: complaint._id,
-          type: "Verifier Assigned",
-          message: `${complaintLabel} has been assigned to you for verification.`,
-        });
+
+    if (verifierAssignmentChanged) {
+      if (oldVerifierUser && (verifierReassigned || !newVerifierUser)) {
+        addAssignedNotification(
+          "verifier",
+          oldVerifierUser,
+          verifierReassigned ? "Complaint Reassigned" : "Complaint Assignment Changed",
+          verifierReassigned
+            ? `${complaintLabel} has been reassigned to another verifier.`
+            : `${complaintLabel} is no longer assigned to you for verification.`
+        );
       }
-    }
-    if (
-      updates.priority !== undefined &&
-      updates.priority !== previousComplaint.priority &&
-      (complaint.assignedStaff || complaint.assignedStaffId)
-    ) {
-      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
-      if (staff) {
-        notifications.push({
-          role: "staff",
-          userId: staff._id,
-          complaintId: complaint._id,
-          type: "Priority Updated",
-          message: `${complaintLabel} priority was changed to ${updates.priority}.`,
-        });
+      if (newVerifierUser) {
+        const verifierAssignmentType = verifierReassigned
+          ? "Complaint Reassigned"
+          : oldVerifierUser
+            ? "Complaint Assignment Changed"
+            : "New Complaint Assigned";
+        addAssignedNotification(
+          "verifier",
+          newVerifierUser,
+          verifierAssignmentType,
+          `${complaintLabel} ${verifierReassigned ? "has been reassigned to you" : "has been assigned to you"} for verification.`
+        );
       }
-    }
-    if (updates.status === "Under Verification" && updates.status !== previousStatus) {
-      notifications.push(
-        {
-          role: "admin",
-          complaintId: complaint._id,
-          type: "Work Completed",
-          message: `${complaintLabel} has been submitted by staff for verification.`,
-        },
-        {
-          role: "verifier",
-          complaintId: complaint._id,
-          type: "Work Completed",
-          message: `${complaintLabel} is ready for physical verification.`,
-        }
+      addNotification(
+        "admin",
+        null,
+        verifierReassigned ? "Complaint Reassigned" : "Complaint Assignment Changed",
+        verifierReassigned
+          ? `${complaintLabel} was reassigned to ${complaint.assignedVerifier || "another verifier"}.`
+          : `${complaintLabel} verifier assignment was changed.`
+      );
+      addAssignedNotification(
+        "staff",
+        newStaffUser,
+        "Complaint Assignment Changed",
+        `${complaintLabel} verifier responsibility changed.`
+      );
+      addNotification(
+        "citizen",
+        complaint.citizenId,
+        verifierReassigned ? "Complaint Reassigned" : "Complaint Assignment Changed",
+        `${complaintLabel} verifier assignment was changed.`
       );
     }
-    const verifierStatusMessages = {
-      "Under Action": "A verifier accepted the complaint and assigned it for staff action.",
-      Verified: "A verifier approved the completed work.",
-      Rejected: "A verifier rejected the submission and sent it for correction.",
-    };
-    if (
-      updates.status &&
-      updates.status !== previousStatus &&
-      verifierStatusMessages[updates.status]
-    ) {
-      const remarks = typeof req.body.remarks === "string" && req.body.remarks.trim()
-        ? ` Remarks: ${req.body.remarks.trim()}`
-        : "";
-      notifications.push({
-        role: "admin",
-        complaintId: complaint._id,
-        type: updates.status === "Under Action" ? "Complaint Assigned" : "Verifier Decision",
-        message: `${complaintLabel}: ${verifierStatusMessages[updates.status]}${remarks}`,
-      });
-    }
-    if (updates.status === "Rejected" && updates.status !== previousStatus && (complaint.assignedStaff || complaint.assignedStaffId)) {
-      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
-      if (staff) {
-        notifications.push({
-          role: "staff",
-          userId: staff._id,
-          complaintId: complaint._id,
-          type: "Verification Rejected",
-          message: `${complaintLabel} was rejected during verification and requires further action.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Remarks: ${req.body.remarks.trim()}` : ""}`,
-        });
+
+    const priorityChanged =
+      updates.priority !== undefined && updates.priority !== previousComplaint.priority;
+    if (priorityChanged) {
+      addNotification("admin", null, "Complaint Priority Changed", `${complaintLabel} priority changed to ${updates.priority}.`);
+      addAssignedNotification("staff", newStaffUser, "Complaint Priority Changed", `${complaintLabel} priority changed to ${updates.priority}.`);
+      addAssignedNotification("verifier", newVerifierUser, "Complaint Priority Changed", `${complaintLabel} priority changed to ${updates.priority}.`);
+      if (updates.priority === "Critical") {
+        addNotification("admin", null, "Critical Complaint Alert", `${complaintLabel} is now marked Critical.`);
       }
     }
-    if (updates.status === "Verified" && updates.status !== previousStatus && (complaint.assignedStaff || complaint.assignedStaffId)) {
-      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
-      if (staff) {
-        notifications.push({
-          role: "staff",
-          userId: staff._id,
-          complaintId: complaint._id,
-          type: "Verification Approved",
-          message: `${complaintLabel} passed verifier review.${typeof req.body.remarks === "string" && req.body.remarks.trim() ? ` Remarks: ${req.body.remarks.trim()}` : ""}`,
-        });
+
+    const statusChanged = updates.status !== undefined && updates.status !== previousStatus;
+    if (statusChanged) {
+      const isSubmittedForVerification = ["Under Verification", "Under Review", "Submitted"].includes(updates.status);
+      const isRejected = updates.status === "Rejected";
+      const isApproved = updates.status === "Verified";
+      const isResolved = ["Resolved", "Closed"].includes(updates.status);
+      const isReverification = isSubmittedForVerification && previousStatus === "Rejected";
+      const isAccepted = ["Under Action", "Assigned"].includes(updates.status);
+      const summary = `${complaintLabel}: status changed from ${previousStatus} to ${updates.status}.${remarks}`;
+
+      if (isSubmittedForVerification) {
+        addNotification(
+          "admin",
+          null,
+          isReverification ? "Reverification Requested" : "Complaint Submitted for Verification",
+          summary
+        );
+        addNotification(
+          "verifier",
+          newVerifierUser?._id || null,
+          isReverification ? "Reverification Requested" : "Work Submitted for Verification",
+          `${complaintLabel} is ready for verification.${remarks}`
+        );
+        addAssignedNotification(
+          "staff",
+          newStaffUser,
+          isReverification ? "Complaint Reverification Requested" : "Complaint Verification Pending",
+          `${complaintLabel} is waiting for verification.${remarks}`
+        );
+        addNotification(
+          "citizen",
+          complaint.citizenId,
+          isReverification ? "Complaint Reverification" : "Complaint Submitted for Verification",
+          `${complaintLabel}: completed work is awaiting verification.`
+        );
+      } else if (isRejected) {
+        addNotification("admin", null, "Complaint Verification Rejected", summary);
+        addNotification("admin", null, "Complaint Rework Requested", `${complaintLabel} requires corrective work.${remarks}`);
+        addNotification("verifier", newVerifierUser?._id || null, "Complaint Verification Rejected", summary);
+        addAssignedNotification("staff", newStaffUser, "Complaint Work Rejected", `${complaintLabel} work was rejected during verification.${remarks}`);
+        addAssignedNotification("staff", newStaffUser, "Rework Requested", `${complaintLabel} was rejected and needs correction.${remarks}`);
+        addNotification("citizen", complaint.citizenId, "Complaint Rejected", `${complaintLabel}: submitted work was rejected and requires correction.${remarks}`);
+      } else if (isApproved) {
+        addNotification("admin", null, "Complaint Verification Accepted", summary);
+        addNotification("verifier", newVerifierUser?._id || null, "Complaint Verification Accepted", summary);
+        addAssignedNotification("staff", newStaffUser, "Complaint Work Approved", `${complaintLabel} passed verifier review.${remarks}`);
+        addNotification("citizen", complaint.citizenId, "Complaint Verification Accepted", `${complaintLabel}: the completed work has been verified.${remarks}`);
+      } else if (isResolved) {
+        addNotification("admin", null, "Complaint Resolved", summary);
+        addNotification("verifier", newVerifierUser?._id || null, "Complaint Resolved", summary);
+        addAssignedNotification("staff", newStaffUser, "Complaint Resolved", summary);
+        addNotification("citizen", complaint.citizenId, "Complaint Resolved", `${complaintLabel}: your complaint has been resolved.`);
+      } else if (isAccepted) {
+        addNotification("admin", null, "Complaint Accepted", summary);
+        addNotification("verifier", newVerifierUser?._id || null, "Complaint Accepted", summary);
+        addAssignedNotification("staff", newStaffUser, "Complaint Work Started", `${complaintLabel} has been accepted for action.`);
+        addNotification("citizen", complaint.citizenId, "Complaint Accepted", `${complaintLabel}: your complaint was accepted for processing.`);
+      } else {
+        addNotification("admin", null, "Complaint Status Changed", summary);
+        addNotification("verifier", newVerifierUser?._id || null, "Complaint Status Changed", summary);
+        addAssignedNotification("staff", newStaffUser, "Complaint Status Changed", summary);
+        addNotification("citizen", complaint.citizenId, "Complaint Status Changed", summary);
       }
     }
-    if (
-      ["Resolved", "Closed"].includes(updates.status) &&
-      updates.status !== previousStatus &&
-      (complaint.assignedStaff || complaint.assignedStaffId)
-    ) {
-      const staff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
-      if (staff) {
-        notifications.push({
-          role: "staff",
-          userId: staff._id,
-          complaintId: complaint._id,
-          type: "Complaint Resolved",
-          message: `${complaintLabel} was marked ${updates.status} after verification.`,
-        });
-      }
+
+    if (inspectionUpdated && !statusChanged) {
+      const previousAction = String(previousComplaint.inspection?.actionTaken || "").trim();
+      const currentAction = String(complaint.inspection?.actionTaken || "").trim();
+      const workStarted = !previousAction && Boolean(currentAction);
+      const type = workStarted ? "Complaint Work Started" : "Complaint Work Updated";
+      const message = workStarted
+        ? `${complaintLabel} work has started.`
+        : `${complaintLabel} work details were updated.`;
+      addNotification("admin", null, type, message);
+      addNotification("verifier", newVerifierUser?._id || null, type, message);
+      addAssignedNotification("staff", newStaffUser, type, message);
+      addNotification("citizen", complaint.citizenId, type, message);
     }
-    const citizenStatusMessages = {
-      "Under Action": "Work has been assigned and is in progress.",
-      "Under Verification": "Work has been submitted and is awaiting verification.",
-      Verified: "The completed work has been verified.",
-      Rejected: "The submitted work needs additional action.",
-      Resolved: "The complaint has been resolved.",
-      Closed: "The complaint has been verified and closed.",
-    };
-    if (
-      updates.status &&
-      updates.status !== previousStatus &&
-      citizenStatusMessages[updates.status] &&
-      complaint.citizenId
-    ) {
-      notifications.push({
-        role: "citizen",
-        userId: complaint.citizenId,
-        complaintId: complaint._id,
-        type: ["Resolved", "Closed"].includes(updates.status)
-          ? "Complaint Resolved"
-          : "Complaint Status Updated",
-        message: `${complaintLabel}: ${citizenStatusMessages[updates.status]}`,
-      });
-    }
-    if (
-      inspectionUpdated &&
-      !(updates.status === "Under Verification" && updates.status !== previousStatus)
-    ) {
-      notifications.push(
-        {
-          role: "admin",
-          complaintId: complaint._id,
-          type: "Work Updated",
-          message: `${complaintLabel} work details were updated by staff.`,
-        },
-        {
-          role: "verifier",
-          complaintId: complaint._id,
-          type: "Work Updated",
-          message: `${complaintLabel} work details were updated and are available for review.`,
-        }
-      );
-      if (
-        complaint.citizenId &&
-        !(updates.status && updates.status !== previousStatus && citizenStatusMessages[updates.status])
-      ) {
-        notifications.push({
-          role: "citizen",
-          userId: complaint.citizenId,
-          complaintId: complaint._id,
-          type: "Work Updated",
-          message: `${complaintLabel}: staff updated the work details for your complaint.`,
-        });
-      }
-    }
-    if (inspectionUpdated && actorRole === "staff" && (complaint.assignedStaffId || complaint.assignedStaff)) {
-      const assignedStaff = await findAssignedUser("staff", complaint.assignedStaffId || complaint.assignedStaff);
-      if (assignedStaff) {
-        notifications.push({
-          role: "staff",
-          userId: assignedStaff._id,
-          complaintId: complaint._id,
-          type: "Work Updated",
-          message: `${complaintLabel} work details were updated successfully.`,
-        });
-      }
-    }
-    if (notifications.length) await Notification.insertMany(notifications);
+
+    if (notifications.length) await createNotifications(notifications);
     res.json({ success: true, complaint: toComplaintView(complaint) });
   } catch (error) {
     console.error("Dashboard complaint update error:", error);

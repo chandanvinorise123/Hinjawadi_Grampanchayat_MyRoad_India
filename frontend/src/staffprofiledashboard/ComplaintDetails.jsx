@@ -42,7 +42,7 @@ const ComplaintDetails = ({ complaints = [], onBack }) => {
   );
 
   return (
-    <div className="cd-shell">
+    <div className="cd-shell cd-staff-updates">
       <div className="cd-header">
         <button className="cd-back-btn" type="button" onClick={onBack}>
           ← Back to Dashboard

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 
 const User = require("../../models/user");
 
@@ -124,9 +125,23 @@ router.post("/login", async (req, res) => {
             });
         }
 
+        if (!process.env.JWT_SECRET) {
+            return res.status(503).json({
+                success: false,
+                message: "Authentication is not configured on the server"
+            });
+        }
+
+        const token = jwt.sign(
+            { role: user.role },
+            process.env.JWT_SECRET,
+            { subject: String(user._id), expiresIn: "30d" }
+        );
+
         res.status(200).json({
             success: true,
             message: "Login successful",
+            token,
             user: {
                 id: user._id,
                 role: user.role,

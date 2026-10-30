@@ -67,12 +67,10 @@ const bannerImage =
 
       const data = await response.json();
 
-      console.log("Login response:", data);
-
       if (response.ok && data.success) {
-        if (!data.user) {
+        if (!data.user || !data.token) {
           throw new Error(
-            "Login successful, but user information was not returned."
+            "Login successful, but authentication information was not returned."
           );
         }
 
@@ -80,6 +78,7 @@ const bannerImage =
 
         // Save logged-in user
         localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
 
         // Record successful citizen login for statistics
         if (String(data.user.role).toLowerCase() === "citizen") {
@@ -122,7 +121,7 @@ const bannerImage =
 
       setLoginError(
         error.message ===
-          "Login successful, but user information was not returned."
+          "Login successful, but authentication information was not returned."
           ? t("login.errors.userNotReturned")
           : t("login.errors.serverUnavailable")
       );

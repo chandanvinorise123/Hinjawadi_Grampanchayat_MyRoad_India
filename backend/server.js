@@ -22,6 +22,8 @@ const adminManagementRoutes = require("./features/admin/adminManagementRoutes");
 const dashboardRoutes = require("./features/dashboard/dashboardRoutes");
 const contactRoutes = require("./features/contact/contactRoutes");
 const blogRoutes = require("./features/blog/blogRoutes");
+const pushRoutes = require("./features/notifications/pushRoutes");
+const { startOverdueComplaintAlerts } = require("./services/overdueComplaintAlerts");
 
 // =====================================================
 // APP
@@ -66,7 +68,9 @@ app.use(
 // DATABASE
 // =====================================================
 
-connectDB();
+connectDB().then(() => {
+  startOverdueComplaintAlerts();
+});
 
 // =====================================================
 // API ROUTES
@@ -111,6 +115,7 @@ try {
 app.use("/api/stats", statRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/push", pushRoutes);
 
 app.use("/api/contact-messages", contactRoutes);
 

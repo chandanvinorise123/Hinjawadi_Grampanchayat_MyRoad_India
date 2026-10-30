@@ -460,3 +460,19 @@
     height: 210px;
   }
 }
+
+/* Dotted background for the staff Complaint Updated Details page */
+.cd-shell.cd-staff-updates {
+  --dot-color: #cadbec;
+  --bg-base: #edf3fa;
+  --bg-from: #e8f1fa;
+  --bg-mid: #f4f8fc;
+  --bg-to: #edf3fa;
+
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
