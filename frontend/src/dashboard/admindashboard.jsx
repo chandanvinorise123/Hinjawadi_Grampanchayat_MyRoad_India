@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./admindashboard.css";
@@ -173,6 +173,8 @@ const defaultCenter = { lat: 18.5913, lng: 73.7389 };
 const AdminDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = searchParams.get("view");
 
   const storedAdmin = getStoredUser();
   const [admin, setAdmin] = useState({
@@ -228,7 +230,7 @@ const AdminDashboard = () => {
   const [assignmentError, setAssignmentError] = useState("");
   const [pdfGeneratingId, setPdfGeneratingId] = useState("");
   const [pdfMessage, setPdfMessage] = useState({ type: "", text: "" });
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(searchParams.get("complaintId"));
   const [showMapView, setShowMapView] = useState(false);
 
   // ---------------- NOTIFICATIONS ----------------
@@ -281,37 +283,30 @@ const AdminDashboard = () => {
   const [resettingAdminPasswordId, setResettingAdminPasswordId] = useState(null);
   const [newPassword, setNewPassword] = useState("");
 
-  const [showProfile, setShowProfile] = useState(false);
-  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
+  const complaintListType = searchParams.get("listType");
 
-  const openView = (setter) => {
-    setShowProfile(false);
-    setShowAdminManagement(false);
-    setShowComplaintManagement(false);
-    setShowComplaintVerification(false);
-    setShowComplaintDetails(false);
-    setShowStaffMonitoring(false);
-    setShowUpdatedComplaints(false);
-    setShowReports(false);
-    setter(true);
+  const openView = (view, params = {}) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set("view", view);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        nextSearchParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextSearchParams);
   };
+
+  const returnToOverview = () => setSearchParams({});
 
   useEffect(() => {
     if (!location.state?.openProfile) return;
-    openView(setShowProfile);
-    navigate(location.pathname, { replace: true, state: null });
+    navigate(
+      { pathname: location.pathname, search: "?view=profile" },
+      { replace: true, state: null }
+    );
   }, [location.state, location.pathname, navigate]);
 
-  const [showStaffVerifierProfile, setShowStaffVerifierProfile] = useState(false);
-  const [showComplaintVerification, setShowComplaintVerification] = useState(false);
-  const [showStaffMonitoring, setShowStaffMonitoring] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
-  const [showAdminManagement, setShowAdminManagement] = useState(false);
-  const [showComplaintManagement, setShowComplaintManagement] = useState(false);
-  const [showComplaintDetails, setShowComplaintDetails] = useState(false);
-  const [complaintListType, setComplaintListType] = useState("new");
-  const [showReports, setShowReports] = useState(false);
-  const [showNotificationMonitoring, setShowNotificationMonitoring] = useState(false);
   const [initialNotification, setInitialNotification] = useState(null);
 
   // ---------------- LOGOUT FUNCTION ----------------
@@ -409,7 +404,7 @@ const AdminDashboard = () => {
   const handleOpenNotificationComplaint = (notification) => {
     if (notification.contactMessageId || notification.contactMessage) {
       setInitialNotification(notification);
-      setShowNotificationMonitoring(true);
+      openView("notification-monitoring");
       return;
     }
 
@@ -419,9 +414,7 @@ const AdminDashboard = () => {
       return;
     }
     setSelectedId(complaint.id || complaint._id);
-    setComplaintListType(null);
-    setShowNotificationMonitoring(false);
-    setShowComplaintDetails(true);
+    openView("complaint-details", { complaintId: complaint.id || complaint._id });
   };
 
   // ---------------- FETCH USERS (Staff & Verifiers) ----------------
@@ -1113,64 +1106,71 @@ const AdminDashboard = () => {
     setMapPriorityFilter("All");
   };
 
+  const profileUserId = searchParams.get("userId");
+  const activeStaffProfile = activeView === "staff-profile"
+    ? users.find((user) => String(user.id) === profileUserId) ||
+      (profileUserId ? null : selectedUserProfile)
+    : selectedUserProfile;
+  const activeComplaintId = searchParams.get("complaintId") || selectedId;
+
   return (
     <>
-      {showProfile ? (
+      {activeView === "profile" ? (
         <AdminProfile
           adminId={admin.staffId || getUserId(storedAdmin)}
-          onBack={() => setShowProfile(false)}
+          onBack={returnToOverview}
         />
-      ) : showComplaintManagement ? (
-        <ComplaintManagement onBack={() => setShowComplaintManagement(false)} />
-      ) : showComplaintVerification ? (
-        <ComplaintVerification onBack={() => setShowComplaintVerification(false)} />
-      ) : showComplaintDetails ? (
+      ) : activeView === "complaint-management" ? (
+        <ComplaintManagement onBack={returnToOverview} />
+      ) : activeView === "complaint-verification" ? (
+        <ComplaintVerification onBack={returnToOverview} />
+      ) : activeView === "complaint-details" ? (
         <ComplaintDetails
           listType={complaintListType || "new"}
-          key={complaintListType || `detail-${String(complaints.find((complaint) => String(complaint.id) === String(selectedId))?.id || "list")}`}
-          complaint={complaintListType ? null : complaints.find((complaint) => String(complaint.id) === String(selectedId))}
+          key={complaintListType || `detail-${String(complaints.find((complaint) => String(complaint.id) === String(activeComplaintId))?.id || "list")}`}
+          complaint={complaintListType ? null : complaints.find((complaint) => String(complaint.id) === String(activeComplaintId))}
           staffOptions={adminStaffOptions}
           verifierOptions={adminVerifierOptions}
           assignmentsLoading={usersLoading}
           assignmentsError={usersLoadError}
           onComplaintUpdated={handleComplaintUpdated}
           onBack={() => {
-            setShowComplaintDetails(false);
             setSelectedId(null);
+            returnToOverview();
           }}
         />
-      ) : showStaffMonitoring ? (
-        <StaffWorkMonitoring onBack={() => setShowStaffMonitoring(false)} />
-      ) : showUpdatedComplaints ? (
+      ) : activeView === "staff-monitoring" ? (
+        <StaffWorkMonitoring onBack={returnToOverview} />
+      ) : activeView === "updated-complaints" ? (
         <UpdatedComplaints
           complaints={complaints}
           actorRoles={["staff", "admin", "verifier"]}
           audienceLabel="Staff, admin & verifier activity"
           listTitle="Staff, Admin & Verifier Updates"
-          onBack={() => setShowUpdatedComplaints(false)}
+          onBack={returnToOverview}
         />
-      ) : showReports ? (
-        <ReportsManagement onBack={() => setShowReports(false)} />
-      ) : showAdminManagement ? (
-        <AdminManagement onBack={() => setShowAdminManagement(false)} />
-      ) : showStaffVerifierProfile ? (
+      ) : activeView === "reports" ? (
+        <ReportsManagement onBack={returnToOverview} />
+      ) : activeView === "admin-management" ? (
+        <AdminManagement onBack={returnToOverview} />
+      ) : activeView === "staff-profile" ? (
         <StaffVerifierProfile
-          userId={selectedUserProfile?.id}
-          role={selectedUserProfile?.role || "staff"}
+          userId={activeStaffProfile?.id}
+          role={activeStaffProfile?.role || "staff"}
           usersList={users} // ✅ PASS THE FULL USERS ARRAY HERE
           onUserUpdated={handleManagedUserUpdated}
           onBack={() => {
-            setShowStaffVerifierProfile(false);
             setSelectedUserProfile(null);
+            returnToOverview();
           }}
         />
       )
 
-        : showNotificationMonitoring ? (
+        : activeView === "notification-monitoring" ? (
           <NotificationMonitoring
             onBack={() => {
-              setShowNotificationMonitoring(false);
               setInitialNotification(null);
+              returnToOverview();
             }}
             onOpenComplaint={handleOpenNotificationComplaint}
             initialNotification={initialNotification}
@@ -1196,7 +1196,7 @@ const AdminDashboard = () => {
                   <button type="button" className="ad-sb-link active" onClick={() => scrollTo("ad-top")}>
                     📊 System Overview
                   </button>
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowProfile)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("profile")}>
                     👤 My Profile
                   </button>
                 </nav>
@@ -1209,7 +1209,7 @@ const AdminDashboard = () => {
                     onClick={() => {
                       if (users.length > 0) {
                         setSelectedUserProfile(users[0]);
-                        setShowStaffVerifierProfile(true);
+                        openView("staff-profile", { userId: users[0].id });
                       }
                     }}
                   >
@@ -1217,12 +1217,12 @@ const AdminDashboard = () => {
                     <span className="ad-sb-badge">{users.length}</span>
                   </button>
 
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowAdminManagement)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("admin-management")}>
                     ⚙️ Admin Management
                     <span className="ad-sb-badge">{admins.length}</span>
                   </button>
 
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintManagement)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("complaint-management")}>
                     ⚙️ComplaintManagement
                     <span className="ad-sb-badge">{complaints.length}</span>
                   </button>
@@ -1232,8 +1232,7 @@ const AdminDashboard = () => {
                     className="ad-sb-link"
                     onClick={() => {
                       setSelectedId(null);
-                      setComplaintListType("new");
-                      openView(setShowComplaintDetails);
+                      openView("complaint-details", { listType: "new" });
                     }}
                   >
                     📈 New Complaints
@@ -1245,8 +1244,7 @@ const AdminDashboard = () => {
                     className="ad-sb-link"
                     onClick={() => {
                       setSelectedId(null);
-                      setComplaintListType("assigned");
-                      openView(setShowComplaintDetails);
+                      openView("complaint-details", { listType: "assigned" });
                     }}
                   >
                     📋 Assigned Complaints
@@ -1254,18 +1252,18 @@ const AdminDashboard = () => {
                   </button>
 
                   
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowUpdatedComplaints)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("updated-complaints")}>
                     📋 Updated Complaints
                     <span className="ad-sb-badge">{updatedComplaintCount}</span>
                   </button>
 
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowStaffMonitoring)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("staff-monitoring")}>
                     🧑‍Staff&Work Monitoring
                     <span className="ad-sb-badge">{users.filter((user) => user.role === "staff").length}</span>
                   </button>
 
 
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowComplaintVerification)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("complaint-verification")}>
                     📈 Complaint Verification
                     <span className="ad-sb-badge">{verificationComplaintCount}</span>
                   </button>
@@ -1273,10 +1271,10 @@ const AdminDashboard = () => {
 
                 <div className="ad-sb-label">Insights</div>
                 <nav className="ad-sb-nav">
-                  <button type="button" className="ad-sb-link" onClick={() => openView(setShowReports)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("reports")}>
                     📈Reports Management
                   </button>
-                  <button type="button" className="ad-sb-link" onClick={() => setShowNotificationMonitoring(true)}>
+                  <button type="button" className="ad-sb-link" onClick={() => openView("notification-monitoring")}>
                 🔔NotificationMonitoring
                     <span className="ad-sb-badge">{notificationFeed.length}</span>
                   </button>
@@ -1544,7 +1542,7 @@ const AdminDashboard = () => {
                                     <td className="ad-mono">{u.contact}</td>
                                     <td className="ad-mono">{u.joined || (u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-")}</td>
                                     <td>
-                                      <button className="ad-btn-outline small" type="button" onClick={() => { setSelectedUserProfile(u); setShowStaffVerifierProfile(true); }} title="View Profile" style={{ marginRight: "4px" }}>👁️</button>
+                                      <button className="ad-btn-outline small" type="button" onClick={() => { setSelectedUserProfile(u); openView("staff-profile", { userId: u.id }); }} title="View Profile" style={{ marginRight: "4px" }}>👁️</button>
                                       <button className="ad-btn-outline small" type="button" onClick={() => editUser(u)} title="Edit" style={{ marginRight: "4px" }}>✏️</button>
                                       <button className="ad-icon-btn small danger" type="button" onClick={() => setConfirmDeleteUserId(u.id)} title="Remove user">🗑️</button>
                                     </td>
@@ -1826,8 +1824,7 @@ const AdminDashboard = () => {
                                         className="ad-btn-primary small" 
                                         onClick={() => {
                                           setSelectedId(c.id);
-                                          setComplaintListType(null);
-                                          setShowComplaintDetails(true);
+                                          openView("complaint-details", { complaintId: c.id });
                                         }}
                                       >
                                         View Details
@@ -2044,7 +2041,7 @@ const AdminDashboard = () => {
                       <button
                         type="button"
                         className="ad-panel-link ad-notif-monitor-link"
-                        onClick={() => setShowNotificationMonitoring(true)}
+                        onClick={() => openView("notification-monitoring")}
                       >
                         Complete System Monitoring
                       </button>

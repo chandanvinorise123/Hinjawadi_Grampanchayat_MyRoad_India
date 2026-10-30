@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import "./verifierdashboard.css";
 import logo from "../assets/logo.jpeg";
 import { fetchDashboard, fetchDashboardUsers, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
@@ -206,6 +206,8 @@ const colorForCategory = (category) => {
 const VerifierDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = searchParams.get("view");
   const storedUser = getStoredUser();
   const [verifier, setVerifier] = useState({
     name: storedUser.name || "",
@@ -220,30 +222,31 @@ const VerifierDashboard = () => {
   const [items, setItems] = useState([]);
   const [staffOptions, setStaffOptions] = useState([]);
   const [assignmentSavingId, setAssignmentSavingId] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
-  const [detailStaffId, setDetailStaffId] = useState("");
-  const [showMapView, setShowMapView] = useState(false);
+  const [selectedId, setSelectedId] = useState(searchParams.get("complaintId"));
+  const [detailStaffId, setDetailStaffId] = useState(searchParams.get("staffId") || "");
   const [remarksDraft, setRemarksDraft] = useState("");
-  const [showProfile, setShowProfile] = useState(false);
-  const [showNewComplaints, setShowNewComplaints] = useState(false);
-  const [showComplaintAssigned, setShowComplaintAssigned] = useState(false);
-  const [showCompletedWork, setShowCompletedWork] = useState(false);
-  const [showWorkVerification, setShowWorkVerification] = useState(false);
-  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
-  const [showReverification, setShowReverification] = useState(false);
-  const [showPhysicalVerification, setShowPhysicalVerification] = useState(false);
-  const [showComplaintHistory, setShowComplaintHistory] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const showProfile = activeView === "profile";
+  const showNewComplaints = activeView === "new";
+  const showComplaintAssigned = activeView === "complaint-assigned";
+  const showCompletedWork = activeView === "completed";
+  const showWorkVerification = activeView === "work-verification";
+  const showUpdatedComplaints = activeView === "updated-complaints";
+  const showReverification = activeView === "reverification";
+  const showPhysicalVerification = activeView === "physical";
+  const showComplaintHistory = activeView === "history";
+  const showNotifications = activeView === "notifications";
   const [notifications, setNotifications] = useState([]);
-  const [showViewLocation, setShowViewLocation] = useState(false);
+  const showViewLocation = activeView === "location";
   const [actionMessage, setActionMessage] = useState("");
   const [actionSaving, setActionSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showDetailView, setShowDetailView] = useState(false);
-  const [showActivityModal, setShowActivityModal] = useState(false);
+  const showDetailView = activeView === "detail";
+  const showActivityModal = activeView === "activity";
   const [activityComplaint, setActivityComplaint] = useState(null);
-  const [activeNav, setActiveNav] = useState("dashboard");
+  const activeNav = activeView === "detail" || activeView === "activity"
+    ? searchParams.get("section") || "dashboard"
+    : activeView || searchParams.get("section") || "dashboard";
   const verifierId = getUserId(storedUser);
   const assignedComplaints = items.filter((complaint) =>
     hasComplaintAssignee(complaint.assignedStaffId) ||
@@ -271,49 +274,41 @@ const VerifierDashboard = () => {
     };
   };
 
-  const openView = (setter) => {
-    setShowProfile(false);
-    setShowNewComplaints(false);
-    setShowComplaintAssigned(false);
-    setShowCompletedWork(false);
-    setShowWorkVerification(false);
-    setShowUpdatedComplaints(false);
-    setShowReverification(false);
-    setShowPhysicalVerification(false);
-    setShowComplaintHistory(false);
-    setShowNotifications(false);
-    setShowViewLocation(false);
-    setShowDetailView(false);
-    setShowActivityModal(false);
-    setter(true);
+  const openView = (view, params = {}) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set("view", view);
+    if (searchParams.get("map") === "1") nextSearchParams.set("map", "1");
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        nextSearchParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextSearchParams);
   };
 
-  const selectView = (view, setter) => {
-    setActiveNav(view);
-    openView(setter);
-  };
-
+  const selectView = (view) => openView(view);
   const returnToDashboard = () => {
-    setShowProfile(false);
-    setShowNewComplaints(false);
-    setShowComplaintAssigned(false);
-    setShowCompletedWork(false);
-    setShowWorkVerification(false);
-    setShowUpdatedComplaints(false);
-    setShowReverification(false);
-    setShowPhysicalVerification(false);
-    setShowComplaintHistory(false);
-    setShowNotifications(false);
-    setShowViewLocation(false);
-    setShowDetailView(false);
-    setShowActivityModal(false);
-    setActiveNav("dashboard");
+    const nextSearchParams = new URLSearchParams();
+    if (searchParams.get("map") === "1") nextSearchParams.set("map", "1");
+    setSearchParams(nextSearchParams);
+  };
+
+  const setMapViewVisible = (visible) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (visible) {
+      nextSearchParams.set("map", "1");
+    } else {
+      nextSearchParams.delete("map");
+    }
+    setSearchParams(nextSearchParams);
   };
 
   useEffect(() => {
     if (!location.state?.openProfile) return;
-    openView(setShowProfile);
-    navigate(location.pathname, { replace: true, state: null });
+    navigate(
+      { pathname: location.pathname, search: "?view=profile" },
+      { replace: true, state: null }
+    );
   }, [location.state, location.pathname, navigate]);
 
   const selected = items.find((c) => c.id === selectedId) || items[0] || {
@@ -321,6 +316,8 @@ const VerifierDashboard = () => {
     citizenName: "", citizenContact: "", description: "", status: "pending",
     queue: "New Complaints", photos: {}, log: [],
   };
+  const activeActivityComplaint = activityComplaint ||
+    items.find((complaint) => String(complaint.id) === searchParams.get("complaintId"));
 
   useEffect(() => {
     let active = true;
@@ -441,12 +438,19 @@ const VerifierDashboard = () => {
   const handleViewDetails = (complaint) => {
     setSelectedId(complaint.id);
     setDetailStaffId(getAssignedStaffId(complaint));
-    setShowDetailView(true);
     setRemarksDraft(complaint.remarks || "");
+    openView("detail", {
+      complaintId: complaint.id,
+      section: activeNav,
+      staffId: getAssignedStaffId(complaint),
+    });
   };
 
   const handleBackToList = () => {
-    setShowDetailView(false);
+    const nextSearchParams = new URLSearchParams();
+    if (searchParams.get("map") === "1") nextSearchParams.set("map", "1");
+    if (activeNav !== "dashboard") nextSearchParams.set("section", activeNav);
+    setSearchParams(nextSearchParams);
   };
 
   // ✅ NEW: Quick verify action from table
@@ -454,18 +458,26 @@ const VerifierDashboard = () => {
     setSelectedId(complaint.id);
     setDetailStaffId(getAssignedStaffId(complaint));
     setRemarksDraft(complaint.remarks || "");
-    setShowDetailView(true);
+    openView("detail", {
+      complaintId: complaint.id,
+      section: activeNav,
+      staffId: getAssignedStaffId(complaint),
+    });
   };
 
   // ✅ NEW: Show activity modal for a complaint
   const handleShowActivity = (complaint) => {
     setActivityComplaint(complaint);
-    setShowActivityModal(true);
+    openView("activity", { complaintId: complaint.id, section: activeNav });
   };
 
   const handleCloseActivityModal = () => {
-    setShowActivityModal(false);
     setActivityComplaint(null);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("view");
+    nextSearchParams.delete("complaintId");
+    nextSearchParams.delete("section");
+    setSearchParams(nextSearchParams);
   };
 
   const handleUpdateProfile = async (updatedVerifier) => {
@@ -871,13 +883,13 @@ const VerifierDashboard = () => {
 
           <div className="vd-sb-label">Overview</div>
           <nav className="vd-sb-nav">
-            <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { setActiveNav("dashboard"); setShowDetailView(false); }}>
+            <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={returnToDashboard}>
               📊 Dashboard
             </button>
-            <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
+            <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile")}>
               👤 My Profile
             </button>
-            <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
+            <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned")}>
               📋 Complaint Assigned
               <span className="vd-sb-badge">{assignedComplaints.length}</span>
             </button>
@@ -1277,36 +1289,36 @@ const VerifierDashboard = () => {
 
         <div className="vd-sb-label">Overview</div>
         <nav className="vd-sb-nav">
-          <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { setActiveNav("dashboard"); scrollTo("vd-top"); }}>
+          <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { returnToDashboard(); scrollTo("vd-top"); }}>
             📊 Dashboard
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile")}>
             👤 My Profile
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new", setShowNewComplaints)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "new" ? "active" : ""}`} onClick={() => selectView("new")}>
             🆕 New Complaints
             <span className="vd-sb-badge">{items.filter(isNewVerifierComplaint).length}</span>
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned", setShowComplaintAssigned)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "complaint-assigned" ? "active" : ""}`} onClick={() => selectView("complaint-assigned")}>
             📋 Complaint Assigned
             <span className="vd-sb-badge">{assignedComplaints.length}</span>
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "work-verification" ? "active" : ""}`} onClick={() => selectView("work-verification", setShowWorkVerification)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "work-verification" ? "active" : ""}`} onClick={() => selectView("work-verification")}>
             ✅ Work Verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "updated-complaints" ? "active" : ""}`} onClick={() => selectView("updated-complaints", setShowUpdatedComplaints)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "updated-complaints" ? "active" : ""}`} onClick={() => selectView("updated-complaints")}>
             📋 Updated Complaints
           </button>
         </nav>
 
         <div className="vd-sb-label">Verification Queues</div>
         <nav className="vd-sb-nav">
-          <button type="button" className={`vd-sb-link ${activeNav === "completed" ? "active" : ""}`} onClick={() => selectView("completed", setShowCompletedWork)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "completed" ? "active" : ""}`} onClick={() => selectView("completed")}>
             🛠️ Completed Work
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "reverification" ? "active" : ""}`} onClick={() => selectView("reverification", setShowReverification)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "reverification" ? "active" : ""}`} onClick={() => selectView("reverification")}>
             ️🔍Re-verification
             <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
           </button>
@@ -1314,17 +1326,17 @@ const VerifierDashboard = () => {
 
         <div className="vd-sb-label">Tools & Actions</div>
         <nav className="vd-sb-nav">
-          <button type="button" className={`vd-sb-link ${activeNav === "physical" ? "active" : ""}`} onClick={() => selectView("physical", setShowPhysicalVerification)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "physical" ? "active" : ""}`} onClick={() => selectView("physical")}>
             🔍Physical Verification
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "history" ? "active" : ""}`} onClick={() => selectView("history", setShowComplaintHistory)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "history" ? "active" : ""}`} onClick={() => selectView("history")}>
             📜Complaint History
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications")}>
             🔔 Notifications
             <span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span>
           </button>
-          <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location", setShowViewLocation)}>
+          <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location")}>
             🗺️ View Location
           </button>
         </nav>
@@ -1537,20 +1549,20 @@ const VerifierDashboard = () => {
           </div>
 
           {/* ✅ ACTIVITY LOG MODAL */}
-          {showActivityModal && activityComplaint && (
+          {showActivityModal && activeActivityComplaint && (
             <div className="vd-activity-modal-overlay" onClick={handleCloseActivityModal}>
               <div className="vd-activity-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="vd-activity-modal-header">
                   <div>
                     <h3>Activity Log</h3>
-                    <span className="vd-mono vd-faint">{activityComplaint.complaintNumber}</span>
+                    <span className="vd-mono vd-faint">{activeActivityComplaint.complaintNumber}</span>
                   </div>
                   <button className="vd-activity-modal-close" onClick={handleCloseActivityModal}>✕</button>
                 </div>
                 <div className="vd-activity-modal-body">
-                  {activityComplaint.log && activityComplaint.log.length > 0 ? (
+                  {activeActivityComplaint.log && activeActivityComplaint.log.length > 0 ? (
                     <div className="vd-activity-list">
-                      {activityComplaint.log.map((note, i) => (
+                      {activeActivityComplaint.log.map((note, i) => (
                         <div className="vd-activity-item" key={i}>
                           <span className="vd-activity-dot"></span>
                           <div className="vd-activity-content">
@@ -1593,7 +1605,7 @@ const VerifierDashboard = () => {
               className="vd-quick-card"
               type="button"
               onClick={() => {
-                setShowMapView(true);
+                setMapViewVisible(true);
                 scrollTo("map-section");
               }}
             >

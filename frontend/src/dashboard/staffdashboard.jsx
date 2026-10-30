@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
 import "./staffdashboard.css";
 import logo from "../assets/logo.jpeg";
@@ -79,6 +79,8 @@ const mapStaffComplaint = (complaint) => ({
 const StaffDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = searchParams.get("view");
   const { isLoaded: isStaffMapLoaded, loadError: staffMapError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
@@ -105,45 +107,62 @@ const StaffDashboard = () => {
   const [allAssignedComplaints, setAllAssignedComplaints] = useState([]);
   const [assignedComplaintsError, setAssignedComplaintsError] = useState("");
   const [notifications, setNotifications] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(searchParams.get("complaintId"));
   const [selectedMapComplaint, setSelectedMapComplaint] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showMapView, setShowMapView] = useState(false);
+  const showMapView = searchParams.get("map") === "1";
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // ✅ Full Page Navigation States
-  const [showProfile, setShowProfile] = useState(false);
-  const [showAssignedComplaints, setShowAssignedComplaints] = useState(false);
-  const [showNewComplaints, setShowNewComplaints] = useState(false);
-  const [showAllAssignedComplaints, setShowAllAssignedComplaints] = useState(false);
-  const [showComplaintDetails, setShowComplaintDetails] = useState(false);
-  const [showPhysicalInspection, setShowPhysicalInspection] = useState(false);
-  const [showActionWorkManagement, setShowActionWorkManagement] = useState(false);
-  const [showComplaintStatus, setShowComplaintStatus] = useState(false);
-  const [showComplaintHistory, setShowComplaintHistory] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const showProfile = activeView === "profile";
+  const showAssignedComplaints = activeView === "assigned-complaints";
+  const showNewComplaints = activeView === "new-complaints";
+  const showAllAssignedComplaints = activeView === "all-assigned-complaints";
+  const showComplaintDetails = activeView === "complaint-details";
+  const showPhysicalInspection = activeView === "physical-inspection";
+  const showActionWorkManagement = activeView === "action-work-management";
+  const showComplaintStatus = activeView === "complaint-status";
+  const showComplaintHistory = activeView === "complaint-history";
+  const showNotifications = activeView === "notifications";
   const [notificationToOpen, setNotificationToOpen] = useState(null);
-  const [showLocationMap, setShowLocationMap] = useState(false);
+  const showLocationMap = activeView === "location-map";
 
-  const openView = (setter) => {
-    setShowProfile(false);
-    setShowAssignedComplaints(false);
-    setShowNewComplaints(false);
-    setShowAllAssignedComplaints(false);
-    setShowComplaintDetails(false);
-    setShowPhysicalInspection(false);
-    setShowActionWorkManagement(false);
-    setShowComplaintStatus(false);
-    setShowComplaintHistory(false);
-    setShowNotifications(false);
-    setShowLocationMap(false);
-    setter(true);
+  const openView = (view, params = {}) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set("view", view);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        nextSearchParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextSearchParams);
+  };
+
+  const returnToOverview = () => setSearchParams({});
+
+  const setMapViewVisible = (visible) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (visible) {
+      nextSearchParams.set("map", "1");
+    } else {
+      nextSearchParams.delete("map");
+    }
+    setSearchParams(nextSearchParams);
+  };
+
+  const clearNotificationSelection = () => {
+    setNotificationToOpen(null);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("notificationId");
+    setSearchParams(nextSearchParams);
   };
 
   useEffect(() => {
     if (!location.state?.openProfile) return;
-    openView(setShowProfile);
-    navigate(location.pathname, { replace: true, state: null });
+    navigate(
+      { pathname: location.pathname, search: "?view=profile" },
+      { replace: true, state: null }
+    );
   }, [location.state, location.pathname, navigate]);
 
   const selected = complaints.find((c) => c.id === selectedId) || complaints[0] || {
@@ -470,7 +489,7 @@ const StaffDashboard = () => {
     return (
       <MyProfile
         initialStaff={staff}
-        onBack={() => setShowProfile(false)}
+        onBack={returnToOverview}
         onUpdate={handleUpdateProfile}
       />
     );
@@ -483,7 +502,7 @@ const StaffDashboard = () => {
         staffId={staff.staffId}
         staffName={staff.name}
         staffUserId={getUserId(storedUser)}
-        onBack={() => setShowAssignedComplaints(false)}
+        onBack={returnToOverview}
       />
     );
   }
@@ -495,7 +514,7 @@ const StaffDashboard = () => {
         staffId={staff.staffId}
         staffName={staff.name}
         staffUserId={getUserId(storedUser)}
-        onBack={() => setShowNewComplaints(false)}
+        onBack={returnToOverview}
         newAssignments
         loadError={newComplaintsError}
       />
@@ -509,7 +528,7 @@ const StaffDashboard = () => {
         staffId={staff.staffId}
         staffName={staff.name}
         staffUserId={getUserId(storedUser)}
-        onBack={() => setShowAllAssignedComplaints(false)}
+        onBack={returnToOverview}
         allAssigned
         loadError={assignedComplaintsError}
       />
@@ -520,7 +539,7 @@ const StaffDashboard = () => {
     return (
       <ComplaintDetails
         complaints={complaints}
-        onBack={() => setShowComplaintDetails(false)}
+        onBack={returnToOverview}
       />
     );
   }
@@ -529,7 +548,7 @@ const StaffDashboard = () => {
     return (
       <PhysicalInspection
         complaints={complaints}
-        onBack={() => setShowPhysicalInspection(false)}
+        onBack={returnToOverview}
         onSaveInspection={handleSaveInspection}
       />
     );
@@ -539,7 +558,7 @@ const StaffDashboard = () => {
     return (
       <ActionWorkManagement
         complaints={complaints}
-        onBack={() => setShowActionWorkManagement(false)}
+        onBack={returnToOverview}
         onUpdateWork={handleUpdateWork}
       />
     );
@@ -549,7 +568,7 @@ const StaffDashboard = () => {
     return (
       <ComplaintStatus
         complaints={complaints}
-        onBack={() => setShowComplaintStatus(false)}
+        onBack={returnToOverview}
         onWorkUpdate={handleUpdateWork}
       />
     );
@@ -560,7 +579,7 @@ const StaffDashboard = () => {
       <ComplaintHistory
         complaints={complaints}
         selectedId={selectedId}
-        onBack={() => setShowComplaintHistory(false)}
+        onBack={returnToOverview}
       />
     );
   }
@@ -569,9 +588,11 @@ const StaffDashboard = () => {
     return (
       <Notifications
         notifications={notifications}
-        initialSelectedNotification={notificationToOpen}
-        onInitialSelectionHandled={() => setNotificationToOpen(null)}
-        onBack={() => setShowNotifications(false)}
+        initialSelectedNotification={notificationToOpen || notifications.find(
+          (notification) => String(notification.id) === searchParams.get("notificationId")
+        ) || null}
+        onInitialSelectionHandled={clearNotificationSelection}
+        onBack={returnToOverview}
         onMarkAsRead={handleMarkAsRead}
         onMarkAllRead={handleMarkAllRead}
       />
@@ -583,7 +604,7 @@ const StaffDashboard = () => {
       <LocationMap
         complaints={complaints}
         ward={staff.ward}
-        onBack={() => setShowLocationMap(false)}
+        onBack={returnToOverview}
       />
     );
   }
@@ -614,14 +635,14 @@ const StaffDashboard = () => {
           <button type="button" className="sd-sb-link active" onClick={() => scrollTo("sd-top")}>
             📊 Dashboard
           </button>
-          <button type="button" className="sd-sb-link" onClick={() => openView(setShowProfile)}>
+          <button type="button" className="sd-sb-link" onClick={() => openView("profile")}>
             👤 My Profile
           </button>
 
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowAllAssignedComplaints)}
+            onClick={() => openView("all-assigned-complaints")}
           >
             📋 Complaint Assigned
             <span className="sd-sb-badge">{allAssignedComplaints.length}</span>
@@ -636,7 +657,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowNewComplaints)}
+            onClick={() => openView("new-complaints")}
           >
             🆕 New Complaints
             <span className="sd-sb-badge">
@@ -647,7 +668,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowAssignedComplaints)}
+            onClick={() => openView("assigned-complaints")}
           >
           🗂️MyComplaints
             <span className="sd-sb-badge">
@@ -661,7 +682,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowActionWorkManagement)}
+            onClick={() => openView("action-work-management")}
           >
             ⚙️Action/Work Management
           </button>
@@ -669,7 +690,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowComplaintStatus)}
+            onClick={() => openView("complaint-status")}
           >
             ⚙️ Complaint Status Update
           </button>
@@ -679,7 +700,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowComplaintDetails)}
+            onClick={() => openView("complaint-details")}
           >
             📋UpdatedComplaint
           </button>
@@ -689,7 +710,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowPhysicalInspection)}
+            onClick={() => openView("physical-inspection")}
           >
             🔎 Physical Inspection
           </button>
@@ -705,14 +726,14 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowComplaintHistory)}
+            onClick={() => openView("complaint-history")}
           >
             🕘 Complaint History
           </button>
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowNotifications)}
+            onClick={() => openView("notifications")}
           >
             🔔 Notifications
             <span className="sd-sb-badge">
@@ -722,7 +743,7 @@ const StaffDashboard = () => {
           <button
             type="button"
             className="sd-sb-link"
-            onClick={() => openView(setShowLocationMap)}
+            onClick={() => openView("location-map")}
           >
             🗺️ View Location on Map
           </button>
@@ -863,7 +884,7 @@ const StaffDashboard = () => {
                               title={`View full details for ${c.complaintNumber}`}
                               onClick={() => {
                                 setSelectedId(c.id);
-                                openView(setShowComplaintDetails);
+                                openView("complaint-details", { complaintId: c.id });
                               }}
                             >
                               View Details
@@ -1021,7 +1042,7 @@ const StaffDashboard = () => {
                               className="sd-notif-view-btn"
                               onClick={() => {
                                 setNotificationToOpen(note);
-                                openView(setShowNotifications);
+                                openView("notifications", { notificationId: note.id });
                               }}
                             >
                               View Details
@@ -1088,7 +1109,7 @@ const StaffDashboard = () => {
                 <h3>🗺️ Assigned Locations — {staff.ward}</h3>
                 <span
                   className="sd-panel-link"
-                  onClick={() => setShowMapView(false)}
+                  onClick={() => setMapViewVisible(false)}
                   style={{ cursor: "pointer" }}
                 >
                   Hide Map View
@@ -1191,7 +1212,7 @@ const StaffDashboard = () => {
               className="sd-quick-card"
               type="button"
               onClick={() => {
-                setShowMapView(true);
+                setMapViewVisible(true);
                 scrollTo("map-section");
               }}
             >

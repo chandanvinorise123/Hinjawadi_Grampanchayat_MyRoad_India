@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import "./citizendashboard.css";
 import logo from "../assets/logo.jpeg"; // ⚠ make sure this file name + extension exist in src/assets
 
@@ -192,6 +192,8 @@ const Icons = {
 const CitizenDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = searchParams.get("view");
   const stored = getStoredUser();
 
   // ---------------- STATE VARIABLES ----------------
@@ -210,8 +212,8 @@ const CitizenDashboard = () => {
   const [editText, setEditText] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [showMapView, setShowMapView] = useState(false);
+  const showNewForm = activeView === "new-form";
+  const showMapView = searchParams.get("map") === "1";
   const [gpsBusy, setGpsBusy] = useState(false);
   const [complaintsLoading, setComplaintsLoading] = useState(false);
   const [complaintsError, setComplaintsError] = useState("");
@@ -224,15 +226,14 @@ const CitizenDashboard = () => {
   });
 
   // Page visibility states
-  const [showProfile, setShowProfile] = useState(false);
-  const [showMyComplaints, setShowMyComplaints] = useState(false);
-  const [showUpdatedComplaints, setShowUpdatedComplaints] = useState(false);
-  const [showTrackComplaint, setShowTrackComplaint] = useState(false);
-  const [initialTrackComplaintNumber, setInitialTrackComplaintNumber] = useState("");
-  const [showComplaintDetails, setShowComplaintDetails] = useState(false);
-  const [showIssueMap, setShowIssueMap] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showRecentActivity, setShowRecentActivity] = useState(false);
+  const showProfile = activeView === "profile";
+  const showMyComplaints = activeView === "my-complaints";
+  const showUpdatedComplaints = activeView === "updated-complaints";
+  const showTrackComplaint = activeView === "track-complaint";
+  const showComplaintDetails = activeView === "complaint-details";
+  const showIssueMap = activeView === "issue-map";
+  const showNotifications = activeView === "notifications";
+  const showRecentActivity = activeView === "recent-activity";
   const [logoFailed, setLogoFailed] = useState(false);
 
   // ✅ NEW: Helper to get auth headers with token
@@ -244,16 +245,27 @@ const CitizenDashboard = () => {
     };
   };
 
-  const openView = (setter) => {
-    setShowProfile(false);
-    setShowMyComplaints(false);
-    setShowUpdatedComplaints(false);
-    setShowTrackComplaint(false);
-    setShowComplaintDetails(false);
-    setShowIssueMap(false);
-    setShowNotifications(false);
-    setShowRecentActivity(false);
-    setter(true);
+  const openView = (view, params = {}) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set("view", view);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        nextSearchParams.set(key, String(value));
+      }
+    });
+    setSearchParams(nextSearchParams);
+  };
+
+  const returnToOverview = () => setSearchParams({});
+
+  const setMapViewVisible = (visible) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (visible) {
+      nextSearchParams.set("map", "1");
+    } else {
+      nextSearchParams.delete("map");
+    }
+    setSearchParams(nextSearchParams);
   };
 
   // ---------------- HANDLERS ----------------
@@ -425,7 +437,7 @@ const CitizenDashboard = () => {
         setNotifications(dashboardResult.notifications || []);
       }
       setNewComplaint({ category: "", issue: "", location: "", description: "", photo: "", gps: "" });
-      setShowNewForm(false);
+      returnToOverview();
     } catch (error) {
       console.error("Create complaint error:", error);
       alert(error.message || "Unable to register complaint.");
@@ -582,16 +594,21 @@ const CitizenDashboard = () => {
   useEffect(() => {
     const s = location.state;
     if (!s) return;
-    if (s.openForm) setShowNewForm(true);
+    const nextSearchParams = new URLSearchParams(location.search);
+    if (s.openForm) nextSearchParams.set("view", "new-form");
     if (s.openTrack) {
-      setInitialTrackComplaintNumber(s.trackComplaintNumber || "");
-      setShowTrackComplaint(true);
+      nextSearchParams.set("view", "track-complaint");
+      if (s.trackComplaintNumber) {
+        nextSearchParams.set("complaintNumber", String(s.trackComplaintNumber));
+      }
     }
-    if (s.openMap) setShowMapView(true);
+    if (s.openMap) nextSearchParams.set("map", "1");
     if (s.scrollTo) setTimeout(() => scrollTo(s.scrollTo), 50);
-    navigate(location.pathname, { replace: true, state: null });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
+    navigate(
+      { pathname: location.pathname, search: nextSearchParams.toString() ? `?${nextSearchParams}` : "" },
+      { replace: true, state: null }
+    );
+  }, [location.pathname, location.search, location.state, navigate]);
 
   // ---------------- DERIVED VALUES ----------------
   const selectedComplaint = complaints.find((c) => c.id === selectedId) || complaints[0];
@@ -614,8 +631,8 @@ const CitizenDashboard = () => {
   }, {});
 
   // ✅ CONDITIONAL RENDERING (Must be AFTER all hooks, BEFORE main return)
-  if (showProfile) return <MyProfile onBack={() => setShowProfile(false)} />;
-  if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={() => setShowMyComplaints(false)} onDelete={handleDelete} />;
+  if (showProfile) return <MyProfile onBack={returnToOverview} />;
+  if (showMyComplaints) return <MyComplaints complaints={complaints} onBack={returnToOverview} onDelete={handleDelete} />;
   if (showUpdatedComplaints) return (
     <UpdatedComplaints
       complaints={complaints}
@@ -623,19 +640,19 @@ const CitizenDashboard = () => {
       audienceLabel="Staff, admin & verifier activity"
       listTitle="Staff, Admin & Verifier Updates"
       showUpdateHistory={false}
-      onBack={() => setShowUpdatedComplaints(false)}
+      onBack={returnToOverview}
     />
   );
   if (showTrackComplaint) return (
     <TrackComplaint
-      onBack={() => setShowTrackComplaint(false)}
-      initialComplaintId={initialTrackComplaintNumber}
+      onBack={returnToOverview}
+      initialComplaintId={searchParams.get("complaintNumber") || ""}
     />
   );
-  if (showComplaintDetails) return <ComplaintsDetails complaints={complaints} onBack={() => setShowComplaintDetails(false)} />;
-  if (showIssueMap) return <IssueMap complaints={complaints} onBack={() => setShowIssueMap(false)} />;
-  if (showNotifications) return <Notifications onBack={() => setShowNotifications(false)} />;
-  if (showRecentActivity) return <RecentActivity onBack={() => setShowRecentActivity(false)} />;
+  if (showComplaintDetails) return <ComplaintsDetails complaints={complaints} onBack={returnToOverview} />;
+  if (showIssueMap) return <IssueMap complaints={complaints} onBack={returnToOverview} />;
+  if (showNotifications) return <Notifications onBack={returnToOverview} />;
+  if (showRecentActivity) return <RecentActivity onBack={returnToOverview} />;
 
   // ✅ MAIN DASHBOARD RENDER
   return (
@@ -666,7 +683,7 @@ const CitizenDashboard = () => {
           <button type="button" className="cdp-sb-link active" onClick={() => scrollTo("cdp-top")}>
             <Icons.Dashboard /> Dashboard
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowProfile)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("profile")}>
             <Icons.Profile /> My Profile
           </button>
         </nav>
@@ -676,38 +693,37 @@ const CitizenDashboard = () => {
           <button type="button" className="cdp-sb-link" onClick={goToReportIssue}>
             <Icons.Report /> Report an Issue
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowMyComplaints)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("my-complaints")}>
             <Icons.Complaints /> My Complaints
             <span className="cdp-sb-badge">{complaints.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowUpdatedComplaints)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("updated-complaints")}>
             <Icons.Details /> Updated Complaints
           </button>
           <button
             type="button"
             className="cdp-sb-link"
             onClick={() => {
-              setInitialTrackComplaintNumber("");
-              openView(setShowTrackComplaint);
+              openView("track-complaint");
             }}
           >
             <Icons.Track /> Track Complaint
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowComplaintDetails)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("complaint-details")}>
             <Icons.Details /> Complaint Details
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowIssueMap)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("issue-map")}>
             <Icons.Map /> Issues Map
           </button>
         </nav>
 
         <div className="cdp-sb-label">Activity</div>
         <nav className="cdp-sb-nav">
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowNotifications)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("notifications")}>
             <Icons.Bell /> Notifications
             <span className="cdp-sb-badge">{notifications.length}</span>
           </button>
-          <button type="button" className="cdp-sb-link" onClick={() => openView(setShowRecentActivity)}>
+          <button type="button" className="cdp-sb-link" onClick={() => openView("recent-activity")}>
             <Icons.Clock /> Recent Activity
           </button>
           {/* ✅ FIXED: Proper Logout Button */}
@@ -750,12 +766,12 @@ const CitizenDashboard = () => {
               type="button"
               className="cdp-icon-btn"
               aria-label="Notifications"
-              onClick={() => openView(setShowNotifications)}
+              onClick={() => openView("notifications")}
             >
               <Icons.Bell />
               <span className="cdp-tb-dot"></span>
             </button>
-            <div className="cdp-tb-user" onClick={() => openView(setShowProfile)}>
+            <div className="cdp-tb-user" onClick={() => openView("profile")}>
               <div className="cdp-tb-avatar">
                 {profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : initials}
               </div>
@@ -1052,7 +1068,7 @@ const CitizenDashboard = () => {
                   </label>
                 </div>
                 <div className="cdp-form-actions">
-                  <button className="cdp-btn-outline" type="button" onClick={() => setShowNewForm(false)}>Cancel</button>
+                  <button className="cdp-btn-outline" type="button" onClick={returnToOverview}>Cancel</button>
                   <button className="cdp-btn-primary" type="submit">Submit Complaint →</button>
                 </div>
               </form>
@@ -1064,7 +1080,7 @@ const CitizenDashboard = () => {
             <div className="cdp-panel cdp-form-panel" id="map-section">
               <div className="cdp-panel-head">
                 <h3>Reported Issues Near {profile.ward}</h3>
-                <span className="cdp-panel-link cdp-clickable" onClick={() => setShowMapView(false)}>Hide Map View</span>
+                <span className="cdp-panel-link cdp-clickable" onClick={() => setMapViewVisible(false)}>Hide Map View</span>
               </div>
               <div className="cdp-map-grid">
                 {Object.entries(mapGroups).map(([loc, items]) => (
@@ -1092,7 +1108,7 @@ const CitizenDashboard = () => {
               <div className="cdp-quick-ic saffron">🔍</div>
               <div><h5>Track a Complaint</h5><p>Check status by complaint ID</p></div>
             </button>
-            <button className="cdp-quick-card" type="button" onClick={() => { setShowMapView(true); setTimeout(() => scrollTo("map-section"), 50); }}>
+            <button className="cdp-quick-card" type="button" onClick={() => { setMapViewVisible(true); setTimeout(() => scrollTo("map-section"), 50); }}>
               <div className="cdp-quick-ic green">🗺️</div>
               <div><h5>View Issues Map</h5><p>See reports near your ward</p></div>
             </button>
