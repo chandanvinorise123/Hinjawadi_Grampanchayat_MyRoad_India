@@ -114,7 +114,6 @@ const ReportedImagesSection = ({ onOpenImage }) => {
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState("");
   const [openCommentCardKey, setOpenCommentCardKey] = useState(null);
-  const [photoViews, setPhotoViews] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [pendingActions, setPendingActions] = useState(() => new Set());
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -439,20 +438,39 @@ const ReportedImagesSection = ({ onOpenImage }) => {
                   ["verified", "resolved", "closed"].includes(
                     String(image.status || "").toLowerCase()
                   );
-                const showAfterPhoto =
-                  showBeforeAfter && photoViews[image.id] === "after";
-                const photoUrl = showAfterPhoto
-                  ? image.afterImageUrl
-                  : image.imageUrl;
-                const photoAlt = showAfterPhoto
-                  ? t("blog.liveUpdates.afterImageAlt", {
-                      issue: image.issueType || image.category || t("blog.liveUpdates.reportedIssue"),
-                      location: image.location || "Hinjawadi",
-                    })
-                  : t("blog.liveUpdates.imageAlt", {
-                      issue: image.issueType || image.category || t("blog.liveUpdates.reportedIssue"),
-                      location: image.location || "Hinjawadi",
-                    });
+                const issue = image.issueType || image.category || t("blog.liveUpdates.reportedIssue");
+                const location = image.location || "Hinjawadi";
+                const beforePhotoAlt = t("blog.liveUpdates.imageAlt", {
+                  issue,
+                  location,
+                });
+                const afterPhotoAlt = t("blog.liveUpdates.afterImageAlt", {
+                  issue,
+                  location,
+                });
+                const renderPhoto = (photoUrl, photoAlt) => (
+                  <img
+                    src={toMediaUrl(photoUrl)}
+                    alt={photoAlt}
+                    loading="lazy"
+                    role="button"
+                    aria-label={t("blog.liveUpdates.previewImage")}
+                    tabIndex={isDuplicate ? -1 : 0}
+                    onClick={() => onOpenImage({
+                      src: toMediaUrl(photoUrl),
+                      alt: photoAlt,
+                    })}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onOpenImage({
+                          src: toMediaUrl(photoUrl),
+                          alt: photoAlt,
+                        });
+                      }
+                    }}
+                  />
+                );
                 return (
                 <article
                   className="reported-image-card"
@@ -461,49 +479,19 @@ const ReportedImagesSection = ({ onOpenImage }) => {
                 >
                 <div className="reported-image-wrap">
                   <div className="reported-photo-panel">
-                    <img
-                      src={toMediaUrl(photoUrl)}
-                      alt={photoAlt}
-                      loading="lazy"
-                      role="button"
-                      aria-label={t("blog.liveUpdates.previewImage")}
-                      tabIndex={isDuplicate ? -1 : 0}
-                      onClick={() => onOpenImage({
-                        src: toMediaUrl(photoUrl),
-                        alt: photoAlt,
-                      })}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          onOpenImage({
-                            src: toMediaUrl(photoUrl),
-                            alt: photoAlt,
-                          });
-                        }
-                      }}
-                    />
                     {showBeforeAfter && (
-                      <div className="reported-photo-switch" role="group" aria-label={t("blog.liveUpdates.photoViewLabel")}>
-                        <button
-                          type="button"
-                          className={!showAfterPhoto ? "active" : ""}
-                          aria-pressed={!showAfterPhoto}
-                          tabIndex={isDuplicate ? -1 : undefined}
-                          onClick={() => setPhotoViews((current) => ({ ...current, [image.id]: "before" }))}
-                        >
-                          {t("blog.liveUpdates.beforePhoto")}
-                        </button>
-                        <button
-                          type="button"
-                          className={showAfterPhoto ? "active" : ""}
-                          aria-pressed={showAfterPhoto}
-                          tabIndex={isDuplicate ? -1 : undefined}
-                          onClick={() => setPhotoViews((current) => ({ ...current, [image.id]: "after" }))}
-                        >
-                          {t("blog.liveUpdates.afterPhoto")}
-                        </button>
+                      <div className="reported-photo-comparison" role="group" aria-label={t("blog.liveUpdates.photoViewLabel")}>
+                        <div className="reported-photo-half">
+                          {renderPhoto(image.imageUrl, beforePhotoAlt)}
+                          <span>{t("blog.liveUpdates.beforePhoto")}</span>
+                        </div>
+                        <div className="reported-photo-half">
+                          {renderPhoto(image.afterImageUrl, afterPhotoAlt)}
+                          <span>{t("blog.liveUpdates.afterPhoto")}</span>
+                        </div>
                       </div>
                     )}
+                    {!showBeforeAfter && renderPhoto(image.imageUrl, beforePhotoAlt)}
                   </div>
                   <span className={`reported-status status-${String(image.status || "new").toLowerCase().replace(/[^a-z]+/g, "-")}`}>
                     {image.status || "New"}
