@@ -30,10 +30,18 @@ export const registerPushToken = async () => {
   const workerUrl = new URL("/firebase-messaging-sw.js", window.location.origin);
   workerUrl.searchParams.set("config", JSON.stringify(firebaseConfig));
   const serviceWorkerRegistration = await navigator.serviceWorker.register(workerUrl);
+  const activeRegistration = await navigator.serviceWorker.ready;
+  if (
+    activeRegistration.scope !== serviceWorkerRegistration.scope ||
+    !activeRegistration.active
+  ) {
+    throw new Error("The Firebase messaging service worker could not be activated.");
+  }
+
   const messaging = getMessaging(getApp());
   const token = await getToken(messaging, {
     vapidKey,
-    serviceWorkerRegistration,
+    serviceWorkerRegistration: activeRegistration,
   });
 
   if (!token) {

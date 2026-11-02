@@ -264,9 +264,15 @@ const createComplaint = async (req, res) => {
         type: "New Complaint Received",
         message: `${complaint.complaintNumber} is ready for verification.`,
       },
+      {
+        role: "staff",
+        complaintId: complaint._id,
+        type: "New Complaint Received",
+        message: `${complaint.complaintNumber} is available for staff action.`,
+      },
     ];
 
-    await createNotifications(notifications);
+    await createNotifications(notifications, { broadcast: true });
 
     return res.status(201).json({
       success: true,
@@ -547,6 +553,9 @@ const updateComplaint = async (req, res) => {
       });
     }
 
+    const previousLocation = complaint.location;
+    const previousDescription = complaint.description;
+
     // ------------------------------------------
     // Update location
     // ------------------------------------------
@@ -573,6 +582,31 @@ const updateComplaint = async (req, res) => {
     }
 
     await complaint.save();
+
+    const complaintDetailsChanged =
+      complaint.location !== previousLocation ||
+      complaint.description !== previousDescription;
+    if (complaintDetailsChanged) {
+      const complaintLabel = complaint.complaintNumber || String(complaint._id);
+      await createNotifications(
+        [
+          {
+            role: "admin",
+            complaintId: complaint._id,
+            type: "Complaint Details Updated",
+            message: `${complaintLabel} details were updated by the citizen.`,
+          },
+          {
+            role: "citizen",
+            userId: complaint.citizenId,
+            complaintId: complaint._id,
+            type: "Complaint Details Updated",
+            message: `${complaintLabel} details were updated successfully.`,
+          },
+        ],
+        { broadcast: true }
+      );
+    }
 
     return res.status(200).json({
       success: true,

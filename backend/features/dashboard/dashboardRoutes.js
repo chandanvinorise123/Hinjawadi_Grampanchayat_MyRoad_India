@@ -4,7 +4,10 @@ const Complaint = require("../../models/Complaint");
 const Notification = require("../../models/Notification");
 const User = require("../../models/user");
 const Admin = require("../../models/Admin");
-const { createNotifications } = require("../../services/notificationService");
+const {
+  createNotifications,
+  sendComplaintUpdatePush,
+} = require("../../services/notificationService");
 
 const router = express.Router();
 const roles = new Set(["admin", "citizen", "staff", "verifier"]);
@@ -294,7 +297,7 @@ router.get("/:role", async (req, res) => {
       Notification.find({
         role,
         ...(role === "staff"
-          ? { userId }
+          ? { $or: [{ userId }, { userId: null }] }
           : userId && isObjectId(userId)
           ? role === "citizen"
             ? { $or: [{ userId }, { userId: null, complaintId: null }] }
@@ -438,6 +441,14 @@ router.patch("/complaints/:id", async (req, res) => {
     }
 
     const previousStatus = previousComplaint.status;
+    const sameValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+    const complaintFieldsChanged = Object.entries(updates).some(([field, value]) =>
+      !sameValue(value, previousComplaint[field])
+    );
+    const remarksAddedWithoutStatusChange =
+      updates.status === previousStatus &&
+      typeof req.body.remarks === "string" &&
+      Boolean(req.body.remarks.trim());
     const previousAssignedStaff = previousComplaint.assignedStaff;
     const previousAssignedStaffId = previousComplaint.assignedStaffId || "";
     const previousAssignedVerifier = previousComplaint.assignedVerifier || "";
@@ -474,7 +485,6 @@ router.patch("/complaints/:id", async (req, res) => {
       },
     };
     const activityEntries = [];
-    const sameValue = (left, right) => JSON.stringify(left) === JSON.stringify(right);
     const inspectionUpdated = Boolean(
       updates.inspection && !sameValue(updates.inspection, previousComplaint.inspection || {})
     );
@@ -763,7 +773,11 @@ router.patch("/complaints/:id", async (req, res) => {
       addNotification("citizen", complaint.citizenId, type, message);
     }
 
-    if (notifications.length) await createNotifications(notifications);
+    if (notifications.length) {
+      await createNotifications(notifications, { broadcast: true });
+    } else if (complaintFieldsChanged || remarksAddedWithoutStatusChange) {
+      await sendComplaintUpdatePush(complaint._id);
+    }
     res.json({ success: true, complaint: toComplaintView(complaint) });
   } catch (error) {
     console.error("Dashboard complaint update error:", error);

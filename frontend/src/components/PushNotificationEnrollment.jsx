@@ -141,8 +141,8 @@ const PushNotificationEnrollment = () => {
   if (permission === "granted" && !message) return null;
   const displayMessage = message || (
     permission === "denied"
-      ? "Notifications are blocked in your browser settings."
-      : ""
+      ? "Notifications are blocked. Allow them in this browser's site settings."
+      : "Enable notifications separately in each browser and on each device."
   );
 
   return (

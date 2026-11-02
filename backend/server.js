@@ -35,18 +35,24 @@ const app = express();
 // CORS
 // =====================================================
 
+const allowedOrigins = [
+  "http://localhost:5800",
+  "http://127.0.0.1:5800",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5100",
+  "http://127.0.0.1:5100",
+  "http://localhost:5101",
+  "http://127.0.0.1:5101",
+  ...(process.env.FRONTEND_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5800",
-      "http://127.0.0.1:5800",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:5100",
-      "http://127.0.0.1:5100",
-      "http://localhost:5101",
-      "http://127.0.0.1:5101",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );

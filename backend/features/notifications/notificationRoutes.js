@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
     // for other dashboards
 
     const query = req.query.role === "staff"
-      ? { role: "staff", userId: req.query.userId }
+      ? { role: "staff", $or: [{ userId: req.query.userId }, { userId: null }] }
       : req.query.role
         ? { role: req.query.role }
         : { role: "admin" };
@@ -354,7 +354,7 @@ router.put("/:id", async (req, res) => {
       if (updatedComplaint.citizenId) addNotification("citizen", updatedComplaint.citizenId, type, message);
     }
 
-    await createNotifications(notificationsToCreate);
+    await createNotifications(notificationsToCreate, { broadcast: true });
 
     res.json({
       success: true,
