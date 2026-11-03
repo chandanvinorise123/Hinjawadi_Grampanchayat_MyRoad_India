@@ -1,21 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as turf from "@turf/turf";
-
-import {
-  GoogleMap,
-  Marker,
-  InfoWindow,
-  Circle,
-  Autocomplete,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import ReportLeafletMap from "../components/maps/ReportLeafletMap";
 
 import "./report.css";
 import PhotoDetection from "../components/PhotoDetection";
 import { API_BASE_URL } from "../utils/dashboardApi";
-import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
 
 const categories = [
   {
@@ -110,13 +101,6 @@ const categories = [
   },
 ];
 
-const libraries = ["places"];
-
-const mapContainerStyle = {
-  width: "100%",
-  height: "350px",
-};
-
 const defaultCenter = {
   lat: 18.494,
   lng: 73.760,
@@ -125,18 +109,22 @@ const defaultCenter = {
 const INITIAL_LIVE_LOCATION_ZOOM = 15;
 
 const BOUNDARY_URL = "/boundaries/hinjavadi.geojson";
+const PHOTON_API_URL = "https://photon.komoot.io";
+
+const getPhotonFeatureLabel = (properties = {}) =>
+  [...new Set([
+    properties.name,
+    [properties.street, properties.housenumber].filter(Boolean).join(" "),
+    properties.city || properties.town || properties.village || properties.district,
+    properties.state,
+  ].filter(Boolean))]
+    .join(", ");
 
 const ReportIssue = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || "";
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey,
-    libraries,
-  });
+  // Google Maps API key and loader are disabled; the report map uses Leaflet.
 
   // Complaint state
   const [complaintNumber, setComplaintNumber] = useState(null);
@@ -173,10 +161,10 @@ const ReportIssue = () => {
   const [locationStatus, setLocationStatus] = useState("idle");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("idle");
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [mapTypeId, setMapTypeId] = useState("roadmap");
   const [map, setMap] = useState(null);
-  const mapTypeButtonRef = useRef(null);
-  const [autocomplete, setAutocomplete] = useState(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const geocodeRequestId = useRef(0);
   const searchRequestId = useRef(0);
   const locationRequestId = useRef(0);
@@ -360,79 +348,33 @@ const ReportIssue = () => {
     };
   }, []);
 
-  // Save Google Maps instance and initialize its position.
-  const handleMapLoad = (mapInstance) => {
+  // Save the Leaflet map instance and initialize its position.
+  const handleMapLoad = useCallback((mapInstance) => {
     setMap(mapInstance);
 
+    if (!mapInstance) return;
     if (liveLocationRef.current.lat !== "" && liveLocationRef.current.lng !== "") {
-      mapInstance.setCenter({
-        lat: Number(liveLocationRef.current.lat),
-        lng: Number(liveLocationRef.current.lng),
-      });
+      mapInstance.setView(
+        [Number(liveLocationRef.current.lat), Number(liveLocationRef.current.lng)],
+        INITIAL_LIVE_LOCATION_ZOOM
+      );
     } else {
-      mapInstance.setCenter(defaultCenter);
+      mapInstance.setView([defaultCenter.lat, defaultCenter.lng], INITIAL_LIVE_LOCATION_ZOOM);
     }
-    mapInstance.setZoom(INITIAL_LIVE_LOCATION_ZOOM);
     gpsAutoCentered.current =
       liveLocationRef.current.lat !== "" && liveLocationRef.current.lng !== "";
-  };
-
-  useEffect(() => {
-    if (!map) return undefined;
-
-    const controlContainer = document.createElement("div");
-    const button = document.createElement("button");
-    const controls = map.controls[window.google.maps.ControlPosition.TOP_LEFT];
-    const handleClick = () => {
-      setMapTypeId((currentType) => {
-        const nextType = currentType === "satellite" ? "roadmap" : "satellite";
-        map.setMapTypeId(nextType);
-        return nextType;
-      });
-    };
-
-    button.className = "report-map-type-button";
-    button.type = "button";
-    button.addEventListener("click", handleClick);
-    controlContainer.appendChild(button);
-    controls.push(controlContainer);
-    mapTypeButtonRef.current = button;
-
-    return () => {
-      button.removeEventListener("click", handleClick);
-      button.remove();
-      const controlArray = controls?.getArray?.();
-      const controlIndex = controlArray?.indexOf(controlContainer);
-      if (typeof controlIndex === "number" && controlIndex !== -1) {
-        controls.removeAt(controlIndex);
-      }
-      mapTypeButtonRef.current = null;
-    };
-  }, [map]);
-
-  useEffect(() => {
-    const button = mapTypeButtonRef.current;
-    if (!button) return;
-
-    const label = t(
-      mapTypeId === "satellite"
-        ? "home.mapRoadmapView"
-        : "home.mapSatelliteView"
-    );
-    button.textContent = label;
-    button.setAttribute("aria-label", label);
-    button.setAttribute("aria-pressed", String(mapTypeId === "satellite"));
-  }, [map, mapTypeId, t]);
+  }, []);
 
   const changeMapZoom = (amount) => {
     if (!map) return;
 
-    const currentZoom = map.getZoom() ?? 14;
+    const currentZoom = map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM;
     map.setZoom(Math.min(21, Math.max(3, currentZoom + amount)));
   };
 
   const selectIssueLocation = (lat, lng, address = "") => {
     searchRequestId.current += 1;
+    setSearchSuggestions([]);
     setLocationMode("map");
     setSelectedLocation({ lat, lng });
     setSelectedAddress(address);
@@ -441,64 +383,43 @@ const ReportIssue = () => {
     const requestId = ++geocodeRequestId.current;
     if (address) return;
 
-    const geocoder = new window.google.maps.Geocoder();
-
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (requestId !== geocodeRequestId.current) return;
-
-      if (status === window.google.maps.GeocoderStatus.OK && results?.[0]) {
-        setSelectedAddress(results[0].formatted_address);
-        return;
-      }
-
-      if (status !== window.google.maps.GeocoderStatus.ZERO_RESULTS) {
-        console.error("Reverse geocoding failed:", status);
-      }
-      setSelectedAddress("");
-    });
+    fetch(
+      `${PHOTON_API_URL}/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&lang=en`
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(`Reverse geocoding failed (${response.status})`);
+        return response.json();
+      })
+      .then((result) => {
+        if (requestId !== geocodeRequestId.current) return;
+        setSelectedAddress(getPhotonFeatureLabel(result?.features?.[0]?.properties));
+      })
+      .catch((error) => {
+        if (requestId !== geocodeRequestId.current) return;
+        console.error("Reverse geocoding failed:", error);
+        setSelectedAddress("");
+      });
   };
 
-  // Draw the boundary when the map and GeoJSON are available.
+  // Fit the loaded boundary in the Leaflet map.
   useEffect(() => {
-    if (!map || !hinjawadiBoundary || !isLoaded) return;
+    if (!map || !hinjawadiBoundary) return;
 
     try {
-      const existingFeatures = [];
-
-      map.data.forEach((feature) => {
-        existingFeatures.push(feature);
-      });
-
-      existingFeatures.forEach((feature) => {
-        map.data.remove(feature);
-      });
-
-      map.data.addGeoJson(hinjawadiBoundary);
-
-      map.data.setStyle({
-        fillOpacity: 0,
-        strokeColor: "#d21919",
-        strokeOpacity: 1,
-        strokeWeight: 3,
-        clickable: false,
-      });
-
       const [minLng, minLat, maxLng, maxLat] = turf.bbox(hinjawadiBoundary);
-      const boundaryBounds = new window.google.maps.LatLngBounds(
-        { lat: minLat, lng: minLng },
-        { lat: maxLat, lng: maxLng }
+      map.fitBounds(
+        [[minLat, minLng], [maxLat, maxLng]],
+        { padding: [28, 28] }
       );
-
-      map.fitBounds(boundaryBounds, 28);
       gpsAutoCentered.current = true;
     } catch (error) {
-      console.error("Error drawing boundary:", error);
+      console.error("Error fitting the Hinjawadi boundary:", error);
 
       setErrorMessage(
         "The Hinjawadi boundary could not be displayed on the map."
       );
     }
-  }, [map, hinjawadiBoundary, isLoaded]);
+  }, [map, hinjawadiBoundary]);
 
   useEffect(() => {
     if (
@@ -510,11 +431,10 @@ const ReportIssue = () => {
       return;
     }
 
-    map.panTo({
-      lat: Number(liveLocation.lat),
-      lng: Number(liveLocation.lng),
-    });
-    map.setZoom(INITIAL_LIVE_LOCATION_ZOOM);
+    map.setView(
+      [Number(liveLocation.lat), Number(liveLocation.lng)],
+      INITIAL_LIVE_LOCATION_ZOOM
+    );
     gpsAutoCentered.current = true;
   }, [map, liveLocation.lat, liveLocation.lng]);
 
@@ -522,118 +442,81 @@ const ReportIssue = () => {
     if (!map) return;
 
     if (selectedLocation.lat !== null && selectedLocation.lng !== null) {
-      map.panTo(selectedLocation);
-      map.setZoom(18);
+      map.setView([selectedLocation.lat, selectedLocation.lng], 18);
     }
   }, [map, selectedLocation, locationMode]);
 
-  const handleLiveLocationMarkerClick = () => {
+  const handleLiveLocationMarkerClick = async () => {
     setShowLiveLocationInfo(true);
 
-    if (!map || !window.google?.maps?.places || !liveLocation.lat || !liveLocation.lng) {
+    if (!liveLocation.lat || !liveLocation.lng) {
       return;
     }
 
     const requestId = ++livePlaceRequestId.current;
-    const position = {
-      lat: Number(liveLocation.lat),
-      lng: Number(liveLocation.lng),
-    };
+    const latitude = Number(liveLocation.lat);
+    const longitude = Number(liveLocation.lng);
     setLiveLocationDetailsLoading(true);
     setLiveLocationAddress("");
     setLiveLocationPhoto("");
 
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: position }, (results, status) => {
+    try {
+      const response = await fetch(
+        `${PHOTON_API_URL}/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&lang=en`
+      );
+      if (!response.ok) {
+        throw new Error(`Current-location lookup failed (${response.status})`);
+      }
+      const result = await response.json();
       if (requestId !== livePlaceRequestId.current) return;
-
-      if (status === window.google.maps.GeocoderStatus.OK && results?.[0]) {
-        setLiveLocationAddress(results[0].formatted_address);
-      } else if (status !== window.google.maps.GeocoderStatus.ZERO_RESULTS) {
-        console.error("Current-location reverse geocoding failed:", status);
+      setLiveLocationAddress(
+        getPhotonFeatureLabel(result?.features?.[0]?.properties)
+      );
+    } catch (error) {
+      if (requestId !== livePlaceRequestId.current) return;
+      console.error("Current-location reverse geocoding failed:", error);
+    } finally {
+      if (requestId === livePlaceRequestId.current) {
+        setLiveLocationDetailsLoading(false);
       }
-      setLiveLocationDetailsLoading(false);
-    });
-
-    const placesService = new window.google.maps.places.PlacesService(map);
-    placesService.nearbySearch(
-      { location: position, radius: 100 },
-      (places, status) => {
-        if (requestId !== livePlaceRequestId.current) return;
-
-        if (
-          status === window.google.maps.places.PlacesServiceStatus.OK &&
-          places?.[0]
-        ) {
-          const nearestPlace = places[0];
-          if (nearestPlace.name) {
-            setLiveLocationAddress((currentAddress) =>
-              currentAddress ||
-              [nearestPlace.name, nearestPlace.vicinity].filter(Boolean).join(", ")
-            );
-          }
-          const photo = nearestPlace.photos?.[0]?.getUrl({
-            maxWidth: 320,
-            maxHeight: 180,
-          });
-          if (photo) setLiveLocationPhoto(photo);
-        } else if (status !== window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          console.error("Nearby-place lookup failed:", status);
-        }
-      }
-    );
+    }
   };
 
   // Click the map to select the complaint location.
   const handleMapClick = (event) => {
-    if (!event.latLng) return;
-
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-
-    selectIssueLocation(lat, lng);
+    if (!event.latlng) return;
+    selectIssueLocation(event.latlng.lat, event.latlng.lng);
   };
 
-  // Allow marker dragging only within the boundary.
+  // Update the selected issue location after the marker is dragged.
   const handleMarkerDragEnd = (event) => {
-    if (!event.latLng) return;
-
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-
-    selectIssueLocation(lat, lng);
+    const position = event.target?.getLatLng?.();
+    if (!position) return;
+    selectIssueLocation(position.lat, position.lng);
   };
 
-  // Location search autocomplete.
-  const handleAutocompleteLoad = (instance) => {
-    setAutocomplete(instance);
-  };
-
-  const handlePlaceChanged = () => {
-    if (!autocomplete) return;
-
-    const place = autocomplete.getPlace();
-
-    if (!place.geometry?.location) {
+  const selectSearchSuggestion = (feature) => {
+    const coordinates = feature.geometry?.coordinates;
+    if (
+      !Array.isArray(coordinates) ||
+      coordinates.length < 2 ||
+      !coordinates.every(Number.isFinite)
+    ) {
       setSearchStatus("error");
-      setErrorMessage("Choose a suggested place or use Search to find the typed landmark.");
+      setErrorMessage("The selected search result has invalid coordinates. Try another location.");
       return;
     }
 
-    const lat = place.geometry.location.lat();
-    const lng = place.geometry.location.lng();
-
-    setSearchQuery(place.formatted_address || place.name || "");
+    const [lng, lat] = coordinates;
+    const address = getPhotonFeatureLabel(feature.properties) || searchQuery.trim();
+    selectIssueLocation(lat, lng, address);
+    setSearchQuery(address);
     setSearchStatus("idle");
-    selectIssueLocation(lat, lng, place.formatted_address || place.name || "");
-
-    if (map) {
-      map.panTo({ lat, lng });
-      map.setZoom(18);
-    }
+    setSearchSuggestions([]);
+    map?.setView([lat, lng], 18);
   };
 
-  const handleSearchLocation = () => {
+  const handleSearchLocation = async () => {
     const query = searchQuery.trim();
     if (!query) {
       setSearchStatus("error");
@@ -641,71 +524,61 @@ const ReportIssue = () => {
       return;
     }
 
-    if (!isLoaded || !map || !window.google?.maps?.places?.AutocompleteService) {
+    if (!map) {
       setSearchStatus("error");
-      setErrorMessage("Google Maps Places search is unavailable. Check that the Maps JavaScript API and Places API are enabled for this key.");
+      setErrorMessage("The map is not ready yet. Please try the search again.");
       return;
     }
 
     const requestId = ++searchRequestId.current;
     setSearchStatus("loading");
+    setSearchSuggestions([]);
     setErrorMessage("");
 
-    const autocompleteService = new window.google.maps.places.AutocompleteService();
-    autocompleteService.getPlacePredictions(
-      {
-        input: query,
-        componentRestrictions: { country: "IN" },
-        locationBias: map.getBounds(),
-      },
-      (predictions, status) => {
-        if (requestId !== searchRequestId.current) return;
-
-        if (
-          status !== window.google.maps.places.PlacesServiceStatus.OK ||
-          !predictions?.[0]?.place_id
-        ) {
-          setSearchStatus("error");
-          if (status !== window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-            console.error("Landmark search failed:", status);
-          }
-          setErrorMessage(
-            status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS
-              ? "No matching location found. Try a nearby landmark or road name."
-              : "Landmark search failed. Check that the Google Maps Places API is enabled for this key."
-          );
-          return;
-        }
-
-        new window.google.maps.places.PlacesService(map).getDetails(
-          {
-            placeId: predictions[0].place_id,
-            fields: ["geometry", "formatted_address", "name"],
-          },
-          (place, detailsStatus) => {
-            if (requestId !== searchRequestId.current) return;
-
-            if (
-              detailsStatus !== window.google.maps.places.PlacesServiceStatus.OK ||
-              !place?.geometry?.location
-            ) {
-              console.error("Landmark details lookup failed:", detailsStatus);
-              setSearchStatus("error");
-              setErrorMessage("Could not load that place. Try another nearby landmark or check the Google Maps Places API configuration.");
-              return;
-            }
-
-            const position = place.geometry.location;
-            const address = place.formatted_address || place.name || query;
-            selectIssueLocation(position.lat(), position.lng(), address);
-            setSearchQuery(address);
-            setSearchStatus("idle");
-            map.panTo(position);
-            map.setZoom(18);
-          }
-        );
+    try {
+      const mapCenter = map.getCenter();
+      const params = new URLSearchParams({
+        q: query,
+        lat: String(mapCenter.lat),
+        lon: String(mapCenter.lng),
+        limit: "5",
+        lang: "en",
+      });
+      const response = await fetch(`${PHOTON_API_URL}/api/?${params}`);
+      if (!response.ok) {
+        throw new Error(`Location search failed (${response.status})`);
       }
-    );
+      const result = await response.json();
+      if (requestId !== searchRequestId.current) return;
+
+      const features = (Array.isArray(result.features) ? result.features : [])
+        .filter((feature) => {
+          const countryCode = String(feature.properties?.countrycode || "").toLowerCase();
+          return !countryCode || countryCode === "in";
+        })
+        .filter((feature) => {
+          const coordinates = feature.geometry?.coordinates;
+          return Array.isArray(coordinates) &&
+            coordinates.length >= 2 &&
+            coordinates.every(Number.isFinite);
+        });
+
+      if (features.length === 0) {
+        setSearchStatus("error");
+        setErrorMessage("No matching location found. Try a nearby landmark or road name.");
+        return;
+      }
+
+      setSearchSuggestions(features);
+      setSearchStatus("idle");
+      selectSearchSuggestion(features[0]);
+      setSearchSuggestions(features);
+    } catch (error) {
+      if (requestId !== searchRequestId.current) return;
+      console.error("Landmark search failed:", error);
+      setSearchStatus("error");
+      setErrorMessage("Landmark search failed. Check your internet connection and try again.");
+    }
   };
 
   // Switch back to map selection mode.
@@ -912,7 +785,7 @@ const ReportIssue = () => {
     complaintData.append("issueType", issueType);
     complaintData.append("description", description.trim());
     complaintData.append("location", `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-    complaintData.append("locationUrl", "Google Maps selected location");
+    complaintData.append("locationUrl", "Map selected location");
     complaintData.append("landmark", selectedAddress.trim());
     complaintData.append("coordinates", JSON.stringify({ latitude, longitude }));
     if (user?.id || user?._id) {
@@ -1015,23 +888,21 @@ const ReportIssue = () => {
       if (hinjawadiBoundary) {
         const [minLng, minLat, maxLng, maxLat] = turf.bbox(hinjawadiBoundary);
         map.fitBounds(
-          new window.google.maps.LatLngBounds(
-            { lat: minLat, lng: minLng },
-            { lat: maxLat, lng: maxLng }
-          ),
-          28
+          [[minLat, minLng], [maxLat, maxLng]],
+          { padding: [28, 28] }
         );
         gpsAutoCentered.current = true;
       } else if (liveLocation.lat !== "" && liveLocation.lng !== "") {
-        map.panTo({
-          lat: Number(liveLocation.lat),
-          lng: Number(liveLocation.lng),
-        });
-        map.setZoom(INITIAL_LIVE_LOCATION_ZOOM);
+        map.setView(
+          [Number(liveLocation.lat), Number(liveLocation.lng)],
+          INITIAL_LIVE_LOCATION_ZOOM
+        );
         gpsAutoCentered.current = true;
       } else {
-        map.setCenter(defaultCenter);
-        map.setZoom(INITIAL_LIVE_LOCATION_ZOOM);
+        map.setView(
+          [defaultCenter.lat, defaultCenter.lng],
+          INITIAL_LIVE_LOCATION_ZOOM
+        );
       }
     }
   };
@@ -1121,162 +992,96 @@ const ReportIssue = () => {
                 <div className="form-field">
                   <label>Select Issue Location</label>
 
-                  {(!googleMapsApiKey || loadError) && (
-                    <p className="location-status error">
-                      {!googleMapsApiKey
-                        ? "Google Maps is not configured. Add VITE_GOOGLE_MAPS_API_KEY to the frontend environment and restart the app."
-                        : "Google Maps could not load. Check the key's website restrictions, billing, and Maps JavaScript API access."}
-                    </p>
-                  )}
-
-                  {googleMapsApiKey && !isLoaded && !loadError && (
-                    <p className="location-status">Loading Google Maps...</p>
-                  )}
-
-                  {googleMapsApiKey && isLoaded && !loadError && (
-                    <>
-                      <div className="map-search-row">
-                        <Autocomplete
-                          onLoad={handleAutocompleteLoad}
-                          onPlaceChanged={handlePlaceChanged}
-                          fields={["geometry", "formatted_address", "name"]}
-                          options={{
-                            componentRestrictions: { country: "in" },
-                            strictBounds: false,
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Search for a landmark or road..."
-                            className="map-search-input"
-                            aria-label="Search for an issue location"
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                handleSearchLocation();
-                              }
-                            }}
-                          />
-                        </Autocomplete>
-                        <button
-                          type="button"
-                          className="map-search-button"
-                          onClick={handleSearchLocation}
-                          disabled={searchStatus === "loading"}
-                        >
-                          {searchStatus === "loading" ? "Searching..." : "Search"}
-                        </button>
+                  <>
+                    <div className="map-search-row">
+                      <input
+                        type="text"
+                        placeholder="Search for a landmark or road..."
+                        className="map-search-input"
+                        aria-label="Search for an issue location"
+                        aria-controls="report-location-search-results"
+                        aria-expanded={searchSuggestions.length > 0}
+                        value={searchQuery}
+                        onChange={(event) => {
+                          setSearchQuery(event.target.value);
+                          setSearchSuggestions([]);
+                          setSearchStatus("idle");
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            if (searchSuggestions.length > 0) {
+                              selectSearchSuggestion(searchSuggestions[0]);
+                            } else {
+                              handleSearchLocation();
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="map-search-button"
+                        onClick={handleSearchLocation}
+                        disabled={searchStatus === "loading"}
+                      >
+                        {searchStatus === "loading" ? "Searching..." : "Search"}
+                      </button>
+                    </div>
+                    {searchSuggestions.length > 0 && (
+                      <div
+                        className="report-location-search-results"
+                        id="report-location-search-results"
+                        role="listbox"
+                        aria-label="Location search results"
+                      >
+                        {searchSuggestions.map((feature, index) => {
+                          const label = getPhotonFeatureLabel(feature.properties);
+                          const featureKey = `${feature.properties?.osm_type || "place"}-${feature.properties?.osm_id || index}`;
+                          return (
+                            <button
+                              key={featureKey}
+                              type="button"
+                              role="option"
+                              aria-selected={label === selectedAddress}
+                              onClick={() => selectSearchSuggestion(feature)}
+                            >
+                              {label || "Unnamed location"}
+                            </button>
+                          );
+                        })}
                       </div>
+                    )}
 
-                      <div className="google-map-container">
-                        <GoogleMap
-                          mapContainerStyle={mapContainerStyle}
-                          defaultCenter={defaultCenter}
-                          defaultZoom={INITIAL_LIVE_LOCATION_ZOOM}
-                          onLoad={handleMapLoad}
-                          onClick={handleMapClick}
-                          options={{
-                            streetViewControl: false,
-                            mapTypeControl: false,
-                            mapTypeId,
-                            fullscreenControl: true,
-                            zoomControl: false,
-                          }}
-                        >
-                          {liveLocation.lat !== "" && liveLocation.lng !== "" && (
-                            <>
-                              {liveLocationAccuracy !== null && (
-                                <Circle
-                                  center={{
-                                    lat: Number(liveLocation.lat),
-                                    lng: Number(liveLocation.lng),
-                                  }}
-                                  radius={liveLocationAccuracy}
-                                  options={{
-                                    fillColor: "#4285F4",
-                                    fillOpacity: 0.12,
-                                    strokeColor: "#4285F4",
-                                    strokeOpacity: 0.45,
-                                    strokeWeight: 1,
-                                    clickable: false,
-                                  }}
-                                />
-                              )}
-                              <Marker
-                                position={{
-                                  lat: Number(liveLocation.lat),
-                                  lng: Number(liveLocation.lng),
-                                }}
-                                title="Your current location"
-                                onClick={handleLiveLocationMarkerClick}
-                                zIndex={2}
-                                icon={{
-                                  url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-                                    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52"><path d="M20 1C9.5 1 1 9.5 1 20c0 14.2 19 31 19 31s19-16.8 19-31C39 9.5 30.5 1 20 1Z" fill="#4285F4" stroke="#fff" stroke-width="2"/><circle cx="20" cy="20" r="7" fill="#fff"/></svg>'
-                                  )}`,
-                                  scaledSize: new window.google.maps.Size(40, 52),
-                                  anchor: new window.google.maps.Point(20, 51),
-                                }}
-                              />
-                            </>
-                          )}
-
-                          {showLiveLocationInfo &&
-                            liveLocation.lat !== "" &&
-                            liveLocation.lng !== "" && (
-                              <InfoWindow
-                                position={{
-                                  lat: Number(liveLocation.lat),
-                                  lng: Number(liveLocation.lng),
-                                }}
-                                onCloseClick={() => setShowLiveLocationInfo(false)}
-                              >
-                                <div className="live-location-info">
-                                  {liveLocationPhoto && (
-                                    <img
-                                      src={liveLocationPhoto}
-                                      alt="Nearby location"
-                                    />
-                                  )}
-                                  <strong>
-                                    {liveLocationAddress || (
-                                      liveLocationDetailsLoading
-                                        ? "Finding nearby location..."
-                                        : "Your current location"
-                                    )}
-                                  </strong>
-                                  <p>
-                                    {Number(liveLocation.lat).toFixed(6)},{" "}
-                                    {Number(liveLocation.lng).toFixed(6)}
-                                  </p>
-                                  {liveLocationAccuracy !== null && (
-                                    <small>
-                                      GPS accuracy: ±{Math.round(liveLocationAccuracy)} m
-                                    </small>
-                                  )}
-                                </div>
-                              </InfoWindow>
-                            )}
-
-                          {selectedLocation.lat !== null &&
-                            selectedLocation.lng !== null && (
-                              <Marker
-                                position={selectedLocation}
-                                icon={getComplaintMapMarkerIcon({ issue: issueType })}
-                                draggable
-                                onDragEnd={handleMarkerDragEnd}
-                              />
-                            )}
-                        </GoogleMap>
+                    <div className="report-map-container">
+                      <ReportLeafletMap
+                        boundary={hinjawadiBoundary}
+                        liveLocation={liveLocation}
+                        liveLocationAccuracy={liveLocationAccuracy}
+                        showLiveLocationInfo={showLiveLocationInfo}
+                        liveLocationAddress={liveLocationAddress}
+                        liveLocationPhoto={liveLocationPhoto}
+                        liveLocationDetailsLoading={liveLocationDetailsLoading}
+                        selectedLocation={selectedLocation}
+                        issueType={issueType}
+                        mapTypeId={mapTypeId}
+                        isFullscreen={isMapFullscreen}
+                        onMapReady={handleMapLoad}
+                        onMapClick={handleMapClick}
+                        onMarkerDragEnd={handleMarkerDragEnd}
+                        onLiveLocationMarkerClick={handleLiveLocationMarkerClick}
+                        onLiveLocationPopupClose={() => setShowLiveLocationInfo(false)}
+                        onMapTypeToggle={() => setMapTypeId((currentType) =>
+                          currentType === "satellite" ? "roadmap" : "satellite"
+                        )}
+                        onFullscreenChange={setIsMapFullscreen}
+                      />
                         <div className="map-zoom-controls" aria-label="Map zoom controls">
                           <button
                             type="button"
                             aria-label="Zoom in"
                             title="Zoom in"
                             onClick={() => changeMapZoom(1)}
-                            disabled={!map || (map.getZoom() ?? 14) >= 21}
+                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) >= 21}
                           >
                             +
                           </button>
@@ -1285,11 +1090,11 @@ const ReportIssue = () => {
                             aria-label="Zoom out"
                             title="Zoom out"
                             onClick={() => changeMapZoom(-1)}
-                            disabled={!map || (map.getZoom() ?? 14) <= 3}
+                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) <= 3}
                           >
                             −
                           </button>
-                        </div>
+                    </div>
                       </div>
 
                       <div className="location-legend" aria-label="Map marker legend">
@@ -1329,8 +1134,7 @@ const ReportIssue = () => {
                         <p className="location-status">Loading Hinjawadi boundary...</p>
                       )}
 
-                    </>
-                  )}
+                  </>
                 </div>
 
                 {errorMessage && (

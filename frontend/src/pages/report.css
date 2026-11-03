@@ -390,12 +390,9 @@ body .pac-container {
   width: 100%;
 }
 
-.report-page .map-search-row > div {
+.report-page .map-search-input {
   flex: 1;
   min-width: 0;
-}
-
-.report-page .map-search-input {
   height: var(--field-height);
   padding: 0 16px;
   border: 1.5px solid var(--line);
@@ -413,11 +410,64 @@ body .pac-container {
   box-shadow: 0 0 0 3px rgba(27, 69, 134, 0.12);
 }
 
-.report-page .google-map-container {
+.report-page .report-location-search-results {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  max-height: 220px;
+  margin-top: 6px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(22, 27, 38, 0.14);
+}
+
+.report-page .report-location-search-results button {
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.report-page .report-location-search-results button + button {
+  border-top: 1px solid var(--line);
+}
+
+.report-page .report-location-search-results button:hover,
+.report-page .report-location-search-results button[aria-selected="true"] {
+  background: #edf4fb;
+}
+
+.report-page .report-map-container {
   position: relative;
   width: 100%;
   overflow: hidden;
   border-radius: var(--radius-sm);
+}
+
+.report-page .report-leaflet-map {
+  width: 100%;
+  height: 350px;
+  background: #e9eef5;
+}
+
+.report-page .report-leaflet-map:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.report-page .report-leaflet-controls {
+  z-index: 1000;
+  margin: 10px 0 0 10px;
+}
+
+.report-page .report-leaflet-controls.leaflet-right {
+  margin-right: 10px;
 }
 
 .report-page .report-map-type-button {
@@ -440,6 +490,45 @@ body .pac-container {
 .report-page .report-map-type-button:focus-visible {
   outline: 3px solid #68b7e3;
   outline-offset: 2px;
+}
+
+.report-page .report-map-fullscreen-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 2px solid #8a9ba8;
+  border-radius: 8px;
+  background: #e3f2fb;
+  color: #173b57;
+  box-shadow: 0 2px 6px rgba(42, 75, 96, .3);
+  font: 700 24px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+
+.report-page .report-map-fullscreen-button:hover {
+  background: #cce8f8;
+  box-shadow: 0 3px 8px rgba(42, 75, 96, .36);
+}
+
+.report-page .report-map-fullscreen-button:focus-visible {
+  outline: 3px solid #68b7e3;
+  outline-offset: 2px;
+}
+
+.report-page .report-gps-marker {
+  border: 0;
+  background: transparent;
+}
+
+.report-page .report-gps-marker svg {
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35));
+}
+
+.report-page .gps-legend-dot {
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
 }
 
 .report-page .map-zoom-controls {

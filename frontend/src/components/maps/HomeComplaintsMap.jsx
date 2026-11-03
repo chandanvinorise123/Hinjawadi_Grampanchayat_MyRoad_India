@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import HomeGoogleComplaintsMap from "./HomeGoogleComplaintsMap";
+import HomeLeafletComplaintsMap from "./HomeLeafletComplaintsMap";
 import "./ComplaintLocationMap.css";
 import { API_BASE_URL, toMediaUrl } from "../../utils/dashboardApi";
 import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
+import { filterHomeComplaints } from "./homeComplaintMapFilters";
 
 const DEFAULT_CENTER = { lat: 18.5913, lng: 73.7389 };
 
@@ -31,6 +32,24 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
   const [loadError, setLoadError] = useState(false);
   const [boundaryGeoJson, setBoundaryGeoJson] = useState(null);
   const [boundaryError, setBoundaryError] = useState(false);
+  const [reportedRange, setReportedRange] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedComplaintId] = useState(() => {
+    if (!fullPage) return null;
+
+    try {
+      const selectedId = window.sessionStorage.getItem(
+        "homeMapSelectedComplaintId"
+      );
+      if (selectedId) {
+        window.sessionStorage.removeItem("homeMapSelectedComplaintId");
+      }
+      return selectedId;
+    } catch (error) {
+      console.error("Unable to restore selected map complaint:", error);
+      return null;
+    }
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -117,6 +136,10 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
     () => complaints.filter((complaint) => !locatedComplaints.includes(complaint)),
     [complaints, locatedComplaints]
   );
+  const visibleComplaints = useMemo(
+    () => filterHomeComplaints(locatedComplaints, reportedRange, statusFilter),
+    [locatedComplaints, reportedRange, statusFilter]
+  );
 
   const center = useMemo(() => {
     if (locatedComplaints.length === 0) return DEFAULT_CENTER;
@@ -130,7 +153,7 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
     };
   }, [locatedComplaints]);
 
-  const pinCounts = locatedComplaints.reduce(
+  const pinCounts = visibleComplaints.reduce(
     (counts, complaint) => {
       counts[getHomeComplaintMapPinType(complaint)] += 1;
       return counts;
@@ -198,7 +221,7 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
         </p>
       )}
 
-      <HomeGoogleComplaintsMap
+      {/* <HomeGoogleComplaintsMap
         complaints={locatedComplaints}
         center={center}
         boundaryGeoJson={boundaryGeoJson}
@@ -209,6 +232,23 @@ const HomeComplaintsMap = ({ t, fullPage = false }) => {
         fullscreenFitBoundaryOnly
         popupExpanded={fullPage}
         clientId={clientId}
+      /> */}
+      <HomeLeafletComplaintsMap
+        complaints={locatedComplaints}
+        visibleComplaints={visibleComplaints}
+        center={center}
+        boundaryGeoJson={boundaryGeoJson}
+        mapClassName="home-live-complaints-map"
+        translate={t}
+        fitBoundaryOnly={fullPage}
+        fullscreenFitBoundaryOnly
+        popupExpanded={fullPage}
+        selectedComplaintId={selectedComplaintId}
+        clientId={clientId}
+        reportedRange={reportedRange}
+        onReportedRangeChange={setReportedRange}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
       />
       {unlocatedComplaints.length > 0 && (
         <details className="home-map-unlocated">

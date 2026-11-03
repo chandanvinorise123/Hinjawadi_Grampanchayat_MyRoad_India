@@ -11,6 +11,10 @@ import {
   getComplaintMapMarkerIcon,
 } from "./complaintMapMarker";
 import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
+import {
+  getComplaintAgeInDays,
+  getComplaintReportedDate,
+} from "./homeComplaintMapFilters";
 
 const libraries = ["places"];
 const defaultCenter = { lat: 18.5913, lng: 73.7389 };
@@ -27,13 +31,20 @@ const mapOptions = {
 };
 
 const formatDate = (value) => {
-  const date = value ? new Date(value) : null;
+  const dateOnly = typeof value === "string"
+    ? value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    : null;
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : value
+      ? new Date(value)
+      : null;
   return date && !Number.isNaN(date.getTime())
     ? date.toLocaleString()
     : "Not available";
 };
 
-const HomeComplaintPopup = ({
+export const HomeComplaintPopup = ({
   clientId,
   complaint,
   onClose,
@@ -82,6 +93,8 @@ const HomeComplaintPopup = ({
   const location = typeof complaint.location === "string"
     ? complaint.location
     : complaint.location?.address || complaint.location?.name || "";
+  const reportedAt = getComplaintReportedDate(complaint);
+  const complaintAgeDays = getComplaintAgeInDays(complaint);
   const position = {
     lat: Number(complaint.lat),
     lng: Number(complaint.lng),
@@ -181,7 +194,16 @@ const HomeComplaintPopup = ({
         <p><b>Category:</b> {complaint.category || "Not available"}</p>
         <p><b>Location:</b> {location || "Address not provided"}</p>
         {complaint.landmark && <p><b>Landmark:</b> {complaint.landmark}</p>}
-        <p><b>Reported:</b> {formatDate(complaint.createdAt || complaint.date)}</p>
+        <p>
+          <b>{translate("home.mapReportedDate", { date: formatDate(reportedAt) })}</b>
+        </p>
+        {complaintAgeDays !== null && (
+          <p>
+            <b>
+              {translate("home.mapComplaintAge", { days: complaintAgeDays })}
+            </b>
+          </p>
+        )}
         {complaint.citizenName && <p><b>Reported by:</b> **** </p>}
         {complaint.assignedStaff && <p><b>Assigned staff:</b> {complaint.assignedStaff}</p>}
         <p>
