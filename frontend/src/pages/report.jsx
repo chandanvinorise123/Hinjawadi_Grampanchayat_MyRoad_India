@@ -890,7 +890,7 @@ const ReportIssue = () => {
       return;
     }
 
-    // ✅ REMOVED: Strict photo location matching validation. 
+    // âœ… REMOVED: Strict photo location matching validation. 
     // Users can now capture/upload photos from anywhere (inside or outside Hinjawadi).
 
     // Include citizen ID if a logged-in user is available.
@@ -919,8 +919,14 @@ const ReportIssue = () => {
       complaintData.append("citizenId", user.id || user._id);
     }
 
+    // Append photos from both normal upload and camera capture
     selectedPhotos.forEach(({ file }) => {
       if (file) complaintData.append("images", file);
+    });
+    verifiedPhotosData.forEach((photo) => {
+      if (photo.file && !selectedPhotos.some((sp) => sp.file === photo.file)) {
+        complaintData.append("images", photo.file);
+      }
     });
 
     const photoVerifications = verifiedPhotosData
@@ -943,8 +949,16 @@ const ReportIssue = () => {
     }
 
     setLoading(true);
+    setSubmissionStep("Checking location & preparing request...");
+    console.log("[Form] Submitting complaint");
+    console.log("[Form]    Issue type:", issueType);
+    console.log("[Form]    Latitude  :", latitude);
+    console.log("[Form]    Longitude :", longitude);
+    console.log("[Form]    Images    :", selectedPhotos.length);
 
     try {
+      setSubmissionStep("Sending to server - AI image validation in progress (Gemini Vision)...");
+      console.log("[Form] Calling POST /api/complaints – Gemini Vision API will validate image on server.");
       const response = await fetch(
         `${API_BASE_URL}/complaints`,
         {
@@ -961,11 +975,17 @@ const ReportIssue = () => {
         data = {};
       }
 
+      console.log("[Form] Server responded:", response.status, data.message || "");
+
       if (!response.ok) {
+        console.error("[Form] Rejected by server:", data.message);
         throw new Error(
           data.message || t("report.submitFailed")
         );
       }
+
+      setSubmissionStep("Complaint submitted successfully!");
+      console.log("[Form] Complaint accepted by server.");
 
       const submittedComplaintNumber = data.complaintNumber || data.data?.complaintNumber;
       if (!submittedComplaintNumber) {
@@ -983,6 +1003,7 @@ const ReportIssue = () => {
       );
     } finally {
       setLoading(false);
+      setSubmissionStep("");
     }
   };
 
@@ -1092,7 +1113,7 @@ const ReportIssue = () => {
                       required
                     />
 
-                    <span className="field-icon">📱</span>
+                    <span className="field-icon">ðŸ“±</span>
                   </div>
                 </div>
 
@@ -1253,7 +1274,7 @@ const ReportIssue = () => {
                                   </p>
                                   {liveLocationAccuracy !== null && (
                                     <small>
-                                      GPS accuracy: ±{Math.round(liveLocationAccuracy)} m
+                                      GPS accuracy: Â±{Math.round(liveLocationAccuracy)} m
                                     </small>
                                   )}
                                 </div>
@@ -1287,7 +1308,7 @@ const ReportIssue = () => {
                             onClick={() => changeMapZoom(-1)}
                             disabled={!map || (map.getZoom() ?? 14) <= 3}
                           >
-                            −
+                            âˆ’
                           </button>
                         </div>
                       </div>
@@ -1447,7 +1468,7 @@ const ReportIssue = () => {
                             fontWeight: 'bold'
                           }}
                         >
-                          ✕
+                          âœ•
                         </button>
                       </div>
                     ))}
@@ -1475,17 +1496,22 @@ const ReportIssue = () => {
                   disabled={loading}
                 >
                   {loading
-                    ? "Submitting..."
+                    ? (submissionStep || "Submitting...")
                     : t("report.submit")}
 
-                  {!loading && <span> →</span>}
+                  {!loading && <span> {String.fromCharCode(8594)}</span>}
                 </button>
+                {loading && submissionStep && (
+                  <p style={{ marginTop: "8px", fontSize: "13px", color: "#555", textAlign: "center" }}>
+                    {submissionStep}
+                  </p>
+                )}
               </div>
             </form>
           </div>
         ) : (
           <div className="result-shell">
-            <span className="result-icon">✓</span>
+            <span className="result-icon">âœ“</span>
 
             <p className="eyebrow center">
               {t("report.complaintNumber")}
@@ -1524,7 +1550,7 @@ const ReportIssue = () => {
                   });
                 }}
               >
-                {t("report.trackComplaint")} <span> →</span>
+                {t("report.trackComplaint")} <span> â†’</span>
               </button>
 
               <button

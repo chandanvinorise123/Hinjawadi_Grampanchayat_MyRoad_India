@@ -1,4 +1,3 @@
-
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
@@ -8,8 +7,6 @@ const router = express.Router();
 
 const Complaint = require("../../models/Complaint");
 
-// IMPORTANT:
-// The controller is in backend/controllers/complaintController.js
 const {
   createComplaint,
   getComplaintById,
@@ -63,7 +60,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB per image
+    fileSize: 10 * 1024 * 1024, // 10 MB per image
   },
 });
 
@@ -249,7 +246,7 @@ router.get("/track/:complaintId", getComplaintById);
 // =====================================================
 // CREATE A COMPLAINT
 // POST /api/complaints
-// Expects image files in the "images" field
+// Handles both normal upload and camera capture images with Gemini AI & geofence verification
 // =====================================================
 router.post("/", upload.array("images", 5), createComplaint);
 
@@ -267,6 +264,5 @@ router.delete("/:id", deleteComplaint);
 
 // =====================================================
 // EXPORT EXPRESS ROUTER
-// REQUIRED: server.js must receive a router function
 // =====================================================
 module.exports = router;

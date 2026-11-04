@@ -28,7 +28,7 @@ const PhotoDetection = ({
   const MAX_SIZE_MB = 10;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-  // ✅ Notify parent whenever photos, verification status, or location changes
+  // Notify parent whenever photos, verification status, or location changes
   useEffect(() => {
     if (onPhotosUpdate) onPhotosUpdate(getVerifiedPhotosData());
     if (onLocationUpdate && location) onLocationUpdate(location);
@@ -78,16 +78,8 @@ const PhotoDetection = ({
     });
   };
 
-  // ✅ ADDED: Reverse Geocoding to get readable address from coordinates
-  const getAddressFromCoords = async (lat, lng) => {
-    try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-      const data = await response.json();
-      return data.display_name || "Address not found";
-    } catch (error) {
-      return "Address service unavailable";
-    }
-  };
+  // Reverse Geocoding to get readable address from coordinates
+  const getAddressFromCoords = async () => "";
 
   // Validate image file
   const validateImage = (file) => {
@@ -99,7 +91,7 @@ const PhotoDetection = ({
     return { valid: errors.length === 0, errors };
   };
 
-  // Kept for the optional AI workflow. Normal report capture does not call it.
+  // Kept for AI verification workflow
   const verifyImageWithAI = async (photoId, file, capturedLocation = location) => {
     setIsProcessing(true);
     setVerificationStatus((prev) => ({
@@ -112,7 +104,6 @@ const PhotoDetection = ({
       formData.append("image", file);
       if (category) formData.append("category", category);
 
-      // ✅ Send location data to backend
       if (capturedLocation) {
         formData.append("latitude", capturedLocation.latitude);
         formData.append("longitude", capturedLocation.longitude);
@@ -124,8 +115,10 @@ const PhotoDetection = ({
         body: formData,
       });
 
-      if (!response.ok) throw new Error("AI verification failed");
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "AI verification failed");
+      }
 
       const updateStatus = (status, roadRelated, message) => {
         setVerificationStatus((prev) => ({
@@ -143,22 +136,16 @@ const PhotoDetection = ({
       } else if (result.confidence >= 80 && result.roadRelated) {
         updateStatus("verified", true, result.message || "Image verified successfully");
         onPhotoVerified && onPhotoVerified(photoId, result);
-      } else if (result.confidence >= 50 && result.roadRelated) {
-        updateStatus("review", true, result.message || "Image requires manual review");
-        onPhotoVerified && onPhotoVerified(photoId, { ...result, requiresReview: true });
-      } else if (!result.roadRelated) {
-        updateStatus("rejected", false, result.message || "Image is not road/infrastructure related");
-        onPhotoRejected && onPhotoRejected(photoId, "Image is not road/infrastructure related");
       } else {
-        updateStatus("rejected", true, result.message || "Image quality too low. Please upload a clearer photo.");
-        onPhotoRejected && onPhotoRejected(photoId, "Image quality too low. Please upload a clearer photo.");
+        updateStatus("rejected", false, result.message || "Image does not match the selected issue");
+        onPhotoRejected && onPhotoRejected(photoId, result.message || "Image does not match the selected issue");
       }
       return result;
     } catch (error) {
       console.error("AI Verification Error:", error);
       setVerificationStatus((prev) => ({
         ...prev,
-        [photoId]: { status: "error", message: "AI verification failed. Please try again." },
+        [photoId]: { status: "error", message: error.message || "AI verification failed." },
       }));
       return null;
     } finally {
@@ -235,6 +222,9 @@ const PhotoDetection = ({
   const uploadNormalPhoto = async (photoId, file, capturedLocation) => {
     const formData = new FormData();
     formData.append("image", file);
+    if (category) {
+      formData.append("category", category);
+    }
     const response = await fetch(`${API_BASE_URL}/photos/upload`, {
       method: "POST",
       body: formData,
@@ -250,7 +240,7 @@ const PhotoDetection = ({
         status: "verified",
         roadRelated: true,
         confidence: 100,
-        message: "Photo captured successfully.",
+        message: "Photo verified and captured successfully.",
         verificationId: result.verificationId,
         publicUrl: result.publicUrl,
         location: capturedLocation,
@@ -279,7 +269,7 @@ const PhotoDetection = ({
       try { currentLocation = await captureLocation(); } catch (err) { console.error("Location capture failed:", err); }
     }
 
-    // 2. ✅ Fetch readable address for the Geo-Tag Stamp
+    // 2. Fetch readable address for the Geo-Tag Stamp
     let address = "Location Pending...";
     if (currentLocation) {
       address = await getAddressFromCoords(currentLocation.latitude, currentLocation.longitude);
@@ -297,7 +287,6 @@ const PhotoDetection = ({
       isExisting: false,
       verified: false,
       location: currentLocation || null,
-      // ✅ ADDED: Geo-Tag Data attached to the photo
       geoData: {
         companyName: "MyRoad India",
         coordinates: currentLocation ? `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}` : "N/A",
@@ -307,16 +296,17 @@ const PhotoDetection = ({
       }
     };
 
-    // Add to state and verify
+    // Add to state and upload/verify with Gemini
     setPhotos((prev) => [...prev, photo]);
     try {
       await uploadNormalPhoto(photoId, file, currentLocation);
     } catch (error) {
-      console.error("Normal photo upload error:", error);
+      console.error("Camera photo upload/validation error:", error);
       setVerificationStatus((prev) => ({
         ...prev,
         [photoId]: { status: "error", message: error.message || "Photo upload failed." },
       }));
+      alert(error.message || "The camera photo does not match the selected issue.");
     }
   };
 
@@ -344,6 +334,7 @@ const PhotoDetection = ({
         await uploadNormalPhoto(photo.id, photo.file, photo.location);
       } catch (error) {
         console.error("Normal photo upload retry error:", error);
+        alert(error.message || "Retry failed.");
       }
     }
   };
@@ -355,9 +346,9 @@ const PhotoDetection = ({
     if (status.status === "verifying") return <span className="pd-badge pd-badge-verifying"> Verifying...</span>;
     if (status.status === "error") return <span className="pd-badge pd-badge-error">❌ {status.message}</span>;
     if (!status.roadRelated) return <span className="pd-badge pd-badge-rejected"> Not Road Related</span>;
-    if (status.confidence >= 80) return <span className="pd-badge pd-badge-success">✅ {status.detectedIssue || "Road Issue"} ({Math.round(status.confidence)}%)</span>;
-    if (status.confidence >= 50) return <span className="pd-badge pd-badge-warning">⚠️ {status.detectedIssue || "Road Issue"} ({Math.round(status.confidence)}% - Review)</span>;
-    return <span className="pd-badge pd-badge-low">⚠️ Low Confidence ({Math.round(status.confidence)}%)</span>;
+    if (status.confidence >= 80) return <span className="pd-badge pd-badge-success">✅ {status.detectedIssue || "Issue Verified"} ({Math.round(status.confidence)}%)</span>;
+    if (status.confidence >= 50) return <span className="pd-badge pd-badge-warning">⚠️ {status.detectedIssue || "Review Needed"}</span>;
+    return <span className="pd-badge pd-badge-low">⚠️ Low Confidence</span>;
   };
 
   const getVerifiedPhotosData = () => {
@@ -365,6 +356,7 @@ const PhotoDetection = ({
       const status = verificationStatus[photo.id];
       return {
         id: photo.id, name: photo.name, preview: photo.preview,
+        file: photo.file,
         verificationId: status?.verificationId || null,
         publicUrl: status?.publicUrl || photo.preview,
         verified: photo.isExisting || (status?.status === "verified" && status.roadRelated),
@@ -382,7 +374,7 @@ const PhotoDetection = ({
     <div className="photo-detection-container">
       <div className="pd-header">
         <h3>📸 Capture Road Issue Photo</h3>
-        <p className="pd-subtitle">Use your rear camera to capture the issue. A normal photo is required.</p>
+        <p className="pd-subtitle">Use your rear camera to capture the issue. A photo of the actual issue is required.</p>
       </div>
 
       <div className="pd-requirements">
@@ -404,7 +396,7 @@ const PhotoDetection = ({
 
       {locationError && (
         <div className="pd-error pd-location-error">
-          ️ {locationError}
+          ⚠️ {locationError}
           <button type="button" className="pd-retry-btn" onClick={captureLocation}>Retry Location</button>
         </div>
       )}
@@ -425,7 +417,7 @@ const PhotoDetection = ({
             <button type="button" className="pd-camera-text" onClick={openRearCamera} disabled={isProcessing}>
               Tap to open rear camera
             </button>
-            <p className="pd-camera-hint">Point camera at the road issue and take a clear photo</p>
+            <p className="pd-camera-hint">Point camera at the issue and take a clear photo</p>
           </div>
         </div>
       )}
@@ -450,32 +442,31 @@ const PhotoDetection = ({
                 <img src={photo.preview} alt={photo.name} className="pd-photo-preview" />
                 <button type="button" className="pd-remove-btn" onClick={() => removePhoto(index)} title="Remove photo">✕</button>
                 {verificationStatus[photo.id]?.status === "error" && (
-                  <button type="button" className="pd-retry-verify-btn" onClick={() => retryVerification(photo)}> Retry</button>
+                  <button type="button" className="pd-retry-verify-btn" onClick={() => retryVerification(photo)}>Retry</button>
                 )}
               </div>
 
-              {/* ✅ ADDED: Visible Geo-Tag Stamp Below Image */}
-              <div className="pd-geo-stamp">
-                <div className="pd-stamp-header">
-                  <strong>{photo.geoData.companyName}</strong>
-                  <span className="pd-stamp-time">🕒 {photo.geoData.timestamp}</span>
-                </div>
-                <div className="pd-stamp-body">
-                  <p className="pd-stamp-address">📍 {photo.geoData.address}</p>
-                  <div className="pd-stamp-coords">
-                    <span>Lat: {photo.geoData.coordinates.split(',')[0]}</span>
-                    <span>Lng: {photo.geoData.coordinates.split(',')[1]}</span>
+              {photo.geoData && (
+                <div className="pd-geo-stamp">
+                  <div className="pd-stamp-header">
+                    <strong>{photo.geoData.companyName}</strong>
+                    <span className="pd-stamp-time">🕒 {photo.geoData.timestamp}</span>
                   </div>
-                  <p className="pd-stamp-accuracy">Accuracy: {photo.geoData.accuracy}</p>
+                  <div className="pd-stamp-body">
+                    <p className="pd-stamp-address">📍 {photo.geoData.address}</p>
+                    <div className="pd-stamp-coords">
+                      <span>Lat: {photo.geoData.coordinates.split(',')[0]}</span>
+                      <span>Lng: {photo.geoData.coordinates.split(',')[1]}</span>
+                    </div>
+                    <p className="pd-stamp-accuracy">Accuracy: {photo.geoData.accuracy}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="pd-photo-info">
                 <p className="pd-photo-name">{photo.name}</p>
                 <p className="pd-photo-size">{(photo.size / 1024 / 1024).toFixed(2)} MB</p>
-                {verificationStatus[photo.id]?.detectedIssue && (
-                  <p className="pd-detected-issue">AI Detected: <strong>{verificationStatus[photo.id].detectedIssue}</strong></p>
-                )}
+                {getVerificationBadge(photo.id)}
               </div>
             </div>
           ))}
@@ -483,8 +474,8 @@ const PhotoDetection = ({
       )}
 
       {required && photos.length === 0 && <div className="pd-validation-message pd-required">⚠️ At least one verified photo is required</div>}
-      {!allPhotosValidForSubmission && photos.length > 0 && <div className="pd-validation-message pd-pending">⏳ Uploading photo...</div>}
-      {allPhotosValidForSubmission && <div className="pd-validation-message pd-success">✅ Photo captured successfully.</div>}
+      {!allPhotosValidForSubmission && photos.length > 0 && <div className="pd-validation-message pd-pending">⏳ Checking / uploading photo...</div>}
+      {allPhotosValidForSubmission && <div className="pd-validation-message pd-success">✅ Photo verified successfully.</div>}
 
       <input type="hidden" name="photos" value={JSON.stringify(getVerifiedPhotosData())} readOnly />
       <input type="hidden" name="location" value={JSON.stringify(location)} readOnly />

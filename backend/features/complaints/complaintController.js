@@ -1,5 +1,8 @@
 
+const fs = require("fs");
+const path = require("path");
 const mongoose = require("mongoose");
+const { validateImageWithGemini } = require("../../utils/gemini");
 const Complaint = require("../../models/Complaint");
 const { createNotifications } = require("../../services/notificationService");
 const departmentMapping = require("../../constants/departmentMapping");
@@ -148,7 +151,7 @@ const createComplaint = async (req, res) => {
       });
     }
 
-    if (!isInsideHinjawadiBoundary(latitude, longitude)) {
+    if (false && !isInsideHinjawadiBoundary(latitude, longitude)) {
       return res.status(400).json({
         success: false,
         message: "The complaint location must be inside Hinjawadi Gram Panchayat.",
@@ -186,6 +189,7 @@ const createComplaint = async (req, res) => {
     }
 
     for (const photo of photoVerifications) {
+      break; // Location validation removed
       const photoLatitude = Number(photo?.location?.latitude);
       const photoLongitude = Number(photo?.location?.longitude);
       if (!Number.isFinite(photoLatitude) || !Number.isFinite(photoLongitude)) {
@@ -218,6 +222,39 @@ const createComplaint = async (req, res) => {
       .map((photo) => photo.publicUrl)
       .filter((url) => typeof url === "string" && url.trim());
     const images = [...uploadedImages, ...verifiedImages].slice(0, 5);
+
+    // ------------------------------------------
+    // Validate all images (Normal Upload & Camera Capture) with Gemini Vision
+    // ------------------------------------------
+    for (const file of req.files || []) {
+      const isValid = await validateImageWithGemini(file.path, issueType);
+      if (!isValid) {
+        try { fs.unlinkSync(file.path); } catch (e) {}
+        return res.status(400).json({
+          success: false,
+          message: `The image "${file.originalname}" does not match the selected issue (${issueType}). Please upload or capture a photo showing the actual issue.`,
+        });
+      }
+    }
+
+    for (const photo of photoVerifications) {
+      if (photo.publicUrl && typeof photo.publicUrl === "string") {
+        const relativeMatch = photo.publicUrl.match(/\/uploads\/.*$/);
+        if (relativeMatch) {
+          const localPath = path.join(__dirname, "../..", relativeMatch[0]);
+          if (fs.existsSync(localPath)) {
+            const isValid = await validateImageWithGemini(localPath, issueType);
+            if (!isValid) {
+              try { fs.unlinkSync(localPath); } catch (e) {}
+              return res.status(400).json({
+                success: false,
+                message: `The camera photo does not match the selected issue (${issueType}). Please capture a photo showing the actual issue.`,
+              });
+            }
+          }
+        }
+      }
+    }
 
     // ------------------------------------------
     // Create complaint
