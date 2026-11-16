@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ComplaintManagement.css";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
-
-// ==========================================
-// ==========================================
 
 const STATUS_OPTIONS = ["New", "Pending", "Under Verification", "Under Action", "Resolved"];
 const PRIORITY_OPTIONS = ["Critical", "Urgent", "Normal"];
 
 const ComplaintManagement = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   // State
   const [complaints, setComplaints] = useState([]);
   const [staffOptions, setStaffOptions] = useState([]);
@@ -33,7 +33,7 @@ const ComplaintManagement = ({ onBack }) => {
       fetch(`${API_BASE_URL}/users?role=staff,verifier`).then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data.success === false) {
-          throw new Error(data.message || "Failed to load staff and verifier users");
+          throw new Error(data.message || t('complaint_management.error_load_users'));
         }
         return data;
       }),
@@ -48,7 +48,7 @@ const ComplaintManagement = ({ onBack }) => {
       .catch((error) => {
         if (!active) return;
         console.error("Failed to load complaints:", error);
-        setLoadError(error.message || "Failed to load complaints");
+        setLoadError(error.message || t('complaint_management.error_load'));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -56,7 +56,7 @@ const ComplaintManagement = ({ onBack }) => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   // Filter Logic
   const filteredComplaints = useMemo(() => {
@@ -79,20 +79,20 @@ const ComplaintManagement = ({ onBack }) => {
     resolved: complaints.filter(c => c.status === "Resolved").length,
   }), [complaints]);
 
-  // --- Actions (Currently updates local state, will be API calls later) ---
+  // --- Actions ---
   const handleOpenDetails = (complaint) => {
     setSelectedComplaint({
       ...complaint,
-      complaintNumber: complaint.complaintNumber || complaint.id || "Complaint",
-      citizenName: complaint.citizenName || "Not available",
-      category: complaint.category || "Not available",
-      location: complaint.location || "Location pending",
-      description: complaint.description || "No description provided",
+      complaintNumber: complaint.complaintNumber || complaint.id || t('complaint_management.complaint'),
+      citizenName: complaint.citizenName || t('complaint_management.not_available'),
+      category: complaint.category || t('complaint_management.not_available'),
+      location: complaint.location || t('complaint_management.location_pending'),
+      description: complaint.description || t('complaint_management.no_description'),
       photos: Array.isArray(complaint.citizenPhotos || complaint.photos)
         ? (complaint.citizenPhotos || complaint.photos).length
-        : complaint.photos || "None",
-      priority: complaint.priority || "Normal",
-      status: complaint.status || "New",
+        : complaint.photos || t('complaint_management.none'),
+      priority: complaint.priority || t('complaint_management.normal'),
+      status: complaint.status || t('complaint_management.new'),
       assignedStaff: complaint.assignedStaff || "",
       assignedStaffId: complaint.assignedStaffId || "",
       assignedVerifier: complaint.assignedVerifier || "",
@@ -116,7 +116,7 @@ const ComplaintManagement = ({ onBack }) => {
       setSelectedComplaint(null);
     } catch (error) {
       console.error("Failed to save complaint changes:", error);
-      setLoadError(error.message || "Failed to save complaint changes");
+      setLoadError(error.message || t('complaint_management.error_save'));
     } finally {
       setSaving(false);
     }
@@ -136,19 +136,19 @@ const ComplaintManagement = ({ onBack }) => {
     <div className="cm-shell">
       {/* Header */}
       <div className="cm-header">
-        <button className="cm-back-btn" onClick={onBack}>← Back to Dashboard</button>
+        <button className="cm-back-btn" onClick={onBack}>{t('complaint_management.back_to_dashboard')}</button>
         <div>
-          <h2>Complaint Management</h2>
-          <p>Monitor, verify, assign, and resolve citizen complaints.</p>
+          <h2>{t('complaint_management.title')}</h2>
+          <p>{t('complaint_management.subtitle')}</p>
         </div>
       </div>
 
       {/* Stats Row */}
       <div className="cm-stats-row">
-        <div className="cm-stat-card"><h3>Total Complaints</h3><p>{stats.total}</p></div>
-        <div className="cm-stat-card new"><h3>New</h3><p>{stats.new}</p></div>
-        <div className="cm-stat-card progress"><h3>In Progress</h3><p>{stats.inProgress}</p></div>
-        <div className="cm-stat-card resolved"><h3>Resolved</h3><p>{stats.resolved}</p></div>
+        <div className="cm-stat-card"><h3>{t('complaint_management.stats.total')}</h3><p>{stats.total}</p></div>
+        <div className="cm-stat-card new"><h3>{t('complaint_management.stats.new')}</h3><p>{stats.new}</p></div>
+        <div className="cm-stat-card progress"><h3>{t('complaint_management.stats.in_progress')}</h3><p>{stats.inProgress}</p></div>
+        <div className="cm-stat-card resolved"><h3>{t('complaint_management.stats.resolved')}</h3><p>{stats.resolved}</p></div>
       </div>
 
       {/* Search & Filters */}
@@ -157,17 +157,17 @@ const ComplaintManagement = ({ onBack }) => {
           <span>🔍</span>
           <input 
             type="text" 
-            placeholder="Search by ID, issue, or location..." 
+            placeholder={t('complaint_management.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="All">All Statuses</option>
+          <option value="All">{t('complaint_management.all_statuses')}</option>
           {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-          <option value="All">All Priorities</option>
+          <option value="All">{t('complaint_management.all_priorities')}</option>
           {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
@@ -176,24 +176,24 @@ const ComplaintManagement = ({ onBack }) => {
       <div className="cm-table-container">
         {loadError && <div className="cm-error" role="alert">{loadError}</div>}
         {loading ? (
-          <div className="cm-empty">Loading complaints...</div>
+          <div className="cm-empty">{t('complaint_management.loading')}</div>
         ) : (
         <table className="cm-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Issue / Category</th>
-              <th>Location</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Date</th>
-              <th>Actions</th>
+              <th>{t('complaint_management.col_id')}</th>
+              <th>{t('complaint_management.col_issue_category')}</th>
+              <th>{t('complaint_management.col_location')}</th>
+              <th>{t('complaint_management.col_priority')}</th>
+              <th>{t('complaint_management.col_status')}</th>
+              <th>{t('complaint_management.col_assigned_to')}</th>
+              <th>{t('complaint_management.col_date')}</th>
+              <th>{t('complaint_management.col_actions')}</th>
             </tr>
           </thead>
           <tbody>
             {filteredComplaints.length === 0 ? (
-              <tr><td colSpan="8" className="cm-empty">No complaints found matching your filters.</td></tr>
+              <tr><td colSpan="8" className="cm-empty">{t('complaint_management.empty')}</td></tr>
             ) : (
               filteredComplaints.map(c => (
                 <tr key={c.id}>
@@ -202,10 +202,10 @@ const ComplaintManagement = ({ onBack }) => {
                   <td>{c.location}</td>
                   <td><span className={`cm-badge cm-priority-${getPriorityColor(c.priority)}`}>{c.priority}</span></td>
                   <td><span className={`cm-badge cm-status-${getStatusColor(c.status)}`}>{c.status}</span></td>
-                  <td>{c.assignedStaff || <span className="cm-unassigned">Unassigned</span>}</td>
+                  <td>{c.assignedStaff || <span className="cm-unassigned">{t('complaint_management.unassigned')}</span>}</td>
                   <td className="cm-mono">{c.date}</td>
                   <td>
-                    <button className="cm-btn-view" onClick={() => handleOpenDetails(c)}>View & Manage</button>
+                    <button className="cm-btn-view" onClick={() => handleOpenDetails(c)}>{t('complaint_management.btn_view_manage')}</button>
                   </td>
                 </tr>
               ))
@@ -220,41 +220,41 @@ const ComplaintManagement = ({ onBack }) => {
         <div className="cm-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="cm-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="cm-modal-header">
-              <h3>Complaint Details: {selectedComplaint.complaintNumber}</h3>
+              <h3>{t('complaint_management.modal_title', { number: selectedComplaint.complaintNumber })}</h3>
               <button className="cm-close-btn" onClick={() => setShowModal(false)}>✕</button>
             </div>
             
             <div className="cm-modal-body">
               {/* Left: Details */}
               <div className="cm-modal-section">
-                <h4>Issue Details</h4>
-                <p><strong>Citizen:</strong> {selectedComplaint.citizenName}</p>
-                <p><strong>Category:</strong> {selectedComplaint.category}</p>
-                <p><strong>Location:</strong> {selectedComplaint.location}</p>
-                <p><strong>Description:</strong> {selectedComplaint.description}</p>
-                <p><strong>Photos Attached:</strong> {selectedComplaint.photos}</p>
+                <h4>{t('complaint_management.modal_issue_details')}</h4>
+                <p><strong>{t('complaint_management.modal_citizen')}</strong> {selectedComplaint.citizenName}</p>
+                <p><strong>{t('complaint_management.modal_category')}</strong> {selectedComplaint.category}</p>
+                <p><strong>{t('complaint_management.modal_location')}</strong> {selectedComplaint.location}</p>
+                <p><strong>{t('complaint_management.modal_description')}</strong> {selectedComplaint.description}</p>
+                <p><strong>{t('complaint_management.modal_photos')}</strong> {selectedComplaint.photos}</p>
               </div>
 
               {/* Right: Actions */}
               <div className="cm-modal-section cm-actions-section">
-                <h4>Management Actions</h4>
+                <h4>{t('complaint_management.modal_management_actions')}</h4>
                 
                 <div className="cm-form-group">
-                  <label>Set Priority</label>
+                  <label>{t('complaint_management.modal_set_priority')}</label>
                   <select value={selectedComplaint.priority} onChange={(e) => setSelectedComplaint({...selectedComplaint, priority: e.target.value})}>
                     {PRIORITY_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
                 <div className="cm-form-group">
-                  <label>Update Status (Verify/Resolve)</label>
+                  <label>{t('complaint_management.modal_update_status')}</label>
                   <select value={selectedComplaint.status} onChange={(e) => setSelectedComplaint({...selectedComplaint, status: e.target.value})}>
                     {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
 
                 <div className="cm-form-group">
-                  <label>Assign / Reassign Staff</label>
+                  <label>{t('complaint_management.modal_assign_staff')}</label>
                   <select
                     value={selectedComplaint.assignedStaffId || staffOptions.find((staff) => staff.name === selectedComplaint.assignedStaff)?._id || ""}
                     onChange={(e) => {
@@ -266,7 +266,7 @@ const ComplaintManagement = ({ onBack }) => {
                       });
                     }}
                   >
-                    <option value="">-- Unassigned --</option>
+                    <option value="">{t('complaint_management.modal_unassigned')}</option>
                     {staffOptions.map((staff) => (
                       <option key={staff._id} value={staff._id}>{staff.name} · {staff.staffId || staff.email}</option>
                     ))}
@@ -274,9 +274,9 @@ const ComplaintManagement = ({ onBack }) => {
                 </div>
 
                 <div className="cm-form-group">
-                  <label>Assign Verifier</label>
+                  <label>{t('complaint_management.modal_assign_verifier')}</label>
                   <select value={selectedComplaint.assignedVerifier} onChange={(e) => setSelectedComplaint({...selectedComplaint, assignedVerifier: e.target.value})}>
-                    <option value="">-- Unassigned --</option>
+                    <option value="">{t('complaint_management.modal_unassigned')}</option>
                     {verifierOptions.map(v => <option key={v._id} value={v.name}>{v.name}</option>)}
                   </select>
                 </div>
@@ -284,9 +284,9 @@ const ComplaintManagement = ({ onBack }) => {
             </div>
 
             <div className="cm-modal-footer">
-              <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>{t('complaint_management.modal_cancel')}</button>
               <button className="cm-btn-save" onClick={handleSaveChanges} disabled={saving}>
-                {saving ? "Saving..." : "💾 Save Changes"}
+                {saving ? t('complaint_management.modal_saving') : t('complaint_management.modal_save')}
               </button>
             </div>
           </div>

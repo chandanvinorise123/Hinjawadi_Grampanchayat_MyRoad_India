@@ -1,14 +1,18 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./CompletedWork.css";
 import ComplaintImage from "./ComplaintImage";
 
-const formatDate = (value) => {
-  if (!value) return "Not recorded";
+const formatDate = (value, notRecordedText = "Not recorded") => {
+  if (!value) return notRecordedText;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
 
 const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const notRecorded = t('completed_work.not_recorded');
+
   const [selectedItem, setSelectedItem] = useState(null);
   const [verifierRemarks, setVerifierRemarks] = useState("");
   const [verificationDateTime, setVerificationDateTime] = useState("");
@@ -43,11 +47,11 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
   // 2. Handle Approval / Rejection
   const handleAction = async (action) => {
     if (!verifierRemarks.trim()) {
-      setError("Please add verification remarks before taking action.");
+      setError(t('completed_work.error_remarks_required'));
       return;
     }
     if (!verificationDateTime) {
-      setError("Please record the verification date and time.");
+      setError(t('completed_work.error_datetime_required'));
       return;
     }
 
@@ -58,7 +62,7 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
       setSelectedItem(null);
       setVerifierRemarks("");
     } catch (saveError) {
-      setError(saveError.message || "Unable to save the verification decision.");
+      setError(saveError.message || t('completed_work.error_save_decision'));
     } finally {
       setSaving(false);
     }
@@ -79,28 +83,28 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
     <div className="cw-shell">
       {/* Header */}
       <div className="cw-header">
-        <button className="cw-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h2>🛠️ Completed Work Verification</h2>
+        <button className="cw-back-btn" onClick={onBack}>← {t('completed_work.back_to_dashboard')}</button>
+        <h2>🛠️ {t('completed_work.title')}</h2>
       </div>
 
       <div className="cw-container">
         {loadError && <div className="cw-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="cw-summary">
-          <span>📋 Total Completed Work Awaiting Verification: <b>{completedItems.length}</b></span>
+          <span>{t('completed_work.total_awaiting', { count: completedItems.length })}</span>
         </div>
 
-        <section className="cw-table-panel" aria-label="Completed work awaiting verification">
+        <section className="cw-table-panel" aria-label={t('completed_work.aria_completed_work')}>
           <div className="cw-table-wrap">
             <table className="cw-table">
               <thead>
                 <tr>
-                  <th>Complaint</th>
-                  <th>Issue & Location</th>
-                  <th>Assigned Staff</th>
-                  <th>Work Completed</th>
-                  <th>Status</th>
-                  <th>Details</th>
+                  <th>{t('completed_work.col_complaint')}</th>
+                  <th>{t('completed_work.col_issue_location')}</th>
+                  <th>{t('completed_work.col_assigned_staff')}</th>
+                  <th>{t('completed_work.col_work_completed')}</th>
+                  <th>{t('completed_work.col_status')}</th>
+                  <th>{t('completed_work.col_details')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,29 +112,29 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                   <tr key={item.id}>
                     <td>
                       <b className="cw-table-number">{item.complaintNumber || "—"}</b>
-                      <span className="cw-table-subtitle">{item.citizenName || "Citizen not available"}</span>
+                      <span className="cw-table-subtitle">{item.citizenName || t('completed_work.citizen_not_available')}</span>
                     </td>
                     <td>
-                      <b>{item.issue || item.category || "Issue not specified"}</b>
-                      <span className="cw-table-subtitle">{item.location || "Location pending"}</span>
+                      <b>{item.issue || item.category || t('completed_work.issue_not_specified')}</b>
+                      <span className="cw-table-subtitle">{item.location || t('completed_work.location_pending')}</span>
                     </td>
-                    <td>{item.assignedStaff || "Not assigned"}</td>
-                    <td>{formatDate(item.inspection?.completionDate || item.updatedAt)}</td>
+                    <td>{item.assignedStaff || t('completed_work.not_assigned')}</td>
+                    <td>{formatDate(item.inspection?.completionDate || item.updatedAt, notRecorded)}</td>
                     <td>
                       <span className={`cw-status-badge cw-status-${getStatusTone(item.status)}`}>
-                        {item.status === "pending" ? "Awaiting Review" : item.status || "Awaiting Review"}
+                        {item.status === "pending" ? t('completed_work.awaiting_review') : (item.status || t('completed_work.awaiting_review'))}
                       </span>
                     </td>
                     <td>
                       <button className="cw-view-button" type="button" onClick={() => handleSelectItem(item)}>
-                        View Details
+                        {t('completed_work.view_details')}
                       </button>
                     </td>
                   </tr>
                 )) : (
                   <tr>
                     <td className="cw-empty" colSpan="6">
-                      {loadError ? "Completed work could not be loaded." : "No completed work in the queue."}
+                      {loadError ? t('completed_work.load_error') : t('completed_work.no_completed_work')}
                     </td>
                   </tr>
                 )}
@@ -151,37 +155,37 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
           >
             <header className="cw-modal-header">
               <div>
-                <span className="cw-modal-eyebrow">Completed work submission</span>
-                <h2 id="cw-modal-title">{selectedItem.complaintNumber || "Complaint details"}</h2>
+                <span className="cw-modal-eyebrow">{t('completed_work.modal_eyebrow')}</span>
+                <h2 id="cw-modal-title">{selectedItem.complaintNumber || t('completed_work.complaint_details')}</h2>
               </div>
-              <button type="button" className="cw-modal-close" aria-label="Close details" onClick={closeDetails} disabled={saving}>×</button>
+              <button type="button" className="cw-modal-close" aria-label={t('completed_work.close_details_aria')} onClick={closeDetails} disabled={saving}>×</button>
             </header>
 
             <div className="cw-modal-body">
               <section className="cw-modal-section">
-                <h3>Citizen & Complaint Details</h3>
+                <h3>{t('completed_work.citizen_complaint_details')}</h3>
                 <div className="cw-modal-detail-grid">
-                  <div><span>Citizen</span><b>{selectedItem.citizenName || "Not available"}</b></div>
-                  <div><span>Citizen contact</span><b>{selectedItem.citizenContact || "Not available"}</b></div>
-                  <div><span>Citizen email</span><b>{selectedItem.citizenProfile?.email || "Not available"}</b></div>
-                  <div><span>Department</span><b>{selectedItem.department || "Not assigned"}</b></div>
-                  <div><span>Assigned staff</span><b>{selectedItem.assignedStaff || "Not assigned"}</b></div>
-                  <div><span>Assigned verifier</span><b>{selectedItem.assignedVerifier || "Not assigned"}</b></div>
-                  <div><span>Priority</span><b>{selectedItem.priority || "Normal"}</b></div>
-                  <div><span>Submitted</span><b>{formatDate(selectedItem.createdAt || selectedItem.date)}</b></div>
-                  <div><span>Last updated</span><b>{formatDate(selectedItem.updatedAt)}</b></div>
-                  <div><span>Landmark</span><b>{selectedItem.landmark || "Not provided"}</b></div>
-                  <div className="cw-modal-detail-wide"><span>Reported description</span><b>{selectedItem.description || "No description provided."}</b></div>
-                  <div className="cw-modal-detail-wide"><span>Complaint location</span><b>{selectedItem.location || "Location pending"}</b></div>
+                  <div><span>{t('completed_work.citizen')}</span><b>{selectedItem.citizenName || t('completed_work.not_available')}</b></div>
+                  <div><span>{t('completed_work.citizen_contact')}</span><b>{selectedItem.citizenContact || t('completed_work.not_available')}</b></div>
+                  <div><span>{t('completed_work.citizen_email')}</span><b>{selectedItem.citizenProfile?.email || t('completed_work.not_available')}</b></div>
+                  <div><span>{t('completed_work.department')}</span><b>{selectedItem.department || t('completed_work.not_assigned')}</b></div>
+                  <div><span>{t('completed_work.assigned_staff')}</span><b>{selectedItem.assignedStaff || t('completed_work.not_assigned')}</b></div>
+                  <div><span>{t('completed_work.assigned_verifier')}</span><b>{selectedItem.assignedVerifier || t('completed_work.not_assigned')}</b></div>
+                  <div><span>{t('completed_work.priority')}</span><b>{selectedItem.priority || t('completed_work.normal')}</b></div>
+                  <div><span>{t('completed_work.submitted')}</span><b>{formatDate(selectedItem.createdAt || selectedItem.date, notRecorded)}</b></div>
+                  <div><span>{t('completed_work.last_updated')}</span><b>{formatDate(selectedItem.updatedAt, notRecorded)}</b></div>
+                  <div><span>{t('completed_work.landmark')}</span><b>{selectedItem.landmark || t('completed_work.not_provided')}</b></div>
+                  <div className="cw-modal-detail-wide"><span>{t('completed_work.reported_description')}</span><b>{selectedItem.description || t('completed_work.no_description_provided')}</b></div>
+                  <div className="cw-modal-detail-wide"><span>{t('completed_work.complaint_location')}</span><b>{selectedItem.location || t('completed_work.location_pending')}</b></div>
                   {selectedItem.coordinates?.latitude != null && selectedItem.coordinates?.longitude != null && (
                     <div className="cw-modal-detail-wide">
-                      <span>GPS coordinates</span>
+                      <span>{t('completed_work.gps_coordinates')}</span>
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedItem.coordinates.latitude},${selectedItem.coordinates.longitude}`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        {selectedItem.coordinates.latitude}, {selectedItem.coordinates.longitude} · Open map
+                        {selectedItem.coordinates.latitude}, {selectedItem.coordinates.longitude} · {t('completed_work.open_map')}
                       </a>
                     </div>
                   )}
@@ -189,34 +193,34 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
               </section>
 
               <section className="cw-modal-section">
-                <h3>Inspection & Action Details</h3>
+                <h3>{t('completed_work.inspection_action_details')}</h3>
                 <div className="cw-modal-detail-grid">
-                  <div><span>Inspection date</span><b>{formatDate(selectedItem.inspection?.inspectionDate)}</b></div>
-                  <div><span>Work completion date</span><b>{formatDate(selectedItem.inspection?.completionDate)}</b></div>
-                  <div className="cw-modal-detail-wide"><span>Staff inspection remarks</span><b>{selectedItem.inspection?.remarks || selectedItem.remarks || "No staff inspection remarks recorded."}</b></div>
-                  <div className="cw-modal-detail-wide"><span>Action taken by staff</span><b>{selectedItem.inspection?.actionTaken || selectedItem.actionTaken || "No work action recorded."}</b></div>
+                  <div><span>{t('completed_work.inspection_date')}</span><b>{formatDate(selectedItem.inspection?.inspectionDate, notRecorded)}</b></div>
+                  <div><span>{t('completed_work.work_completion_date')}</span><b>{formatDate(selectedItem.inspection?.completionDate, notRecorded)}</b></div>
+                  <div className="cw-modal-detail-wide"><span>{t('completed_work.staff_inspection_remarks')}</span><b>{selectedItem.inspection?.remarks || selectedItem.remarks || t('completed_work.no_staff_inspection_remarks')}</b></div>
+                  <div className="cw-modal-detail-wide"><span>{t('completed_work.action_taken_by_staff')}</span><b>{selectedItem.inspection?.actionTaken || selectedItem.actionTaken || t('completed_work.no_work_action_recorded')}</b></div>
                   {selectedItem.verifierRemarks && (
-                    <div className="cw-modal-detail-wide"><span>Latest verifier feedback</span><b>{selectedItem.verifierRemarks}</b></div>
+                    <div className="cw-modal-detail-wide"><span>{t('completed_work.latest_verifier_feedback')}</span><b>{selectedItem.verifierRemarks}</b></div>
                   )}
                 </div>
 
                 <div className="cw-modal-comparison">
-                  <h4>Before & After Work Photos</h4>
+                  <h4>{t('completed_work.before_after_work_photos')}</h4>
                   <div className="cw-comparison-grid">
                     <div className="cw-photo-card">
-                      <span className="cw-photo-label">Before Repair</span>
+                      <span className="cw-photo-label">{t('completed_work.before_repair')}</span>
                       <div className="cw-photo-placeholder">
                         {selectedItem.photos?.before
-                          ? <ComplaintImage src={selectedItem.photos.before} alt="Before repair evidence" fallbackClassName="cw-photo-fallback" />
-                          : "No photo available"}
+                          ? <ComplaintImage src={selectedItem.photos.before} alt={t('completed_work.before_repair')} fallbackClassName="cw-photo-fallback" />
+                          : t('completed_work.no_photo_available')}
                       </div>
                     </div>
                     <div className="cw-photo-card">
-                      <span className="cw-photo-label">After Repair</span>
+                      <span className="cw-photo-label">{t('completed_work.after_repair')}</span>
                       <div className="cw-photo-placeholder">
                         {selectedItem.photos?.after
-                          ? <ComplaintImage src={selectedItem.photos.after} alt="After repair evidence" fallbackClassName="cw-photo-fallback" />
-                          : "No photo available"}
+                          ? <ComplaintImage src={selectedItem.photos.after} alt={t('completed_work.after_repair')} fallbackClassName="cw-photo-fallback" />
+                          : t('completed_work.no_photo_available')}
                       </div>
                     </div>
                   </div>
@@ -224,7 +228,7 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
 
                 {Array.isArray(selectedItem.log) && selectedItem.log.length > 0 && (
                   <div className="cw-modal-log">
-                    <h4>Activity Log</h4>
+                    <h4>{t('completed_work.activity_log')}</h4>
                     <ul className="cw-log-list">
                       {selectedItem.log.map((entry, idx) => (
                         <li key={`${entry.time || "log"}-${idx}`}>{entry.text} <span className="cw-log-time">({entry.time})</span></li>
@@ -234,21 +238,21 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                 )}
 
                 <div className="cw-verification-form">
-                  <h4>Verifier Action</h4>
+                  <h4>{t('completed_work.verifier_action')}</h4>
                   {error && <p className="cw-save-error" role="alert">{error}</p>}
                   <div className="cw-form-group">
-                    <label htmlFor="cw-remarks">Verification Remarks *</label>
+                    <label htmlFor="cw-remarks">{t('completed_work.verification_remarks_required')}</label>
                     <textarea
                       id="cw-remarks"
                       rows="3"
-                      placeholder="Document your observations after comparing the work..."
+                      placeholder={t('completed_work.verification_remarks_placeholder')}
                       value={verifierRemarks}
                       onChange={(event) => setVerifierRemarks(event.target.value)}
                       disabled={saving}
                     />
                   </div>
                   <div className="cw-form-group">
-                    <label htmlFor="cw-datetime">Verification Date & Time *</label>
+                    <label htmlFor="cw-datetime">{t('completed_work.verification_datetime_required')}</label>
                     <input
                       id="cw-datetime"
                       type="datetime-local"
@@ -259,10 +263,10 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                   </div>
                   <div className="cw-action-buttons">
                     <button className="cw-btn cw-btn-reject" disabled={saving} onClick={() => handleAction("reject")}>
-                      {saving ? "Saving..." : "Work Not Satisfied (Reject)"}
+                      {saving ? t('completed_work.saving') : t('completed_work.work_not_satisfied_reject')}
                     </button>
                     <button className="cw-btn cw-btn-approve" disabled={saving} onClick={() => handleAction("approve")}>
-                      {saving ? "Saving..." : "Work Satisfied (Approve)"}
+                      {saving ? t('completed_work.saving') : t('completed_work.work_satisfied_approve')}
                     </button>
                   </div>
                 </div>
@@ -270,7 +274,7 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
             </div>
 
             <footer className="cw-modal-footer">
-              <button className="cw-back-btn" type="button" onClick={closeDetails} disabled={saving}>Close</button>
+              <button className="cw-back-btn" type="button" onClick={closeDetails} disabled={saving}>{t('completed_work.close')}</button>
             </footer>
           </section>
         </div>

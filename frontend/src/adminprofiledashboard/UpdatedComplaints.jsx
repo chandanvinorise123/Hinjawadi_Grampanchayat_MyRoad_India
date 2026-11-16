@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./UpdatedComplaints.css";
 import { toMediaUrl } from "../utils/dashboardApi";
 import { getTimestamp, getUpdateHistory } from "./updatedComplaintsUtils";
 
-const formatDateTime = (value) => {
-  if (!value) return "Time not recorded";
+const formatDateTime = (value, notRecordedText = "Time not recorded") => {
+  if (!value) return notRecordedText;
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? String(value)
-    : date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    // ✅ Updated to use browser's active locale for better i18n support
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 };
 
 const getPhotoItems = (photos, label) => photos
@@ -18,19 +20,19 @@ const getPhotoItems = (photos, label) => photos
     photo,
   }));
 
-const getCitizenPhotos = (complaint) => {
+const getCitizenPhotos = (complaint, t) => {
   const photos = Array.isArray(complaint.citizenPhotos)
     ? complaint.citizenPhotos
     : Array.isArray(complaint.images) ? complaint.images : [];
-  return getPhotoItems(photos, "Citizen Evidence");
+  return getPhotoItems(photos, t('updated_complaints.citizen_evidence'));
 };
 
-const getWorkPhotos = (complaint) => {
+const getWorkPhotos = (complaint, t) => {
   const inspection = complaint.inspection || {};
   return [
-    ...getPhotoItems([inspection.sitePhoto || complaint.photos?.site || ""], "Before / Site"),
-    ...getPhotoItems([inspection.completionPhoto || complaint.photos?.after || ""], "After Work"),
-    ...getPhotoItems([inspection.verificationPhoto || ""], "Verification"),
+    ...getPhotoItems([inspection.sitePhoto || complaint.photos?.site || ""], t('updated_complaints.before_site')),
+    ...getPhotoItems([inspection.completionPhoto || complaint.photos?.after || ""], t('updated_complaints.after_work')),
+    ...getPhotoItems([inspection.verificationPhoto || ""], t('updated_complaints.verification')),
   ];
 };
 
@@ -42,6 +44,9 @@ const UpdatedComplaints = ({
   listTitle = "Staff & Verifier Updates",
   showUpdateHistory = true,
 }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const notRecorded = t('updated_complaints.not_recorded');
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedComplaintId, setSelectedComplaintId] = useState("");
 
@@ -75,6 +80,7 @@ const UpdatedComplaints = ({
       latestUpdate.actor,
     ].some((value) => String(value || "").toLowerCase().includes(query));
   });
+  
   const selectedRecord = updatedComplaints.find(
     ({ complaint }) => String(complaint.id || complaint._id) === String(selectedComplaintId)
   );
@@ -83,15 +89,15 @@ const UpdatedComplaints = ({
     <main className="uc-shell">
       <header className="uc-header">
         <button className="uc-back-btn" type="button" onClick={selectedRecord ? () => setSelectedComplaintId("") : onBack}>
-          ← {selectedRecord ? "Back to Updated Complaints" : "Back to Dashboard"}
+          ← {selectedRecord ? t('updated_complaints.back_to_updated') : t('updated_complaints.back_to_dashboard')}
         </button>
         <div>
           <span className="uc-eyebrow">{audienceLabel}</span>
-          <h1>{selectedRecord ? "Updated Complaint Details" : "Updated Complaints"}</h1>
+          <h1>{selectedRecord ? t('updated_complaints.updated_complaint_details') : t('updated_complaints.updated_complaints')}</h1>
           <p>
             {selectedRecord
               ? selectedRecord.complaint.complaintNumber
-              : "Review the latest complaint updates and submitted work evidence."}
+              : t('updated_complaints.review_latest_updates')}
           </p>
         </div>
       </header>
@@ -100,62 +106,62 @@ const UpdatedComplaints = ({
         <div className="uc-detail-layout">
           <section className="uc-panel">
             <div className="uc-panel-heading">
-              <span className="uc-eyebrow">Original report</span>
-              <h2>Complaint Information</h2>
+              <span className="uc-eyebrow">{t('updated_complaints.original_report')}</span>
+              <h2>{t('updated_complaints.complaint_information')}</h2>
             </div>
             <dl className="uc-facts">
-              <div><dt>Complaint Number</dt><dd>{selectedRecord.complaint.complaintNumber || "Not recorded"}</dd></div>
-              <div><dt>Citizen</dt><dd>{selectedRecord.complaint.citizenName || "Guest"}</dd></div>
-              <div><dt>Contact</dt><dd>{selectedRecord.complaint.citizenContact || selectedRecord.complaint.citizenMobile || "Not recorded"}</dd></div>
-              <div><dt>Email</dt><dd>{selectedRecord.complaint.citizenEmail || selectedRecord.complaint.citizenProfile?.email || "Not recorded"}</dd></div>
-              <div><dt>Category</dt><dd>{selectedRecord.complaint.category || "Not recorded"}</dd></div>
-              <div><dt>Issue</dt><dd>{selectedRecord.complaint.issue || selectedRecord.complaint.issueType || "Not recorded"}</dd></div>
-              <div><dt>Location</dt><dd>{typeof selectedRecord.complaint.location === "string" ? selectedRecord.complaint.location : selectedRecord.complaint.location?.address || "Not recorded"}</dd></div>
-              <div><dt>Priority</dt><dd>{selectedRecord.complaint.priority || "Normal"}</dd></div>
-              <div><dt>Current Status</dt><dd>{selectedRecord.complaint.status || "Not recorded"}</dd></div>
-              <div><dt>Assigned Staff</dt><dd>{selectedRecord.complaint.assignedStaff || "Not assigned"}</dd></div>
-              <div><dt>Assigned Verifier</dt><dd>{selectedRecord.complaint.assignedVerifier || "Not assigned"}</dd></div>
-              <div><dt>Submitted</dt><dd>{formatDateTime(selectedRecord.complaint.createdAt || selectedRecord.complaint.date)}</dd></div>
-              <div><dt>Last Updated</dt><dd>{formatDateTime(selectedRecord.complaint.updatedAt)}</dd></div>
-              <div><dt>Landmark</dt><dd>{selectedRecord.complaint.landmark || "Not recorded"}</dd></div>
-              <div className="uc-fact-wide"><dt>Description</dt><dd>{selectedRecord.complaint.description || "No complaint description provided."}</dd></div>
+              <div><dt>{t('updated_complaints.complaint_number')}</dt><dd>{selectedRecord.complaint.complaintNumber || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.citizen')}</dt><dd>{selectedRecord.complaint.citizenName || t('updated_complaints.guest')}</dd></div>
+              <div><dt>{t('updated_complaints.contact')}</dt><dd>{selectedRecord.complaint.citizenContact || selectedRecord.complaint.citizenMobile || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.email')}</dt><dd>{selectedRecord.complaint.citizenEmail || selectedRecord.complaint.citizenProfile?.email || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.category')}</dt><dd>{selectedRecord.complaint.category || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.issue')}</dt><dd>{selectedRecord.complaint.issue || selectedRecord.complaint.issueType || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.location')}</dt><dd>{typeof selectedRecord.complaint.location === "string" ? selectedRecord.complaint.location : selectedRecord.complaint.location?.address || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.priority')}</dt><dd>{selectedRecord.complaint.priority || t('updated_complaints.normal')}</dd></div>
+              <div><dt>{t('updated_complaints.current_status')}</dt><dd>{selectedRecord.complaint.status || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.assigned_staff')}</dt><dd>{selectedRecord.complaint.assignedStaff || t('updated_complaints.not_assigned')}</dd></div>
+              <div><dt>{t('updated_complaints.assigned_verifier')}</dt><dd>{selectedRecord.complaint.assignedVerifier || t('updated_complaints.not_assigned')}</dd></div>
+              <div><dt>{t('updated_complaints.submitted')}</dt><dd>{formatDateTime(selectedRecord.complaint.createdAt || selectedRecord.complaint.date, notRecorded)}</dd></div>
+              <div><dt>{t('updated_complaints.last_updated')}</dt><dd>{formatDateTime(selectedRecord.complaint.updatedAt, notRecorded)}</dd></div>
+              <div><dt>{t('updated_complaints.landmark')}</dt><dd>{selectedRecord.complaint.landmark || notRecorded}</dd></div>
+              <div className="uc-fact-wide"><dt>{t('updated_complaints.description')}</dt><dd>{selectedRecord.complaint.description || t('updated_complaints.no_description_provided')}</dd></div>
             </dl>
             <div className="uc-evidence">
-              <h3>Citizen Evidence</h3>
-              {getCitizenPhotos(selectedRecord.complaint).length ? (
+              <h3>{t('updated_complaints.citizen_evidence')}</h3>
+              {getCitizenPhotos(selectedRecord.complaint, t).length ? (
                 <div className="uc-photo-grid">
-                  {getCitizenPhotos(selectedRecord.complaint).map(({ label, photo }, index) => (
+                  {getCitizenPhotos(selectedRecord.complaint, t).map(({ label, photo }, index) => (
                     <a href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={`${label}-${index}`}>
                       <img src={toMediaUrl(photo)} alt={`${label} evidence`} loading="lazy" />
                       <span>{label}</span>
                     </a>
                   ))}
                 </div>
-              ) : <p className="uc-empty">No citizen complaint images attached.</p>}
+              ) : <p className="uc-empty">{t('updated_complaints.no_citizen_images')}</p>}
             </div>
           </section>
 
           <section className="uc-panel">
             <div className="uc-panel-heading">
-              <span className="uc-eyebrow">Latest activity first</span>
-              <h2>Update Information</h2>
+              <span className="uc-eyebrow">{t('updated_complaints.latest_activity_first')}</span>
+              <h2>{t('updated_complaints.update_information')}</h2>
             </div>
             <dl className="uc-facts">
-              <div><dt>Work Performed</dt><dd>{selectedRecord.complaint.inspection?.actionTaken || "Not recorded"}</dd></div>
-              <div><dt>Staff Remarks</dt><dd>{selectedRecord.complaint.inspection?.remarks || "Not recorded"}</dd></div>
-              <div><dt>Inspection Date</dt><dd>{formatDateTime(selectedRecord.complaint.inspection?.inspectionDate)}</dd></div>
-              <div><dt>Completion Date</dt><dd>{formatDateTime(selectedRecord.complaint.inspection?.completionDate)}</dd></div>
-              <div className="uc-fact-wide"><dt>Verifier Feedback</dt><dd>{selectedRecord.complaint.verifierRemarks || selectedRecord.complaint.previousRemarks || "No verifier feedback recorded."}</dd></div>
+              <div><dt>{t('updated_complaints.work_performed')}</dt><dd>{selectedRecord.complaint.inspection?.actionTaken || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.staff_remarks')}</dt><dd>{selectedRecord.complaint.inspection?.remarks || notRecorded}</dd></div>
+              <div><dt>{t('updated_complaints.inspection_date')}</dt><dd>{formatDateTime(selectedRecord.complaint.inspection?.inspectionDate, notRecorded)}</dd></div>
+              <div><dt>{t('updated_complaints.completion_date')}</dt><dd>{formatDateTime(selectedRecord.complaint.inspection?.completionDate, notRecorded)}</dd></div>
+              <div className="uc-fact-wide"><dt>{t('updated_complaints.verifier_feedback')}</dt><dd>{selectedRecord.complaint.verifierRemarks || selectedRecord.complaint.previousRemarks || t('updated_complaints.no_verifier_feedback')}</dd></div>
             </dl>
             {showUpdateHistory && (
               <div className="uc-evidence">
-                <h3>Update History</h3>
+                <h3>{t('updated_complaints.update_history')}</h3>
                 <ol className="uc-history">
                   {selectedRecord.history.map((entry) => (
                     <li key={entry.id}>
                       <div className="uc-history-topline">
                         <strong>{entry.actor}</strong>
-                        <time>{formatDateTime(entry.time)}</time>
+                        <time>{formatDateTime(entry.time, notRecorded)}</time>
                       </div>
                       <p>{entry.details}</p>
                     </li>
@@ -164,17 +170,17 @@ const UpdatedComplaints = ({
               </div>
             )}
             <div className="uc-evidence">
-              <h3>Work Evidence</h3>
-              {getWorkPhotos(selectedRecord.complaint).length ? (
+              <h3>{t('updated_complaints.work_evidence')}</h3>
+              {getWorkPhotos(selectedRecord.complaint, t).length ? (
                 <div className="uc-photo-grid">
-                  {getWorkPhotos(selectedRecord.complaint).map(({ label, photo }, index) => (
+                  {getWorkPhotos(selectedRecord.complaint, t).map(({ label, photo }, index) => (
                     <a href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={`${label}-${index}`}>
                       <img src={toMediaUrl(photo)} alt={`${label} evidence`} loading="lazy" />
                       <span>{label}</span>
                     </a>
                   ))}
                 </div>
-              ) : <p className="uc-empty">No staff or verifier work images attached.</p>}
+              ) : <p className="uc-empty">{t('updated_complaints.no_work_images')}</p>}
             </div>
           </section>
         </div>
@@ -183,12 +189,12 @@ const UpdatedComplaints = ({
           <div className="uc-table-heading">
             <div>
               <h2>{listTitle}</h2>
-              <p>{filteredComplaints.length} updated complaint{filteredComplaints.length === 1 ? "" : "s"}</p>
+              <p>{filteredComplaints.length} {filteredComplaints.length === 1 ? t('updated_complaints.updated_complaint_singular') : t('updated_complaints.updated_complaints_plural')}</p>
             </div>
             <input
               type="search"
-              aria-label="Search updated complaints"
-              placeholder="Search complaint, updater, location..."
+              aria-label={t('updated_complaints.search_aria')}
+              placeholder={t('updated_complaints.search_placeholder')}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
@@ -197,39 +203,39 @@ const UpdatedComplaints = ({
             <table className="uc-table">
               <thead>
                 <tr>
-                  <th>Complaint No.</th>
-                  <th>Citizen</th>
-                  <th>Issue</th>
-                  <th>Updated By</th>
-                  <th>Latest Update</th>
-                  <th>Date & Time</th>
-                  <th>Action</th>
+                  <th>{t('updated_complaints.col_complaint_no')}</th>
+                  <th>{t('updated_complaints.col_citizen')}</th>
+                  <th>{t('updated_complaints.col_issue')}</th>
+                  <th>{t('updated_complaints.col_updated_by')}</th>
+                  <th>{t('updated_complaints.col_latest_update')}</th>
+                  <th>{t('updated_complaints.col_date_time')}</th>
+                  <th>{t('updated_complaints.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredComplaints.length ? filteredComplaints.map(({ complaint, latestUpdate }) => (
                   <tr key={complaint.id || complaint._id}>
-                    <td className="uc-mono">{complaint.complaintNumber || "N/A"}</td>
-                    <td>{complaint.citizenName || "Guest"}</td>
+                    <td className="uc-mono">{complaint.complaintNumber || t('updated_complaints.na')}</td>
+                    <td>{complaint.citizenName || t('updated_complaints.guest')}</td>
                     <td>
-                      <strong>{complaint.issue || complaint.issueType || complaint.category || "Complaint"}</strong>
-                      <small>{typeof complaint.location === "string" ? complaint.location : complaint.location?.address || "Location not recorded"}</small>
+                      <strong>{complaint.issue || complaint.issueType || complaint.category || t('updated_complaints.complaint')}</strong>
+                      <small>{typeof complaint.location === "string" ? complaint.location : complaint.location?.address || t('updated_complaints.location_not_recorded')}</small>
                     </td>
                     <td><span className="uc-actor-badge">{latestUpdate.actor}</span></td>
                     <td className="uc-update-summary">{latestUpdate.details}</td>
-                    <td>{formatDateTime(latestUpdate.time)}</td>
+                    <td>{formatDateTime(latestUpdate.time, notRecorded)}</td>
                     <td>
                       <button
                         className="uc-view-btn"
                         type="button"
                         onClick={() => setSelectedComplaintId(String(complaint.id || complaint._id))}
                       >
-                        View Details
+                        {t('updated_complaints.view_details')}
                       </button>
                     </td>
                   </tr>
                 )) : (
-                  <tr><td className="uc-empty-row" colSpan="7">No staff or verifier updates match your search.</td></tr>
+                  <tr><td className="uc-empty-row" colSpan="7">{t('updated_complaints.no_updates_match_search')}</td></tr>
                 )}
               </tbody>
             </table>

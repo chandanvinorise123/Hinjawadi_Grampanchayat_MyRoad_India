@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./RecentActivity.css";
 import { fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/status mapping
 const categoryBadgeMap = {
   "Complaints": "navy",
   "Account": "orange",
@@ -10,6 +12,8 @@ const categoryBadgeMap = {
 };
 
 const RecentActivity = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [selectedActivity, setSelectedActivity] = useState(null);
@@ -24,19 +28,19 @@ const RecentActivity = ({ onBack }) => {
           action: entry.status,
           category: "Complaints",
           complaintNumber: complaint.complaintNumber,
-          description: entry.remarks || `Complaint status changed to ${entry.status}`,
+          description: entry.remarks || t('recent_activity.status_changed', { status: entry.status }),
           device: "MyRoad India",
           status: "Success",
         }))
       )))
       .catch((error) => console.error("Failed to load citizen activity:", error));
-  }, []);
+  }, [t]); // ✅ Added t to dependency array
 
   const filteredActivities = useMemo(() => {
     return activities.filter((a) => {
       const matchesSearch =
-        a.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.action || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.description || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (a.complaintNumber && a.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesCategory = filterCategory === "All" || a.category === filterCategory;
@@ -63,13 +67,13 @@ const RecentActivity = ({ onBack }) => {
     <div className="cdp-ra-page">
       {/* Header */}
       <div className="cdp-ra-header">
-        <button className="cdp-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h1>Recent Activity</h1>
+        <button className="cdp-back-btn" onClick={onBack}>← {t('recent_activity.back_to_dashboard')}</button>
+        <h1>{t('recent_activity.title')}</h1>
       </div>
 
       <div className="cdp-ra-content">
         <p className="cdp-ra-subtitle">
-          A chronological log of all actions and interactions performed on your citizen account.
+          {t('recent_activity.subtitle')}
         </p>
 
         {/* Search and Filter Bar */}
@@ -78,19 +82,19 @@ const RecentActivity = ({ onBack }) => {
             <span className="cdp-ra-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search by action, description, or complaint number..."
+              placeholder={t('recent_activity.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="cdp-ra-filter">
-            <label>Category:</label>
+            <label>{t('recent_activity.filter_label')}:</label>
             <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-              <option value="All">All Categories</option>
-              <option value="Complaints">Complaints</option>
-              <option value="Tracking">Tracking</option>
-              <option value="Account">Account</option>
-              <option value="Security">Security</option>
+              <option value="All">{t('recent_activity.filter_all')}</option>
+              <option value="Complaints">{t('recent_activity.filter_complaints')}</option>
+              <option value="Tracking">{t('recent_activity.filter_tracking')}</option>
+              <option value="Account">{t('recent_activity.filter_account')}</option>
+              <option value="Security">{t('recent_activity.filter_security')}</option>
             </select>
           </div>
         </div>
@@ -100,19 +104,19 @@ const RecentActivity = ({ onBack }) => {
           {filteredActivities.length === 0 ? (
             <div className="cdp-ra-empty-state">
               <div className="cdp-ra-empty-icon">📜</div>
-              <h4>No Activity Found</h4>
-              <p>Try adjusting your search or filter criteria.</p>
+              <h4>{t('recent_activity.empty_title')}</h4>
+              <p>{t('recent_activity.empty_desc')}</p>
             </div>
           ) : (
             <table className="cdp-ra-table">
               <thead>
                 <tr>
-                  <th>Date & Time</th>
-                  <th>Action</th>
-                  <th>Category</th>
-                  <th>Related Complaint</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t('recent_activity.col_datetime')}</th>
+                  <th>{t('recent_activity.col_action')}</th>
+                  <th>{t('recent_activity.col_category')}</th>
+                  <th>{t('recent_activity.col_related_complaint')}</th>
+                  <th>{t('recent_activity.col_status')}</th>
+                  <th>{t('recent_activity.col_action_btn')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,7 +130,7 @@ const RecentActivity = ({ onBack }) => {
                       </span>
                     </td>
                     <td className="cdp-ra-mono">
-                      {a.complaintNumber || <span className="cdp-ra-na">N/A</span>}
+                      {a.complaintNumber || <span className="cdp-ra-na">{t('recent_activity.na')}</span>}
                     </td>
                     <td>
                       <span className="cdp-ra-status-success">✓ {a.status}</span>
@@ -136,7 +140,7 @@ const RecentActivity = ({ onBack }) => {
                         className="cdp-ra-view-btn"
                         onClick={() => setSelectedActivity(a)}
                       >
-                        View Details
+                        {t('recent_activity.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -164,29 +168,29 @@ const RecentActivity = ({ onBack }) => {
             <div className="cdp-ra-modal-body">
               {/* Full Description */}
               <div className="cdp-ra-modal-section">
-                <h4>📝 Activity Description</h4>
+                <h4>📝 {t('recent_activity.modal_activity_desc')}</h4>
                 <p className="cdp-ra-modal-full-desc">{selectedActivity.description}</p>
               </div>
 
               {/* Context Grid */}
               <div className="cdp-ra-modal-section">
-                <h4>ℹ️ Session & Context Details</h4>
+                <h4>ℹ️ {t('recent_activity.modal_session_details')}</h4>
                 <div className="cdp-ra-context-grid">
                   <div className="cdp-ra-context-item">
-                    <span>Timestamp</span>
+                    <span>{t('recent_activity.modal_timestamp')}</span>
                     <b className="cdp-ra-mono">{selectedActivity.timestamp}</b>
                   </div>
                   <div className="cdp-ra-context-item">
-                    <span>Device / Browser</span>
+                    <span>{t('recent_activity.modal_device')}</span>
                     <b>{selectedActivity.device}</b>
                   </div>
                   <div className="cdp-ra-context-item">
-                    <span>Execution Status</span>
+                    <span>{t('recent_activity.modal_execution_status')}</span>
                     <b className="cdp-ra-status-success">✓ {selectedActivity.status}</b>
                   </div>
                   <div className="cdp-ra-context-item">
-                    <span>Related Complaint</span>
-                    <b className="cdp-ra-mono">{selectedActivity.complaintNumber || "None"}</b>
+                    <span>{t('recent_activity.modal_related_complaint')}</span>
+                    <b className="cdp-ra-mono">{selectedActivity.complaintNumber || t('recent_activity.modal_none')}</b>
                   </div>
                 </div>
               </div>
@@ -194,7 +198,7 @@ const RecentActivity = ({ onBack }) => {
 
             <div className="cdp-ra-modal-footer">
               <button className="cdp-ra-modal-close-btn" onClick={() => setSelectedActivity(null)}>
-                Close Details
+                {t('recent_activity.modal_close')}
               </button>
             </div>
           </div>

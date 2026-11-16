@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./Notification.css";
 import { API_BASE_URL } from "../utils/dashboardApi";
 
@@ -7,10 +8,26 @@ const NotificationMonitoring = ({
   onOpenComplaint,
   initialNotification = null,
 }) => {
+  const { t } = useTranslation(); // ✅ ADDED
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotif, setSelectedNotif] = useState(initialNotification);
   const [filterType, setFilterType] = useState("All");
+
+  // ✅ Helper to translate notification types while keeping internal logic intact
+  const getTypeLabel = (type) => {
+    const map = {
+      "Complaint Registered": t('notification_monitoring.type_complaint_registered'),
+      "Complaint Verified": t('notification_monitoring.type_complaint_verified'),
+      "Staff Assigned": t('notification_monitoring.type_staff_assigned'),
+      "Action Initiated": t('notification_monitoring.type_action_initiated'),
+      "Work Completed": t('notification_monitoring.type_work_completed'),
+      "Complaint Resolved": t('notification_monitoring.type_complaint_resolved'),
+      "Complaint Closed": t('notification_monitoring.type_complaint_closed'),
+      "Rework Required": t('notification_monitoring.type_rework_required'),
+    };
+    return map[type] || type;
+  };
 
   // Fetch notifications dynamically from backend
   useEffect(() => {
@@ -48,7 +65,7 @@ const NotificationMonitoring = ({
       active = false;
       window.clearInterval(refreshTimer);
     };
-  }, []);
+  }, [t]);
 
   // Filter notifications by type
   const filteredNotifications = filterType === "All" 
@@ -71,18 +88,19 @@ const NotificationMonitoring = ({
     return tones[type] || "navy";
   };
 
+  // ✅ Updated to use browser's active locale for better i18n support
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return t('notification_monitoring.na');
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return "N/A";
-    return date.toLocaleString("en-IN", {
+    if (Number.isNaN(date.getTime())) return t('notification_monitoring.na');
+    return date.toLocaleString(undefined, {
       dateStyle: "medium",
       timeStyle: "short",
     });
   };
 
   if (loading) {
-    return <div className="nm-full-page-loading">Loading Notifications...</div>;
+    return <div className="nm-full-page-loading">{t('notification_monitoring.loading')}</div>;
   }
 
   return (
@@ -92,11 +110,11 @@ const NotificationMonitoring = ({
         <div className="nm-header">
           <div className="nm-header-info">
             <button className="nm-back-btn" onClick={onBack}>
-              ← Back to Dashboard
+              {t('notification_monitoring.back_to_dashboard')}
             </button>
             <div>
-              <h2>Notification Monitoring</h2>
-              <p>MyRoad India · Admin Portal</p>
+              <h2>{t('notification_monitoring.title')}</h2>
+              <p>{t('notification_monitoring.subtitle')}</p>
             </div>
           </div>
           <div className="nm-header-actions">
@@ -107,11 +125,11 @@ const NotificationMonitoring = ({
             >
               {notificationTypes.map((type) => (
                 <option key={type} value={type}>
-                  {type === "All" ? "All Types" : type}
+                  {type === "All" ? t('notification_monitoring.all_types') : getTypeLabel(type)}
                 </option>
               ))}
             </select>
-            <span className="nm-count-badge">{filteredNotifications.length} Total</span>
+            <span className="nm-count-badge">{filteredNotifications.length} {t('notification_monitoring.total')}</span>
           </div>
         </div>
 
@@ -119,18 +137,18 @@ const NotificationMonitoring = ({
         <div className="nm-table-container">
           {filteredNotifications.length === 0 ? (
             <div className="nm-empty-state">
-              <p>No notifications found for the selected filter.</p>
+              <p>{t('notification_monitoring.empty_state')}</p>
             </div>
           ) : (
             <table className="nm-table">
               <thead>
                 <tr>
-                  <th>Date & Time</th>
-                  <th>Type</th>
-                  <th>Message</th>
-                  <th>Complaint / Subject</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t('notification_monitoring.col_date_time')}</th>
+                  <th>{t('notification_monitoring.col_type')}</th>
+                  <th>{t('notification_monitoring.col_message')}</th>
+                  <th>{t('notification_monitoring.col_complaint_subject')}</th>
+                  <th>{t('notification_monitoring.col_status')}</th>
+                  <th>{t('notification_monitoring.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,7 +157,7 @@ const NotificationMonitoring = ({
                     <td className="nm-mono">{formatDate(notif.createdAt || notif.time)}</td>
                     <td>
                       <span className={`nm-badge nm-badge-${getToneClass(notif.type)}`}>
-                        {notif.type}
+                        {getTypeLabel(notif.type)}
                       </span>
                     </td>
                     <td className="nm-message-text">
@@ -154,15 +172,15 @@ const NotificationMonitoring = ({
                           className="nm-complaint-link"
                           type="button"
                           onClick={() => onOpenComplaint?.(notif)}
-                          title="Open complaint details"
+                          title={t('notification_monitoring.open_complaint_details')}
                         >
                           {notif.complaintNumber}
                         </button>
-                      ) : notif.complaintId || "N/A"}
+                      ) : notif.complaintId || t('notification_monitoring.na')}
                     </td>
                     <td>
                       <span className={`nm-status ${notif.isRead ? "read" : "unread"}`}>
-                        {notif.isRead ? "Read" : "New"}
+                        {notif.isRead ? t('notification_monitoring.status_read') : t('notification_monitoring.status_new')}
                       </span>
                     </td>
                     <td>
@@ -170,7 +188,7 @@ const NotificationMonitoring = ({
                         className="nm-view-btn"
                         onClick={() => setSelectedNotif(notif)}
                       >
-                        View Details
+                        {t('notification_monitoring.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -188,16 +206,16 @@ const NotificationMonitoring = ({
             <div className="nm-modal-header">
               <div>
                 <span className={`nm-badge nm-badge-${getToneClass(selectedNotif.type)}`}>
-                  {selectedNotif.type}
+                  {getTypeLabel(selectedNotif.type)}
                 </span>
-                <h3>Notification Details</h3>
+                <h3>{t('notification_monitoring.modal_title')}</h3>
               </div>
               <button className="nm-modal-close" onClick={() => setSelectedNotif(null)}>✕</button>
             </div>
 
             <div className="nm-modal-body">
               <div className="nm-detail-section">
-                <h4>{selectedNotif.contactMessage ? "✉️ Citizen Message" : "📢 Full Message"}</h4>
+                <h4>{selectedNotif.contactMessage ? t('notification_monitoring.citizen_message') : t('notification_monitoring.full_message')}</h4>
                 <p className="nm-full-message">
                   {selectedNotif.contactMessage?.message ||
                     selectedNotif.text ||
@@ -207,7 +225,7 @@ const NotificationMonitoring = ({
 
               <div className="nm-detail-grid">
                 <div className="nm-detail-item">
-                  <span>Date & Time</span>
+                  <span>{t('notification_monitoring.date_time')}</span>
                   <b className="nm-mono">
                     {formatDate(selectedNotif.contactMessage?.createdAt || selectedNotif.createdAt || selectedNotif.time)}
                   </b>
@@ -215,42 +233,42 @@ const NotificationMonitoring = ({
                 {selectedNotif.contactMessage ? (
                   <>
                     <div className="nm-detail-item">
-                      <span>Citizen Name</span>
+                      <span>{t('notification_monitoring.citizen_name')}</span>
                       <b>{selectedNotif.contactMessage.name}</b>
                     </div>
                     <div className="nm-detail-item">
-                      <span>Email</span>
+                      <span>{t('notification_monitoring.email')}</span>
                       <b>{selectedNotif.contactMessage.email}</b>
                     </div>
                     <div className="nm-detail-item">
-                      <span>Mobile</span>
+                      <span>{t('notification_monitoring.mobile')}</span>
                       <b>{selectedNotif.contactMessage.mobile}</b>
                     </div>
                     <div className="nm-detail-item">
-                      <span>Subject</span>
+                      <span>{t('notification_monitoring.subject')}</span>
                       <b>{selectedNotif.contactMessage.subject}</b>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="nm-detail-item">
-                      <span>Complaint Number</span>
-                      <b className="nm-mono">{selectedNotif.complaintNumber || "N/A"}</b>
+                      <span>{t('notification_monitoring.complaint_number')}</span>
+                      <b className="nm-mono">{selectedNotif.complaintNumber || t('notification_monitoring.na')}</b>
                     </div>
                     <div className="nm-detail-item">
-                      <span>Complaint ID (Internal)</span>
-                      <b className="nm-mono">{selectedNotif.complaintId || "N/A"}</b>
+                      <span>{t('notification_monitoring.complaint_id_internal')}</span>
+                      <b className="nm-mono">{selectedNotif.complaintId || t('notification_monitoring.na')}</b>
                     </div>
                     <div className="nm-detail-item">
-                      <span>Recipient ID</span>
-                      <b className="nm-mono">{selectedNotif.recipientId || "N/A"}</b>
+                      <span>{t('notification_monitoring.recipient_id')}</span>
+                      <b className="nm-mono">{selectedNotif.recipientId || t('notification_monitoring.na')}</b>
                     </div>
                   </>
                 )}
                 <div className="nm-detail-item">
-                  <span>Read Status</span>
+                  <span>{t('notification_monitoring.read_status')}</span>
                   <b className={selectedNotif.isRead ? "nm-text-success" : "nm-text-warning"}>
-                    {selectedNotif.isRead ? "✓ Read" : "⚠ Unread"}
+                    {selectedNotif.isRead ? t('notification_monitoring.text_read') : t('notification_monitoring.text_unread')}
                   </b>
                 </div>
               </div>
@@ -266,11 +284,11 @@ const NotificationMonitoring = ({
                     onOpenComplaint(selectedNotif);
                   }}
                 >
-                  View Complaint Details
+                  {t('notification_monitoring.view_complaint_details')}
                 </button>
               )}
               <button className="nm-modal-close-btn" onClick={() => setSelectedNotif(null)}>
-                Close
+                {t('notification_monitoring.close')}
               </button>
             </div>
           </div>

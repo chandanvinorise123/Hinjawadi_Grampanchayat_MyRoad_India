@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./PhysicalInspection.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/index mapping
 const stageLabels = [
   "Action Initiated",
   "Work In Progress",
@@ -32,6 +34,9 @@ const latestStaffUpdate = (complaint) => (complaint.log || [])
   }, { entry: null, timestamp: 0 });
 
 const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const translatedStageLabels = t('physical_inspection.stage_labels', { returnObjects: true }); // ✅ ADDED
+
   const [viewingComplaintId, setViewingComplaintId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState(() => createInspectionForm(null));
@@ -39,6 +44,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
   const currentComplaint = complaints.find((complaint) =>
     String(complaint.id) === String(viewingComplaintId)
   ) || null;
@@ -55,6 +61,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
       }),
     [complaints]
   );
+
   const filteredComplaints = sortedComplaints.filter(({ complaint }) => {
     const query = searchTerm.trim().toLowerCase();
     return !query || [
@@ -93,7 +100,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
       const uploaded = await uploadDashboardPhoto(file);
       setFormData((previous) => ({ ...previous, [field]: uploaded.publicUrl }));
     } catch (error) {
-      setFormError(error.message || "Unable to upload the inspection photograph.");
+      setFormError(error.message || t('physical_inspection.error_upload'));
     } finally {
       setUploadingPhoto("");
       event.target.value = "";
@@ -122,9 +129,9 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
     setSuccessMessage("");
     try {
       await onSaveInspection?.(currentComplaint.id, formData);
-      setSuccessMessage("Inspection record saved successfully.");
+      setSuccessMessage(t('physical_inspection.success_message'));
     } catch (error) {
-      setFormError(error.message || "Unable to save the inspection record.");
+      setFormError(error.message || t('physical_inspection.error_save'));
     } finally {
       setSaving(false);
     }
@@ -134,71 +141,71 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
     <div className="pi-shell">
       <header className="pi-header">
         <button className="pi-back-btn" type="button" onClick={onBack}>
-          ← Back to Dashboard
+          {t('physical_inspection.back_to_dashboard')}
         </button>
         <div>
-          <span className="pi-eyebrow">Staff workspace</span>
-          <h2>Physical Inspection</h2>
-          <p>Review assigned complaints and record inspection findings, work progress, and evidence.</p>
+          <span className="pi-eyebrow">{t('physical_inspection.staff_workspace')}</span>
+          <h2>{t('physical_inspection.title')}</h2>
+          <p>{t('physical_inspection.subtitle')}</p>
         </div>
       </header>
 
       <main className="pi-container">
-        <section className="pi-table-card" aria-label="Assigned complaints for physical inspection">
+        <section className="pi-table-card" aria-label={t('physical_inspection.aria_assigned_complaints')}>
           <div className="pi-table-heading">
             <div>
-              <span className="pi-eyebrow">Assigned workload</span>
-              <h3>Complaints for Inspection</h3>
-              <p>Open a complaint to review its report and update inspection details.</p>
+              <span className="pi-eyebrow">{t('physical_inspection.assigned_workload')}</span>
+              <h3>{t('physical_inspection.complaints_for_inspection')}</h3>
+              <p>{t('physical_inspection.open_complaint_review')}</p>
             </div>
-            <span className="pi-count">{complaints.length} complaints</span>
+            <span className="pi-count">{t('physical_inspection.complaints_count', { count: complaints.length })}</span>
           </div>
           <label className="pi-search">
-            <span>Search complaints</span>
+            <span>{t('physical_inspection.search_complaints')}</span>
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Complaint number, issue, location, or status..."
+              placeholder={t('physical_inspection.search_placeholder')}
             />
           </label>
           <div className="pi-table-wrap">
             <table className="pi-table">
               <thead>
                 <tr>
-                  <th>Complaint</th>
-                  <th>Issue & Location</th>
-                  <th>Status</th>
-                  <th>Latest Staff Update</th>
-                  <th>Last Updated</th>
-                  <th>Action</th>
+                  <th>{t('physical_inspection.col_complaint')}</th>
+                  <th>{t('physical_inspection.col_issue_location')}</th>
+                  <th>{t('physical_inspection.col_status')}</th>
+                  <th>{t('physical_inspection.col_latest_staff_update')}</th>
+                  <th>{t('physical_inspection.col_last_updated')}</th>
+                  <th>{t('physical_inspection.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredComplaints.length ? filteredComplaints.map(({ complaint, latestUpdate }) => (
                   <tr key={complaint.id}>
                     <td>
-                      <b className="pi-complaint-number">{complaint.complaintNumber || "Complaint"}</b>
-                      <span className="pi-cell-note">{complaint.citizenName || "Citizen not available"}</span>
+                      <b className="pi-complaint-number">{complaint.complaintNumber || t('physical_inspection.col_complaint')}</b>
+                      <span className="pi-cell-note">{complaint.citizenName || t('physical_inspection.citizen_not_available')}</span>
                     </td>
                     <td>
-                      <b>{complaint.issue || complaint.category || "Issue not specified"}</b>
-                      <span className="pi-cell-note">{complaint.location || "Location not recorded"}</span>
+                      <b>{complaint.issue || complaint.category || t('physical_inspection.issue_not_specified')}</b>
+                      <span className="pi-cell-note">{complaint.location || t('physical_inspection.location_not_recorded')}</span>
                     </td>
-                    <td><span className="pi-status-badge">{complaint.status || "Not recorded"}</span></td>
+                    <td><span className="pi-status-badge">{complaint.status || t('physical_inspection.not_recorded')}</span></td>
                     <td className="pi-update-summary">
-                      {latestUpdate.entry?.text || complaint.inspection?.actionTaken || "No staff update recorded"}
+                      {latestUpdate.entry?.text || complaint.inspection?.actionTaken || t('physical_inspection.no_staff_update_recorded')}
                     </td>
                     <td>
                       {latestUpdate.entry?.time
                         ? new Date(latestUpdate.entry.time).toLocaleString()
                         : complaint.updatedAt
                           ? new Date(complaint.updatedAt).toLocaleString()
-                          : "Not updated"}
+                          : t('physical_inspection.not_updated')}
                     </td>
                     <td>
                       <button className="pi-view-btn" type="button" onClick={() => openComplaint(complaint)}>
-                        View Details
+                        {t('physical_inspection.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -206,8 +213,8 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
                   <tr>
                     <td className="pi-empty" colSpan="6">
                       {complaints.length
-                        ? "No assigned complaints match your search."
-                        : "No complaints are currently assigned to you."}
+                        ? t('physical_inspection.no_match_search')
+                        : t('physical_inspection.no_complaints_assigned')}
                     </td>
                   </tr>
                 )}
@@ -221,21 +228,35 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
         <div className="pi-modal-overlay" onMouseDown={(event) => {
           if (event.target === event.currentTarget) closeDetails();
         }}>
-          <section className="pi-modal" role="dialog" aria-modal="true" aria-label={`Inspection details for ${currentComplaint.complaintNumber}`}>
+          <section
+            className="pi-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('physical_inspection.aria_inspection_details', {
+              complaintNumber: currentComplaint.complaintNumber || t('physical_inspection.col_complaint')
+            })}
+          >
             <header className="pi-modal-header">
               <div>
-                <span className="pi-eyebrow">Inspection record</span>
-                <h3>{currentComplaint.complaintNumber || "Complaint details"}</h3>
+                <span className="pi-eyebrow">{t('physical_inspection.inspection_record')}</span>
+                <h3>{currentComplaint.complaintNumber || t('physical_inspection.complaint_details_fallback')}</h3>
               </div>
-              <button className="pi-modal-close" type="button" onClick={closeDetails} aria-label="Close details">×</button>
+              <button
+                className="pi-modal-close"
+                type="button"
+                onClick={closeDetails}
+                aria-label={t('physical_inspection.close_details_aria')}
+              >
+                ×
+              </button>
             </header>
 
             <div className="pi-modal-body">
               <div className="pi-detail-layout">
                 <section className="pi-information-panel">
                   <header className="pi-panel-heading">
-                    <h4>Complaint Information</h4>
-                    <span className="pi-status-badge">{currentComplaint.status || "Not recorded"}</span>
+                    <h4>{t('physical_inspection.complaint_information')}</h4>
+                    <span className="pi-status-badge">{currentComplaint.status || t('physical_inspection.not_recorded')}</span>
                   </header>
                   <div className="pi-complaint-information">
                     <StaffComplaintDetails
@@ -249,8 +270,8 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
                 <form className="pi-form-card" onSubmit={handleSubmit}>
                   <header className="pi-panel-heading">
                     <div>
-                      <span className="pi-eyebrow">Staff record</span>
-                      <h4>Inspection & Work Update</h4>
+                      <span className="pi-eyebrow">{t('physical_inspection.staff_record')}</span>
+                      <h4>{t('physical_inspection.inspection_work_update')}</h4>
                     </div>
                   </header>
                   <div className="pi-form-content">
@@ -259,7 +280,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
 
                     <div className="pi-grid-2">
                       <div className="pi-field">
-                        <label htmlFor="pi-inspection-date">Inspection Date & Time</label>
+                        <label htmlFor="pi-inspection-date">{t('physical_inspection.inspection_datetime')}</label>
                         <input
                           id="pi-inspection-date"
                           name="inspectionDate"
@@ -270,7 +291,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
                         />
                       </div>
                       <div className="pi-field">
-                        <label htmlFor="pi-completion-date">Work Completion Date & Time</label>
+                        <label htmlFor="pi-completion-date">{t('physical_inspection.work_completion_datetime')}</label>
                         <input
                           id="pi-completion-date"
                           name="completionDate"
@@ -282,7 +303,7 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
                     </div>
 
                     <div className="pi-field">
-                      <label htmlFor="pi-status">Inspection Status</label>
+                      <label htmlFor="pi-status">{t('physical_inspection.inspection_status')}</label>
                       <select
                         id="pi-status"
                         name="newStage"
@@ -292,48 +313,51 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
                           newStage: Number(event.target.value),
                         }))}
                       >
-                        {stageLabels.map((label, index) => (
-                          <option key={label} value={index}>{label}</option>
+                        {translatedStageLabels.map((label, index) => (
+                          <option key={index} value={index}>{label}</option>
                         ))}
                       </select>
                     </div>
 
                     <div className="pi-field">
-                      <label htmlFor="pi-remarks">Inspection Remarks</label>
+                      <label htmlFor="pi-remarks">{t('physical_inspection.inspection_remarks')}</label>
                       <textarea
                         id="pi-remarks"
                         name="remarks"
                         rows="3"
                         value={formData.remarks}
                         onChange={handleChange}
-                        placeholder="Describe your inspection findings..."
+                        placeholder={t('physical_inspection.describe_findings_placeholder')}
                         required
                       />
                     </div>
+
                     <div className="pi-field">
-                      <label htmlFor="pi-action-taken">Action Taken / Work Remarks</label>
+                      <label htmlFor="pi-action-taken">{t('physical_inspection.action_taken_work_remarks')}</label>
                       <textarea
                         id="pi-action-taken"
                         name="actionTaken"
                         rows="3"
                         value={formData.actionTaken}
                         onChange={handleChange}
-                        placeholder="Describe the repair or action carried out..."
+                        placeholder={t('physical_inspection.action_placeholder')}
                       />
                     </div>
 
                     <div className="pi-photo-fields">
                       {[
-                        ["sitePhoto", "Before-Work / Site Photograph"],
-                        ["completionPhoto", "After-Work / Completion Photograph"],
+                        ["sitePhoto", t('physical_inspection.before_work_site_photo')],
+                        ["completionPhoto", t('physical_inspection.after_work_completion_photo')],
                       ].map(([field, label]) => (
                         <div className="pi-field" key={field}>
                           <label htmlFor={`pi-${field}`}>{label}</label>
                           <div className="pi-photo-upload">
                             <span>
                               {uploadingPhoto === field
-                                ? "Uploading..."
-                                : formData[field] ? "Replace photograph" : "Choose photograph"}
+                                ? t('physical_inspection.uploading')
+                                : formData[field]
+                                  ? t('physical_inspection.replace_photo')
+                                  : t('physical_inspection.choose_photo')}
                             </span>
                             <input
                               id={`pi-${field}`}
@@ -356,10 +380,10 @@ const PhysicalInspection = ({ complaints = [], onBack, onSaveInspection }) => {
 
                     <div className="pi-form-actions">
                       <button className="pi-btn-outline" type="button" onClick={closeDetails} disabled={saving}>
-                        Close
+                        {t('physical_inspection.close')}
                       </button>
                       <button className="pi-btn-primary" type="submit" disabled={saving || Boolean(uploadingPhoto)}>
-                        {saving ? "Saving..." : "Save Inspection"}
+                        {saving ? t('physical_inspection.saving') : t('physical_inspection.save_inspection')}
                       </button>
                     </div>
                   </div>

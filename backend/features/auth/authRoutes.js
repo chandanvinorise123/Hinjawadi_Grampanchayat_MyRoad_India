@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 
 const User = require("../../models/user");
-
-const allowedRoles = ["citizen", "staff", "verifier", "admin"];
 
 // Indian mobile number: 10 digits, starting with 6-9
 const MOBILE_REGEX = /^[6-9]\d{9}$/;
@@ -22,13 +21,20 @@ const publicUser = (u) => ({
 
 router.post("/signup", async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
         const mobile = String(req.body.mobile || "").trim();
 
-        if (!name || !email || !mobile || !password || !role) {
+        if (!name || !email || !mobile || !password) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
+            });
+        }
+
+        if (req.body.role && req.body.role !== "citizen") {
+            return res.status(400).json({
+                success: false,
+                message: "Only citizen accounts can sign up"
             });
         }
 
@@ -36,13 +42,6 @@ router.post("/signup", async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Enter a valid 10-digit mobile number"
-            });
-        }
-
-        if (!allowedRoles.includes(role)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid role selected"
             });
         }
 
@@ -61,7 +60,7 @@ router.post("/signup", async (req, res) => {
         }
 
         const newUser = new User({
-            role,
+            role: "citizen",
             name,
             email,
             mobile,
@@ -96,25 +95,24 @@ router.post("/signup", async (req, res) => {
 
 router.post("/login", async (req, res) => {
     try {
-        const { identifier, password, role } = req.body;
+        const { identifier, password } = req.body;
 
-        if (!identifier || !password || !role) {
+        if (!identifier || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Email or mobile number, password and role are required"
+                message: "Email or mobile number and password are required"
             });
         }
 
         // identifier can be an email address or a mobile number
         const user = await User.findOne({
-            $or: [{ email: identifier }, { mobile: identifier }],
-            role: role
+            $or: [{ email: identifier }, { mobile: identifier }]
         });
 
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email/mobile, password or role"
+                message: "Invalid email/mobile or password"
             });
         }
 
@@ -123,13 +121,27 @@ router.post("/login", async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email/mobile, password or role"
+                message: "Invalid email/mobile or password"
             });
         }
+
+        if (!process.env.JWT_SECRET) {
+            return res.status(503).json({
+                success: false,
+                message: "Authentication is not configured on the server"
+            });
+        }
+
+        const token = jwt.sign(
+            { role: user.role },
+            process.env.JWT_SECRET,
+            { subject: String(user._id), expiresIn: "30d" }
+        );
 
         res.status(200).json({
             success: true,
             message: "Login successful",
+            token,
             user: {
                 id: user._id,
                 role: user.role,

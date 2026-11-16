@@ -1,9 +1,21 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./NewComplaints.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 
+// Helper function for category colors (matches dashboard)
+const getCategoryColor = (category) => {
+  const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
+  let hash = 0;
+  const value = String(category || "");
+  for (let i = 0; i < value.length; i++) hash = value.charCodeAt(i) + ((hash << 5) - hash);
+  return mapColors[Math.abs(hash) % mapColors.length];
+};
+
 const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("All");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -38,12 +50,13 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
     return "green";
   };
 
+  // ✅ Moved inside component to safely use `t`
   const getStatusLabel = (status) => {
     const labels = {
-      pending: "Pending Verification",
-      in_review: "Under Review",
-      verified: "Verified",
-      rejected: "Sent Back",
+      pending: t('new_complaints.status_pending'),
+      in_review: t('new_complaints.status_in_review'),
+      verified: t('new_complaints.status_verified'),
+      rejected: t('new_complaints.status_rejected'),
     };
     return labels[status] || status;
   };
@@ -71,11 +84,11 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
 
   const handleAction = async (action) => {
     if (action === "accept" && !assignedStaffId) {
-      setActionError("Select a staff member before accepting this complaint.");
+      setActionError(t('new_complaints.error_select_staff'));
       return;
     }
     if (action === "reject" && !verifierRemarks.trim()) {
-      setActionError("Add remarks explaining why this complaint is rejected.");
+      setActionError(t('new_complaints.error_add_remarks'));
       return;
     }
 
@@ -88,7 +101,7 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
       });
       setSelectedComplaint(null);
     } catch (error) {
-      setActionError(error.message || "Unable to save the complaint decision.");
+      setActionError(error.message || t('new_complaints.error_save_decision'));
     } finally {
       setSavingAction(false);
     }
@@ -114,20 +127,20 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
       {/* Header */}
       <div className="nc-header">
         <button className="nc-back-btn" onClick={onBack}>
-          ← Back to Dashboard
+          {t('new_complaints.back_to_dashboard')}
         </button>
-        <h2>🆕 New Complaints</h2>
+        <h2>{t('new_complaints.title')}</h2>
       </div>
 
       <div className="nc-container">
         {/* ✅ Summary Cards (Two Distinct Cards) */}
         <div className="nc-summary-cards">
           <div className="nc-summary-card">
-            <span className="nc-summary-label">Total New Complaints</span>
+            <span className="nc-summary-label">{t('new_complaints.total_new_complaints')}</span>
             <span className="nc-summary-value">{newComplaints.length}</span>
           </div>
           <div className="nc-summary-card">
-            <span className="nc-summary-label">Filtered Results</span>
+            <span className="nc-summary-label">{t('new_complaints.filtered_results')}</span>
             <span className="nc-summary-value">{filteredComplaints.length}</span>
           </div>
         </div>
@@ -138,18 +151,18 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
             <span>🔍</span>
             <input
               type="text"
-              placeholder="Search by complaint number, category, or location..."
+              placeholder={t('new_complaints.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="nc-filter">
-            <label>Priority:</label>
+            <label>{t('new_complaints.priority_label')}:</label>
             <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-              <option value="All">All Priorities</option>
-              <option value="Critical">Critical</option>
-              <option value="Urgent">Urgent</option>
-              <option value="Normal">Normal</option>
+              <option value="All">{t('new_complaints.all_priorities')}</option>
+              <option value="Critical">{t('new_complaints.critical')}</option>
+              <option value="Urgent">{t('new_complaints.urgent')}</option>
+              <option value="Normal">{t('new_complaints.normal')}</option>
             </select>
           </div>
         </div>
@@ -159,19 +172,19 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
           {filteredComplaints.length === 0 ? (
             <div className="nc-empty-state">
               <div className="nc-empty-icon">📭</div>
-              <h4>No New Complaints Found</h4>
-              <p>Try adjusting your search or filter criteria.</p>
+              <h4>{t('new_complaints.empty_title')}</h4>
+              <p>{t('new_complaints.empty_desc')}</p>
             </div>
           ) : (
             <table className="nc-table">
               <thead>
                 <tr>
-                  <th>Complaint No.</th>
-                  <th>Category</th>
-                  <th>Priority</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t('new_complaints.col_complaint_no')}</th>
+                  <th>{t('new_complaints.col_category')}</th>
+                  <th>{t('new_complaints.col_priority')}</th>
+                  <th>{t('new_complaints.col_location')}</th>
+                  <th>{t('new_complaints.col_status')}</th>
+                  <th>{t('new_complaints.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -200,7 +213,7 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
                         className="nc-view-btn"
                         onClick={() => selectComplaint(c)}
                       >
-                        View Details
+                        {t('new_complaints.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -217,7 +230,7 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
           <div className="nc-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="nc-modal-header">
               <div>
-                <span className="nc-modal-badge">Complaint Details</span>
+                <span className="nc-modal-badge">{t('new_complaints.modal_title')}</span>
                 <h3>{selectedComplaint.complaintNumber}</h3>
               </div>
               <button className="nc-modal-close" onClick={() => setSelectedComplaint(null)}>✕</button>
@@ -227,69 +240,69 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
               {/* Top Info Grid */}
               <div className="nc-modal-info-grid">
                 <div className="nc-info-item">
-                  <span>Category</span>
+                  <span>{t('new_complaints.modal_category')}</span>
                   <b>{selectedComplaint.category}</b>
                 </div>
                 <div className="nc-info-item">
-                  <span>Priority</span>
+                  <span>{t('new_complaints.modal_priority')}</span>
                   <b className={`nc-text-${getPriorityTone(selectedComplaint.priority)}`}>
                     {selectedComplaint.priority}
                   </b>
                 </div>
                 <div className="nc-info-item">
-                  <span>Location</span>
+                  <span>{t('new_complaints.modal_location')}</span>
                   <b>{selectedComplaint.location}</b>
                 </div>
                 <div className="nc-info-item">
-                  <span>Status</span>
+                  <span>{t('new_complaints.modal_status')}</span>
                   <b>{getStatusLabel(selectedComplaint.status)}</b>
                 </div>
               </div>
 
               {/* Citizen Info */}
               <div className="nc-modal-section">
-                <h4>👤 Citizen Information</h4>
+                <h4>{t('new_complaints.citizen_info')}</h4>
                 <div className="nc-citizen-row">
-                  <div><span>Name:</span> <b>{selectedComplaint.citizenName}</b></div>
-                  <div><span>Contact:</span> <b>{selectedComplaint.citizenContact}</b></div>
+                  <div><span>{t('new_complaints.citizen_name')}</span> <b>{selectedComplaint.citizenName}</b></div>
+                  <div><span>{t('new_complaints.citizen_contact')}</span> <b>{selectedComplaint.citizenContact}</b></div>
                 </div>
               </div>
 
               {/* Description */}
               <div className="nc-modal-section">
-                <h4>📝 Description</h4>
+                <h4>{t('new_complaints.description')}</h4>
                 <p className="nc-description">{selectedComplaint.description}</p>
               </div>
               <VerifierComplaintDetails complaint={selectedComplaint} />
 
               {/* Photos */}
               <div className="nc-modal-section">
-                <h4>📷 Attached Photos</h4>
+                <h4>{t('new_complaints.attached_photos')}</h4>
                 <div className="nc-photos-grid">
                   {selectedComplaint.photos?.before && (
                     <div className="nc-photo-box">
-                      <span className="nc-photo-label">Before Repair</span>
+                      <span className="nc-photo-label">{t('new_complaints.before_repair')}</span>
                       <div className="nc-photo-placeholder">
-                        <ComplaintImage key={`${selectedComplaint.id}-before`} src={selectedComplaint.photos.before} alt="Before repair evidence" fallbackClassName="nc-photo-load-error" />
+                        <ComplaintImage key={`${selectedComplaint.id}-before`} src={selectedComplaint.photos.before} alt={t('new_complaints.before_repair')} fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}
                   {!selectedComplaint.photos?.before && !selectedComplaint.photos?.site && !selectedComplaint.photos?.after && (
-                    <p>No photographs were attached to this complaint.</p>
+                    <p>{t('new_complaints.no_photos_attached')}</p>
                   )}
                   {selectedComplaint.photos?.site && (
                     <div className="nc-photo-box">
-                      <span className="nc-photo-label">Site Photo</span>
+                      <span className="nc-photo-label">{t('new_complaints.site_photo')}</span>
                       <div className="nc-photo-placeholder">
-                        <ComplaintImage key={`${selectedComplaint.id}-site`} src={selectedComplaint.photos.site} alt="Site inspection evidence" fallbackClassName="nc-photo-load-error" />
+                        <ComplaintImage key={`${selectedComplaint.id}-site`} src={selectedComplaint.photos.site} alt={t('new_complaints.site_photo')} fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}
                   {selectedComplaint.photos?.after && (
                     <div className="nc-photo-box">
-                      <span className="nc-photo-label">After Repair</span>
+                      <span className="nc-photo-label">{t('new_complaints.after_repair')}</span>
                       <div className="nc-photo-placeholder">
-                        <ComplaintImage key={`${selectedComplaint.id}-after`} src={selectedComplaint.photos.after} alt="After repair evidence" fallbackClassName="nc-photo-load-error" />
+                        <ComplaintImage key={`${selectedComplaint.id}-after`} src={selectedComplaint.photos.after} alt={t('new_complaints.after_repair')} fallbackClassName="nc-photo-load-error" />
                       </div>
                     </div>
                   )}
@@ -300,35 +313,35 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
             {["pending", "in_action"].includes(selectedComplaint.status) && (
               <div className="nc-review-actions">
                 {actionError && <p className="nc-review-error" role="alert">{actionError}</p>}
-                <label htmlFor="nc-assigned-staff">Assign staff to accept this complaint *</label>
+                <label htmlFor="nc-assigned-staff">{t('new_complaints.assign_staff')}</label>
                 <select
                   id="nc-assigned-staff"
                   value={assignedStaffId}
                   disabled={savingAction}
                   onChange={(event) => setAssignedStaffId(event.target.value)}
                 >
-                  <option value="">Select staff member</option>
+                  <option value="">{t('new_complaints.select_staff_member')}</option>
                   {staffOptions.map((staff) => (
                     <option key={staff._id} value={staff._id}>
                       {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
                     </option>
                   ))}
                 </select>
-                <label htmlFor="nc-verifier-remarks">Rejection remarks (required to reject)</label>
+                <label htmlFor="nc-verifier-remarks">{t('new_complaints.rejection_remarks')}</label>
                 <textarea
                   id="nc-verifier-remarks"
                   rows="3"
                   value={verifierRemarks}
                   disabled={savingAction}
                   onChange={(event) => setVerifierRemarks(event.target.value)}
-                  placeholder="Explain the issue requiring rejection."
+                  placeholder={t('new_complaints.rejection_placeholder')}
                 />
                 <div className="nc-review-buttons">
                   <button type="button" disabled={savingAction} onClick={() => handleAction("reject")}>
-                    Reject Complaint
+                    {t('new_complaints.reject_complaint')}
                   </button>
                   <button type="button" disabled={savingAction} onClick={() => handleAction("accept")}>
-                    {savingAction ? "Saving..." : "Accept & Assign Staff"}
+                    {savingAction ? t('new_complaints.saving') : t('new_complaints.accept_assign')}
                   </button>
                 </div>
               </div>
@@ -336,7 +349,7 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
 
             <div className="nc-modal-footer">
               <button className="nc-modal-close-btn" onClick={() => setSelectedComplaint(null)}>
-                Close
+                {t('new_complaints.close')}
               </button>
             </div>
           </div>
@@ -344,15 +357,6 @@ const NewComplaints = ({ complaints, staffOptions = [], onAction, onBack }) => {
       )}
     </div>
   );
-};
-
-// Helper function for category colors (matches dashboard)
-const getCategoryColor = (category) => {
-  const mapColors = ["#e07b1c", "#2e6cb0", "#1d8a5c", "#c1900a", "#cf4438", "#7a5c9e"];
-  let hash = 0;
-  const value = String(category || "");
-  for (let i = 0; i < value.length; i++) hash = value.charCodeAt(i) + ((hash << 5) - hash);
-  return mapColors[Math.abs(hash) % mapColors.length];
 };
 
 export default NewComplaints;

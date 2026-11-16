@@ -212,3 +212,130 @@
   .swm-queue-item { flex-direction: column; align-items: flex-start; gap: 12px; }
   .swm-queue-actions { width: 100%; justify-content: space-between; }
 }
+
+/* ================= DOTTED BACKGROUND (full page behind the staff work manager) ================= */
+body:has(.swm-shell) {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 1.2px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+.swm-shell {
+  background: transparent;
+}
+
+/* ================= FIX RIGHT-SIDE OVERFLOW ================= */
+
+/* Prevent grid columns from exceeding available width */
+.swm-main-grid {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Allow grid children to shrink */
+.swm-main-grid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Keep panels inside the available space */
+.swm-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Prevent sections from overflowing */
+.swm-section {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keep section headers within panel */
+.swm-section-header {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Make tables scroll horizontally instead of cutting off */
+.swm-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.swm-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+}
+
+/* Prevent queue cards from overflowing */
+.swm-queue-list {
+  width: 100%;
+  min-width: 0;
+}
+
+.swm-queue-item {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.swm-queue-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.swm-queue-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* ================= RESPONSIVE FIX ================= */
+
+@media (max-width: 1024px) {
+  .swm-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .swm-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .swm-shell {
+    padding: 16px;
+  }
+
+  .swm-panel {
+    padding: 16px;
+  }
+
+  .swm-queue-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .swm-queue-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

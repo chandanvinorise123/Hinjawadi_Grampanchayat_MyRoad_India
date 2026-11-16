@@ -101,3 +101,17 @@
   .cv-modal-footer { flex-direction: column; gap: 12px; }
   .cv-btn-return, .cv-btn-verify { width: 100%; }
 }
+/* ================= DOTTED BACKGROUND (full page behind the complaint verifier) ================= */
+body:has(.cv-shell) {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 1.2px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+.cv-shell {
+  background: transparent;
+}

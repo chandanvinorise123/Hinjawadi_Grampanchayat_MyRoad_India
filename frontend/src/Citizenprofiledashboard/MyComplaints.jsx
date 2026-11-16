@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./MyComplaints.css";
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/status mapping
 const lifecycleStages = [
   "Complaint Registered",
   "Complaint Verified",
@@ -23,7 +25,9 @@ const colorForCategory = (category = "") => {
 };
 
 const MyComplaints = ({ complaints, onBack, onDelete }) => {
-  // ✅ Use local state to handle deletions dynamically
+  const { t } = useTranslation(); // ✅ ADDED
+  const stages = t('lifecycle.stages', { returnObjects: true }); // ✅ ADDED for lifecycle translation
+
   const initialData = complaints || [];
   const [localComplaints, setLocalComplaints] = useState(initialData);
 
@@ -31,10 +35,9 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   
-  // ✅ NEW: Selection and Delete State
   const [selectedIds, setSelectedIds] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null); // 'bulk' or specific complaint ID
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const getFilterStatus = (stage) => {
     if (stage <= 1) return "Pending";
@@ -48,15 +51,14 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
     return localComplaints.filter((c) => {
       const matchesSearch =
         c.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.location.toLowerCase().includes(searchTerm.toLowerCase());
+        (c.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.location || "").toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = filterStatus === "All" || getFilterStatus(c.stage) === filterStatus;
       return matchesSearch && matchesStatus;
     });
   }, [localComplaints, searchTerm, filterStatus]);
 
-  // ✅ NEW: Selection Handlers
   const toggleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedIds(filteredComplaints.map(c => c.id));
@@ -73,11 +75,10 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
     }
   };
 
-  // ✅ NEW: Delete Handlers
   const handleDeleteClick = (target) => {
     setDeleteTarget(target);
     setShowDeleteConfirm(true);
-    setSelectedComplaint(null); // Close details modal if open
+    setSelectedComplaint(null);
   };
 
   const confirmDelete = async () => {
@@ -89,7 +90,6 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
     const updatedComplaints = localComplaints.filter(c => !idsToDelete.includes(c.id));
     
     setLocalComplaints(updatedComplaints);
-    
     setSelectedIds([]);
     setShowDeleteConfirm(false);
     setDeleteTarget(null);
@@ -100,8 +100,7 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
     setDeleteTarget(null);
   };
 
-  // Close modals on Escape key
-  React.useEffect(() => {
+  useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape") {
         setSelectedComplaint(null);
@@ -124,41 +123,40 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
   return (
     <div className="cdp-mc-page">
       <div className="cdp-mc-header">
-        <button className="cdp-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h1>My Complaints</h1>
+        <button className="cdp-back-btn" onClick={onBack}>← {t('my_complaints.back_to_dashboard')}</button>
+        <h1>{t('my_complaints.title')}</h1>
       </div>
 
       <div className="cdp-mc-content">
-        <p className="cdp-mc-subtitle">Track and manage all the issues you have reported.</p>
+        <p className="cdp-mc-subtitle">{t('my_complaints.subtitle')}</p>
 
         <div className="cdp-mc-controls">
           <div className="cdp-mc-search">
             <span className="cdp-mc-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search by complaint number, category, or location..."
+              placeholder={t('my_complaints.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="cdp-mc-filter">
-            <label>Status:</label>
+            <label>{t('my_complaints.status_label')}:</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="All">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Under Process">Under Process</option>
-              <option value="Resolved">Resolved</option>
-              <option value="Closed">Closed</option>
+              <option value="All">{t('status.all')}</option>
+              <option value="Pending">{t('status.pending')}</option>
+              <option value="Under Process">{t('status.under_process')}</option>
+              <option value="Resolved">{t('status.resolved')}</option>
+              <option value="Closed">{t('status.closed')}</option>
             </select>
           </div>
         </div>
 
-        {/* ✅ NEW: Bulk Action Bar */}
         {selectedIds.length > 0 && (
           <div className="cdp-mc-bulk-bar">
-            <span className="cdp-mc-bulk-text">{selectedIds.length} complaint(s) selected</span>
+            <span className="cdp-mc-bulk-text">{t('my_complaints.selected_count', { count: selectedIds.length })}</span>
             <button className="cdp-mc-bulk-delete-btn" onClick={() => handleDeleteClick('bulk')}>
-              🗑️ Delete Selected
+              🗑️ {t('my_complaints.delete_selected')}
             </button>
           </div>
         )}
@@ -167,8 +165,8 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
           {filteredComplaints.length === 0 ? (
             <div className="cdp-mc-empty-state">
               <div className="cdp-mc-empty-icon">📭</div>
-              <h4>No Complaints Found</h4>
-              <p>Try adjusting your search or filter criteria.</p>
+              <h4>{t('my_complaints.empty_title')}</h4>
+              <p>{t('my_complaints.empty_desc')}</p>
             </div>
           ) : (
             <table className="cdp-mc-table">
@@ -182,12 +180,12 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
                       onChange={toggleSelectAll}
                     />
                   </th>
-                  <th>Complaint No.</th>
-                  <th>Category</th>
-                  <th>Date</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Action</th>
+                  <th>{t('my_complaints.col_complaint_no')}</th>
+                  <th>{t('my_complaints.col_category')}</th>
+                  <th>{t('my_complaints.col_date')}</th>
+                  <th>{t('my_complaints.col_location')}</th>
+                  <th>{t('my_complaints.col_status')}</th>
+                  <th>{t('my_complaints.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,18 +209,18 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
                     <td>{c.location}</td>
                     <td>
                       <span className={`cdp-mc-badge cdp-mc-badge-${stageTone[c.stage]}`}>
-                        {lifecycleStages[c.stage]}
+                        {stages[c.stage]}
                       </span>
                     </td>
                     <td>
                       <div className="cdp-mc-actions">
                         <button className="cdp-mc-view-btn" onClick={() => setSelectedComplaint(c)}>
-                          View Details
+                          {t('my_complaints.view_details')}
                         </button>
                         <button 
                           className="cdp-mc-delete-icon-btn"
                           onClick={() => handleDeleteClick(c.id)}
-                          title="Delete Complaint"
+                          title={t('my_complaints.delete_complaint')}
                         >
                           🗑️
                         </button>
@@ -236,80 +234,78 @@ const MyComplaints = ({ complaints, onBack, onDelete }) => {
         </div>
       </div>
 
-      {/* ✅ OVERLAY MODAL for Complete Complaint Details */}
       {selectedComplaint && (
         <div className="cdp-mc-modal-overlay" onClick={() => setSelectedComplaint(null)}>
           <div className="cdp-mc-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="cdp-mc-modal-header">
               <div>
-                <span className="cdp-mc-modal-badge">Complaint Details</span>
+                <span className="cdp-mc-modal-badge">{t('my_complaints.modal_title')}</span>
                 <h3>{selectedComplaint.complaintNumber}</h3>
               </div>
               <button className="cdp-mc-modal-close" onClick={() => setSelectedComplaint(null)}>✕</button>
             </div>
             <div className="cdp-mc-modal-body">
               <div className="cdp-mc-modal-info-grid">
-                <div className="cdp-mc-info-item"><span>Category</span><b>{selectedComplaint.category}</b></div>
-                <div className="cdp-mc-info-item"><span>Date Submitted</span><b>{selectedComplaint.date}</b></div>
-                <div className="cdp-mc-info-item"><span>Location</span><b>{selectedComplaint.location}</b></div>
+                <div className="cdp-mc-info-item"><span>{t('my_complaints.modal_category')}</span><b>{selectedComplaint.category}</b></div>
+                <div className="cdp-mc-info-item"><span>{t('my_complaints.modal_date_submitted')}</span><b>{selectedComplaint.date}</b></div>
+                <div className="cdp-mc-info-item"><span>{t('my_complaints.modal_location')}</span><b>{selectedComplaint.location}</b></div>
                 <div className="cdp-mc-info-item">
-                  <span>Current Status</span>
-                  <b className={`cdp-mc-text-${stageTone[selectedComplaint.stage]}`}>{lifecycleStages[selectedComplaint.stage]}</b>
+                  <span>{t('my_complaints.modal_current_status')}</span>
+                  <b className={`cdp-mc-text-${stageTone[selectedComplaint.stage]}`}>{stages[selectedComplaint.stage]}</b>
                 </div>
               </div>
               <div className="cdp-mc-modal-section">
-                <h4>📝 Issue Description</h4>
-                <p className="cdp-mc-modal-description">{selectedComplaint.description || "No description provided."}</p>
+                <h4>📝 {t('my_complaints.modal_issue_desc')}</h4>
+                <p className="cdp-mc-modal-description">{selectedComplaint.description || t('my_complaints.no_desc')}</p>
               </div>
               {(selectedComplaint.photos?.before || selectedComplaint.photos?.site || selectedComplaint.photos?.after) && (
                 <div className="cdp-mc-modal-section">
-                  <h4>📷 Attached Photos</h4>
+                  <h4>📷 {t('my_complaints.modal_photos')}</h4>
                   <div className="cdp-mc-photos-grid">
                     {selectedComplaint.photos.before && (
-                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">Before Repair</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.before}</div></div>
+                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">{t('my_complaints.photo_before')}</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.before}</div></div>
                     )}
                     {selectedComplaint.photos.site && (
-                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">Site Photo</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.site}</div></div>
+                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">{t('my_complaints.photo_site')}</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.site}</div></div>
                     )}
                     {selectedComplaint.photos.after && (
-                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">After Repair</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.after}</div></div>
+                      <div className="cdp-mc-photo-box"><span className="cdp-mc-photo-label">{t('my_complaints.photo_after')}</span><div className="cdp-mc-photo-placeholder">📷 {selectedComplaint.photos.after}</div></div>
                     )}
                   </div>
                 </div>
               )}
               <div className="cdp-mc-modal-section">
-                <h4>ℹ️ Additional Details</h4>
+                <h4>ℹ️ {t('my_complaints.modal_additional')}</h4>
                 <div className="cdp-mc-detail-row">
-                  <span>Specific Issue:</span>
-                  <strong>{selectedComplaint.issue || selectedComplaint.issueType || "General Issue"}</strong>
+                  <span>{t('my_complaints.modal_specific_issue')}:</span>
+                  <strong>{selectedComplaint.issue || selectedComplaint.issueType || t('my_complaints.general_issue')}</strong>
                 </div>
               </div>
             </div>
             <div className="cdp-mc-modal-footer">
-              <button className="cdp-mc-modal-close-btn" onClick={() => setSelectedComplaint(null)}>Close Details</button>
+              <button className="cdp-mc-modal-close-btn" onClick={() => setSelectedComplaint(null)}>{t('my_complaints.close_details')}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ✅ NEW: Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="cdp-mc-modal-overlay" onClick={cancelDelete}>
           <div className="cdp-mc-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="cdp-mc-confirm-header">
-              <h3>⚠️ Confirm Deletion</h3>
+              <h3>⚠️ {t('delete.confirm_title')}</h3>
               <button className="cdp-mc-modal-close" onClick={cancelDelete}>✕</button>
             </div>
             <div className="cdp-mc-confirm-body">
               <p>
                 {deleteTarget === 'bulk' 
-                  ? `Are you sure you want to permanently delete the ${selectedIds.length} selected complaint(s)? This action cannot be undone.`
-                  : "Are you sure you want to permanently delete this complaint? This action cannot be undone."}
+                  ? t('delete.confirm_bulk', { count: selectedIds.length })
+                  : t('delete.confirm_single')}
               </p>
             </div>
             <div className="cdp-mc-confirm-footer">
-              <button className="cdp-mc-confirm-cancel-btn" onClick={cancelDelete}>Cancel</button>
-              <button className="cdp-mc-confirm-delete-btn" onClick={confirmDelete}>Yes, Delete</button>
+              <button className="cdp-mc-confirm-cancel-btn" onClick={cancelDelete}>{t('common.cancel')}</button>
+              <button className="cdp-mc-confirm-delete-btn" onClick={confirmDelete}>{t('common.yes_delete')}</button>
             </div>
           </div>
         </div>

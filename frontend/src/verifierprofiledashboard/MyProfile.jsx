@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./MyProfile.css";
 import { changeDashboardPassword, getStoredUser, getUserId, toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
 
@@ -14,6 +15,8 @@ const createFormData = (profile = {}) => ({
 });
 
 const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(() => createFormData(initialVerifier));
   const [message, setMessage] = useState("");
@@ -37,13 +40,13 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
     setMessage("");
     try {
       const result = await onUpdate(formData);
-      if (!result?.success) throw new Error("The profile update was not confirmed by the server.");
+      if (!result?.success) throw new Error(t('my_profile.error_update_not_confirmed'));
       setIsEditing(false);
       setMessageType("success");
-      setMessage("✅ Profile updated successfully!");
+      setMessage(t('my_profile.success_update'));
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "Profile update failed.");
+      setMessage(error.message || t('my_profile.error_update'));
     } finally {
       setIsSaving(false);
     }
@@ -57,15 +60,15 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
       const data = await uploadProfilePhoto(file, formData._id || formData.id, "verifier");
       setFormData((current) => ({ ...current, profilePhoto: data.profilePhoto }));
       const result = await onUpdate({ ...formData, profilePhoto: data.profilePhoto });
-      if (!result?.success) throw new Error("The profile photo was uploaded but could not be synchronized.");
+      if (!result?.success) throw new Error(t('my_profile.error_photo_sync'));
       const current = JSON.parse(localStorage.getItem("user") || "{}");
       localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
       window.dispatchEvent(new Event("authChange"));
       setMessageType("success");
-      setMessage("✅ Profile photo uploaded successfully!");
+      setMessage(t('my_profile.success_photo_upload'));
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "Profile photo upload failed.");
+      setMessage(error.message || t('my_profile.error_photo_upload'));
     } finally {
       setIsSaving(false);
       e.target.value = "";
@@ -76,12 +79,12 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessageType("error");
-      setMessage("New passwords do not match.");
+      setMessage(t('my_profile.error_passwords_mismatch'));
       return;
     }
     if (passwordData.newPassword.length < 6) {
       setMessageType("error");
-      setMessage("New password must be at least 6 characters.");
+      setMessage(t('my_profile.error_password_length'));
       return;
     }
 
@@ -95,10 +98,10 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
       );
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setMessageType("success");
-      setMessage("Password changed successfully.");
+      setMessage(t('my_profile.success_password_change'));
     } catch (error) {
       setMessageType("error");
-      setMessage(error.message || "Password change failed.");
+      setMessage(error.message || t('my_profile.error_password_change'));
     } finally {
       setIsChangingPassword(false);
     }
@@ -121,9 +124,9 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
       {/* Header */}
       <div className="mp-header">
         <button className="mp-back-btn" onClick={onBack}>
-          ← Back to Dashboard
+          {t('my_profile.back_to_dashboard')}
         </button>
-        <h2>My Profile</h2>
+        <h2>{t('my_profile.title')}</h2>
       </div>
 
       {message && <div className={`mp-success-message ${messageType === "error" ? "mp-error-message" : ""}`} role={messageType === "error" ? "alert" : "status"}>{message}</div>}
@@ -136,7 +139,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
               {formData.profilePhoto ? <img src={toMediaUrl(formData.profilePhoto)} alt="Profile" /> : initials}
             </div>
             <label className="mp-edit-btn">
-              Upload Photo
+              {t('my_profile.upload_photo')}
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} disabled={isSaving} hidden />
             </label>
             <div className="mp-profile-info">
@@ -148,11 +151,11 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
             <div className="mp-profile-actions">
               {!isEditing ? (
                 <button className="mp-edit-btn" onClick={() => setIsEditing(true)}>
-                  ✏️ Edit Profile
+                  {t('my_profile.edit_profile')}
                 </button>
               ) : (
                 <button className="mp-cancel-btn" disabled={isSaving} onClick={handleCancel}>
-                  Cancel Changes
+                  {t('my_profile.cancel_changes')}
                 </button>
               )}
             </div>
@@ -163,14 +166,13 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
         <div className="mp-main-content">
           <div className="mp-content-card">
             <div className="mp-card-header">
-              <h3>{isEditing ? "Edit Profile Information" : "Profile Information"}</h3>
+              <h3>{isEditing ? t('my_profile.edit_profile_info') : t('my_profile.profile_info')}</h3>
             </div>
 
             <form className="mp-form" onSubmit={handleSave}>
               <div className="mp-form-grid">
-                {/* Full Name */}
                 <div className="mp-field">
-                  <label>Full Name</label>
+                  <label>{t('my_profile.full_name')}</label>
                   {isEditing ? (
                     <input name="name" value={formData.name} onChange={handleChange} required />
                   ) : (
@@ -178,15 +180,13 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   )}
                 </div>
 
-                {/* Verifier ID */}
                 <div className="mp-field">
-                  <label>Verifier ID</label>
+                  <label>{t('my_profile.verifier_id')}</label>
                   <div className="mp-readonly-value mp-mono">{formData.staffId}</div>
                 </div>
 
-                {/* Role / Designation */}
                 <div className="mp-field">
-                  <label>Role / Designation</label>
+                  <label>{t('my_profile.role_designation')}</label>
                   {isEditing ? (
                     <input name="role" value={formData.role} onChange={handleChange} required />
                   ) : (
@@ -194,15 +194,13 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   )}
                 </div>
 
-                {/* Department */}
                 <div className="mp-field">
-                  <label>Department</label>
+                  <label>{t('my_profile.department')}</label>
                   <div className="mp-readonly-value">{formData.department}</div>
                 </div>
 
-                {/* Assigned Ward */}
                 <div className="mp-field">
-                  <label>Assigned Ward</label>
+                  <label>{t('my_profile.assigned_ward')}</label>
                   {isEditing ? (
                     <input name="ward" value={formData.ward} onChange={handleChange} required />
                   ) : (
@@ -210,9 +208,8 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   )}
                 </div>
 
-                {/* Contact Number */}
                 <div className="mp-field">
-                  <label>Contact Number</label>
+                  <label>{t('my_profile.contact_number')}</label>
                   {isEditing ? (
                     <input name="contact" value={formData.contact} onChange={handleChange} required />
                   ) : (
@@ -220,9 +217,8 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   )}
                 </div>
 
-                {/* Email Address */}
                 <div className="mp-field">
-                  <label>Email Address</label>
+                  <label>{t('my_profile.email_address')}</label>
                   {isEditing ? (
                     <input name="email" type="email" value={formData.email} onChange={handleChange} required />
                   ) : (
@@ -230,9 +226,8 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   )}
                 </div>
 
-                {/* Join Date */}
                 <div className="mp-field">
-                  <label>Join Date</label>
+                  <label>{t('my_profile.join_date')}</label>
                   <div className="mp-readonly-value">{formData.joinDate}</div>
                 </div>
               </div>
@@ -240,10 +235,10 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
               {isEditing && (
                 <div className="mp-form-actions">
                   <button type="button" className="mp-btn-outline" disabled={isSaving} onClick={handleCancel}>
-                    Cancel
+                    {t('my_profile.cancel')}
                   </button>
                   <button type="submit" className="mp-btn-primary" disabled={isSaving}>
-                    {isSaving ? "Saving..." : "Save Changes"}
+                    {isSaving ? t('my_profile.saving') : t('my_profile.save_changes')}
                   </button>
                 </div>
               )}
@@ -252,13 +247,13 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
 
           <div className="mp-content-card mp-password-card">
             <div className="mp-card-header">
-              <h3>Change Password</h3>
+              <h3>{t('my_profile.change_password')}</h3>
             </div>
-            <p className="mp-password-help">Enter your current password to set a new password for your verifier account.</p>
+            <p className="mp-password-help">{t('my_profile.password_help')}</p>
             <form className="mp-form" onSubmit={handlePasswordChange}>
               <div className="mp-form-grid">
                 <div className="mp-field">
-                  <label htmlFor="verifier-current-password">Current Password</label>
+                  <label htmlFor="verifier-current-password">{t('my_profile.current_password')}</label>
                   <input
                     id="verifier-current-password"
                     type="password"
@@ -269,7 +264,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   />
                 </div>
                 <div className="mp-field">
-                  <label htmlFor="verifier-new-password">New Password</label>
+                  <label htmlFor="verifier-new-password">{t('my_profile.new_password')}</label>
                   <input
                     id="verifier-new-password"
                     type="password"
@@ -281,7 +276,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
                   />
                 </div>
                 <div className="mp-field">
-                  <label htmlFor="verifier-confirm-password">Confirm New Password</label>
+                  <label htmlFor="verifier-confirm-password">{t('my_profile.confirm_new_password')}</label>
                   <input
                     id="verifier-confirm-password"
                     type="password"
@@ -295,7 +290,7 @@ const MyProfile = ({ initialVerifier, onBack, onUpdate }) => {
               </div>
               <div className="mp-form-actions">
                 <button type="submit" className="mp-btn-primary" disabled={isChangingPassword}>
-                  {isChangingPassword ? "Updating..." : "Update Password"}
+                  {isChangingPassword ? t('my_profile.updating') : t('my_profile.update_password')}
                 </button>
               </div>
             </form>

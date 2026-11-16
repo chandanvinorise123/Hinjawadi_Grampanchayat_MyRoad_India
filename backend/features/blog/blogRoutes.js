@@ -160,7 +160,7 @@ router.patch("/feed/:complaintId/:imageIndex/like", async (req, res) => {
     const engagement = await BlogImageEngagement.findOneAndUpdate(
       { complaintId: req.params.complaintId, imageIndex },
       update,
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     ).select("likes thumbs");
 
     return res.status(200).json({
@@ -204,7 +204,7 @@ router.post("/feed/:complaintId/:imageIndex/comments", async (req, res) => {
         },
         $setOnInsert: { complaintId: req.params.complaintId, imageIndex },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     );
 
     return res.status(201).json({ success: true });

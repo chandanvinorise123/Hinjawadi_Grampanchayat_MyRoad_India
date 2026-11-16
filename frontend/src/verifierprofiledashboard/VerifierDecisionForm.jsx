@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./VerifierDecisionForm.css";
 
 const VerifierDecisionForm = ({ complaint, onVerify, onComplete }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [remarks, setRemarks] = useState("");
   const [dateTime, setDateTime] = useState(() => {
     const now = new Date();
@@ -29,11 +32,11 @@ const VerifierDecisionForm = ({ complaint, onVerify, onComplete }) => {
 
   const submitDecision = async (status) => {
     if (!remarks.trim()) {
-      setError("Add remarks before saving your decision.");
+      setError(t('verifier_decision_form.error_remarks_required'));
       return;
     }
     if (!dateTime) {
-      setError("Record the verification date and time.");
+      setError(t('verifier_decision_form.error_datetime_required'));
       return;
     }
 
@@ -44,35 +47,35 @@ const VerifierDecisionForm = ({ complaint, onVerify, onComplete }) => {
       setRemarks("");
       onComplete?.(updatedComplaint);
     } catch (saveError) {
-      setError(saveError.message || "Unable to save the verification decision.");
+      setError(saveError.message || t('verifier_decision_form.error_save_decision'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <section className="vdf-panel" aria-label="Verifier decision">
+    <section className="vdf-panel" aria-label={t('verifier_decision_form.aria_label')}>
       <h4>
         {isAwaitingVerification
-          ? "Verifier Decision"
+          ? t('verifier_decision_form.title_awaiting')
           : nextStatus === "Resolved"
-            ? "Complaint Resolution"
-            : "Complaint Closure"}
+            ? t('verifier_decision_form.title_resolved')
+            : t('verifier_decision_form.title_closed')}
       </h4>
       {error && <p className="vdf-error" role="alert">{error}</p>}
       <label>
-        {isAwaitingVerification ? "Verification remarks *" : "Completion remarks *"}
+        {isAwaitingVerification ? t('verifier_decision_form.label_remarks_awaiting') : t('verifier_decision_form.label_remarks_completion')}
         <textarea
           rows="3"
           value={remarks}
           onChange={(event) => setRemarks(event.target.value)}
           placeholder={isAwaitingVerification
-            ? "Record your observations and reasons for this decision."
-            : "Record why the complaint is being marked complete."}
+            ? t('verifier_decision_form.placeholder_awaiting')
+            : t('verifier_decision_form.placeholder_completion')}
         />
       </label>
       <label>
-        {isAwaitingVerification ? "Verification date and time *" : "Completion date and time *"}
+        {isAwaitingVerification ? t('verifier_decision_form.label_datetime_awaiting') : t('verifier_decision_form.label_datetime_completion')}
         <input
           type="datetime-local"
           value={dateTime}
@@ -83,15 +86,15 @@ const VerifierDecisionForm = ({ complaint, onVerify, onComplete }) => {
         {isAwaitingVerification ? (
           <>
             <button type="button" disabled={saving} onClick={() => submitDecision("Rejected")}>
-              {saving ? "Saving..." : "Reject / Send for Re-verification"}
+              {saving ? t('verifier_decision_form.saving') : t('verifier_decision_form.btn_reject')}
             </button>
             <button type="button" disabled={saving} onClick={() => submitDecision("Verified")}>
-              {saving ? "Saving..." : "Verify Work"}
+              {saving ? t('verifier_decision_form.saving') : t('verifier_decision_form.btn_verify')}
             </button>
           </>
         ) : (
           <button type="button" disabled={saving} onClick={() => submitDecision(nextStatus)}>
-            {saving ? "Saving..." : nextStatus === "Resolved" ? "Mark Resolved / Work Complete" : "Close Completed Complaint"}
+            {saving ? t('verifier_decision_form.saving') : (nextStatus === "Resolved" ? t('verifier_decision_form.btn_resolve') : t('verifier_decision_form.btn_close'))}
           </button>
         )}
       </div>

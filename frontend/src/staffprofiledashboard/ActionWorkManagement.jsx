@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ActionWorkManagement.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
@@ -12,14 +13,20 @@ const createFormData = (complaint) => ({
 });
 
 const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const stageLabels = t('action_work.stage_labels', { returnObjects: true }); // ✅ ADDED for UI rendering
+
   const [currentComplaintId, setCurrentComplaintId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  
   const currentComplaint = complaints.find((complaint) =>
     String(complaint.id) === String(currentComplaintId)
   ) || null;
+  
   const beforeWorkPhotos = Array.isArray(currentComplaint?.citizenPhotos) && currentComplaint.citizenPhotos.length
     ? currentComplaint.citizenPhotos
     : Array.isArray(currentComplaint?.images) ? currentComplaint.images : [];
+    
   const sortedComplaints = useMemo(
     () => [...complaints].sort((first, second) => {
       const firstTime = new Date(first.updatedAt || first.createdAt || 0).getTime();
@@ -28,6 +35,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
     }),
     [complaints]
   );
+  
   const filteredComplaints = sortedComplaints.filter((complaint) => {
     const query = searchTerm.trim().toLowerCase();
     return !query || [
@@ -45,15 +53,6 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const stageLabels = [
-    "Action Initiated",
-    "Work In Progress",
-    "Work Completed",
-    "After-Repair Upload",
-    "Verification",
-    "Work Resolved / Closed",
-  ];
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -68,7 +67,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
       const uploaded = await uploadDashboardPhoto(file);
       setFormData((prev) => ({ ...prev, [field]: uploaded.publicUrl }));
     } catch (error) {
-      setFormError(error.message || "Unable to upload the work photograph.");
+      setFormError(error.message || t('action_work.error_upload'));
     } finally {
       setUploadingPhoto("");
       e.target.value = "";
@@ -84,7 +83,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
       await onUpdateWork?.(currentComplaintId, formData);
       setFormError("");
     } catch (error) {
-      setFormError(error.message || "Unable to save the work update.");
+      setFormError(error.message || t('action_work.error_save'));
     } finally {
       setSaving(false);
     }
@@ -95,63 +94,63 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
       {/* Header */}
       <div className="awm-header">
         <button className="awm-back-btn" type="button" onClick={onBack}>
-          ← Back to Dashboard
+          {t('action_work.back_to_dashboard')}
         </button>
         <div>
-          <span className="awm-eyebrow">Staff workspace</span>
-          <h2>{currentComplaint ? "Update Assigned Work" : "Action / Work Management"}</h2>
+          <span className="awm-eyebrow">{t('action_work.staff_workspace')}</span>
+          <h2>{currentComplaint ? t('action_work.update_assigned_work') : t('action_work.action_work_management')}</h2>
           <p>
             {currentComplaint
-              ? `Review and update ${currentComplaint.complaintNumber || "this assigned complaint"}.`
-              : "Review your assigned complaints and keep work progress up to date."}
+              ? t('action_work.review_update_complaint', { complaintNumber: currentComplaint.complaintNumber || t('action_work.this_assigned_complaint') })
+              : t('action_work.review_assigned_progress')}
           </p>
         </div>
       </div>
 
       <div className="awm-container">
         {!currentComplaint && (
-        <section className="awm-table-card" aria-label="Assigned complaints awaiting work updates">
+        <section className="awm-table-card" aria-label={t('action_work.aria_assigned_complaints')}>
           <div className="awm-table-heading">
             <div>
-              <span className="awm-eyebrow">Your workload</span>
-              <h3>Assigned Complaints</h3>
-              <p>Choose a complaint to review its information and update the work record.</p>
+              <span className="awm-eyebrow">{t('action_work.your_workload')}</span>
+              <h3>{t('action_work.assigned_complaints')}</h3>
+              <p>{t('action_work.choose_complaint_review')}</p>
             </div>
-            <span className="awm-count">{complaints.length} assigned</span>
+            <span className="awm-count">{t('action_work.assigned_count', { count: complaints.length })}</span>
           </div>
           <label className="awm-search">
-            <span>Search complaints</span>
+            <span>{t('action_work.search_complaints')}</span>
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Complaint number, issue, citizen, location..."
+              placeholder={t('action_work.search_placeholder')}
             />
           </label>
           <div className="awm-table-wrap">
             <table className="awm-table">
               <thead>
                 <tr>
-                  <th>Complaint</th>
-                  <th>Issue & Location</th>
-                  <th>Status</th>
-                  <th>Last Updated</th>
-                  <th>Action</th>
+                  <th>{t('action_work.col_complaint')}</th>
+                  <th>{t('action_work.col_issue_location')}</th>
+                  <th>{t('action_work.col_status')}</th>
+                  <th>{t('action_work.col_last_updated')}</th>
+                  <th>{t('action_work.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredComplaints.length ? filteredComplaints.map((complaint) => (
                   <tr key={complaint.id}>
                     <td>
-                      <b className="awm-complaint-number">{complaint.complaintNumber || "Complaint"}</b>
-                      <span className="awm-cell-note">{complaint.citizenName || "Citizen not available"}</span>
+                      <b className="awm-complaint-number">{complaint.complaintNumber || t('action_work.col_complaint')}</b>
+                      <span className="awm-cell-note">{complaint.citizenName || t('action_work.citizen_not_available')}</span>
                     </td>
                     <td>
-                      <b>{complaint.issue || complaint.category || "Issue not specified"}</b>
-                      <span className="awm-cell-note">{complaint.location || "Location pending"}</span>
+                      <b>{complaint.issue || complaint.category || t('action_work.issue_not_specified')}</b>
+                      <span className="awm-cell-note">{complaint.location || t('action_work.location_pending')}</span>
                     </td>
-                    <td><span className="awm-status-badge">{complaint.status || "Status unavailable"}</span></td>
-                    <td>{complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleString() : "Not updated"}</td>
+                    <td><span className="awm-status-badge">{complaint.status || t('action_work.status_unavailable')}</span></td>
+                    <td>{complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleString() : t('action_work.not_updated')}</td>
                     <td>
                       <button
                         className="awm-select-btn"
@@ -162,16 +161,14 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                           setFormError("");
                         }}
                       >
-                        Update Work
+                        {t('action_work.update_work_btn')}
                       </button>
                     </td>
                   </tr>
                 )) : (
                   <tr>
                     <td className="awm-empty" colSpan="5">
-                      {complaints.length
-                        ? "No assigned complaints match your search."
-                        : "No complaints are currently assigned to you."}
+                      {complaints.length ? t('action_work.no_match_search') : t('action_work.no_complaints_assigned')}
                     </td>
                   </tr>
                 )}
@@ -192,31 +189,31 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
               }}
               disabled={saving}
             >
-              ← Back to Assigned Complaints
+              {t('action_work.back_to_assigned')}
             </button>
             <div className="awm-update-layout">
               <section className="awm-details-card">
                 <div className="awm-section-heading">
                   <div>
-                    <span className="awm-eyebrow">Complaint information</span>
+                    <span className="awm-eyebrow">{t('action_work.complaint_information')}</span>
                     <h3>{currentComplaint.complaintNumber}</h3>
                   </div>
-                  <span className="awm-status-badge">{currentComplaint.status || "Status unavailable"}</span>
+                  <span className="awm-status-badge">{currentComplaint.status || t('action_work.status_unavailable')}</span>
                 </div>
                 <StaffComplaintDetails complaint={currentComplaint} showActivity={false} />
               </section>
 
               <form className="awm-form-card" onSubmit={handleSubmit}>
                 <div className="awm-form-header">
-                  <span className="awm-eyebrow">Work update</span>
-                  <h3>Update assigned work</h3>
-                  <p>Record the work performed and attach an after-work photograph. Before-work evidence comes from the citizen or guest complaint.</p>
+                  <span className="awm-eyebrow">{t('action_work.work_update')}</span>
+                  <h3>{t('action_work.update_assigned_work_title')}</h3>
+                  <p>{t('action_work.record_work_performed')}</p>
                 </div>
                 {formError && <p className="awm-form-error" role="alert">{formError}</p>}
 
                 <div className="awm-grid-2">
                   <div className="awm-field">
-                    <label htmlFor="completionDateTime">Work Completion Date & Time</label>
+                    <label htmlFor="completionDateTime">{t('action_work.work_completion_datetime')}</label>
                     <input
                       id="completionDateTime"
                       name="completionDateTime"
@@ -227,7 +224,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                   </div>
 
                   <div className="awm-field">
-                    <label htmlFor="newStage">Work Status</label>
+                    <label htmlFor="newStage">{t('action_work.work_status')}</label>
                     <select
                       id="newStage"
                       name="newStage"
@@ -243,12 +240,12 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                 </div>
 
                 <div className="awm-field awm-full-width">
-                  <label htmlFor="actionTaken">Work Performed</label>
+                  <label htmlFor="actionTaken">{t('action_work.work_performed')}</label>
                   <textarea
                     id="actionTaken"
                     name="actionTaken"
                     rows="4"
-                    placeholder="Describe the repairs or actions completed..."
+                    placeholder={t('action_work.describe_repairs_placeholder')}
                     value={formData.actionTaken}
                     onChange={handleChange}
                     required
@@ -256,12 +253,12 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                 </div>
 
                 <div className="awm-field awm-full-width">
-                  <label htmlFor="remarks">Work Remarks</label>
+                  <label htmlFor="remarks">{t('action_work.work_remarks')}</label>
                   <textarea
                     id="remarks"
                     name="remarks"
                     rows="3"
-                    placeholder="Add observations or additional work notes..."
+                    placeholder={t('action_work.add_observations_placeholder')}
                     value={formData.remarks}
                     onChange={handleChange}
                   />
@@ -269,25 +266,31 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
 
                 <div className="awm-photo-grid">
                   <div className="awm-field">
-                    <label>Before-Work Photograph (Citizen / Guest)</label>
+                    <label>{t('action_work.before_work_photo')}</label>
                     <div className="awm-citizen-photo-list">
                       {beforeWorkPhotos.length ? (
                         beforeWorkPhotos.map((photo, index) => (
                           <a key={`${photo}-${index}`} href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer">
-                            <img className="awm-photo-preview" src={toMediaUrl(photo)} alt={`Citizen or guest before-work evidence ${index + 1}`} />
-                            <span>Complaint photo {index + 1}</span>
+                            <img className="awm-photo-preview" src={toMediaUrl(photo)} alt={`${t('action_work.complaint_photo', { index: index + 1 })}`} />
+                            <span>{t('action_work.complaint_photo', { index: index + 1 })}</span>
                           </a>
                         ))
                       ) : (
-                        <p className="awm-no-photo">No before-work photograph was uploaded with this complaint.</p>
+                        <p className="awm-no-photo">{t('action_work.no_before_work_photo')}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="awm-field">
-                    <label>After-Work Photograph</label>
+                    <label>{t('action_work.after_work_photo')}</label>
                     <div className="awm-photo-upload">
-                      <span>{uploadingPhoto === "afterPhoto" ? "Uploading..." : formData.afterPhoto ? "Replace after-work photo" : "Choose an after-work photo"}</span>
+                      <span>
+                        {uploadingPhoto === "afterPhoto" 
+                          ? t('action_work.uploading') 
+                          : formData.afterPhoto 
+                            ? t('action_work.replace_after_photo') 
+                            : t('action_work.choose_after_photo')}
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -296,7 +299,7 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                       />
                     </div>
                     {formData.afterPhoto && (
-                      <img className="awm-photo-preview" src={toMediaUrl(formData.afterPhoto)} alt="After-work evidence" />
+                      <img className="awm-photo-preview" src={toMediaUrl(formData.afterPhoto)} alt={t('action_work.after_work_evidence')} />
                     )}
                   </div>
                 </div>
@@ -311,10 +314,10 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                     }}
                     disabled={saving}
                   >
-                    Back to Assigned Complaints
+                    {t('action_work.back_to_assigned')}
                   </button>
                   <button type="submit" className="awm-btn-primary" disabled={saving || Boolean(uploadingPhoto)}>
-                    {saving ? "Saving update..." : "Save Work Update"}
+                    {saving ? t('action_work.saving_update') : t('action_work.save_work_update')}
                   </button>
                 </div>
               </form>

@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./StaffWorkMonitoring.css";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId, updateDashboardComplaint } from "../utils/dashboardApi";
 
-// ==========================================
-// ==========================================
 const StaffWorkMonitoring = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [staffList, setStaffList] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [selectedStaffId, setSelectedStaffId] = useState("");
@@ -28,8 +29,8 @@ const StaffWorkMonitoring = ({ onBack }) => {
           assignedTo: complaint.assignedStaffId || users.find((user) => user.name === complaint.assignedStaff)?.id || "",
         })));
       })
-      .catch((error) => console.error("Failed to load staff monitoring data:", error));
-  }, []);
+      .catch((error) => console.error(t('staff_work_monitoring.error_load_data'), error));
+  }, [t]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -64,13 +65,13 @@ const StaffWorkMonitoring = ({ onBack }) => {
         status: "Under Action",
       });
     } catch (error) {
-      console.error("Failed to assign complaint:", error);
+      console.error(t('staff_work_monitoring.error_assign'), error);
       return;
     }
     setComplaints(complaints.map(c => 
       c.id === complaintId ? { ...c, assignedTo: staffId, assignedStaffId: staffId, status: "Under Action" } : c
     ));
-    showMessage("success", `Complaint assigned successfully!`);
+    showMessage("success", t('staff_work_monitoring.msg_assigned_success'));
   };
 
   const handleReassign = async (complaintId, newStaffId) => {
@@ -81,13 +82,32 @@ const StaffWorkMonitoring = ({ onBack }) => {
         assignedStaffId: newStaffId,
       });
     } catch (error) {
-      console.error("Failed to reassign complaint:", error);
+      console.error(t('staff_work_monitoring.error_reassign'), error);
       return;
     }
     setComplaints(complaints.map(c => 
       c.id === complaintId ? { ...c, assignedTo: newStaffId, assignedStaffId: newStaffId } : c
     ));
-    showMessage("success", `Complaint reassigned successfully!`);
+    showMessage("success", t('staff_work_monitoring.msg_reassigned_success'));
+  };
+
+  // ✅ Helpers to translate UI strings while keeping internal logic intact
+  const getStatusLabel = (status) => {
+    const map = {
+      "Pending": t('staff_work_monitoring.status_pending'),
+      "Under Action": t('staff_work_monitoring.status_under_action'),
+      "Resolved": t('staff_work_monitoring.status_resolved'),
+    };
+    return map[status] || status;
+  };
+
+  const getPriorityLabel = (priority) => {
+    const map = {
+      "Critical": t('staff_work_monitoring.priority_critical'),
+      "Urgent": t('staff_work_monitoring.priority_urgent'),
+      "Normal": t('staff_work_monitoring.priority_normal'),
+    };
+    return map[priority] || priority;
   };
 
   const getStatusColor = (status) => {
@@ -104,10 +124,10 @@ const StaffWorkMonitoring = ({ onBack }) => {
     <div className="swm-shell">
       {/* Header */}
       <div className="swm-header">
-        <button className="swm-back-btn" onClick={onBack}>← Back to Dashboard</button>
+        <button className="swm-back-btn" onClick={onBack}>{t('staff_work_monitoring.back_to_dashboard')}</button>
         <div>
-          <h2>🧑‍ Staff & Work Monitoring</h2>
-          <p>Assign, reassign, and track staff workload and progress.</p>
+          <h2>{t('staff_work_monitoring.title')}</h2>
+          <p>{t('staff_work_monitoring.subtitle')}</p>
         </div>
       </div>
 
@@ -115,10 +135,10 @@ const StaffWorkMonitoring = ({ onBack }) => {
 
       {/* Stats Row */}
       <div className="swm-stats-row">
-        <div className="swm-stat-card"><h3>Total Staff</h3><p>{stats.totalStaff}</p></div>
-        <div className="swm-stat-card active"><h3>Active Tasks</h3><p>{stats.activeTasks}</p></div>
-        <div className="swm-stat-card pending"><h3>Pending Work</h3><p>{stats.pendingWork}</p></div>
-        <div className="swm-stat-card completed"><h3>Completed Work</h3><p>{stats.completedWork}</p></div>
+        <div className="swm-stat-card"><h3>{t('staff_work_monitoring.stats.total_staff')}</h3><p>{stats.totalStaff}</p></div>
+        <div className="swm-stat-card active"><h3>{t('staff_work_monitoring.stats.active_tasks')}</h3><p>{stats.activeTasks}</p></div>
+        <div className="swm-stat-card pending"><h3>{t('staff_work_monitoring.stats.pending_work')}</h3><p>{stats.pendingWork}</p></div>
+        <div className="swm-stat-card completed"><h3>{t('staff_work_monitoring.stats.completed_work')}</h3><p>{stats.completedWork}</p></div>
       </div>
 
       {/* Main Content Grid */}
@@ -126,7 +146,7 @@ const StaffWorkMonitoring = ({ onBack }) => {
         
         {/* LEFT PANEL: View Available Staff & Track Staff-wise */}
         <div className="swm-panel swm-staff-list-panel">
-          <h3 className="swm-panel-title">Available Staff</h3>
+          <h3 className="swm-panel-title">{t('staff_work_monitoring.available_staff')}</h3>
           <div className="swm-staff-list">
             {staffList.map(staff => (
               <div 
@@ -142,9 +162,9 @@ const StaffWorkMonitoring = ({ onBack }) => {
                   </div>
                 </div>
                 <div className="swm-staff-stats">
-                  <span className="swm-stat-badge assigned" title="Assigned">{staff.assigned}</span>
-                  <span className="swm-stat-badge pending" title="Pending">{staff.pending}</span>
-                  <span className="swm-stat-badge completed" title="Completed">{staff.completed}</span>
+                  <span className="swm-stat-badge assigned" title={t('staff_work_monitoring.assigned')}>{staff.assigned}</span>
+                  <span className="swm-stat-badge pending" title={t('staff_work_monitoring.pending')}>{staff.pending}</span>
+                  <span className="swm-stat-badge completed" title={t('staff_work_monitoring.completed')}>{staff.completed}</span>
                 </div>
               </div>
             ))}
@@ -157,22 +177,22 @@ const StaffWorkMonitoring = ({ onBack }) => {
           {/* Section 1: Selected Staff Workload */}
           <div className="swm-section">
             <div className="swm-section-header">
-              <h3>Workload: {selectedStaffDetails?.name}</h3>
-              <span className="swm-count-badge">{selectedStaffComplaints.length} Complaints</span>
+              <h3>{t('staff_work_monitoring.workload_for', { name: selectedStaffDetails?.name })}</h3>
+              <span className="swm-count-badge">{selectedStaffComplaints.length} {t('staff_work_monitoring.complaints')}</span>
             </div>
             
             {selectedStaffComplaints.length === 0 ? (
-              <p className="swm-empty">No complaints currently assigned to this staff member.</p>
+              <p className="swm-empty">{t('staff_work_monitoring.no_complaints_assigned')}</p>
             ) : (
               <div className="swm-table-wrap">
                 <table className="swm-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Issue</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Action</th>
+                      <th>{t('staff_work_monitoring.col_id')}</th>
+                      <th>{t('staff_work_monitoring.col_issue')}</th>
+                      <th>{t('staff_work_monitoring.col_priority')}</th>
+                      <th>{t('staff_work_monitoring.col_status')}</th>
+                      <th>{t('staff_work_monitoring.col_action')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -180,8 +200,8 @@ const StaffWorkMonitoring = ({ onBack }) => {
                       <tr key={c.id}>
                         <td className="swm-mono">{c.complaintNumber}</td>
                         <td>{c.issue}<br/><small className="swm-subtext">{c.location}</small></td>
-                        <td><span className={`swm-badge swm-priority-${getPriorityColor(c.priority)}`}>{c.priority}</span></td>
-                        <td><span className={`swm-badge swm-status-${getStatusColor(c.status)}`}>{c.status}</span></td>
+                        <td><span className={`swm-badge swm-priority-${getPriorityColor(c.priority)}`}>{getPriorityLabel(c.priority)}</span></td>
+                        <td><span className={`swm-badge swm-status-${getStatusColor(c.status)}`}>{getStatusLabel(c.status)}</span></td>
                         <td>
                           {/* Reassign Dropdown */}
                           <select 
@@ -189,7 +209,7 @@ const StaffWorkMonitoring = ({ onBack }) => {
                             defaultValue="" 
                             onChange={(e) => e.target.value && handleReassign(c.id, e.target.value)}
                           >
-                            <option value="" disabled>Reassign to...</option>
+                            <option value="" disabled>{t('staff_work_monitoring.reassign_to')}</option>
                             {staffList.filter(s => s.id !== c.assignedTo && s.status !== "On Leave").map(s => (
                               <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
@@ -206,12 +226,12 @@ const StaffWorkMonitoring = ({ onBack }) => {
           {/* Section 2: Unassigned / Pending Queue */}
           <div className="swm-section swm-queue-section">
             <div className="swm-section-header">
-              <h3>📥 Assignment Queue (Unassigned / Pending)</h3>
-              <span className="swm-count-badge queue">{unassignedComplaints.length} Needs Action</span>
+              <h3>{t('staff_work_monitoring.assignment_queue')}</h3>
+              <span className="swm-count-badge queue">{unassignedComplaints.length} {t('staff_work_monitoring.needs_action')}</span>
             </div>
 
             {unassignedComplaints.length === 0 ? (
-              <p className="swm-empty">All complaints are assigned!</p>
+              <p className="swm-empty">{t('staff_work_monitoring.all_assigned')}</p>
             ) : (
               <div className="swm-queue-list">
                 {unassignedComplaints.map(c => (
@@ -221,13 +241,13 @@ const StaffWorkMonitoring = ({ onBack }) => {
                       <small className="swm-subtext">{c.location}</small>
                     </div>
                     <div className="swm-queue-actions">
-                      <span className={`swm-badge swm-priority-${getPriorityColor(c.priority)}`}>{c.priority}</span>
+                      <span className={`swm-badge swm-priority-${getPriorityColor(c.priority)}`}>{getPriorityLabel(c.priority)}</span>
                       <select 
                         className="swm-select-sm" 
                         defaultValue="" 
                         onChange={(e) => e.target.value && handleAssign(c.id, e.target.value)}
                       >
-                        <option value="" disabled>Assign to...</option>
+                        <option value="" disabled>{t('staff_work_monitoring.assign_to')}</option>
                         {staffList.filter(s => s.status !== "On Leave").map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}

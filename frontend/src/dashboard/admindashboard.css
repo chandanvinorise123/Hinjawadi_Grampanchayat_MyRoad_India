@@ -45,13 +45,27 @@
 .ad-faint { color: var(--ink-faint); font-size: 12px; }
 
 /* ============ SIDEBAR ============ */
-.ad-sidebar { background: var(--navy-950); color: #c9d6ea; display: flex; flex-direction: column; padding: 24px 18px; }
+.ad-sidebar {
+  box-sizing: border-box;
+  background: var(--navy-950);
+  color: #c9d6ea;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px;
+}
 .ad-sb-brand { display: flex; align-items: center; gap: 12px; padding: 6px 8px 26px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 18px; }
 .ad-sb-logo {
-  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
   background: linear-gradient(155deg, var(--saffron), var(--saffron-dark));
   display: flex; align-items: center; justify-content: center;
   font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: 13px; color: #3a1e00;
+}
+.ad-sb-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .ad-sb-brand b { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; font-weight: 800; color: #fff; display: block; }
 .ad-sb-brand span { font-size: 9.5px; letter-spacing: 1.4px; color: #ffd9a8; font-weight: 700; text-transform: uppercase; }
@@ -61,11 +75,59 @@
 .ad-sb-link {
   display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border-radius: 10px;
   border: none; background: none; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #c9d6ea;
-  position: relative; text-align: left;
+  position: relative; text-align: left; font-family: inherit;
 }
 .ad-sb-link:hover { background: rgba(255,255,255,.06); }
 .ad-sb-link.active { background: rgba(255,153,51,.14); color: #fff; }
-.ad-sb-badge { margin-left: auto; font-size: 10.5px; font-weight: 700; background: var(--saffron); color: #3a1e00; padding: 2px 7px; border-radius: 999px; }
+.ad-sb-link:focus-visible { outline: 2px solid var(--saffron); outline-offset: 2px; }
+.ad-sb-badge { margin-left: auto; flex-shrink: 0; font-size: 10.5px; font-weight: 700; background: var(--saffron); color: #3a1e00; padding: 2px 7px; border-radius: 999px; }
+
+/* ===== Expandable Complaints group ===== */
+.ad-sb-parent {
+  position: relative;
+}
+
+.ad-sb-parent .ad-sb-chevron {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.75;
+  transition: transform 0.2s ease;
+}
+
+.ad-sb-parent.open .ad-sb-chevron { transform: rotate(90deg); }
+
+.ad-sb-parent.open,
+.ad-sb-parent.has-active {
+  background: rgba(255, 153, 51, 0.14);
+  color: #fff;
+}
+
+.ad-sb-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid rgba(255, 153, 51, 0.35);
+  margin-left: 14px;
+}
+
+.ad-sb-sublink {
+  padding: 9px 10px 9px 14px !important;
+  font-size: 12.5px !important;
+  color: #a8b8d0 !important;
+  border-radius: 8px;
+}
+
+.ad-sb-sublink:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: #fff !important;
+}
+
+.ad-sb-sublink .ad-sb-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+}
 
 .ad-sb-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); }
 .ad-sb-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; }
@@ -93,6 +155,9 @@
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px clamp(16px, 2vw, 32px); gap: 20px; flex-wrap: wrap;
 }
+/* topbar used on sub-views: only the user chip, pushed to the right */
+.ad-topbar-end { justify-content: flex-end; }
+
 .ad-search {
   flex: 1; min-width: 200px; max-width: 420px; display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; color: var(--ink-faint);
@@ -265,14 +330,6 @@
 .ad-detail-wide { grid-column: 1 / -1; }
 .ad-update-row { display: flex; gap: 20px; flex-wrap: wrap; padding: 4px 22px 22px; }
 
-
-.ad-sb-logo img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  border-radius: 50%;
-}
-
 /* Forms */
 /* ✅ Vertical Form Layout */
 .ad-new-form-vertical {
@@ -388,11 +445,6 @@
 .ad-bar-fill.tone-green { background: var(--resolved); }
 .ad-bar-count { font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--ink); text-align: right; }
 
-
-
-
-
-
 .ad-analytics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -441,73 +493,6 @@
   transition: width 0.4s ease;
 }
 .ad-bar-fill.alt { background: #1d8a5c; }
-.ad-bar-count {
-  width: 30px;
-  text-align: right;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-
-/* Complaint Analytics Grid */
-.ad-analytics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  margin-top: 16px;
-}
-
-.ad-report-block {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.ad-report-block h5 {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
-  color: #1e293b;
-  font-weight: 600;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 8px;
-}
-
-.ad-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 0.85rem;
-}
-
-.ad-bar-label {
-  width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #475569;
-}
-
-.ad-bar-track {
-  flex: 1;
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.ad-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  background: #2e6cb0;
-  transition: width 0.4s ease;
-}
-
-.ad-bar-fill.alt {
-  background: #1d8a5c;
-}
-
 .ad-bar-count {
   width: 30px;
   text-align: right;
@@ -578,24 +563,6 @@
   transform: none;
   box-shadow: none;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Notification monitoring */
 .ad-notif-list {
@@ -747,16 +714,6 @@
 }
 
 /* ============ RESPONSIVE ============ */
-@media (max-width: 860px) {
-  .ad-shell { grid-template-columns: minmax(0, 1fr); }
-  .ad-sidebar { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px; gap: 10px; }
-  .ad-sb-brand { border-bottom: none; margin-bottom: 0; padding: 0; }
-  .ad-sb-label { display: none; }
-  .ad-sb-nav { flex-direction: row; flex-wrap: wrap; }
-  .ad-sb-link { padding: 8px 10px; }
-  .ad-sb-footer { display: none; }
-}
-
 @media (max-width: 600px) {
   .ad-bar-row { grid-template-columns: 90px 1fr 24px; }
 }
@@ -764,4 +721,505 @@
 @media (max-width: 480px) {
   .ad-tb-user { display: none; }
   .ad-search { max-width: none; }
+}
+
+/* Admin dashboard overview charts */
+.ad-content {
+  background: #f5f9ff;
+}
+
+.ad-dashboard-stat {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 82px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-color: #e5edf8;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(37, 78, 128, 0.06);
+}
+
+.ad-dashboard-stat .ad-stat-heading {
+  display: contents;
+}
+
+.ad-dashboard-stat .ad-stat-label {
+  grid-column: 2;
+  grid-row: 1;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.ad-dashboard-stat .ad-stat-ic {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.ad-dashboard-stat.tone-blue .ad-stat-ic { background: #4b8df8; }
+.ad-dashboard-stat.tone-green .ad-stat-ic { background: #27ae70; }
+.ad-dashboard-stat.tone-orange .ad-stat-ic { background: #f5a623; }
+.ad-dashboard-stat.tone-purple .ad-stat-ic { background: #9254de; }
+.ad-dashboard-stat.tone-cyan .ad-stat-ic { background: #13a8b8; }
+
+.ad-dashboard-stat .ad-stat-num {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 2px;
+  color: #17365f;
+  font-size: 23px;
+}
+
+.ad-dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ad-dashboard-chart {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid #e5edf8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(37, 78, 128, 0.05);
+}
+
+.ad-dashboard-chart-head {
+  display: flex;
+  min-height: 42px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ad-dashboard-chart-head h3 {
+  margin: 0 0 4px;
+  color: #17365f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ad-dashboard-chart-head p {
+  margin: 0;
+  color: #8492a6;
+  font-size: 11px;
+}
+
+.ad-chart-range select {
+  padding: 6px 9px;
+  border: 1px solid #dfe8f3;
+  border-radius: 7px;
+  background: #fff;
+  color: #40536d;
+  font: inherit;
+  font-size: 11px;
+}
+
+.ad-chart-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 250px;
+}
+
+.ad-chart-canvas-trend { min-height: 260px; }
+.ad-chart-canvas-circle { min-height: 250px; }
+.ad-chart-canvas-column { min-height: 250px; }
+
+.ad-chart-empty {
+  display: grid;
+  min-height: inherit;
+  place-items: center;
+  color: #8492a6;
+  font-size: 13px;
+  text-align: center;
+}
+
+.ad-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 1200px) {
+  .ad-stats-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .ad-dashboard-charts {
+    grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .ad-dashboard-charts { grid-template-columns: minmax(0, 1fr); }
+  .ad-dashboard-chart { padding: 14px; }
+}
+
+/* ===== Selected Dashboard Card Effect ===== */
+
+.ad-dashboard-stat {
+  position: relative;
+  overflow: hidden;
+  min-height: 120px;
+  border: 1px solid #dfe6f1;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 5px 16px rgba(30, 60, 100, 0.05);
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+/* Top pink gradient line */
+.ad-dashboard-stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #ff1764, #ff1764, #492046);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+/* Pink bottom line */
+.ad-dashboard-stat::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  bottom: 18px;
+  width: 55%;
+  height: 3px;
+  border-radius: 10px;
+  background: #ff1764;
+  transition: width 0.3s ease;
+}
+
+/* Hover effect */
+.ad-dashboard-stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(30, 60, 100, 0.10);
+  border-color: #ffc0d4;
+}
+
+/* Selected card */
+.ad-dashboard-stat.active {
+  border-color: #ffb4cc;
+  background: linear-gradient(145deg, #ffffff, #fff5f9);
+  box-shadow: 0 12px 28px rgba(255, 23, 100, 0.12);
+  transform: translateY(-3px);
+}
+
+.ad-dashboard-stat.active::before {
+  opacity: 1;
+}
+
+.ad-dashboard-stat.active::after {
+  width: 62%;
+}
+
+/* Selected icon glow */
+.ad-dashboard-stat.active .ad-stat-ic {
+  box-shadow: 0 0 0 10px rgba(255, 23, 100, 0.055);
+}
+
+/* Selected number */
+.ad-dashboard-stat.active .ad-stat-num {
+  color: #ff1764;
+}
+
+/* Selected label */
+.ad-dashboard-stat.active .ad-stat-label {
+  color: #ff1764;
+}
+
+/* Arrow beside the selected label */
+.ad-dashboard-stat.active .ad-stat-label::before {
+  content: "➜";
+  display: inline-block;
+  margin-right: 9px;
+  color: #ff1764;
+  font-size: 19px;
+  font-weight: 700;
+  vertical-align: -1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-dashboard-stat,
+  .ad-dashboard-stat::before,
+  .ad-dashboard-stat::after {
+    transition: none;
+  }
+}
+
+/* ================= DOTTED BACKGROUND (main content area) ================= */
+.ad-shell .ad-content {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 1.2px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+
+/* ============================================================
+   PERSISTENT ADMIN SIDEBAR + SIDE-BY-SIDE CONTENT
+   FIX: the sidebar used width:260px + padding with content-box,
+   so it was ~296px wide and covered the left edge of the page
+   (cutting "System Overview", the title and the stat cards).
+   box-sizing:border-box keeps it exactly one grid column wide.
+   ============================================================ */
+.ad-shell {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  align-items: start;
+  width: 100%;
+  min-height: 100vh;
+  overflow: visible;
+}
+
+.ad-sidebar {
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  width: 264px;
+  min-width: 264px;
+  max-width: 264px;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  z-index: 20;
+
+  /* visible scrollbar (Firefox) */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 153, 51, 0.6) rgba(255, 255, 255, 0.06);
+}
+
+/* items keep their size; the sidebar scrolls instead of squashing them */
+.ad-sidebar > * { flex-shrink: 0; }
+
+/* visible scrollbar (Chrome, Edge, Safari) */
+.ad-sidebar::-webkit-scrollbar { width: 8px; }
+.ad-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+.ad-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 153, 51, 0.55);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.ad-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 153, 51, 0.9);
+  background-clip: padding-box;
+}
+
+.ad-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+.ad-main > .ad-topbar { position: sticky; top: 0; z-index: 10; }
+.ad-content { flex: 1; min-width: 0; width: 100%; box-sizing: border-box; }
+.ad-content > * { max-width: 100%; animation: adPageEnter .2s ease; }
+@keyframes adPageEnter { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: translateX(0); } }
+
+/* active highlight for sidebar items and sub-items */
+.ad-sb-link.active,
+.ad-sb-sublink.active { background: rgba(255,153,51,.18); color: #fff; }
+.ad-sb-sublink.active { border-left: 3px solid #ff9933; }
+
+@media (max-width: 860px) {
+  .ad-shell { grid-template-columns: 220px minmax(0, 1fr); }
+  .ad-sidebar { width: 220px; min-width: 220px; max-width: 220px; }
+}
+@media (max-width: 600px) {
+  .ad-shell { grid-template-columns: 1fr; }
+  .ad-sidebar { position: relative; width: 100%; min-width: 0; max-width: none; height: auto; min-height: auto; }
+  .ad-main { width: 100%; }
+}
+
+/* ============================================================
+   SUB-VIEWS BESIDE THE SIDEBAR
+   Clicking any tab keeps the sidebar and opens that page in the
+   right-hand area (.ad-subview-content). If a page component
+   draws its OWN nested .ad-shell / sidebar / topbar, hide those
+   so there is only ONE sidebar. Keep this block at the END.
+   ============================================================ */
+.ad-subview-content .ad-shell {
+  display: block;
+  grid-template-columns: none;
+  min-height: 0;
+  background: transparent;
+}
+
+.ad-subview-content .ad-shell > .ad-sidebar,
+.ad-subview-content > .ad-sidebar {
+  display: none !important;
+}
+
+.ad-subview-content .ad-shell .ad-main > .ad-topbar {
+  display: none !important;
+}
+
+.ad-subview-content .ad-shell .ad-main > .ad-content {
+  padding: 0;
+  background: transparent;
+  background-image: none;
+}
+
+.ad-subview-content .ad-shell .ad-main {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Refined, readable admin navigation */
+.ad-shell {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.ad-sidebar {
+  background: linear-gradient(180deg, #0d2341 0%, #08172d 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 12px 0 32px rgba(8, 27, 52, 0.12);
+}
+
+.ad-sb-brand {
+  padding-bottom: 22px;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.ad-sb-logo-button {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-sb-logo-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.22);
+}
+
+.ad-sb-logo-button:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 3px;
+}
+
+.ad-sb-label {
+  color: #8da3c3;
+  letter-spacing: 1.25px;
+}
+
+.ad-sb-nav {
+  gap: 4px;
+}
+
+.ad-sb-link {
+  min-height: 44px;
+  gap: 9px;
+  border-color: transparent;
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.ad-sb-link:hover {
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(255, 255, 255, 0.06);
+  transform: translateX(2px);
+}
+
+.ad-sb-link.active {
+  background: linear-gradient(100deg, rgba(255, 153, 51, 0.23), rgba(255, 153, 51, 0.09));
+  border-color: rgba(255, 153, 51, 0.2);
+  box-shadow: inset 3px 0 0 var(--saffron);
+}
+
+.ad-sb-text {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+.ad-sb-subnav {
+  border-left-color: rgba(255, 153, 51, 0.45);
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.ad-sb-sublink.active {
+  background: rgba(255, 153, 51, 0.16) !important;
+  box-shadow: inset 3px 0 0 var(--saffron);
+}
+
+.ad-sidebar .ad-button-link {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 10px;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.18s ease;
+}
+
+.ad-sidebar .ad-button-link:hover {
+  background: rgba(207, 68, 56, 0.12);
+}
+
+.ad-sb-footer {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 860px) {
+  .ad-shell {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .ad-sidebar {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .ad-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+  }
 }

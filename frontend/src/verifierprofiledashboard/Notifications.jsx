@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./Notifications.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
@@ -15,6 +16,20 @@ const displayCategory = (category) => {
   return category || "Other";
 };
 
+// ✅ Helper to translate internal category strings for UI display
+const translateCategory = (cat, t) => {
+  switch (cat) {
+    case "Work Submitted": return t('notifications.cat_work_submitted');
+    case "Verification Required": return t('notifications.cat_verification_required');
+    case "Reassignment": return t('notifications.cat_reassignment');
+    case "Pending Reminder": return t('notifications.cat_pending_reminder');
+    case "Status Update": return t('notifications.cat_status_update');
+    case "Other": return t('notifications.cat_other');
+    case "All": return t('notifications.cat_all');
+    default: return cat;
+  }
+};
+
 const Notifications = ({
   notifications,
   complaints = [],
@@ -28,12 +43,14 @@ const Notifications = ({
   onAssign,
   onComplaintUpdated,
 }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [filterCategory, setFilterCategory] = useState("All");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Helper to get badge colors based on category
+  // Helper to get badge colors based on category (keeps English for logic)
   const getCategoryStyle = (category) => {
     switch (displayCategory(category)) {
       case "Work Submitted": return "type-submitted";
@@ -51,6 +68,7 @@ const Notifications = ({
     })),
     [notifications]
   );
+  
   const categories = useMemo(
     () => ["All", ...new Set(normalizedNotifications.map((notification) => notification.category))],
     [normalizedNotifications]
@@ -69,7 +87,7 @@ const Notifications = ({
       await onMarkAsRead(id);
       setSelectedNotif(null);
     } catch (saveError) {
-      setError(saveError.message || "Unable to mark the notification as read.");
+      setError(saveError.message || t('notifications.error_mark_read'));
     } finally {
       setSaving(false);
     }
@@ -81,7 +99,7 @@ const Notifications = ({
     try {
       await onMarkAllRead();
     } catch (saveError) {
-      setError(saveError.message || "Unable to mark all notifications as read.");
+      setError(saveError.message || t('notifications.error_mark_all_read'));
     } finally {
       setSaving(false);
     }
@@ -108,8 +126,8 @@ const Notifications = ({
     <div className="notif-shell">
       {/* Header */}
       <div className="notif-header">
-        <button className="notif-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h2>🔔 Notifications Center</h2>
+        <button className="notif-back-btn" onClick={onBack}>{t('notifications.back_to_dashboard')}</button>
+        <h2>{t('notifications.title')}</h2>
       </div>
 
       <div className="notif-container">
@@ -118,15 +136,15 @@ const Notifications = ({
         <div className="notif-stats">
           <div className="notif-stat-card">
             <span className="notif-stat-num">{notifications.filter((n) => !n.isRead).length}</span>
-            <span className="notif-stat-label">Unread</span>
+            <span className="notif-stat-label">{t('notifications.unread')}</span>
           </div>
           <div className="notif-stat-card">
             <span className="notif-stat-num">{normalizedNotifications.filter((n) => n.category === "Work Submitted").length}</span>
-            <span className="notif-stat-label">Work Submitted</span>
+            <span className="notif-stat-label">{t('notifications.cat_work_submitted')}</span>
           </div>
           <div className="notif-stat-card">
             <span className="notif-stat-num">{normalizedNotifications.filter((n) => n.category === "Pending Reminder").length}</span>
-            <span className="notif-stat-label">Pending Reminders</span>
+            <span className="notif-stat-label">{t('notifications.cat_pending_reminder')}</span>
           </div>
         </div>
 
@@ -138,11 +156,11 @@ const Notifications = ({
               className={`notif-filter-btn ${filterCategory === cat ? "active" : ""}`}
               onClick={() => setFilterCategory(cat)}
             >
-              {cat}
+              {translateCategory(cat, t)}
             </button>
           ))}
           <button className="notif-mark-all-btn" disabled={saving} onClick={handleMarkAllRead}>
-            ✓ Mark All as Read
+            {t('notifications.mark_all_read')}
           </button>
         </div>
 
@@ -151,20 +169,20 @@ const Notifications = ({
           {filteredNotifications.length === 0 ? (
             <div className="notif-empty-state">
               <div className="notif-empty-icon">📭</div>
-              <h4>No Notifications Found</h4>
-              <p>Try changing your filter or check back later.</p>
+              <h4>{t('notifications.empty_title')}</h4>
+              <p>{t('notifications.empty_desc')}</p>
             </div>
           ) : (
             <table className="notif-table">
               <thead>
                 <tr>
                   <th style={{ width: "40px" }}></th>
-                  <th>Time</th>
-                  <th>Category</th>
-                  <th>Complaint No.</th>
-                  <th>Notification</th>
-                  <th>Status</th>
-                  <th style={{ width: "120px" }}>Action</th>
+                  <th>{t('notifications.col_time')}</th>
+                  <th>{t('notifications.col_category')}</th>
+                  <th>{t('notifications.col_complaint_no')}</th>
+                  <th>{t('notifications.col_notification')}</th>
+                  <th>{t('notifications.col_status')}</th>
+                  <th style={{ width: "120px" }}>{t('notifications.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,19 +198,19 @@ const Notifications = ({
                     <td className="notif-mono">{notif.time && !Number.isNaN(new Date(notif.time).getTime()) ? new Date(notif.time).toLocaleString() : "—"}</td>
                     <td>
                       <span className={`notif-type-badge ${getCategoryStyle(notif.category)}`}>
-                        {notif.category}
+                        {translateCategory(notif.category, t)}
                       </span>
                     </td>
                     <td className="notif-mono notif-link">{notif.complaintNumber}</td>
                     <td className="notif-message">{notif.title}</td>
                     <td>
                       <span className={`notif-status-badge ${notif.isRead ? "status-read" : "status-unread"}`}>
-                        {notif.isRead ? "Read" : "Unread"}
+                        {notif.isRead ? t('notifications.status_read') : t('notifications.status_unread')}
                       </span>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <button className="notif-view-btn" onClick={() => setSelectedNotif(notif)}>
-                        View Details
+                        {t('notifications.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -210,7 +228,7 @@ const Notifications = ({
             <div className="notif-modal-header">
               <div>
                 <span className={`notif-modal-badge ${getCategoryStyle(selectedNotif.category)}`}>
-                  {selectedNotif.category.toUpperCase()}
+                  {translateCategory(selectedNotif.category, t).toUpperCase()}
                 </span>
                 <h3>{selectedNotif.title}</h3>
               </div>
@@ -220,21 +238,21 @@ const Notifications = ({
             <div className="notif-modal-body">
               <div className="notif-modal-info-grid">
                 <div className="notif-info-item">
-                  <span>Complaint Number</span>
+                  <span>{t('notifications.modal_complaint_number')}</span>
                   <b className="notif-mono">{selectedNotif.complaintNumber}</b>
                 </div>
                 <div className="notif-info-item">
-                  <span>Received At</span>
+                  <span>{t('notifications.modal_received_at')}</span>
                   <b>{selectedNotif.time && !Number.isNaN(new Date(selectedNotif.time).getTime()) ? new Date(selectedNotif.time).toLocaleString() : "—"}</b>
                 </div>
                 <div className="notif-info-item">
-                  <span>Read Status</span>
-                  <b>{selectedNotif.isRead ? "✅ Read" : "🔴 Unread"}</b>
+                  <span>{t('notifications.modal_read_status')}</span>
+                  <b>{selectedNotif.isRead ? t('notifications.modal_read') : t('notifications.modal_unread')}</b>
                 </div>
               </div>
 
               <div className="notif-modal-section">
-                <span className="notif-section-label">Full Message</span>
+                <span className="notif-section-label">{t('notifications.modal_full_message')}</span>
                 <p className="notif-modal-message">{selectedNotif.message}</p>
               </div>
               {selectedComplaint ? (
@@ -242,13 +260,13 @@ const Notifications = ({
                   <VerifierComplaintDetails complaint={selectedComplaint} />
                   <div className="notif-evidence-grid">
                     {[
-                      ["Before Repair", selectedComplaint.photos?.before],
-                      ["Site Inspection", selectedComplaint.photos?.site],
-                      ["After Repair", selectedComplaint.photos?.after],
+                      [t('notifications.modal_before_repair'), selectedComplaint.photos?.before],
+                      [t('notifications.modal_site_inspection'), selectedComplaint.photos?.site],
+                      [t('notifications.modal_after_repair'), selectedComplaint.photos?.after],
                     ].map(([label, photo]) => photo && (
                       <div key={label}>
                         <span>{label}</span>
-                        <ComplaintImage src={photo} alt={`${label} evidence`} fallbackClassName="notif-evidence-fallback" />
+                        <ComplaintImage src={photo} alt={label} fallbackClassName="notif-evidence-fallback" />
                       </div>
                     ))}
                   </div>
@@ -269,7 +287,7 @@ const Notifications = ({
                 </>
               ) : (
                 <p className="notif-error" role="alert">
-                  Complaint details could not be matched to this notification. Refresh the dashboard and try again.
+                  {t('notifications.modal_error_no_match')}
                 </p>
               )}
             </div>
@@ -277,11 +295,11 @@ const Notifications = ({
             <div className="notif-modal-footer">
               {!selectedNotif.isRead && (
                 <button className="notif-modal-action-btn" disabled={saving} onClick={() => handleMarkRead(selectedNotif.id)}>
-                  ✓ Mark as Read
+                  {t('notifications.modal_mark_read')}
                 </button>
               )}
               <button className="notif-modal-close-btn" onClick={() => setSelectedNotif(null)}>
-                Close
+                {t('notifications.modal_close')}
               </button>
             </div>
           </div>

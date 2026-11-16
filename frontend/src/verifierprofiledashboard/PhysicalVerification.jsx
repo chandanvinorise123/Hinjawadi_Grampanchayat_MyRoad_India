@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./PhysicalVerification.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerification }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [selectedItem, setSelectedItem] = useState(null);
   const [decision, setDecision] = useState("approve"); // 'approve' or 'reject'
   const [remarks, setRemarks] = useState("");
@@ -39,7 +42,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
       const uploaded = await uploadDashboardPhoto(file);
       setVerificationPhoto(uploaded.publicUrl);
     } catch (uploadError) {
-      setError(uploadError.message || "Unable to upload the physical verification photo.");
+      setError(uploadError.message || t('physical_verification.error_upload_photo'));
     } finally {
       setUploadingPhoto(false);
       event.target.value = "";
@@ -49,15 +52,15 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
   // 2. Submit Verification Result
   const handleSubmit = async () => {
     if (!remarks.trim()) {
-      alert("Verification remarks are mandatory before submitting.");
+      alert(t('physical_verification.error_remarks_required'));
       return;
     }
     if (!dateTime) {
-      alert("Please record the verification date and time.");
+      alert(t('physical_verification.error_datetime_required'));
       return;
     }
     if (!verificationPhoto) {
-      setError("Upload a physical verification photo before submitting your decision.");
+      setError(t('physical_verification.error_photo_required'));
       return;
     }
 
@@ -67,7 +70,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
       await onSubmitVerification(selectedItem.id, decision, remarks, dateTime, verificationPhoto);
       setSelectedItem(null);
     } catch (saveError) {
-      setError(saveError.message || "Unable to save the verification decision.");
+      setError(saveError.message || t('physical_verification.error_save_decision'));
     } finally {
       setSaving(false);
     }
@@ -77,23 +80,23 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
     <div className="pv-shell">
       {/* Header */}
       <div className="pv-header">
-        <button className="pv-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h2>🔍 Physical Verification Workspace</h2>
+        <button className="pv-back-btn" onClick={onBack}>{t('physical_verification.back_to_dashboard')}</button>
+        <h2>🔍 {t('physical_verification.title')}</h2>
       </div>
 
       <div className="pv-container">
         {loadError && <div className="pv-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="pv-summary">
-          <span>📋 Completed and corrected work awaiting physical verification: <b>{verificationQueue.length}</b></span>
+          <span>{t('physical_verification.summary', { count: verificationQueue.length })}</span>
         </div>
 
         <div className="pv-layout">
           {/* LEFT: Queue List */}
           <div className="pv-list-panel">
-            <h3>Verification Queue</h3>
+            <h3>{t('physical_verification.verification_queue')}</h3>
             {verificationQueue.length === 0 ? (
-              <div className="pv-empty">No completed or corrected work currently requires physical verification.</div>
+              <div className="pv-empty">{t('physical_verification.empty_queue')}</div>
             ) : (
               <div className="pv-list">
                 {verificationQueue.map((item) => (
@@ -122,7 +125,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
               <>
                 <div className="pv-workspace-header">
                   <div>
-                    <h3>Verifying: {selectedItem.complaintNumber}</h3>
+                    <h3>{t('physical_verification.verifying', { complaintNumber: selectedItem.complaintNumber })}</h3>
                     <p className="pv-subtitle">{selectedItem.category} • {selectedItem.citizenName}</p>
                   </div>
                 </div>
@@ -131,38 +134,38 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
                 {/* Quick Info & Photos */}
                 <div className="pv-info-grid">
                   <div className="pv-info-card">
-                    <span>Issue Description</span>
+                    <span>{t('physical_verification.issue_description')}</span>
                     <p>{selectedItem.description}</p>
                   </div>
                   <div className="pv-info-card">
-                    <span>Staff Remarks</span>
-                    <p>{selectedItem.remarks || "No remarks provided."}</p>
+                    <span>{t('physical_verification.staff_remarks')}</span>
+                    <p>{selectedItem.remarks || t('physical_verification.no_remarks')}</p>
                   </div>
                   <div className="pv-info-card pv-photos-card">
-                    <span>Evidence Photos</span>
+                    <span>{t('physical_verification.evidence_photos')}</span>
                     <div className="pv-photo-row">
                       <div className="pv-mini-photo">
-                        <span>Before</span>
+                        <span>{t('physical_verification.before')}</span>
                         <div>
                           {selectedItem.photos?.before
-                            ? <ComplaintImage src={selectedItem.photos.before} alt="Before repair evidence" fallbackClassName="pv-photo-fallback" />
-                            : "N/A"}
+                            ? <ComplaintImage src={selectedItem.photos.before} alt={t('physical_verification.before')} fallbackClassName="pv-photo-fallback" />
+                            : t('physical_verification.na')}
                         </div>
                       </div>
                       <div className="pv-mini-photo">
-                        <span>After</span>
+                        <span>{t('physical_verification.after')}</span>
                         <div>
                           {selectedItem.photos?.after
-                            ? <ComplaintImage src={selectedItem.photos.after} alt="After repair evidence" fallbackClassName="pv-photo-fallback" />
-                            : "N/A"}
+                            ? <ComplaintImage src={selectedItem.photos.after} alt={t('physical_verification.after')} fallbackClassName="pv-photo-fallback" />
+                            : t('physical_verification.na')}
                         </div>
                       </div>
                       <div className="pv-mini-photo">
-                        <span>Site</span>
+                        <span>{t('physical_verification.site')}</span>
                         <div>
                           {selectedItem.photos?.site
-                            ? <ComplaintImage src={selectedItem.photos.site} alt="Site inspection evidence" fallbackClassName="pv-photo-fallback" />
-                            : "N/A"}
+                            ? <ComplaintImage src={selectedItem.photos.site} alt={t('physical_verification.site')} fallbackClassName="pv-photo-fallback" />
+                            : t('physical_verification.na')}
                         </div>
                       </div>
                     </div>
@@ -172,7 +175,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
                 {/* Verification Action Form */}
                 <div className="pv-action-form">
                   {error && <p className="pv-save-error" role="alert">{error}</p>}
-                  <h4>Submit Verification Result</h4>
+                  <h4>{t('physical_verification.submit_verification_result')}</h4>
                   
                   {/* Decision Toggle */}
                   <div className="pv-decision-toggle">
@@ -181,25 +184,25 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
                       className={`pv-toggle-btn pv-approve ${decision === 'approve' ? 'active' : ''}`}
                       onClick={() => setDecision('approve')}
                     >
-                      ✅ Approve / Verify Work
+                      ✅ {t('physical_verification.approve_verify_work')}
                     </button>
                     <button 
                       type="button" 
                       className={`pv-toggle-btn pv-reject ${decision === 'reject' ? 'active' : ''}`}
                       onClick={() => setDecision('reject')}
                     >
-                      ❌ Reject / Send for Correction
+                      ❌ {t('physical_verification.reject_send_for_correction')}
                     </button>
                   </div>
 
                   {/* Remarks */}
                   <div className="pv-form-group">
-                    <label>Verification Remarks *</label>
+                    <label>{t('physical_verification.verification_remarks_required')}</label>
                     <textarea
                       rows="3"
                       placeholder={decision === 'approve' 
-                        ? "Confirm that the work meets the required standards..." 
-                        : "Detail exactly what needs correction or additional action..."}
+                        ? t('physical_verification.approve_placeholder') 
+                        : t('physical_verification.reject_placeholder')}
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
                     ></textarea>
@@ -207,7 +210,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
 
                   {/* Date & Time */}
                   <div className="pv-form-group">
-                    <label>Verification Date & Time *</label>
+                    <label>{t('physical_verification.verification_datetime_required')}</label>
                     <input
                       type="datetime-local"
                       value={dateTime}
@@ -216,7 +219,7 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
                   </div>
 
                   <div className="pv-form-group">
-                    <label htmlFor="pv-verification-photo">Physical Verification Photo *</label>
+                    <label htmlFor="pv-verification-photo">{t('physical_verification.physical_verification_photo_required')}</label>
                     <input
                       id="pv-verification-photo"
                       type="file"
@@ -224,27 +227,27 @@ const PhysicalVerification = ({ complaints, loadError, onBack, onSubmitVerificat
                       disabled={saving || uploadingPhoto}
                       onChange={handlePhotoChange}
                     />
-                    {uploadingPhoto && <p>Uploading verification photo...</p>}
+                    {uploadingPhoto && <p>{t('physical_verification.uploading_photo')}</p>}
                     {verificationPhoto && (
                       <img
                         className="pv-verification-photo-preview"
                         src={toMediaUrl(verificationPhoto)}
-                        alt="Physical verification evidence"
+                        alt={t('physical_verification.physical_verification_photo_alt')}
                       />
                     )}
                   </div>
 
                   {/* Submit Button */}
                   <button className="pv-submit-btn" disabled={saving || uploadingPhoto} onClick={handleSubmit}>
-                    {saving ? "Saving..." : decision === 'approve' ? '✅ Verify Work' : '❌ Reject / Send for Re-verification'}
+                    {saving ? t('physical_verification.saving') : (decision === 'approve' ? t('physical_verification.verify_work') : t('physical_verification.reject_reverification'))}
                   </button>
                 </div>
               </>
             ) : (
               <div className="pv-empty-workspace">
                 <div className="pv-empty-icon">🔍</div>
-                <h4>Select an item to verify</h4>
-                <p>Choose a complaint from the queue to begin the physical verification process.</p>
+                <h4>{t('physical_verification.select_item_to_verify')}</h4>
+                <p>{t('physical_verification.choose_complaint_to_verify')}</p>
               </div>
             )}
           </div>

@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ComplaintHistory.css";
 import ComplaintImage from "./ComplaintImage";
 import VerifierDecisionForm from "./VerifierDecisionForm";
 
-const formatDateTime = (value) => {
-  if (!value) return "Not recorded";
+const formatDateTime = (value, notRecordedText = "Not recorded") => {
+  if (!value) return notRecordedText;
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? String(value)
@@ -25,7 +26,7 @@ const getStatusTone = (status) => {
   return "navy";
 };
 
-const getComplaintPhotos = (complaint) => {
+const getComplaintPhotos = (complaint, t) => {
   const citizenPhotos = Array.isArray(complaint.citizenPhotos)
     ? complaint.citizenPhotos
     : Array.isArray(complaint.images) ? complaint.images : [];
@@ -33,14 +34,20 @@ const getComplaintPhotos = (complaint) => {
     ? complaint.photos
     : {};
   return [
-    ...citizenPhotos.map((photo, index) => ({ label: `Citizen Evidence ${index + 1}`, photo })),
-    { label: "Before / Site", photo: complaint.inspection?.sitePhoto || photos.site || photos.before },
-    { label: "After Work", photo: complaint.inspection?.completionPhoto || photos.after },
-    { label: "Verification", photo: complaint.inspection?.verificationPhoto || photos.verification },
+    ...citizenPhotos.map((photo, index) => ({ 
+      label: t('complaint_history.citizen_evidence', { index: index + 1 }), 
+      photo 
+    })),
+    { label: t('complaint_history.before_site'), photo: complaint.inspection?.sitePhoto || photos.site || photos.before },
+    { label: t('complaint_history.after_work'), photo: complaint.inspection?.completionPhoto || photos.after },
+    { label: t('complaint_history.verification'), photo: complaint.inspection?.verificationPhoto || photos.verification },
   ].filter(({ photo }) => typeof photo === "string" && photo.trim());
 };
 
 const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const notRecorded = t('complaint_history.not_recorded');
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
@@ -75,11 +82,11 @@ const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
     <main className="vch-shell">
       <header className="vch-header">
         <button className="vch-back-btn" type="button" onClick={backAction}>
-          ← {selectedItem ? "Back to Complaint History" : "Back to Dashboard"}
+          {selectedItem ? t('complaint_history.back_to_history') : t('complaint_history.back_to_dashboard')}
         </button>
         <div>
-          <span className="vch-eyebrow">Verifier records</span>
-          <h2>📜 Complaint History & Timeline</h2>
+          <span className="vch-eyebrow">{t('complaint_history.verifier_records')}</span>
+          <h2>📜 {t('complaint_history.title')}</h2>
           {selectedItem && <p>{selectedItem.complaintNumber}</p>}
         </div>
       </header>
@@ -88,56 +95,56 @@ const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
         <div className="vch-detail-layout">
           <section className="vch-detail-panel">
             <header className="vch-detail-heading">
-              <span className="vch-eyebrow">Original report</span>
-              <h3>Complaint Information</h3>
+              <span className="vch-eyebrow">{t('complaint_history.original_report')}</span>
+              <h3>{t('complaint_history.complaint_information')}</h3>
             </header>
             <dl className="vch-detail-facts">
-              <div><dt>Complaint Number</dt><dd>{selectedItem.complaintNumber || "Not recorded"}</dd></div>
-              <div><dt>Citizen</dt><dd>{selectedItem.citizenName || "Guest"}</dd></div>
-              <div><dt>Contact</dt><dd>{selectedItem.citizenContact || "Not recorded"}</dd></div>
-              <div><dt>Email</dt><dd>{selectedItem.citizenEmail || selectedItem.citizenProfile?.email || "Not recorded"}</dd></div>
-              <div><dt>Department</dt><dd>{selectedItem.department || "Not assigned"}</dd></div>
-              <div><dt>Category</dt><dd>{selectedItem.category || "Not recorded"}</dd></div>
-              <div><dt>Issue</dt><dd>{selectedItem.issue || "Not recorded"}</dd></div>
-              <div><dt>Priority</dt><dd>{selectedItem.priority || "Normal"}</dd></div>
-              <div><dt>Location</dt><dd>{selectedItem.location || "Location pending"}</dd></div>
-              <div><dt>Landmark</dt><dd>{selectedItem.landmark || "Not recorded"}</dd></div>
-              <div><dt>Submitted</dt><dd>{formatDateTime(selectedItem.createdAt || selectedItem.date)}</dd></div>
-              <div><dt>Assigned Staff</dt><dd>{selectedItem.assignedStaff || "Not assigned"}</dd></div>
-              <div><dt>Assigned Verifier</dt><dd>{selectedItem.assignedVerifier || "Not assigned"}</dd></div>
-              <div className="vch-detail-wide"><dt>Description</dt><dd>{selectedItem.description || "No complaint description provided."}</dd></div>
+              <div><dt>{t('complaint_history.complaint_number')}</dt><dd>{selectedItem.complaintNumber || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.citizen')}</dt><dd>{selectedItem.citizenName || t('complaint_history.guest')}</dd></div>
+              <div><dt>{t('complaint_history.contact')}</dt><dd>{selectedItem.citizenContact || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.email')}</dt><dd>{selectedItem.citizenEmail || selectedItem.citizenProfile?.email || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.department')}</dt><dd>{selectedItem.department || t('complaint_history.not_assigned')}</dd></div>
+              <div><dt>{t('complaint_history.category')}</dt><dd>{selectedItem.category || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.issue')}</dt><dd>{selectedItem.issue || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.priority')}</dt><dd>{selectedItem.priority || t('complaint_history.normal')}</dd></div>
+              <div><dt>{t('complaint_history.location')}</dt><dd>{selectedItem.location || t('complaint_history.location_pending')}</dd></div>
+              <div><dt>{t('complaint_history.landmark')}</dt><dd>{selectedItem.landmark || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.submitted')}</dt><dd>{formatDateTime(selectedItem.createdAt || selectedItem.date, notRecorded)}</dd></div>
+              <div><dt>{t('complaint_history.assigned_staff')}</dt><dd>{selectedItem.assignedStaff || t('complaint_history.not_assigned')}</dd></div>
+              <div><dt>{t('complaint_history.assigned_verifier')}</dt><dd>{selectedItem.assignedVerifier || t('complaint_history.not_assigned')}</dd></div>
+              <div className="vch-detail-wide"><dt>{t('complaint_history.description')}</dt><dd>{selectedItem.description || t('complaint_history.no_description_provided')}</dd></div>
             </dl>
             <div className="vch-detail-evidence">
-              <h4>Complaint Evidence</h4>
-              {getComplaintPhotos(selectedItem).length ? (
+              <h4>{t('complaint_history.complaint_evidence')}</h4>
+              {getComplaintPhotos(selectedItem, t).length ? (
                 <div className="vch-detail-photos">
-                  {getComplaintPhotos(selectedItem).map(({ label, photo }) => (
+                  {getComplaintPhotos(selectedItem, t).map(({ label, photo }) => (
                     <figure key={`${label}-${photo}`}>
                       <ComplaintImage src={photo} alt={label} fallbackClassName="vch-photo-fallback" />
                       <figcaption>{label}</figcaption>
                     </figure>
                   ))}
                 </div>
-              ) : <p className="vch-empty-text">No images attached to this complaint.</p>}
+              ) : <p className="vch-empty-text">{t('complaint_history.no_images_attached')}</p>}
             </div>
           </section>
 
           <section className="vch-detail-panel">
             <header className="vch-detail-heading">
-              <span className="vch-eyebrow">Work & verification</span>
-              <h3>Work Information</h3>
+              <span className="vch-eyebrow">{t('complaint_history.work_verification')}</span>
+              <h3>{t('complaint_history.work_information')}</h3>
             </header>
             <dl className="vch-detail-facts">
-              <div><dt>Current Status</dt><dd><span className={`vch-status-badge vch-status-${getStatusTone(selectedItem.status)}`}>{selectedItem.status || "Pending"}</span></dd></div>
-              <div><dt>Queue</dt><dd>{selectedItem.queue || "Not recorded"}</dd></div>
-              <div><dt>Inspection Date</dt><dd>{formatDateTime(selectedItem.inspection?.inspectionDate)}</dd></div>
-              <div><dt>Completion Date</dt><dd>{formatDateTime(selectedItem.inspection?.completionDate)}</dd></div>
-              <div className="vch-detail-wide"><dt>Staff Inspection Remarks</dt><dd>{selectedItem.inspection?.remarks || "No staff inspection remarks recorded."}</dd></div>
-              <div className="vch-detail-wide"><dt>Action Taken by Staff</dt><dd>{selectedItem.inspection?.actionTaken || "No work action recorded."}</dd></div>
-              <div className="vch-detail-wide"><dt>Verifier Feedback</dt><dd>{selectedItem.verifierRemarks || selectedItem.previousRemarks || "No verifier feedback recorded."}</dd></div>
+              <div><dt>{t('complaint_history.current_status')}</dt><dd><span className={`vch-status-badge vch-status-${getStatusTone(selectedItem.status)}`}>{selectedItem.status || t('complaint_history.pending')}</span></dd></div>
+              <div><dt>{t('complaint_history.queue')}</dt><dd>{selectedItem.queue || notRecorded}</dd></div>
+              <div><dt>{t('complaint_history.inspection_date')}</dt><dd>{formatDateTime(selectedItem.inspection?.inspectionDate, notRecorded)}</dd></div>
+              <div><dt>{t('complaint_history.completion_date')}</dt><dd>{formatDateTime(selectedItem.inspection?.completionDate, notRecorded)}</dd></div>
+              <div className="vch-detail-wide"><dt>{t('complaint_history.staff_inspection_remarks')}</dt><dd>{selectedItem.inspection?.remarks || t('complaint_history.no_staff_inspection_remarks')}</dd></div>
+              <div className="vch-detail-wide"><dt>{t('complaint_history.action_taken_by_staff')}</dt><dd>{selectedItem.inspection?.actionTaken || t('complaint_history.no_work_action_recorded')}</dd></div>
+              <div className="vch-detail-wide"><dt>{t('complaint_history.verifier_feedback')}</dt><dd>{selectedItem.verifierRemarks || selectedItem.previousRemarks || t('complaint_history.no_verifier_feedback_recorded')}</dd></div>
             </dl>
             <div className="vch-detail-evidence">
-              <h4>Verifier Decision</h4>
+              <h4>{t('complaint_history.verifier_decision')}</h4>
               <VerifierDecisionForm complaint={selectedItem} onVerify={onVerify} />
             </div>
           </section>
@@ -146,17 +153,17 @@ const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
         <section className="vch-table-section">
           <div className="vch-table-header">
             <div>
-              <h3>All Complaints</h3>
-              <p>Browse complaint records and open their full details.</p>
+              <h3>{t('complaint_history.all_complaints')}</h3>
+              <p>{t('complaint_history.browse_records_subtitle')}</p>
             </div>
             <div className="vch-table-controls">
-              <span className="vch-table-count">{filteredComplaints.length} complaints</span>
+              <span className="vch-table-count">{t('complaint_history.complaints_count', { count: filteredComplaints.length })}</span>
               <input
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search complaint, citizen, status..."
-                aria-label="Search complaints"
+                placeholder={t('complaint_history.search_placeholder')}
+                aria-label={t('complaint_history.search_aria')}
               />
             </div>
           </div>
@@ -164,36 +171,36 @@ const ComplaintHistory = ({ complaints = [], onBack, onVerify }) => {
             <table className="vch-complaints-table">
               <thead>
                 <tr>
-                  <th>Complaint No.</th>
-                  <th>Citizen</th>
-                  <th>Issue</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Last Updated</th>
-                  <th>Action</th>
+                  <th>{t('complaint_history.col_complaint_no')}</th>
+                  <th>{t('complaint_history.col_citizen')}</th>
+                  <th>{t('complaint_history.col_issue')}</th>
+                  <th>{t('complaint_history.col_location')}</th>
+                  <th>{t('complaint_history.col_status')}</th>
+                  <th>{t('complaint_history.col_last_updated')}</th>
+                  <th>{t('complaint_history.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredComplaints.length ? filteredComplaints.map((complaint) => (
                   <tr key={complaint.id}>
-                    <td className="vch-mono">{complaint.complaintNumber || "N/A"}</td>
-                    <td>{complaint.citizenName || "Guest"}</td>
-                    <td>{complaint.issue || complaint.category || "Not recorded"}</td>
-                    <td>{complaint.location || "Location pending"}</td>
-                    <td><span className={`vch-status-badge vch-status-${getStatusTone(complaint.status)}`}>{complaint.status || "Pending"}</span></td>
-                    <td>{formatDateTime(complaint.updatedAt || complaint.createdAt || complaint.date)}</td>
+                    <td className="vch-mono">{complaint.complaintNumber || t('complaint_history.na')}</td>
+                    <td>{complaint.citizenName || t('complaint_history.guest')}</td>
+                    <td>{complaint.issue || complaint.category || notRecorded}</td>
+                    <td>{complaint.location || t('complaint_history.location_pending')}</td>
+                    <td><span className={`vch-status-badge vch-status-${getStatusTone(complaint.status)}`}>{complaint.status || t('complaint_history.pending')}</span></td>
+                    <td>{formatDateTime(complaint.updatedAt || complaint.createdAt || complaint.date, notRecorded)}</td>
                     <td>
                       <button
                         className="vch-view-details-btn"
                         type="button"
                         onClick={() => setSelectedId(String(complaint.id))}
                       >
-                        View Details
+                        {t('complaint_history.view_details')}
                       </button>
                     </td>
                   </tr>
                 )) : (
-                  <tr><td className="vch-empty-row" colSpan="7">No complaints match your search.</td></tr>
+                  <tr><td className="vch-empty-row" colSpan="7">{t('complaint_history.no_match_search')}</td></tr>
                 )}
               </tbody>
             </table>

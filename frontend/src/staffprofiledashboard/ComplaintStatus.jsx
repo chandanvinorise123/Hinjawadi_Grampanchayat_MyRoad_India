@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ComplaintStatus.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
 import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/index mapping
 const stageLabels = [
   "Action Initiated",
   "Work In Progress",
@@ -32,6 +34,9 @@ const getLatestStaffUpdate = (complaint) => (complaint.log || [])
   }, { entry: null, timestamp: 0 });
 
 const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+  const translatedStageLabels = t('complaint_status.stage_labels', { returnObjects: true }); // ✅ ADDED
+
   const [currentComplaintId, setCurrentComplaintId] = useState("");
   const [formData, setFormData] = useState(() => createWorkForm(null));
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +44,7 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
   const [updateError, setUpdateError] = useState("");
   const [uploadingPhoto, setUploadingPhoto] = useState("");
   const [saving, setSaving] = useState(false);
+  
   const currentComplaint = complaints.find((complaint) =>
     String(complaint.id) === String(currentComplaintId)
   ) || null;
@@ -55,6 +61,7 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
       }),
     [complaints]
   );
+  
   const filteredComplaints = sortedComplaints.filter(({ complaint }) => {
     const query = searchTerm.trim().toLowerCase();
     return !query || [
@@ -81,7 +88,7 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
       const uploaded = await uploadDashboardPhoto(file);
       setFormData((previous) => ({ ...previous, [field]: uploaded.publicUrl }));
     } catch (error) {
-      setUpdateError(error.message || "Unable to upload the work photograph.");
+      setUpdateError(error.message || t('complaint_status.error_upload'));
     } finally {
       setUploadingPhoto("");
       event.target.value = "";
@@ -96,9 +103,9 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
     setUpdateMessage("");
     try {
       await onWorkUpdate?.(currentComplaint.id, formData);
-      setUpdateMessage("Work details and status were saved successfully.");
+      setUpdateMessage(t('complaint_status.success_message'));
     } catch (error) {
-      setUpdateError(error.message || "Unable to save the complaint update.");
+      setUpdateError(error.message || t('complaint_status.error_save'));
     } finally {
       setSaving(false);
     }
@@ -115,72 +122,72 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
     <div className="cs-shell">
       <header className="cs-header">
         <button className="cs-back-btn" type="button" onClick={onBack}>
-          ← Back to Dashboard
+          {t('complaint_status.back_to_dashboard')}
         </button>
         <div>
-          <span className="cs-eyebrow">Staff workspace</span>
-          <h2>{currentComplaint ? "Complaint Status & Work Update" : "Complaint Status Update"}</h2>
+          <span className="cs-eyebrow">{t('complaint_status.staff_workspace')}</span>
+          <h2>{currentComplaint ? t('complaint_status.status_and_work_update') : t('complaint_status.complaint_status_update')}</h2>
           <p>
             {currentComplaint
-              ? `Review and update ${currentComplaint.complaintNumber || "this complaint"}.`
-              : "Monitor every assigned complaint and update its progress when needed."}
+              ? t('complaint_status.review_update_complaint', { complaintNumber: currentComplaint.complaintNumber || t('complaint_status.this_complaint') })
+              : t('complaint_status.monitor_assigned_subtitle')}
           </p>
         </div>
       </header>
 
       <main className="cs-container">
         {!currentComplaint ? (
-          <section className="cs-list-panel" aria-label="Assigned complaints and work status">
+          <section className="cs-list-panel" aria-label={t('complaint_status.aria_assigned_workload')}>
             <div className="cs-list-heading">
               <div>
-                <span className="cs-eyebrow">Assigned workload</span>
-                <h3>Complaint Work Status</h3>
-                <p>Latest staff updates appear first. Open a complaint to review or update its work.</p>
+                <span className="cs-eyebrow">{t('complaint_status.assigned_workload')}</span>
+                <h3>{t('complaint_status.complaint_work_status')}</h3>
+                <p>{t('complaint_status.latest_updates_first')}</p>
               </div>
-              <span className="cs-count">{complaints.length} complaints</span>
+              <span className="cs-count">{t('complaint_status.complaints_count', { count: complaints.length })}</span>
             </div>
             <label className="cs-search">
-              <span>Search complaints</span>
+              <span>{t('complaint_status.search_complaints')}</span>
               <input
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Complaint number, issue, location, status..."
+                placeholder={t('complaint_status.search_placeholder')}
               />
             </label>
             <div className="cs-table-wrap">
               <table className="cs-table">
                 <thead>
                   <tr>
-                    <th>Complaint</th>
-                    <th>Issue & Location</th>
-                    <th>Current Status</th>
-                    <th>Latest Staff Update</th>
-                    <th>Updated At</th>
-                    <th>Action</th>
+                    <th>{t('complaint_status.col_complaint')}</th>
+                    <th>{t('complaint_status.col_issue_location')}</th>
+                    <th>{t('complaint_status.col_current_status')}</th>
+                    <th>{t('complaint_status.col_latest_staff_update')}</th>
+                    <th>{t('complaint_status.col_updated_at')}</th>
+                    <th>{t('complaint_status.col_action')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredComplaints.length ? filteredComplaints.map(({ complaint, latestStaffUpdate }) => (
                     <tr key={complaint.id}>
                       <td>
-                        <b className="cs-complaint-number">{complaint.complaintNumber || "Complaint"}</b>
-                        <span className="cs-cell-note">{complaint.citizenName || "Citizen not available"}</span>
+                        <b className="cs-complaint-number">{complaint.complaintNumber || t('complaint_status.col_complaint')}</b>
+                        <span className="cs-cell-note">{complaint.citizenName || t('complaint_status.citizen_not_available')}</span>
                       </td>
                       <td>
-                        <b>{complaint.issue || complaint.category || "Issue not specified"}</b>
-                        <span className="cs-cell-note">{complaint.location || "Location not recorded"}</span>
+                        <b>{complaint.issue || complaint.category || t('complaint_status.issue_not_specified')}</b>
+                        <span className="cs-cell-note">{complaint.location || t('complaint_status.location_not_recorded')}</span>
                       </td>
-                      <td><span className="cs-status-badge">{complaint.status || "Not recorded"}</span></td>
+                      <td><span className="cs-status-badge">{complaint.status || t('complaint_status.not_recorded')}</span></td>
                       <td className="cs-update-message">
-                        {latestStaffUpdate.entry?.text || complaint.inspection?.actionTaken || "Awaiting staff work update"}
+                        {latestStaffUpdate.entry?.text || complaint.inspection?.actionTaken || t('complaint_status.awaiting_staff_update')}
                       </td>
                       <td>
                         {latestStaffUpdate.entry?.time
                           ? new Date(latestStaffUpdate.entry.time).toLocaleString()
                           : complaint.updatedAt
                             ? new Date(complaint.updatedAt).toLocaleString()
-                            : "Not updated"}
+                            : t('complaint_status.not_updated')}
                       </td>
                       <td>
                         <button
@@ -188,16 +195,14 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
                           type="button"
                           onClick={() => selectComplaint(complaint)}
                         >
-                          View Details
+                          {t('complaint_status.view_details')}
                         </button>
                       </td>
                     </tr>
                   )) : (
                     <tr>
                       <td className="cs-empty" colSpan="6">
-                        {complaints.length
-                          ? "No complaints match your search."
-                          : "No complaints are currently assigned to you."}
+                        {complaints.length ? t('complaint_status.no_match_search') : t('complaint_status.no_complaints_assigned')}
                       </td>
                     </tr>
                   )}
@@ -217,7 +222,7 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
               }}
               disabled={saving}
             >
-              ← Back to Complaint List
+              {t('complaint_status.back_to_complaint_list')}
             </button>
             {updateMessage && <div className="cs-success-banner" role="status">✓ {updateMessage}</div>}
             {updateError && <div className="cs-error-banner" role="alert">{updateError}</div>}
@@ -226,10 +231,10 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
               <section className="cs-information-panel">
                 <header className="cs-panel-heading">
                   <div>
-                    <span className="cs-eyebrow">Original report</span>
-                    <h3>Complaint Information</h3>
+                    <span className="cs-eyebrow">{t('complaint_status.original_report')}</span>
+                    <h3>{t('complaint_status.complaint_information')}</h3>
                   </div>
-                  <span className="cs-status-badge">{currentComplaint.status || "Not recorded"}</span>
+                  <span className="cs-status-badge">{currentComplaint.status || t('complaint_status.not_recorded')}</span>
                 </header>
                 <div className="cs-complaint-info">
                   <StaffComplaintDetails
@@ -243,42 +248,42 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
               <form className="cs-work-panel" onSubmit={saveWorkUpdate}>
                 <header className="cs-panel-heading">
                   <div>
-                    <span className="cs-eyebrow">Progress & staff work</span>
-                    <h3>Status and Work Update</h3>
+                    <span className="cs-eyebrow">{t('complaint_status.progress_staff_work')}</span>
+                    <h3>{t('complaint_status.status_and_work_update_title')}</h3>
                   </div>
                 </header>
                 <div className="cs-work-content">
                   <div className="cs-status-summary">
-                    <span>Current workflow status</span>
-                    <b>{currentComplaint.status || stageLabels[formData.newStage]}</b>
+                    <span>{t('complaint_status.current_workflow_status')}</span>
+                    <b>{currentComplaint.status || translatedStageLabels[formData.newStage]}</b>
                   </div>
-                  <div className="cs-stepper" aria-label="Complaint workflow stages">
+                  <div className="cs-stepper" aria-label={t('complaint_status.aria_workflow_stages')}>
                     {stageLabels.map((label, index) => (
                       <div
                         key={label}
                         className={`cs-step ${index < Number(formData.newStage) ? "completed" : index === Number(formData.newStage) ? "active" : "pending"}`}
                       >
                         <span className="cs-step-dot">{index < Number(formData.newStage) ? "✓" : index + 1}</span>
-                        <span className="cs-step-label">{label}</span>
+                        <span className="cs-step-label">{translatedStageLabels[index]}</span>
                       </div>
                     ))}
                   </div>
                   <div className="cs-form-fields">
                     <div className="cs-field">
-                      <label htmlFor="cs-stage">Update Work Status</label>
+                      <label htmlFor="cs-stage">{t('complaint_status.update_work_status')}</label>
                       <select
                         id="cs-stage"
                         name="newStage"
                         value={formData.newStage}
                         onChange={handleFieldChange}
                       >
-                        {stageLabels.map((label, index) => (
+                        {translatedStageLabels.map((label, index) => (
                           <option key={label} value={index}>{label}</option>
                         ))}
                       </select>
                     </div>
                     <div className="cs-field">
-                      <label htmlFor="cs-inspection-time">Inspection Date & Time</label>
+                      <label htmlFor="cs-inspection-time">{t('complaint_status.inspection_datetime')}</label>
                       <input
                         id="cs-inspection-time"
                         name="inspectionDate"
@@ -288,7 +293,7 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
                       />
                     </div>
                     <div className="cs-field">
-                      <label htmlFor="cs-completion-time">Work Completion Date & Time</label>
+                      <label htmlFor="cs-completion-time">{t('complaint_status.work_completion_datetime')}</label>
                       <input
                         id="cs-completion-time"
                         name="completionDateTime"
@@ -298,39 +303,39 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
                       />
                     </div>
                     <div className="cs-field">
-                      <label htmlFor="cs-action-taken">Work Performed</label>
+                      <label htmlFor="cs-action-taken">{t('complaint_status.work_performed')}</label>
                       <textarea
                         id="cs-action-taken"
                         name="actionTaken"
                         rows="4"
                         value={formData.actionTaken}
                         onChange={handleFieldChange}
-                        placeholder="Describe the repairs or work completed..."
+                        placeholder={t('complaint_status.describe_repairs_placeholder')}
                       />
                     </div>
                     <div className="cs-field">
-                      <label htmlFor="cs-remarks">Work Remarks</label>
+                      <label htmlFor="cs-remarks">{t('complaint_status.work_remarks')}</label>
                       <textarea
                         id="cs-remarks"
                         name="remarks"
                         rows="3"
                         value={formData.remarks}
                         onChange={handleFieldChange}
-                        placeholder="Add observations or additional work notes..."
+                        placeholder={t('complaint_status.add_observations_placeholder')}
                       />
                     </div>
                     <div className="cs-photo-fields">
                       {[
-                        ["beforePhoto", "Before-Work Photograph"],
-                        ["afterPhoto", "After-Work Photograph"],
+                        ["beforePhoto", t('complaint_status.before_work_photo')],
+                        ["afterPhoto", t('complaint_status.after_work_photo')],
                       ].map(([field, label]) => (
                         <div className="cs-field" key={field}>
                           <label htmlFor={`cs-${field}`}>{label}</label>
                           <div className="cs-photo-upload">
                             <span>
                               {uploadingPhoto === field
-                                ? "Uploading..."
-                                : formData[field] ? "Replace photograph" : "Choose photograph"}
+                                ? t('complaint_status.uploading')
+                                : formData[field] ? t('complaint_status.replace_photo') : t('complaint_status.choose_photo')}
                             </span>
                             <input
                               id={`cs-${field}`}
@@ -357,14 +362,14 @@ const ComplaintStatus = ({ complaints = [], onBack, onWorkUpdate }) => {
                         onClick={() => setCurrentComplaintId("")}
                         disabled={saving}
                       >
-                        Back to List
+                        {t('complaint_status.back_to_list')}
                       </button>
                       <button
                         className="cs-btn-primary"
                         type="submit"
                         disabled={saving || Boolean(uploadingPhoto)}
                       >
-                        {saving ? "Saving..." : "Save Status & Work"}
+                        {saving ? t('complaint_status.saving') : t('complaint_status.save_status_work')}
                       </button>
                     </div>
                   </div>

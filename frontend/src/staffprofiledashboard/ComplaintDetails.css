@@ -460,3 +460,24 @@
     height: 210px;
   }
 }
+
+/* ============================================================
+   DOTTED BACKGROUND (paste at bottom)
+   Change theme colors here
+   ============================================================ */
+.cd-shell {
+  --dot-color: #cadbec;
+  --bg-base: #edf3fa;
+  --bg-from: #e8f1fa;
+  --bg-mid: #f4f8fc;
+  --bg-to: #edf3fa;
+  --border-color: #d4e3f3;
+  --dot-size: 20px;
+
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at center, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: var(--dot-size) var(--dot-size), 100% 100%;
+  background-repeat: repeat, no-repeat;
+}

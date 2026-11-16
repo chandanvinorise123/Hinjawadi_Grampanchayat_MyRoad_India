@@ -27,7 +27,7 @@ import gallery4 from "../assets/r4.png";
 
 // Gram Panchayat team photos
 import sarpanchPhoto1 from "../assets/committee_photo2.JPG";
-import upsarpanchPhoto2 from "../assets/avtar.jpg";
+import upsarpanchPhoto2 from "../assets/committee_photo9.jpg";
 
 
 const heroImages = [
@@ -306,125 +306,39 @@ const teamMembers = [
     photo: sarpanchPhoto1,
   },
   {
-    // name: "Sau. Shubhangi Suraj Sakhare",
+    name: "upsarpanchName",
     role: "upsarpanchRole",
     photo: upsarpanchPhoto2,
   },
 ];
 
 const HomeIcon = ({ name, className = "" }) => {
-  const artwork = {
-    pin: (
-      <>
-        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
-        <circle cx="12" cy="10" r="2.5" />
-      </>
-    ),
-    search: (
-      <>
-        <circle cx="10.8" cy="10.8" r="6.8" />
-        <path d="m16 16 4.5 4.5" />
-      </>
-    ),
-    map: (
-      <>
-        <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
-        <path d="M9 3v15m6-12v15" />
-        <path d="M5.5 9.5h1m10-1h1" />
-      </>
-    ),
-    warning: (
-      <>
-        <path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z" />
-        <path d="M12 9v4m0 4h.01" />
-      </>
-    ),
-    road: (
-      <>
-        <path d="M5 21 9 3m10 18L15 3" />
-        <path d="M12 4v3m0 4v3m0 4v3" />
-        <path d="M3 21h18" />
-      </>
-    ),
-    drain: (
-      <>
-        <path d="M3 7h18M5 7v12m14-12v12M5 19h14" />
-        <path d="M8 10v6m4-6v6m4-6v6" />
-        <path d="M3 4h18" />
-      </>
-    ),
-    water: (
-      <>
-        <path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11Z" />
-        <path d="M9 15a3 3 0 0 0 3 3" />
-      </>
-    ),
-    light: (
-      <>
-        <path d="M9 18h6m-5 3h4" />
-        <path d="M8.5 14.5A7 7 0 1 1 15.5 14.5c-.8.7-1.2 1.5-1.4 2.5h-4.2c-.2-1-.6-1.8-1.4-2.5Z" />
-        <path d="M12 1v2m9 9h-2M5 12H3m15.4-6.4L17 7M7 7 5.6 5.6" />
-      </>
-    ),
-    safety: (
-      <>
-        <path d="m12 22 1.8-.8A11 11 0 0 0 20 11V5l-8-3-8 3v6a11 11 0 0 0 6.2 10.2L12 22Z" />
-        <path d="m9 12 2 2 4-4" />
-      </>
-    ),
-    bridge: (
-      <>
-        <path d="M3 19h18M4 19v-5m16 5v-5M3 14h18" />
-        <path d="M4 14a8 8 0 0 1 16 0M8 14v5m8-5v5" />
-        <path d="M2 21h20" />
-      </>
-    ),
-    people: (
-      <>
-        <circle cx="9" cy="8" r="3.5" />
-        <path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5a3.5 3.5 0 0 1 0 6.8m1.5 2a6 6 0 0 1 4 5.7" />
-      </>
-    ),
-    camera: (
-      <>
-        <path d="M4 7h3l1.5-2h7L17 7h3a2 2 0 0 1 2 2v10H2V9a2 2 0 0 1 2-2Z" />
-        <circle cx="12" cy="13" r="3.5" />
-      </>
-    ),
-    check: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="m8 12 2.5 2.5L16.5 9" />
-      </>
-    ),
-    chart: (
-      <>
-        <path d="M4 20V10m5 10V4m6 16v-7m5 7V7" />
-        <path d="M2 20h20" />
-      </>
-    ),
-    user: (
-      <>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21a8 8 0 0 1 16 0" />
-      </>
-    ),
-  }[name];
+  const symbols = {
+    pin: "📍",
+    search: "🔍",
+    map: "🗺️",
+    warning: "⚠️",
+    road: "🛣️",
+    drain: "🕳️",
+    water: "🚰",
+    light: "💡",
+    safety: "🛡️",
+    bridge: "🌉",
+    people: "👥",
+    camera: "📸",
+    check: "✅",
+    chart: "📊",
+    user: "👤",
+  };
 
   return (
-    <svg
-      className={`home-icon-svg ${className}`.trim()}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <span
+      className={`home-emoji-icon ${className}`.trim()}
+      role="img"
       aria-hidden="true"
-      focusable="false"
     >
-      {artwork}
-    </svg>
+      {symbols[name]}
+    </span>
   );
 };
 
@@ -947,6 +861,29 @@ const Home = () => {
 
 
 
+      {/* ================= HOW IT WORKS ================= */}
+      <section className="steps-section">
+        <div className="section-heading center">
+          <p className="section-label">{t("home.process")}</p>
+          <h2>{t("home.howItWorks")}</h2>
+        </div>
+
+        <div className="steps-track">
+          {steps.map((step, i) => (
+            <div
+              className={`step ${i < activeProcessStep ? "done" : ""} ${
+                i === activeProcessStep ? "current" : ""
+              }`}
+              key={i}
+              aria-current={i === activeProcessStep ? "step" : undefined}
+            >
+              <div className="step-num">{step.num}</div>
+              <h5>{t(`home.${step.title}`)}</h5>
+              <p>{t(`home.${step.desc}`)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
 
 
@@ -982,44 +919,6 @@ const Home = () => {
             </button>
           ))}
         </div>
-      </section>
-
-      {/* ================= LIVE STATS ================= */}
-      <section className="stats-section" ref={statsSectionRef}>
-        <div className="section-heading center">
-          <p className="section-label">
-            {t("home.statsUpdated")}
-          </p>
-          <h2>{t("home.liveStatistics")}</h2>
-        </div>
-
-        <div className="stats-bar">
-          {liveStats.map((stat, i) => (
-            <div className="stat-cell" key={i}>
-              <div className="stat-top">
-                <span className={`stat-dot dot-${stat.color}`}></span>
-              </div>
-
-              <div className="stat-num">
-                {complaintStats
-                  ? (prefersReducedMotion
-                      ? complaintStats[stat.key]
-                      : animatedComplaintStats?.[stat.key] ?? 0
-                    ).toLocaleString()
-                  : "—"}
-              </div>
-
-              <div className="stat-label">
-                {t(`home.${stat.label}`)}
-              </div>
-            </div>
-          ))}
-        </div>
-        {complaintStatsError && (
-          <p className="stats-error" role="alert">
-            {t("home.statsLoadError")}
-          </p>
-        )}
       </section>
 
       {/* ================= CATEGORIES ================= */}
@@ -1097,29 +996,6 @@ const Home = () => {
         </div>
       )}
 
-      {/* ================= HOW IT WORKS ================= */}
-      <section className="steps-section">
-        <div className="section-heading center">
-          <p className="section-label">{t("home.process")}</p>
-          <h2>{t("home.howItWorks")}</h2>
-        </div>
-
-        <div className="steps-track">
-          {steps.map((step, i) => (
-            <div
-              className={`step ${i < activeProcessStep ? "done" : ""} ${
-                i === activeProcessStep ? "current" : ""
-              }`}
-              key={i}
-              aria-current={i === activeProcessStep ? "step" : undefined}
-            >
-              <div className="step-num">{step.num}</div>
-              <h5>{t(`home.${step.title}`)}</h5>
-              <p>{t(`home.${step.desc}`)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ================= GALLERY ================= */}
       <section className="gallery-section">
@@ -1169,7 +1045,7 @@ const Home = () => {
         <div className="track-shell track-shell-single">
           <div className="track-card track-form-card track-card-featured">
             <div className="track-icon" aria-hidden="true"><HomeIcon name="search" /></div>
-            <h3>{t("home.trackYourComplaint")}</h3>
+            <h2>{t("home.trackYourComplaint")}</h2>
             <p>{t("home.trackDescription")}</p>
             <form className="track-form" onSubmit={submitComplaintTracking}>
               <label htmlFor="home-track-id" className="sr-only">
@@ -1221,6 +1097,43 @@ const Home = () => {
         </div>
       </section> */}
 
+      {/* ================= LIVE STATS ================= */}
+      <section className="stats-section" ref={statsSectionRef}>
+        <div className="section-heading center">
+          <p className="section-label">
+            {t("home.statsUpdated")}
+          </p>
+          <h2>{t("home.liveStatistics")}</h2>
+        </div>
+
+        <div className="stats-bar">
+          {liveStats.map((stat, i) => (
+            <div className="stat-cell" key={i}>
+              <div className="stat-top">
+                <span className={`stat-dot dot-${stat.color}`}></span>
+              </div>
+
+              <div className="stat-num">
+                {complaintStats
+                  ? (prefersReducedMotion
+                      ? complaintStats[stat.key]
+                      : animatedComplaintStats?.[stat.key] ?? 0
+                    ).toLocaleString()
+                  : "—"}
+              </div>
+
+              <div className="stat-label">
+                {t(`home.${stat.label}`)}
+              </div>
+            </div>
+          ))}
+        </div>
+        {complaintStatsError && (
+          <p className="stats-error" role="alert">
+            {t("home.statsLoadError")}
+          </p>
+        )}
+      </section>
 
 
 

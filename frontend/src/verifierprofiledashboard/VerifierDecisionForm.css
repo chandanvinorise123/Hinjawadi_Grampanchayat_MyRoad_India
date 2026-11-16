@@ -64,3 +64,14 @@
   color: #b91c1c;
   font-size: 13px;
 }
+
+/* ================= DOTTED BACKGROUND (verification decision form card) ================= */
+.vdf-panel {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 1.2px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  border-color: #d4e3f3;
+}

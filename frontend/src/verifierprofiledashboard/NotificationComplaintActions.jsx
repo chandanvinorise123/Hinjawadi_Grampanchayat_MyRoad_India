@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./NotificationComplaintActions.css";
 
 const NotificationComplaintActions = ({
@@ -9,6 +10,8 @@ const NotificationComplaintActions = ({
   onAssign,
   onComplete,
 }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const status = String(complaint?.status || "")
     .trim()
     .toLowerCase()
@@ -30,10 +33,12 @@ const NotificationComplaintActions = ({
     "staff work in progress",
     "awaiting staff correction",
   ].includes(status);
+  
   const [staffId, setStaffId] = useState("");
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  
   const currentStaffId = complaint?.assignedStaffId ||
     staffOptions.find((staff) => staff.name === complaint?.assignedStaff)?._id ||
     "";
@@ -43,11 +48,11 @@ const NotificationComplaintActions = ({
 
   const submit = async (action) => {
     if ((action === "accept" || action === "assign") && !selectedStaffId) {
-      setError("Select a staff member before continuing.");
+      setError(t('notification_complaint_actions.error_select_staff'));
       return;
     }
     if (!remarks.trim()) {
-      setError("Add verifier remarks before saving this action.");
+      setError(t('notification_complaint_actions.error_add_remarks'));
       return;
     }
 
@@ -61,35 +66,35 @@ const NotificationComplaintActions = ({
           : await onAssign(complaint, selectedStaffId, remarks.trim());
       onComplete?.(updated);
     } catch (saveError) {
-      setError(saveError.message || "Unable to update this complaint.");
+      setError(saveError.message || t('notification_complaint_actions.error_update'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <section className="nca-panel" aria-label="Complaint action">
+    <section className="nca-panel" aria-label={t('notification_complaint_actions.aria_complaint_action')}>
       <h4>
         {canAccept
-          ? "Review & Assign This Complaint"
+          ? t('notification_complaint_actions.review_assign_title')
           : canAssign
-            ? "Staff Assignment"
-            : "Complaint Review Status"}
+            ? t('notification_complaint_actions.staff_assignment_title')
+            : t('notification_complaint_actions.review_status_title')}
       </h4>
       <p className="nca-status">
-        Current status: <b>{complaint.status || "Not recorded"}</b>
+        {t('notification_complaint_actions.current_status')}: <b>{complaint.status || t('notification_complaint_actions.not_recorded')}</b>
       </p>
       {error && <p className="nca-error" role="alert">{error}</p>}
       {canAssign && (
         <>
-          <label htmlFor="nca-staff">Assign staff member *</label>
+          <label htmlFor="nca-staff">{t('notification_complaint_actions.assign_staff_label')}</label>
           <select
             id="nca-staff"
             value={selectedStaffId}
             disabled={saving || staffOptions.length === 0}
             onChange={(event) => setStaffId(event.target.value)}
           >
-            <option value="">Select staff member</option>
+            <option value="">{t('notification_complaint_actions.select_staff_member')}</option>
             {staffOptions.map((staff) => (
               <option key={staff._id} value={staff._id}>
                 {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
@@ -100,39 +105,39 @@ const NotificationComplaintActions = ({
       )}
       {canAccept || canAssign ? (
         <>
-          <label htmlFor="nca-remarks">Verifier remarks *</label>
+          <label htmlFor="nca-remarks">{t('notification_complaint_actions.verifier_remarks_label')}</label>
           <textarea
             id="nca-remarks"
             rows="3"
             value={remarks}
             disabled={saving}
             onChange={(event) => setRemarks(event.target.value)}
-            placeholder="Add your review notes or explain the rejection/assignment."
+            placeholder={t('notification_complaint_actions.remarks_placeholder')}
           />
         </>
       ) : (
         <p className="nca-status-note">
           {["verified", "resolved", "closed"].includes(status)
-            ? "This complaint has already passed verifier review. No further accept, reject, or staff-assignment action is available at this stage."
+            ? t('notification_complaint_actions.status_verified_note')
             : ["under verification", "under review", "in review"].includes(status)
-              ? "Staff has submitted work for verification. Use the verification remarks and decision controls above."
-              : "No assignment action is available for this status. Review the current complaint details and history above."}
+              ? t('notification_complaint_actions.status_under_verification_note')
+              : t('notification_complaint_actions.status_default_note')}
         </p>
       )}
       <div className="nca-actions">
         {canAccept && (
           <button type="button" className="nca-reject" disabled={saving} onClick={() => submit("reject")}>
-            Reject Complaint
+            {t('notification_complaint_actions.reject_complaint')}
           </button>
         )}
         {canAccept && (
           <button type="button" disabled={saving || !staffOptions.length} onClick={() => submit("accept")}>
-            Accept & Assign Staff
+            {t('notification_complaint_actions.accept_assign')}
           </button>
         )}
         {!canAccept && canAssign && (
           <button type="button" disabled={saving || !staffOptions.length} onClick={() => submit("assign")}>
-            {saving ? "Saving..." : "Assign / Reassign Staff"}
+            {saving ? t('notification_complaint_actions.saving') : t('notification_complaint_actions.assign_reassign')}
           </button>
         )}
       </div>

@@ -1,20 +1,54 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./MyProfile.css";
-import { API_BASE_URL, toMediaUrl, uploadProfilePhoto } from "../utils/dashboardApi";
+import {
+  API_BASE_URL,
+  toMediaUrl,
+  uploadProfilePhoto,
+} from "../utils/dashboardApi";
 
 const API_URL = `${API_BASE_URL}/auth/users`;
 const MOBILE_REGEX = /^[6-9]\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// ✅ Accept onBack as a prop
 const MyProfile = ({ onBack }) => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const language = (
+    i18n.resolvedLanguage ||
+    i18n.language ||
+    "en"
+  ).split("-")[0];
+
+  const localeMap = {
+    en: "en-IN",
+    hi: "hi-IN",
+    mr: "mr-IN",
+  };
+
+  const formatMemberSince = (date) => {
+    if (!date) return "";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) return "";
+
+    return parsedDate.toLocaleDateString(
+      localeMap[language] || "en-IN",
+      {
+        month: "long",
+        year: "numeric",
+      }
+    );
+  };
 
   const [storedUser, setStoredUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("user") || "{}");
-    } catch (e) {
+    } catch {
       return {};
     }
   });
@@ -23,10 +57,12 @@ const MyProfile = ({ onBack }) => {
     name: storedUser.name || "",
     email: storedUser.email || "",
     mobile: storedUser.mobile || "",
-    profilePhoto: storedUser.profilePhoto || "",
+    profilePhoto: storedUser.profilePhoto
+      ? toMediaUrl(storedUser.profilePhoto)
+      : "",
     userId: storedUser.userId || storedUser.id || "N/A",
     ward: storedUser.location || "",
-    memberSince: storedUser.createdAt ? new Date(storedUser.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : "",
+    memberSince: formatMemberSince(storedUser.createdAt),
   });
 
   const [form, setForm] = useState({
@@ -47,20 +83,20 @@ const MyProfile = ({ onBack }) => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [notice, setNotice] = useState(null);
-
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
 
   const initials = profile.name
     .split(" ")
-    .map((w) => w[0])
+    .filter(Boolean)
+    .map((word) => word[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
 
-  // ✅ NEW: Helper to get auth headers with token for ALL fetch requests
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
+
     return {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -81,172 +117,340 @@ const MyProfile = ({ onBack }) => {
 
     const loadProfile = async () => {
       try {
-        // ✅ UPDATED: Added getAuthHeaders()
-        const response = await fetch(`${API_URL}/${storedUser.id}`, {
-          headers: getAuthHeaders()
-        });
+        const response = await fetch(
+          `${API_URL}/${storedUser.id}`,
+          {
+            headers: getAuthHeaders(),
+          }
+        );
 
         if (response.status === 404) {
           clearSession();
           navigate("/login");
           return;
         }
-        const data = await response.json();
-        if (response.ok && data.success) {
-          const u = data.user;
-          const loaded = {
-            name: u.name,
-            email: u.email,
-            mobile: u.mobile || "",
-            profilePhoto: toMediaUrl(u.profilePhoto),
-            userId: u.userId || u.id,
-            ward: u.location || "",
-            memberSince: u.createdAt
-              ? new Date(u.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" })
-              : "",
-          };
-          setProfile(loaded);
-          setForm({ name: loaded.name, email: loaded.email, mobile: loaded.mobile, ward: loaded.ward });
 
-          const current = JSON.parse(localStorage.getItem("user") || "{}");
-          localStorage.setItem("user", JSON.stringify({ ...current, ...u }));
-          setStoredUser({ ...current, ...u });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          const user = data.user;
+
+          const loaded = {
+            name: user.name || "",
+            email: user.email || "",
+            mobile: user.mobile || "",
+            profilePhoto: toMediaUrl(user.profilePhoto),
+            userId: user.userId || user.id || storedUser.id,
+            ward: user.location || "",
+            memberSince: formatMemberSince(user.createdAt),
+          };
+
+          setProfile(loaded);
+
+          setForm({
+            name: loaded.name,
+            email: loaded.email,
+            mobile: loaded.mobile,
+            ward: loaded.ward,
+          });
+
+          const current = JSON.parse(
+            localStorage.getItem("user") || "{}"
+          );
+
+          const updatedUser = { ...current, ...user };
+
+          localStorage.setItem(
+            "user",
+            JSON.stringify(updatedUser)
+          );
+
+          setStoredUser(updatedUser);
         } else {
-          console.error("Failed to load profile data:", data);
+          console.error(
+            "Failed to load profile data:",
+            data
+          );
         }
-      } catch (err) {
-        console.error("Failed to load profile:", err);
+      } catch (error) {
+        console.error("Failed to load profile:", error);
       }
     };
 
     loadProfile();
   }, [storedUser.id, navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: name === "mobile" ? value.replace(/\D/g, "") : value,
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]:
+        name === "mobile"
+          ? value.replace(/\D/g, "")
+          : value,
     }));
   };
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+
     if (!file) return;
+
     try {
-      const data = await uploadProfilePhoto(file, storedUser.id, "citizen");
-      setProfile((current) => ({ ...current, profilePhoto: toMediaUrl(data.profilePhoto) }));
-      const current = JSON.parse(localStorage.getItem("user") || "{}");
-      localStorage.setItem("user", JSON.stringify({ ...current, profilePhoto: data.profilePhoto }));
-      setStoredUser((user) => ({ ...user, profilePhoto: data.profilePhoto }));
+      const data = await uploadProfilePhoto(
+        file,
+        storedUser.id,
+        "citizen"
+      );
+
+      setProfile((current) => ({
+        ...current,
+        profilePhoto: toMediaUrl(data.profilePhoto),
+      }));
+
+      const current = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+
+      const updatedUser = {
+        ...current,
+        profilePhoto: data.profilePhoto,
+      };
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(updatedUser)
+      );
+
+      setStoredUser(updatedUser);
       window.dispatchEvent(new Event("authChange"));
-      setNotice({ type: "success", text: "Profile photo uploaded successfully." });
+
+      setNotice({
+        type: "success",
+        text: t("myProfile.photoUploadSuccess"),
+      });
     } catch (error) {
-      setNotice({ type: "error", text: error.message || "Failed to upload profile photo." });
+      setNotice({
+        type: "error",
+        text:
+          error.message ||
+          t("myProfile.photoUploadError"),
+      });
     } finally {
-      e.target.value = "";
+      event.target.value = "";
     }
   };
 
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+
+    setPasswordForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
 
   const handleCancel = () => {
-    setForm({ name: profile.name, email: profile.email, mobile: profile.mobile, ward: profile.ward });
+    setForm({
+      name: profile.name,
+      email: profile.email,
+      mobile: profile.mobile,
+      ward: profile.ward,
+    });
+
     setEditing(false);
     setNotice(null);
   };
 
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return setNotice({ type: "error", text: "Full name is required." });
-    if (!EMAIL_REGEX.test(form.email)) return setNotice({ type: "error", text: "Enter a valid email address." });
-    if (!MOBILE_REGEX.test(form.mobile)) return setNotice({ type: "error", text: "Enter a valid 10-digit mobile number." });
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+
+    if (!form.name.trim()) {
+      return setNotice({
+        type: "error",
+        text: t("myProfile.nameRequired"),
+      });
+    }
+
+    if (!EMAIL_REGEX.test(form.email.trim())) {
+      return setNotice({
+        type: "error",
+        text: t("myProfile.invalidEmail"),
+      });
+    }
+
+    if (!MOBILE_REGEX.test(form.mobile)) {
+      return setNotice({
+        type: "error",
+        text: t("myProfile.invalidMobile"),
+      });
+    }
 
     setSaving(true);
+
     try {
-      // ✅ UPDATED: Added getAuthHeaders()
-      const response = await fetch(`${API_URL}/${storedUser.id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
+      const response = await fetch(
+        `${API_URL}/${storedUser.id}`,
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            name: form.name.trim(),
+            email: form.email.trim(),
+            mobile: form.mobile,
+            location: form.ward,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setProfile((previous) => ({
+          ...previous,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          mobile: form.mobile,
+          ward: form.ward,
+        }));
+
+        const current = JSON.parse(
+          localStorage.getItem("user") || "{}"
+        );
+
+        const updatedUser = {
+          ...current,
           name: form.name.trim(),
           email: form.email.trim(),
           mobile: form.mobile,
           location: form.ward,
-        }),
-      });
-      const data = await response.json();
+        };
 
-      if (response.ok && data.success) {
-        setProfile((p) => ({ ...p, name: form.name.trim(), email: form.email.trim(), mobile: form.mobile, ward: form.ward }));
-        const current = JSON.parse(localStorage.getItem("user") || "{}");
-        localStorage.setItem("user", JSON.stringify({ ...current, name: form.name.trim(), email: form.email.trim(), mobile: form.mobile, location: form.ward }));
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedUser)
+        );
+
+        setStoredUser(updatedUser);
         window.dispatchEvent(new Event("authChange"));
+
         setEditing(false);
-        setNotice({ type: "success", text: "Profile updated successfully." });
+
+        setNotice({
+          type: "success",
+          text: t("myProfile.profileUpdateSuccess"),
+        });
       } else {
         console.error("Update profile failed:", data);
-        setNotice({ type: "error", text: data.message || "Could not update profile." });
+
+        setNotice({
+          type: "error",
+          text:
+            data.message ||
+            t("myProfile.profileUpdateError"),
+        });
       }
-    } catch (err) {
-      console.error("Update profile error:", err);
-      setNotice({ type: "error", text: "Unable to reach the server." });
+    } catch (error) {
+      console.error("Update profile error:", error);
+
+      setNotice({
+        type: "error",
+        text: t("myProfile.serverError"),
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      return setNotice({ type: "error", text: "New passwords do not match." });
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+
+    if (
+      passwordForm.newPassword !==
+      passwordForm.confirmPassword
+    ) {
+      return setNotice({
+        type: "error",
+        text: t("myProfile.passwordMismatch"),
+      });
     }
+
     if (passwordForm.newPassword.length < 6) {
-      return setNotice({ type: "error", text: "New password must be at least 6 characters." });
+      return setNotice({
+        type: "error",
+        text: t("myProfile.passwordTooShort"),
+      });
     }
 
     setSaving(true);
+
     try {
-      // ✅ UPDATED: Added getAuthHeaders()
-      const response = await fetch(`${API_URL}/${storedUser.id}/password`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/${storedUser.id}/password`,
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            currentPassword: passwordForm.currentPassword,
+            newPassword: passwordForm.newPassword,
+          }),
+        }
+      );
+
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setNotice({ type: "success", text: "Password changed successfully." });
-        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        setNotice({
+          type: "success",
+          text: t("myProfile.passwordChangeSuccess"),
+        });
+
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+
         setChangingPassword(false);
       } else {
         console.error("Change password failed:", data);
-        setNotice({ type: "error", text: data.message || "Could not change password. Check current password." });
+
+        setNotice({
+          type: "error",
+          text:
+            data.message ||
+            t("myProfile.passwordChangeError"),
+        });
       }
-    } catch (err) {
-      console.error("Change password error:", err);
-      setNotice({ type: "error", text: "Unable to reach the server." });
+    } catch (error) {
+      console.error("Change password error:", error);
+
+      setNotice({
+        type: "error",
+        text: t("myProfile.serverError"),
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (e) => {
-    e.preventDefault();
+  const handleDelete = async (event) => {
+    event.preventDefault();
     setDeleting(true);
+
     try {
-      // ✅ UPDATED: Added getAuthHeaders()
-      const response = await fetch(`${API_URL}/${storedUser.id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ password: deletePassword }),
-      });
+      const response = await fetch(
+        `${API_URL}/${storedUser.id}`,
+        {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            password: deletePassword,
+          }),
+        }
+      );
+
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -254,62 +458,106 @@ const MyProfile = ({ onBack }) => {
         navigate("/");
       } else {
         console.error("Delete account failed:", data);
-        setNotice({ type: "error", text: data.message || "Could not delete account. Check password." });
+
+        setNotice({
+          type: "error",
+          text:
+            data.message ||
+            t("myProfile.deleteAccountError"),
+        });
       }
-    } catch (err) {
-      console.error("Delete account error:", err);
-      setNotice({ type: "error", text: "Unable to reach the server." });
+    } catch (error) {
+      console.error("Delete account error:", error);
+
+      setNotice({
+        type: "error",
+        text: t("myProfile.serverError"),
+      });
     } finally {
       setDeleting(false);
     }
   };
 
-  // ✅ Smart Back Handler: Uses the prop if provided, otherwise falls back to router
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      navigate("/dashboard"); // Fallback if used as a standalone route
+      navigate("/dashboard");
     }
   };
 
   return (
     <div className="cdp-profile-page">
       <div className="cdp-profile-header">
-        <button className="cdp-back-btn" onClick={handleBack}>
-          ← Back to Dashboard
+        <button
+          className="cdp-back-btn"
+          onClick={handleBack}
+        >
+          ← {t("myProfile.backToDashboard")}
         </button>
-        <h1>My Profile</h1>
+
+        <h1>{t("myProfile.title")}</h1>
       </div>
 
       <div className="cdp-profile-content">
-        <p className="cdp-profile-subtitle">Manage your personal details, account information, and security settings.</p>
+        <p className="cdp-profile-subtitle">
+          {t("myProfile.subtitle")}
+        </p>
 
-        {notice && <div className={`cdp-banner cdp-banner-${notice.type}`}>{notice.text}</div>}
+        {notice && (
+          <div
+            className={`cdp-banner cdp-banner-${notice.type}`}
+          >
+            {notice.text}
+          </div>
+        )}
 
         <div className="cdp-profile-grid">
           <div className="cdp-panel cdp-profile-card cdp-sticky-card">
             <div className="cdp-profile-avatar">
-              {profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : initials}
+              {profile.profilePhoto ? (
+                <img
+                  src={profile.profilePhoto}
+                  alt={t("myProfile.profilePhotoAlt")}
+                />
+              ) : (
+                initials
+              )}
             </div>
+
             <label className="cdp-btn-primary small">
-              Upload Photo
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} hidden />
+              {t("myProfile.uploadPhoto")}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoUpload}
+                hidden
+              />
             </label>
+
             <h3>{profile.name}</h3>
-            <p>Citizen Account</p>
+            <p>{t("myProfile.citizenAccount")}</p>
+
             <dl className="cdp-kv">
               <div>
-                <dt>User ID</dt>
-                <dd className="cdp-mono">{profile.userId}</dd>
+                <dt>{t("myProfile.userId")}</dt>
+                <dd className="cdp-mono">
+                  {profile.userId}
+                </dd>
               </div>
+
               <div>
-                <dt>Member since</dt>
+                <dt>{t("myProfile.memberSince")}</dt>
                 <dd>{profile.memberSince}</dd>
               </div>
+
               <div>
-                <dt>Status</dt>
-                <dd><span className="cdp-badge cdp-badge-green">Active</span></dd>
+                <dt>{t("myProfile.status")}</dt>
+                <dd>
+                  <span className="cdp-badge cdp-badge-green">
+                    {t("myProfile.active")}
+                  </span>
+                </dd>
               </div>
             </dl>
           </div>
@@ -317,41 +565,116 @@ const MyProfile = ({ onBack }) => {
           <div className="cdp-right-column">
             <div className="cdp-panel">
               <div className="cdp-panel-head">
-                <h3>Personal Information</h3>
+                <h3>
+                  {t("myProfile.personalInformation")}
+                </h3>
+
                 {!editing && (
-                  <button type="button" className="cdp-btn-primary small" onClick={() => { setEditing(true); setNotice(null); }}>
-                    Edit Profile
+                  <button
+                    type="button"
+                    className="cdp-btn-primary small"
+                    onClick={() => {
+                      setEditing(true);
+                      setNotice(null);
+                    }}
+                  >
+                    {t("myProfile.editProfile")}
                   </button>
                 )}
               </div>
 
-              <form className="cdp-new-form" onSubmit={handleSaveProfile}>
+              <form
+                className="cdp-new-form"
+                onSubmit={handleSaveProfile}
+              >
                 <div className="cdp-form-row">
                   <div className="cdp-field">
-                    <label htmlFor="pf-name">Full Name</label>
-                    <input id="pf-name" name="name" type="text" value={form.name} onChange={handleChange} disabled={!editing} required />
+                    <label htmlFor="pf-name">
+                      {t("myProfile.fullName")}
+                    </label>
+
+                    <input
+                      id="pf-name"
+                      name="name"
+                      type="text"
+                      value={form.name}
+                      onChange={handleChange}
+                      disabled={!editing}
+                      required
+                    />
                   </div>
+
                   <div className="cdp-field">
-                    <label htmlFor="pf-email">Email Address</label>
-                    <input id="pf-email" name="email" type="email" value={form.email} onChange={handleChange} disabled={!editing} required />
+                    <label htmlFor="pf-email">
+                      {t("myProfile.emailAddress")}
+                    </label>
+
+                    <input
+                      id="pf-email"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      disabled={!editing}
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="cdp-form-row">
                   <div className="cdp-field">
-                    <label htmlFor="pf-mobile">Mobile Number</label>
-                    <input id="pf-mobile" name="mobile" type="tel" inputMode="numeric" maxLength={10} value={form.mobile} onChange={handleChange} disabled={!editing} required />
+                    <label htmlFor="pf-mobile">
+                      {t("myProfile.mobileNumber")}
+                    </label>
+
+                    <input
+                      id="pf-mobile"
+                      name="mobile"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={form.mobile}
+                      onChange={handleChange}
+                      disabled={!editing}
+                      required
+                    />
                   </div>
+
                   <div className="cdp-field">
-                    <label htmlFor="pf-ward">Ward / Location</label>
-                    <input id="pf-ward" name="ward" type="text" value={form.ward} onChange={handleChange} disabled={!editing} />
+                    <label htmlFor="pf-ward">
+                      {t("myProfile.wardLocation")}
+                    </label>
+
+                    <input
+                      id="pf-ward"
+                      name="ward"
+                      type="text"
+                      value={form.ward}
+                      onChange={handleChange}
+                      disabled={!editing}
+                    />
                   </div>
                 </div>
 
                 {editing && (
                   <div className="cdp-form-actions">
-                    <button type="button" className="cdp-btn-outline" onClick={handleCancel}>Cancel</button>
-                    <button type="submit" className="cdp-btn-primary" disabled={saving}>{saving ? "Saving…" : "Save Changes"}</button>
+                    <button
+                      type="button"
+                      className="cdp-btn-outline"
+                      onClick={handleCancel}
+                    >
+                      {t("myProfile.cancel")}
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="cdp-btn-primary"
+                      disabled={saving}
+                    >
+                      {saving
+                        ? t("myProfile.saving")
+                        : t("myProfile.saveChanges")}
+                    </button>
                   </div>
                 )}
               </form>
@@ -359,64 +682,176 @@ const MyProfile = ({ onBack }) => {
 
             <div className="cdp-panel">
               <div className="cdp-panel-head">
-                <h3>Security & Password</h3>
+                <h3>
+                  {t("myProfile.securityPassword")}
+                </h3>
+
                 {!changingPassword && (
-                  <button type="button" className="cdp-btn-outline small" onClick={() => { setChangingPassword(true); setNotice(null); }}>
-                    Change Password
+                  <button
+                    type="button"
+                    className="cdp-btn-outline small"
+                    onClick={() => {
+                      setChangingPassword(true);
+                      setNotice(null);
+                    }}
+                  >
+                    {t("myProfile.changePassword")}
                   </button>
                 )}
               </div>
 
               {changingPassword ? (
-                <form className="cdp-new-form" onSubmit={handleChangePassword}>
+                <form
+                  className="cdp-new-form"
+                  onSubmit={handleChangePassword}
+                >
                   <div className="cdp-form-row">
                     <div className="cdp-field">
-                      <label htmlFor="curr-pass">Current Password</label>
-                      <input id="curr-pass" name="currentPassword" type="password" value={passwordForm.currentPassword} onChange={handlePasswordChange} required />
+                      <label htmlFor="curr-pass">
+                        {t("myProfile.currentPassword")}
+                      </label>
+
+                      <input
+                        id="curr-pass"
+                        name="currentPassword"
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={handlePasswordChange}
+                        required
+                      />
                     </div>
                   </div>
+
                   <div className="cdp-form-row">
                     <div className="cdp-field">
-                      <label htmlFor="new-pass">New Password</label>
-                      <input id="new-pass" name="newPassword" type="password" value={passwordForm.newPassword} onChange={handlePasswordChange} required />
+                      <label htmlFor="new-pass">
+                        {t("myProfile.newPassword")}
+                      </label>
+
+                      <input
+                        id="new-pass"
+                        name="newPassword"
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                        required
+                      />
                     </div>
+
                     <div className="cdp-field">
-                      <label htmlFor="conf-pass">Confirm New Password</label>
-                      <input id="conf-pass" name="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={handlePasswordChange} required />
+                      <label htmlFor="conf-pass">
+                        {t("myProfile.confirmNewPassword")}
+                      </label>
+
+                      <input
+                        id="conf-pass"
+                        name="confirmPassword"
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                        required
+                      />
                     </div>
                   </div>
+
                   <div className="cdp-form-actions">
-                    <button type="button" className="cdp-btn-outline" onClick={() => { setChangingPassword(false); setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" }); }}>Cancel</button>
-                    <button type="submit" className="cdp-btn-primary" disabled={saving}>{saving ? "Updating…" : "Update Password"}</button>
+                    <button
+                      type="button"
+                      className="cdp-btn-outline"
+                      onClick={() => {
+                        setChangingPassword(false);
+                        setPasswordForm({
+                          currentPassword: "",
+                          newPassword: "",
+                          confirmPassword: "",
+                        });
+                      }}
+                    >
+                      {t("myProfile.cancel")}
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="cdp-btn-primary"
+                      disabled={saving}
+                    >
+                      {saving
+                        ? t("myProfile.updating")
+                        : t("myProfile.updatePassword")}
+                    </button>
                   </div>
                 </form>
               ) : (
                 <div className="cdp-security-hint">
-                  Keep your account secure by using a strong, unique password. Never share your password with anyone.
+                  {t("myProfile.securityHint")}
                 </div>
               )}
             </div>
 
             <div className="cdp-panel cdp-danger-panel">
               <div className="cdp-panel-head">
-                <h3>Delete Account</h3>
+                <h3>{t("myProfile.deleteAccount")}</h3>
               </div>
+
               <div className="cdp-danger-body">
-                <p>Permanently delete your account, personal details, and complaint history. This action cannot be undone.</p>
+                <p>
+                  {t("myProfile.deleteAccountWarning")}
+                </p>
 
                 {!confirmingDelete ? (
-                  <button type="button" className="cdp-btn-danger" onClick={() => { setConfirmingDelete(true); setNotice(null); }}>
-                    Delete My Account
+                  <button
+                    type="button"
+                    className="cdp-btn-danger"
+                    onClick={() => {
+                      setConfirmingDelete(true);
+                      setNotice(null);
+                    }}
+                  >
+                    {t("myProfile.deleteMyAccount")}
                   </button>
                 ) : (
-                  <form className="cdp-danger-form" onSubmit={handleDelete}>
+                  <form
+                    className="cdp-danger-form"
+                    onSubmit={handleDelete}
+                  >
                     <div className="cdp-field">
-                      <label htmlFor="pf-delete-password">Enter your password to confirm permanent deletion</label>
-                      <input id="pf-delete-password" type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} autoComplete="current-password" required />
+                      <label htmlFor="pf-delete-password">
+                        {t("myProfile.confirmDeletePassword")}
+                      </label>
+
+                      <input
+                        id="pf-delete-password"
+                        type="password"
+                        value={deletePassword}
+                        onChange={(event) =>
+                          setDeletePassword(event.target.value)
+                        }
+                        autoComplete="current-password"
+                        required
+                      />
                     </div>
+
                     <div className="cdp-form-actions">
-                      <button type="button" className="cdp-btn-outline" onClick={() => { setConfirmingDelete(false); setDeletePassword(""); }}>Cancel</button>
-                      <button type="submit" className="cdp-btn-danger" disabled={deleting}>{deleting ? "Deleting…" : "Yes, Delete My Account"}</button>
+                      <button
+                        type="button"
+                        className="cdp-btn-outline"
+                        onClick={() => {
+                          setConfirmingDelete(false);
+                          setDeletePassword("");
+                        }}
+                      >
+                        {t("myProfile.cancel")}
+                      </button>
+
+                      <button
+                        type="submit"
+                        className="cdp-btn-danger"
+                        disabled={deleting}
+                      >
+                        {deleting
+                          ? t("myProfile.deleting")
+                          : t("myProfile.confirmDeleteAccount")}
+                      </button>
                     </div>
                   </form>
                 )}

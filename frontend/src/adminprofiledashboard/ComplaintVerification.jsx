@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ComplaintVerification.css";
 import { fetchDashboard, getStoredUser, getUserId, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
 
-// ==========================================
-// ==========================================
-
-const WORKFLOW_STEPS = ["Work Started", "Under Working", "Under Verification", "Verified", "Work Completed"];
+// ✅ Keep as translation keys to safely translate UI while preserving internal logic
+const WORKFLOW_STEP_KEYS = ["work_started", "under_working", "under_verification", "verified", "work_completed"];
 
 const ComplaintVerification = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [complaints, setComplaints] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,12 +26,12 @@ const ComplaintVerification = ({ onBack }) => {
             typeof image === "string" ? image : image?.url
           ).filter(Boolean);
           const evidence = [
-            ...images.map((url, index) => ({ url, label: `Complaint photo ${index + 1}` })),
+            ...images.map((url, index) => ({ url, label: t('complaint_verification.evidence_photo', { index: index + 1 }) })),
             ...(inspection.sitePhoto
-              ? [{ url: inspection.sitePhoto, label: "Before-work / site photo" }]
+              ? [{ url: inspection.sitePhoto, label: t('complaint_verification.evidence_before_site') }]
               : []),
             ...(inspection.completionPhoto
-              ? [{ url: inspection.completionPhoto, label: "After-work / completion photo" }]
+              ? [{ url: inspection.completionPhoto, label: t('complaint_verification.evidence_after_completion') }]
               : []),
           ].filter((photo, index, all) =>
             all.findIndex((candidate) => candidate.url === photo.url) === index
@@ -39,13 +40,13 @@ const ComplaintVerification = ({ onBack }) => {
             ...complaint,
             currentStep: { "Under Action": 1, "Under Verification": 3, Verified: 4, Resolved: 5, Closed: 5, Rejected: 2 }[complaint.status] || 0,
             issue: complaint.issue || complaint.issueType,
-            staffName: complaint.assignedStaff || "Unassigned",
+            staffName: complaint.assignedStaff || t('complaint_verification.unassigned'),
             workDetails: complaint.inspection?.actionTaken || complaint.description,
             evidence,
           };
         })))
       .catch((error) => console.error("Failed to load verification queue:", error));
-  }, []);
+  }, [t]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -70,7 +71,7 @@ const ComplaintVerification = ({ onBack }) => {
   const handleVerifyAndClose = async () => {
     if (!selectedComplaint?.id || savingAction) return;
     if (!verifierRemarks.trim()) {
-      showMessage("error", "Please add closure remarks before verifying.");
+      showMessage("error", t('complaint_verification.msg_closure_remarks_required'));
       return;
     }
     setSavingAction(true);
@@ -92,20 +93,20 @@ const ComplaintVerification = ({ onBack }) => {
       ));
     } catch (error) {
       console.error("Failed to close complaint:", error);
-      showMessage("error", error.message || "Unable to verify and close this complaint.");
+      showMessage("error", error.message || t('complaint_verification.msg_unable_verify_close'));
       return;
     } finally {
       setSavingAction(false);
     }
     setIsModalOpen(false);
-    showMessage("success", "Complaint verified and closed successfully!");
+    showMessage("success", t('complaint_verification.msg_verified_closed_success'));
   };
 
   // Action: Return for Additional Action
   const handleReturnForAction = async () => {
     if (!selectedComplaint?.id || savingAction) return;
     if (!verifierRemarks.trim()) {
-      showMessage("error", "Please add remarks explaining why it's being returned.");
+      showMessage("error", t('complaint_verification.msg_return_remarks_required'));
       return;
     }
     setSavingAction(true);
@@ -116,7 +117,7 @@ const ComplaintVerification = ({ onBack }) => {
       });
     } catch (error) {
       console.error("Failed to return complaint:", error);
-      showMessage("error", error.message || "Unable to return this complaint to staff.");
+      showMessage("error", error.message || t('complaint_verification.msg_unable_return'));
       return;
     } finally {
       setSavingAction(false);
@@ -126,22 +127,22 @@ const ComplaintVerification = ({ onBack }) => {
         ? {
             ...complaint,
             currentStep: 2,
-            remarks: `RETURNED: ${verifierRemarks.trim()}`,
+            remarks: `${t('complaint_verification.returned_prefix')}: ${verifierRemarks.trim()}`,
             status: "Under Action",
           }
         : complaint
     ));
     setIsModalOpen(false);
-    showMessage("success", "Complaint returned to staff for additional action.");
+    showMessage("success", t('complaint_verification.msg_returned_success'));
   };
 
   return (
     <div className="cv-shell">
       <div className="cv-header">
-        <button className="cv-back-btn" onClick={onBack}>← Back to Dashboard</button>
+        <button className="cv-back-btn" onClick={onBack}>{t('complaint_verification.back_to_dashboard')}</button>
         <div>
-          <h2>✅ Complaint Verification & Closure</h2>
-          <p>Review completed work, verify resolutions, and track the workflow lifecycle.</p>
+          <h2>{t('complaint_verification.title')}</h2>
+          <p>{t('complaint_verification.subtitle')}</p>
         </div>
       </div>
 
@@ -149,23 +150,23 @@ const ComplaintVerification = ({ onBack }) => {
 
       {/* Stats */}
       <div className="cv-stats-row">
-        <div className="cv-stat-card pending"><h3>Pending Verification</h3><p>{stats.pending}</p></div>
-        <div className="cv-stat-card verified"><h3>Verified</h3><p>{stats.verified}</p></div>
-        <div className="cv-stat-card completed"><h3>Work Completed</h3><p>{stats.completed}</p></div>
-        <div className="cv-stat-card returned"><h3>Returned for Action</h3><p>{stats.returned}</p></div>
+        <div className="cv-stat-card pending"><h3>{t('complaint_verification.stats.pending')}</h3><p>{stats.pending}</p></div>
+        <div className="cv-stat-card verified"><h3>{t('complaint_verification.stats.verified')}</h3><p>{stats.verified}</p></div>
+        <div className="cv-stat-card completed"><h3>{t('complaint_verification.stats.completed')}</h3><p>{stats.completed}</p></div>
+        <div className="cv-stat-card returned"><h3>{t('complaint_verification.stats.returned')}</h3><p>{stats.returned}</p></div>
       </div>
 
       {/* Verification Queue Table */}
       <div className="cv-table-container">
-        <h3 className="cv-section-title">Verification Queue</h3>
+        <h3 className="cv-section-title">{t('complaint_verification.verification_queue')}</h3>
         <table className="cv-table">
           <thead>
             <tr>
-              <th>Complaint ID</th>
-              <th>Issue & Location</th>
-              <th>Assigned Staff</th>
-              <th>Current Workflow Stage</th>
-              <th>Actions</th>
+              <th>{t('complaint_verification.col_complaint_id')}</th>
+              <th>{t('complaint_verification.col_issue_location')}</th>
+              <th>{t('complaint_verification.col_assigned_staff')}</th>
+              <th>{t('complaint_verification.col_workflow_stage')}</th>
+              <th>{t('complaint_verification.col_actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -176,17 +177,17 @@ const ComplaintVerification = ({ onBack }) => {
                 <td>{c.staffName}</td>
                 <td>
                   <div className="cv-mini-tracker">
-                    {WORKFLOW_STEPS.map((step, idx) => (
-                      <div key={idx} className={`cv-mini-step ${idx + 1 <= c.currentStep ? "active" : ""}`} title={step}>
+                    {WORKFLOW_STEP_KEYS.map((stepKey, idx) => (
+                      <div key={idx} className={`cv-mini-step ${idx + 1 <= c.currentStep ? "active" : ""}`} title={t(`complaint_verification.workflow.${stepKey}`)}>
                         {idx + 1 <= c.currentStep ? "✓" : "○"}
                       </div>
                     ))}
                   </div>
-                  <small className="cv-step-label">{WORKFLOW_STEPS[c.currentStep - 1]}</small>
+                  <small className="cv-step-label">{t(`complaint_verification.workflow.${WORKFLOW_STEP_KEYS[c.currentStep - 1]}`)}</small>
                 </td>
                 <td>
                   <button className="cv-btn-review" onClick={() => openVerificationModal(c)}>
-                    {c.currentStep >= 4 ? "View Details" : "Review & Verify"}
+                    {c.currentStep >= 4 ? t('complaint_verification.btn_view_details') : t('complaint_verification.btn_review_verify')}
                   </button>
                 </td>
               </tr>
@@ -200,17 +201,17 @@ const ComplaintVerification = ({ onBack }) => {
         <div className="cv-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="cv-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="cv-modal-header">
-              <h3>Verification: {selectedComplaint.complaintNumber}</h3>
+              <h3>{t('complaint_verification.modal_title', { number: selectedComplaint.complaintNumber })}</h3>
               <button className="cv-close-btn" onClick={() => setIsModalOpen(false)}>✕</button>
             </div>
 
             <div className="cv-modal-body">
               {/* 7. Track Complaint Workflow */}
               <div className="cv-workflow-tracker">
-                {WORKFLOW_STEPS.map((step, idx) => (
+                {WORKFLOW_STEP_KEYS.map((stepKey, idx) => (
                   <div key={idx} className={`cv-tracker-step ${idx + 1 < selectedComplaint.currentStep ? "completed" : ""} ${idx + 1 === selectedComplaint.currentStep ? "current" : ""}`}>
                     <div className="cv-tracker-circle">{idx + 1 < selectedComplaint.currentStep ? "✓" : idx + 1}</div>
-                    <span className="cv-tracker-label">{step}</span>
+                    <span className="cv-tracker-label">{t(`complaint_verification.workflow.${stepKey}`)}</span>
                   </div>
                 ))}
               </div>
@@ -218,11 +219,11 @@ const ComplaintVerification = ({ onBack }) => {
               {/* Review Details */}
               <div className="cv-details-grid">
                 <div className="cv-detail-card">
-                  <h4>Work Details by {selectedComplaint.staffName}</h4>
+                  <h4>{t('complaint_verification.work_details_by', { name: selectedComplaint.staffName })}</h4>
                   <p>{selectedComplaint.workDetails}</p>
                 </div>
                 <div className="cv-detail-card">
-                  <h4>Evidence / Photos</h4>
+                  <h4>{t('complaint_verification.evidence_photos')}</h4>
                   {selectedComplaint.evidence.length > 0 ? (
                     <div className="cv-photo-grid">
                       {selectedComplaint.evidence.map((photo) => (
@@ -233,18 +234,18 @@ const ComplaintVerification = ({ onBack }) => {
                       ))}
                     </div>
                   ) : (
-                    <p className="cv-empty">No photos uploaded.</p>
+                    <p className="cv-empty">{t('complaint_verification.no_photos_uploaded')}</p>
                   )}
                 </div>
               </div>
 
               {/* Record Closure Remarks */}
               <div className="cv-remarks-section">
-                <h4>Verifier Remarks & Closure Details</h4>
+                <h4>{t('complaint_verification.verifier_remarks_title')}</h4>
                 <textarea 
                   value={verifierRemarks} 
                   onChange={(e) => setVerifierRemarks(e.target.value)}
-                  placeholder="Enter your verification remarks, observations, or reasons for return..."
+                  placeholder={t('complaint_verification.verifier_remarks_placeholder')}
                   rows="4"
                 ></textarea>
               </div>
@@ -258,18 +259,18 @@ const ComplaintVerification = ({ onBack }) => {
                     onClick={handleReturnForAction}
                     disabled={savingAction}
                   >
-                    ↩ Return for Additional Action
+                    {t('complaint_verification.btn_return_action')}
                   </button>
                   <button
                     className="cv-btn-verify"
                     onClick={handleVerifyAndClose}
                     disabled={savingAction}
                   >
-                    {savingAction ? "Saving..." : "✅ Verify & Close Complaint"}
+                    {savingAction ? t('complaint_verification.btn_saving') : t('complaint_verification.btn_verify_close')}
                   </button>
                 </>
               ) : (
-                <span className="cv-empty">This complaint is already {selectedComplaint.status.toLowerCase()}.</span>
+                <span className="cv-empty">{t('complaint_verification.already_status', { status: selectedComplaint.status.toLowerCase() })}</span>
               )}
             </div>
           </div>

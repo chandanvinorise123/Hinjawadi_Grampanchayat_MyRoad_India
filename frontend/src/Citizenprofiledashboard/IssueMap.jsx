@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 import { toMediaUrl } from "../utils/dashboardApi";
 import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
@@ -6,6 +7,7 @@ import "./IssueMap.css";
 
 const GOOGLE_MAPS_LIBRARIES = ["places"];
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/status mapping
 const statusToneMap = {
   New: "amber",
   Pending: "amber",
@@ -28,12 +30,16 @@ const statusToneMap = {
 };
 
 const IssueMap = ({ onBack, complaints = [] }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
+  
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  
   const mapComplaints = complaints
     .filter((complaint) => {
       const latitude = complaint.coordinates?.latitude;
@@ -69,6 +75,7 @@ const IssueMap = ({ onBack, complaints = [] }) => {
           "",
       },
     }));
+    
   const mapCenter = mapComplaints.length
     ? [mapComplaints[0].lat, mapComplaints[0].lng]
     : [20, 0];
@@ -96,17 +103,17 @@ const IssueMap = ({ onBack, complaints = [] }) => {
     <div className="cdp-im-page">
       {/* Header */}
       <div className="cdp-im-header">
-        <button className="cdp-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h1>Issues Map</h1>
+        <button className="cdp-back-btn" onClick={onBack}>← {t('issue_map.back_to_dashboard')}</button>
+        <h1>{t('issue_map.title')}</h1>
       </div>
 
       <div className="cdp-im-content">
-        <p className="cdp-im-subtitle">Explore reported issues geographically. Click on a pin or list item to view full details.</p>
+        <p className="cdp-im-subtitle">{t('issue_map.subtitle')}</p>
 
         <div className="cdp-im-grid">
           {/* ✅ 1. Complaint List Sidebar (NOW ON THE LEFT) */}
           <div className="cdp-im-list-container">
-            <h3>Reported Issues ({mapComplaints.length})</h3>
+            <h3>{t('issue_map.reported_issues_count', { count: mapComplaints.length })}</h3>
             <div className="cdp-im-list">
               {mapComplaints.map((c) => (
                 <div
@@ -131,7 +138,7 @@ const IssueMap = ({ onBack, complaints = [] }) => {
                     <p className="cdp-im-list-loc">📍 {c.location}</p>
                   </div>
                   <span className="cdp-im-view-btn">
-                    View Details
+                    {t('issue_map.view_details')}
                   </span>
                 </div>
               ))}
@@ -140,7 +147,13 @@ const IssueMap = ({ onBack, complaints = [] }) => {
 
           {/* ✅ 2. Interactive Map (NOW ON THE RIGHT) */}
           <div className="cdp-im-map-container">
-            {loadError ? <div>Google Maps could not be loaded.</div> : !isLoaded ? <div>Loading map...</div> : mapComplaints.length === 0 ? <div>No complaint coordinates are available.</div> : (
+            {loadError ? (
+              <div>{t('issue_map.map_load_error')}</div>
+            ) : !isLoaded ? (
+              <div>{t('issue_map.map_loading')}</div>
+            ) : mapComplaints.length === 0 ? (
+              <div>{t('issue_map.no_coordinates')}</div>
+            ) : (
               <GoogleMap
                 mapContainerStyle={{ width: "100%", height: "100%" }}
                 center={selectedComplaint
@@ -180,7 +193,7 @@ const IssueMap = ({ onBack, complaints = [] }) => {
           <div className="cdp-im-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="cdp-im-modal-header">
               <div>
-                <span className="cdp-im-modal-badge">Comprehensive Details</span>
+                <span className="cdp-im-modal-badge">{t('issue_map.modal_title')}</span>
                 <h3>{selectedComplaint.complaintNumber}</h3>
               </div>
               <button className="cdp-im-modal-close" onClick={() => setSelectedComplaint(null)}>✕</button>
@@ -189,52 +202,52 @@ const IssueMap = ({ onBack, complaints = [] }) => {
             <div className="cdp-im-modal-body">
               {/* Basic Info Grid */}
               <div className="cdp-im-info-grid">
-                <div className="cdp-im-info-item"><span>Category</span><b>{selectedComplaint.category}</b></div>
-              <div className="cdp-im-info-item"><span>Issue</span><b>{selectedComplaint.issue || selectedComplaint.issueType}</b></div>
-              <div className="cdp-im-info-item"><span>Current Status</span><b className={`cdp-im-text-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</b></div>
-              <div className="cdp-im-info-item"><span>Date Submitted</span><b>{selectedComplaint.createdAt ? new Date(selectedComplaint.createdAt).toLocaleString() : selectedComplaint.date}</b></div>
-              <div className="cdp-im-info-item" style={{ gridColumn: "1 / -1" }}>
-                <span>Location</span>
-                <b>📍 {selectedComplaint.location}</b>
-                <a
-                  className="cdp-im-coordinate-link"
-                  href={`https://www.google.com/maps/search/?api=1&query=${selectedComplaint.lat},${selectedComplaint.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {selectedComplaint.lat.toFixed(6)}, {selectedComplaint.lng.toFixed(6)} · Open exact location
-                </a>
-              </div>
+                <div className="cdp-im-info-item"><span>{t('issue_map.modal_category')}</span><b>{selectedComplaint.category}</b></div>
+                <div className="cdp-im-info-item"><span>{t('issue_map.modal_issue')}</span><b>{selectedComplaint.issue || selectedComplaint.issueType}</b></div>
+                <div className="cdp-im-info-item"><span>{t('issue_map.modal_current_status')}</span><b className={`cdp-im-text-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</b></div>
+                <div className="cdp-im-info-item"><span>{t('issue_map.modal_date_submitted')}</span><b>{selectedComplaint.createdAt ? new Date(selectedComplaint.createdAt).toLocaleString() : selectedComplaint.date}</b></div>
+                <div className="cdp-im-info-item" style={{ gridColumn: "1 / -1" }}>
+                  <span>{t('issue_map.modal_location')}</span>
+                  <b>📍 {selectedComplaint.location}</b>
+                  <a
+                    className="cdp-im-coordinate-link"
+                    href={`https://www.google.com/maps/search/?api=1&query=${selectedComplaint.lat},${selectedComplaint.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {selectedComplaint.lat.toFixed(6)}, {selectedComplaint.lng.toFixed(6)} · {t('issue_map.modal_open_exact')}
+                  </a>
+                </div>
               </div>
 
               {/* Description */}
               <div className="cdp-im-section">
-                <h4>📝 Issue Description</h4>
+                <h4>📝 {t('issue_map.modal_issue_desc')}</h4>
                 <p className="cdp-im-description">{selectedComplaint.description}</p>
               </div>
 
               {/* Photo Gallery */}
               {(selectedComplaint.photos?.before || selectedComplaint.photos?.after || selectedComplaint.photos?.site || selectedComplaint.images?.length > 0) && (
                 <div className="cdp-im-section">
-                  <h4>📷 Photographic Evidence</h4>
+                  <h4>📷 {t('issue_map.modal_photo_evidence')}</h4>
                   <div className="cdp-im-photo-grid">
                     {selectedComplaint.photos.before && (
                       <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.before)} target="_blank" rel="noopener noreferrer">
-                        <span className="cdp-im-photo-label">Before Repair</span>
-                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.before)} alt="Complaint before repair" loading="lazy" />
+                        <span className="cdp-im-photo-label">{t('issue_map.photo_before')}</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.before)} alt={t('issue_map.photo_before')} loading="lazy" />
                       </a>
                     )}
                     {selectedComplaint.photos.site &&
                       selectedComplaint.photos.site !== selectedComplaint.photos.before && (
                       <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.site)} target="_blank" rel="noopener noreferrer">
-                        <span className="cdp-im-photo-label">Site Inspection</span>
-                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.site)} alt="Complaint site inspection" loading="lazy" />
+                        <span className="cdp-im-photo-label">{t('issue_map.photo_site')}</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.site)} alt={t('issue_map.photo_site')} loading="lazy" />
                       </a>
                     )}
                     {selectedComplaint.photos.after && (
                       <a className="cdp-im-photo-card" href={toMediaUrl(selectedComplaint.photos.after)} target="_blank" rel="noopener noreferrer">
-                        <span className="cdp-im-photo-label">After Repair</span>
-                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.after)} alt="Complaint after repair" loading="lazy" />
+                        <span className="cdp-im-photo-label">{t('issue_map.photo_after')}</span>
+                        <img className="cdp-im-photo-image" src={toMediaUrl(selectedComplaint.photos.after)} alt={t('issue_map.photo_after')} loading="lazy" />
                       </a>
                     )}
                     {[...new Set(selectedComplaint.images || [])]
@@ -244,8 +257,8 @@ const IssueMap = ({ onBack, complaints = [] }) => {
                         image !== selectedComplaint.photos.after)
                       .map((image, index) => (
                         <a className="cdp-im-photo-card" href={toMediaUrl(image)} target="_blank" rel="noopener noreferrer" key={`${image}-${index}`}>
-                          <span className="cdp-im-photo-label">Complaint Photo {index + 1}</span>
-                          <img className="cdp-im-photo-image" src={toMediaUrl(image)} alt={`Complaint evidence ${index + 1}`} loading="lazy" />
+                          <span className="cdp-im-photo-label">{t('issue_map.photo_complaint', { index: index + 1 })}</span>
+                          <img className="cdp-im-photo-image" src={toMediaUrl(image)} alt={`${t('issue_map.photo_complaint', { index: index + 1 })}`} loading="lazy" />
                         </a>
                       ))}
                   </div>
@@ -254,7 +267,7 @@ const IssueMap = ({ onBack, complaints = [] }) => {
 
               {/* History Timeline */}
               <div className="cdp-im-section">
-                <h4>🕘 Complaint History & Timeline</h4>
+                <h4>🕘 {t('issue_map.modal_history_title')}</h4>
                 <div className="cdp-im-timeline">
                   {selectedComplaint.history.map((log, idx) => (
                     <div className="cdp-im-timeline-item" key={idx}>
@@ -274,18 +287,20 @@ const IssueMap = ({ onBack, complaints = [] }) => {
               {/* Resolution Details */}
               {selectedComplaint.resolutionDetails && (
                 <div className="cdp-im-section cdp-im-resolution-section">
-                  <h4>✅ Resolution Details</h4>
+                  <h4>✅ {t('issue_map.modal_resolution_title')}</h4>
                   <div className="cdp-im-resolution-grid">
-                    <div><span>Resolved By:</span><strong>{selectedComplaint.resolutionDetails.resolvedBy}</strong></div>
-                    <div><span>Resolution Date:</span><strong>{selectedComplaint.resolutionDetails.resolutionDate}</strong></div>
-                    <div style={{ gridColumn: "1 / -1" }}><span>Final Remarks:</span><strong>{selectedComplaint.resolutionDetails.remarks}</strong></div>
+                    <div><span>{t('issue_map.modal_resolved_by')}</span><strong>{selectedComplaint.resolutionDetails.resolvedBy}</strong></div>
+                    <div><span>{t('issue_map.modal_resolution_date')}</span><strong>{selectedComplaint.resolutionDetails.resolutionDate}</strong></div>
+                    <div style={{ gridColumn: "1 / -1" }}><span>{t('issue_map.modal_final_remarks')}</span><strong>{selectedComplaint.resolutionDetails.remarks}</strong></div>
                   </div>
                 </div>
               )}
             </div>
 
             <div className="cdp-im-modal-footer">
-              <button className="cdp-im-modal-close-btn" onClick={() => setSelectedComplaint(null)}>Close Details</button>
+              <button className="cdp-im-modal-close-btn" onClick={() => setSelectedComplaint(null)}>
+                {t('issue_map.modal_close')}
+              </button>
             </div>
           </div>
         </div>

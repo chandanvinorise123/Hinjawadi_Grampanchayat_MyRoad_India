@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./Reverification.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
 
 const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [selectedItem, setSelectedItem] = useState(null);
   const [remarks, setRemarks] = useState("");
   const [dateTime, setDateTime] = useState("");
@@ -27,11 +30,11 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
   // 2. Handle Approve or Reject Again
   const handleAction = async (action) => {
     if (!remarks.trim()) {
-      alert("Please add re-verification remarks before taking action.");
+      alert(t('reverification.error_remarks_required'));
       return;
     }
     if (!dateTime) {
-      alert("Please record the re-verification date and time.");
+      alert(t('reverification.error_datetime_required'));
       return;
     }
 
@@ -41,7 +44,7 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
       await onReverify(selectedItem.id, action, remarks, dateTime);
       setSelectedItem(null);
     } catch (saveError) {
-      setError(saveError.message || "Unable to save the re-verification decision.");
+      setError(saveError.message || t('reverification.error_save_decision'));
     } finally {
       setSaving(false);
     }
@@ -51,23 +54,23 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
     <div className="rv-shell">
       {/* Header */}
       <div className="rv-header">
-        <button className="rv-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h2>🔁 Re-verification Queue</h2>
+        <button className="rv-back-btn" onClick={onBack}>{t('reverification.back_to_dashboard')}</button>
+        <h2>{t('reverification.title')}</h2>
       </div>
 
       <div className="rv-container">
         {loadError && <div className="rv-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="rv-summary">
-          <span>⚠️ Awaiting Re-verification: <b>{reverifyQueue.length}</b> complaint(s) resubmitted by staff.</span>
+          <span>{t('reverification.summary', { count: reverifyQueue.length })}</span>
         </div>
 
         <div className="rv-layout">
           {/* LEFT: Re-verification Queue List */}
           <div className="rv-list-panel">
-            <h3>Resubmitted Work</h3>
+            <h3>{t('reverification.resubmitted_work')}</h3>
             {reverifyQueue.length === 0 ? (
-              <div className="rv-empty">No items currently in the re-verification queue.</div>
+              <div className="rv-empty">{t('reverification.empty_queue')}</div>
             ) : (
               <div className="rv-list">
                 {reverifyQueue.map((item) => (
@@ -78,11 +81,11 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
                   >
                     <div className="rv-item-header">
                       <span className="rv-item-number">{item.complaintNumber}</span>
-                      <span className="rv-status-badge rv-status-red">Needs Review</span>
+                      <span className="rv-status-badge rv-status-red">{t('reverification.needs_review')}</span>
                     </div>
                     <div className="rv-item-details">
-                      <p><b>Issue:</b> {item.issue}</p>
-                      <p><b>Location:</b> {item.location}</p>
+                      <p><b>{t('reverification.issue_label')}:</b> {item.issue}</p>
+                      <p><b>{t('reverification.location_label')}:</b> {item.location}</p>
                     </div>
                   </div>
                 ))}
@@ -95,46 +98,46 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
             {selectedItem ? (
               <>
                 <div className="rv-detail-header">
-                  <h3>Re-verifying: {selectedItem.complaintNumber}</h3>
+                  <h3>{t('reverification.reverifying', { complaintNumber: selectedItem.complaintNumber })}</h3>
                   <span className="rv-category-tag">{selectedItem.category}</span>
                 </div>
                 <VerifierComplaintDetails complaint={selectedItem} />
 
                 {/* Requirement 2: View Previous Rejection Remarks */}
                 <div className="rv-section rv-alert-box">
-                  <h4>🚨 Previous Rejection Reason</h4>
+                  <h4>{t('reverification.previous_rejection_reason')}</h4>
                   <p className="rv-previous-remarks">
-                    {selectedItem.previousRemarks || selectedItem.remarks || "No specific remarks recorded during previous rejection."}
+                    {selectedItem.previousRemarks || selectedItem.remarks || t('reverification.no_previous_remarks')}
                   </p>
-                  <small>Staff has resubmitted this work claiming the above issues have been corrected.</small>
+                  <small>{t('reverification.staff_resubmitted_claim')}</small>
                 </div>
 
                 {/* Requirement 3 & 4: Review & Compare Updated Evidence */}
                 <div className="rv-section">
-                  <h4>📸 Updated Work Evidence</h4>
+                  <h4>{t('reverification.updated_work_evidence')}</h4>
                   <div className="rv-comparison-grid">
                     <div className="rv-photo-card">
-                      <span className="rv-photo-label">Before Repair (Original)</span>
+                      <span className="rv-photo-label">{t('reverification.before_repair_original')}</span>
                       <div className="rv-photo-placeholder">
                         {selectedItem.photos?.before
-                          ? <ComplaintImage src={selectedItem.photos.before} alt="Original before-repair evidence" fallbackClassName="rv-photo-fallback" />
-                          : "No photo"}
+                          ? <ComplaintImage src={selectedItem.photos.before} alt={t('reverification.before_repair_original')} fallbackClassName="rv-photo-fallback" />
+                          : t('reverification.no_photo')}
                       </div>
                     </div>
                     <div className="rv-photo-arrow">➡️</div>
                     <div className="rv-photo-card rv-photo-updated">
-                      <span className="rv-photo-label">Updated After Repair (Resubmitted)</span>
+                      <span className="rv-photo-label">{t('reverification.updated_after_repair')}</span>
                       <div className="rv-photo-placeholder">
                         {selectedItem.photos?.after
-                          ? <ComplaintImage src={selectedItem.photos.after} alt="Resubmitted after-repair evidence" fallbackClassName="rv-photo-fallback" />
-                          : "No photo"}
+                          ? <ComplaintImage src={selectedItem.photos.after} alt={t('reverification.updated_after_repair')} fallbackClassName="rv-photo-fallback" />
+                          : t('reverification.no_photo')}
                       </div>
                     </div>
                     {selectedItem.photos?.site && (
                       <div className="rv-site-photo">
-                        <span className="rv-photo-label">Site Inspection Photo</span>
+                        <span className="rv-photo-label">{t('reverification.site_inspection_photo')}</span>
                         <div className="rv-photo-placeholder">
-                          <ComplaintImage src={selectedItem.photos.site} alt="Resubmitted site inspection evidence" fallbackClassName="rv-photo-fallback" />
+                          <ComplaintImage src={selectedItem.photos.site} alt={t('reverification.site_inspection_photo')} fallbackClassName="rv-photo-fallback" />
                         </div>
                       </div>
                     )}
@@ -143,7 +146,7 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
 
                 {/* Requirement 5: Verify Corrections via Staff Log */}
                 <div className="rv-section">
-                  <h4> Staff Correction Log</h4>
+                  <h4>{t('reverification.staff_correction_log')}</h4>
                   <ul className="rv-log-list">
                     {(Array.isArray(selectedItem.log) ? selectedItem.log : []).map((entry, idx) => (
                       <li key={idx}>
@@ -157,21 +160,21 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
                 {/* Requirement 6, 7, 8: Action Form (Remarks, Date, Approve/Reject) */}
                 <div className="rv-section rv-action-form">
                   {error && <p className="rv-save-error" role="alert">{error}</p>}
-                  <h4>✅ Re-verification Decision</h4>
+                  <h4>{t('reverification.reverification_decision')}</h4>
                   
                   <div className="rv-form-group">
-                    <label htmlFor="rv-remarks">Re-verification Remarks *</label>
+                    <label htmlFor="rv-remarks">{t('reverification.reverification_remarks_required')}</label>
                     <textarea
                       id="rv-remarks"
                       rows="3"
-                      placeholder="Confirm if corrections are satisfactory or detail why it is rejected again..."
+                      placeholder={t('reverification.remarks_placeholder')}
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
                     ></textarea>
                   </div>
 
                   <div className="rv-form-group">
-                    <label htmlFor="rv-datetime">Re-verification Date & Time *</label>
+                    <label htmlFor="rv-datetime">{t('reverification.reverification_datetime_required')}</label>
                     <input
                       id="rv-datetime"
                       type="datetime-local"
@@ -182,20 +185,20 @@ const Reverification = ({ complaints, loadError, onBack, onReverify }) => {
 
                   <div className="rv-action-buttons">
                     <button className="rv-btn rv-btn-reject-again" disabled={saving} onClick={() => handleAction("reject_again")}>
-                      ❌ Reject Again (Further Action Required)
+                      {t('reverification.reject_again')}
                     </button>
                     <button className="rv-btn rv-btn-approve" disabled={saving} onClick={() => handleAction("approve")}>
-                      ✅ Approve Corrected Work
+                      {t('reverification.approve_corrected_work')}
                     </button>
                   </div>
-                  <p className="rv-notify-note">* Approving or rejecting will automatically update the status and notify the assigned staff member.</p>
+                  <p className="rv-notify-note">{t('reverification.notify_note')}</p>
                 </div>
               </>
             ) : (
               <div className="rv-empty-selection">
                 <div className="rv-empty-icon">🔍</div>
-                <h4>Select a resubmitted complaint</h4>
-                <p>Choose an item from the queue to view previous rejection reasons, compare updated photos, and make a final decision.</p>
+                <h4>{t('reverification.select_resubmitted_complaint')}</h4>
+                <p>{t('reverification.choose_item_to_verify')}</p>
               </div>
             )}
           </div>

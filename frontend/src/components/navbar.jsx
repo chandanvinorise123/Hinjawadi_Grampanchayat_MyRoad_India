@@ -1,11 +1,42 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./navbar.css";
 import "./navbarresponsive.css";
 import logo from "../assets/logo.jpeg";
+import topbarBanner from "../assets/topbar-banner-bg.png";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toMediaUrl } from "../utils/dashboardApi";
+// import topbarBanner from "../assets/topbar-banner.webp";
+
+// Top bar texts for each language.
+// These are only added when a key does not already exist in your translation files,
+// so anything you already translated is never overwritten.
+const TOPBAR_TRANSLATIONS = {
+  en: {
+    panchayatName: "Hinjawadi Gram Panchayat",
+    governmentPortal: "Government Digital Service",
+    panchayatSubtitle: "GRAMPANCHAYAT HINJEWADI",
+    bannerTagline1: "Empowered Gram Sabha",
+    bannerTagline2: "Prosperous Village",
+    bannerTagline3: "Bright Future",
+  },
+  hi: {
+    panchayatName: "ग्रामपंचायत हिनवडी",
+    governmentPortal: "सरकारी डिजिटल सेवा",
+    panchayatSubtitle: "GRAMPANCHAYAT HINJEWADI",
+    bannerTagline1: "सशक्त ग्रामसभा",
+    bannerTagline2: "समृद्ध गांव",
+    bannerTagline3: "उज्ज्वल भविष्य",
+  },
+  mr: {
+    panchayatName: "ग्रामपंचायत हिनवडी",
+    governmentPortal: "शासकीय डिजिटल सेवा",
+    panchayatSubtitle: "GRAMPANCHAYAT HINJEWADI",
+    bannerTagline1: "सशक्त ग्रामसभा",
+    bannerTagline2: "समृद्ध गाव",
+    bannerTagline3: "उज्ज्वल भविष्य",
+  },
+};
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -16,6 +47,19 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+
+  // Add top bar translations once (never overwrites existing keys)
+  const topbarTextsAdded = useRef(false);
+  if (!topbarTextsAdded.current) {
+    try {
+      Object.entries(TOPBAR_TRANSLATIONS).forEach(([lng, navbar]) => {
+        i18n.addResourceBundle(lng, "translation", { navbar }, true, false);
+      });
+    } catch (error) {
+      console.error("Failed to add top bar translations:", error);
+    }
+    topbarTextsAdded.current = true;
+  }
 
   // Change language
   const handleLanguageChange = async (langCode) => {
@@ -34,6 +78,16 @@ const Navbar = () => {
   )
     .split("-")[0]
     .toUpperCase();
+  const panchayatName = t("navbar.panchayatName", {
+    defaultValue: "Hinjawadi Gram Panchayat",
+  });
+  const panchayatNameBreak = panchayatName.lastIndexOf(" ");
+  const panchayatNameLines = panchayatNameBreak > 0
+    ? [
+      panchayatName.slice(0, panchayatNameBreak),
+      panchayatName.slice(panchayatNameBreak + 1),
+    ]
+    : [panchayatName];
 
   // Load logged-in user
   useEffect(() => {
@@ -388,60 +442,79 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Top Bar: keep for desktop; hide using responsive CSS on mobile */}
-      <div className="topbar">
-        <div className="topbar-inner">
-          <span className="topbar-government">
-            <img
-              src="https://flagcdn.com/w40/in.png"
-              alt="India"
-              className="flag-icon"
-            />
+      {/* Top Banner (final MyRoad India banner, text changes with language) */}
+      <div className="topbar-banner">
+        <img
+          src={topbarBanner}
+          alt="MyRoad India"
+          className="topbar-banner-img"
+        />
 
-            {t("navbar.governmentPortal", {
-              defaultValue:
-                "Government Digital Service",
+        {/* Title */}
+        <div
+          className={`banner-title${currentLangLabel === "EN" ? " is-latin" : ""}`}
+        >
+          {panchayatName}
+        </div>
+
+        {/* Subtitle (hidden in English because the title is already in English) */}
+        {currentLangLabel !== "EN" && (
+          <div className="banner-subtitle">
+            {t("navbar.panchayatSubtitle", {
+              defaultValue: "GRAMPANCHAYAT HINJEWADI",
             })}
-          </span>
-
-          <span className="topbar-title">
-            {t("navbar.panchayatName", {
-              defaultValue: "Hinjawadi Gram Panchayat",
-            })}
-          </span>
-
-          <div className="topbar-right">
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={() => handleLanguageChange("hi")}
-              aria-pressed={currentLangLabel === "HI"}
-            >
-              हिंदी
-            </button>
-
-            <span className="sep">·</span>
-
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={() => handleLanguageChange("mr")}
-              aria-pressed={currentLangLabel === "MR"}
-            >
-              मराठी
-            </button>
-
-            <span className="sep">·</span>
-
-            <button
-              type="button"
-              className="lang-btn"
-              onClick={() => handleLanguageChange("en")}
-              aria-pressed={currentLangLabel === "EN"}
-            >
-              English
-            </button>
           </div>
+        )}
+
+        {/* Tagline */}
+        <div className="banner-tagline">
+          <span>
+            {t("navbar.bannerTagline1", {
+              defaultValue: "Empowered Gram Sabha",
+            })}
+          </span>
+          <i>|</i>
+          <span>
+            {t("navbar.bannerTagline2", {
+              defaultValue: "Prosperous Village",
+            })}
+          </span>
+          <i>|</i>
+          <span>
+            {t("navbar.bannerTagline3", {
+              defaultValue: "Bright Future",
+            })}
+          </span>
+        </div>
+
+        {/* Language buttons */}
+        <div className="topbar-banner-langs">
+          <button
+            type="button"
+            className="banner-lang-btn"
+            onClick={() => handleLanguageChange("hi")}
+            aria-pressed={currentLangLabel === "HI"}
+          >
+            हिंदी
+          </button>
+
+          <button
+            type="button"
+            className="banner-lang-btn"
+            onClick={() => handleLanguageChange("mr")}
+            aria-pressed={currentLangLabel === "MR"}
+          >
+            मराठी
+          </button>
+
+          <button
+            type="button"
+            className="banner-lang-btn"
+            onClick={() => handleLanguageChange("en")}
+            aria-pressed={currentLangLabel === "EN"}
+          >
+            English
+          </button>
         </div>
       </div>
 
@@ -470,6 +543,11 @@ const Navbar = () => {
                 {t("navbar.tagline", {
                   defaultValue: "Report · Track · Resolve",
                 })}
+              </span>
+              <span className="mobile-brand-title">
+                {panchayatNameLines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
               </span>
             </NavLink>
           </div>
@@ -555,3 +633,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./ReportsManagement.css";
 import { API_BASE_URL, fetchDashboard, getStoredUser, getUserId } from "../utils/dashboardApi";
 
-// ==========================================
-// ==========================================
-const REPORT_TYPES = [
-  { id: "daily", title: " Daily Report", desc: "Generate a summary of today's complaints.", icon: "" },
-  { id: "weekly", title: "🗓️ Weekly/Monthly Report", desc: "Analyze trends over a specific period.", icon: "🗓️" },
-  { id: "status", title: "⏳ Pending vs Resolved", desc: "Track resolution rates and bottlenecks.", icon: "⏳" },
-  { id: "category", title: "📁 Category & Area Wise", desc: "Breakdown by issue type and location.", icon: "📁" },
-  { id: "staff", title: "👷 Staff & Progress Report", desc: "Monitor individual staff performance.", icon: "👷" },
-];
-
 const ReportsManagement = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
+  // ✅ Moved inside component to safely use `t` for dynamic titles/descriptions
+  const reportTypes = useMemo(() => [
+    { id: "daily", title: t('reports.daily_title'), desc: t('reports.daily_desc'), icon: "📊" },
+    { id: "weekly", title: t('reports.weekly_title'), desc: t('reports.weekly_desc'), icon: "🗓️" },
+    { id: "status", title: t('reports.status_title'), desc: t('reports.status_desc'), icon: "⏳" },
+    { id: "category", title: t('reports.category_title'), desc: t('reports.category_desc'), icon: "📁" },
+    { id: "staff", title: t('reports.staff_title'), desc: t('reports.staff_desc'), icon: "👷" },
+  ], [t]);
+
   const [reports, setReports] = useState({ complaints: [], staff: [] });
   const [selectedReport, setSelectedReport] = useState(null);
   const [filterValue, setFilterValue] = useState("");
@@ -46,13 +48,13 @@ const ReportsManagement = ({ onBack }) => {
             area: complaint.location,
             priority: complaint.priority,
             status: complaint.status,
-            staff: complaint.assignedStaff || "Unassigned",
+            staff: complaint.assignedStaff || t('reports.unassigned'),
           })),
           staff,
         });
       })
       .catch((error) => console.error("Failed to load reports:", error));
-  }, []);
+  }, [t]);
 
   const showMessage = (type, text) => {
     setMessage({ type, text });
@@ -73,19 +75,20 @@ const ReportsManagement = ({ onBack }) => {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("MyRoad India - Official Report", 14, 20);
+    doc.text(t('reports.pdf_title'), 14, 20);
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Report Type: ${REPORT_TYPES.find(r => r.id === type)?.title || "Custom"}`, 14, 30);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - 14, 30, { align: "right" });
+    const reportTitle = reportTypes.find(r => r.id === type)?.title || t('reports.custom');
+    doc.text(`${t('reports.pdf_report_type')}: ${reportTitle}`, 14, 30);
+    doc.text(`${t('reports.pdf_generated_on')}: ${new Date().toLocaleDateString()}`, pageWidth - 14, 30, { align: "right" });
 
     // --- Summary Section ---
     let yPos = 55;
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Executive Summary", 14, yPos);
+    doc.text(t('reports.executive_summary'), 14, yPos);
     yPos += 10;
 
     // Colorful Summary Boxes
@@ -104,9 +107,9 @@ const ReportsManagement = ({ onBack }) => {
       doc.text(value.toString(), x + 5, y + 20);
     };
 
-    drawBox(14, yPos, "Total Complaints", total, { r: 59, g: 130, b: 246 }); // Blue
-    drawBox(75, yPos, "Resolved", resolved, { r: 16, g: 163, b: 74 }); // Green
-    drawBox(136, yPos, "Pending", pending, { r: 217, g: 119, b: 6 }); // Amber
+    drawBox(14, yPos, t('reports.total_complaints'), total, { r: 59, g: 130, b: 246 }); // Blue
+    drawBox(75, yPos, t('reports.resolved'), resolved, { r: 16, g: 163, b: 74 }); // Green
+    drawBox(136, yPos, t('reports.pending'), pending, { r: 217, g: 119, b: 6 }); // Amber
     yPos += 40;
 
     // --- Table Data Preparation ---
@@ -114,10 +117,10 @@ const ReportsManagement = ({ onBack }) => {
     let body = [];
 
     if (type === "staff") {
-      head = [["Staff Name", "Assigned", "Completed", "Pending", "Progress"]];
+      head = [[t('reports.staff_name'), t('reports.assigned'), t('reports.completed'), t('reports.pending'), t('reports.progress')]];
       body = reports.staff.map(s => [s.name, s.assigned, s.completed, s.pending, s.progress]);
     } else {
-      head = [["Complaint ID", "Date", "Category", "Area", "Priority", "Status", "Staff"]];
+      head = [[t('reports.complaint_id'), t('reports.date'), t('reports.category'), t('reports.area'), t('reports.priority'), t('reports.status'), t('reports.staff')]];
       body = reports.complaints.map(c => [c.id, c.date, c.category, c.area, c.priority, c.status, c.staff]);
     }
 
@@ -155,20 +158,20 @@ const ReportsManagement = ({ onBack }) => {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text(`Page ${i} of ${pageCount} | MyRoad India Gram Panchayat Portal`, pageWidth / 2, 285, { align: "center" });
+      doc.text(`${t('reports.page')} ${i} ${t('reports.of')} ${pageCount} | ${t('reports.footer_text')}`, pageWidth / 2, 285, { align: "center" });
     }
 
     doc.save(`MyRoad_Report_${type}_${Date.now()}.pdf`);
-    showMessage("success", "Colorful PDF generated successfully!");
+    showMessage("success", t('reports.msg_pdf_generated'));
   };
 
   return (
     <div className="rm-shell">
       <div className="rm-header">
-        <button className="rm-back-btn" onClick={onBack}>← Back to Dashboard</button>
+        <button className="rm-back-btn" onClick={onBack}>{t('reports.back_to_dashboard')}</button>
         <div>
-          <h2>📈 Reports Management</h2>
-          <p>Generate, view, and download colorful PDF reports for all system activities.</p>
+          <h2>{t('reports.title')}</h2>
+          <p>{t('reports.subtitle')}</p>
         </div>
       </div>
 
@@ -176,13 +179,13 @@ const ReportsManagement = ({ onBack }) => {
 
       {/* Report Cards Grid */}
       <div className="rm-grid">
-        {REPORT_TYPES.map(report => (
+        {reportTypes.map(report => (
           <div key={report.id} className="rm-card" onClick={() => setSelectedReport(report.id)}>
             <div className="rm-card-icon">{report.icon}</div>
             <h3>{report.title}</h3>
             <p>{report.desc}</p>
             <button className="rm-card-btn" onClick={(e) => { e.stopPropagation(); generatePDF(report.id); }}>
-              Download PDF
+              {t('reports.download_pdf')}
             </button>
           </div>
         ))}
@@ -191,18 +194,27 @@ const ReportsManagement = ({ onBack }) => {
       {/* Preview Section (Shows what the PDF will look like) */}
       {selectedReport && (
         <div className="rm-preview-section">
-          <h3>Preview: {REPORT_TYPES.find(r => r.id === selectedReport)?.title}</h3>
+          <h3>{t('reports.preview')} {reportTypes.find(r => r.id === selectedReport)?.title}</h3>
           <div className="rm-preview-table">
             <table>
               <thead>
                 <tr>
                   {selectedReport === "staff" ? (
                     <>
-                      <th>Staff Name</th><th>Assigned</th><th>Completed</th><th>Pending</th><th>Progress</th>
+                      <th>{t('reports.staff_name')}</th>
+                      <th>{t('reports.assigned')}</th>
+                      <th>{t('reports.completed')}</th>
+                      <th>{t('reports.pending')}</th>
+                      <th>{t('reports.progress')}</th>
                     </>
                   ) : (
                     <>
-                      <th>ID</th><th>Date</th><th>Category</th><th>Area</th><th>Priority</th><th>Status</th>
+                      <th>{t('reports.complaint_id')}</th>
+                      <th>{t('reports.date')}</th>
+                      <th>{t('reports.category')}</th>
+                      <th>{t('reports.area')}</th>
+                      <th>{t('reports.priority')}</th>
+                      <th>{t('reports.status')}</th>
                     </>
                   )}
                 </tr>
@@ -210,17 +222,30 @@ const ReportsManagement = ({ onBack }) => {
               <tbody>
                 {selectedReport === "staff" 
                   ? reports.staff.map((s, i) => (
-                      <tr key={i}><td>{s.name}</td><td>{s.assigned}</td><td>{s.completed}</td><td>{s.pending}</td><td><span className="rm-progress">{s.progress}</span></td></tr>
+                      <tr key={i}>
+                        <td>{s.name}</td>
+                        <td>{s.assigned}</td>
+                        <td>{s.completed}</td>
+                        <td>{s.pending}</td>
+                        <td><span className="rm-progress">{s.progress}</span></td>
+                      </tr>
                     ))
                   : reports.complaints.map((c, i) => (
-                      <tr key={i}><td>{c.id}</td><td>{c.date}</td><td>{c.category}</td><td>{c.area}</td><td><span className={`rm-badge rm-p-${String(c.priority || "normal").toLowerCase()}`}>{c.priority || "Normal"}</span></td><td><span className={`rm-badge rm-s-${String(c.status || "new").toLowerCase()}`}>{c.status || "New"}</span></td></tr>
+                      <tr key={i}>
+                        <td>{c.id}</td>
+                        <td>{c.date}</td>
+                        <td>{c.category}</td>
+                        <td>{c.area}</td>
+                        <td><span className={`rm-badge rm-p-${String(c.priority || "normal").toLowerCase()}`}>{c.priority || t('reports.normal')}</span></td>
+                        <td><span className={`rm-badge rm-s-${String(c.status || "new").toLowerCase()}`}>{c.status || t('reports.new')}</span></td>
+                      </tr>
                     ))
                 }
               </tbody>
             </table>
           </div>
           <button className="rm-generate-btn" onClick={() => generatePDF(selectedReport)}>
-            📥 Generate & Download Colorful PDF
+            {t('reports.generate_download_pdf')}
           </button>
         </div>
       )}

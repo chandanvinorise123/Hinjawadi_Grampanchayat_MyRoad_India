@@ -394,3 +394,13 @@
 @media (max-width: 600px) {
   .rv-action-buttons { flex-direction: column; }
 }
+
+/* ================= DOTTED BACKGROUND (full page behind re-verification) ================= */
+.rv-shell {
+  background-color: #edf3fa;
+  background-image:
+    radial-gradient(#cadbec 0.85px, transparent 1.2px),
+    linear-gradient(180deg, #e8f1fa 0%, #f4f8fc 50%, #edf3fa 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}

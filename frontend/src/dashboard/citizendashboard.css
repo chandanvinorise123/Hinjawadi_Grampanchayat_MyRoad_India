@@ -54,17 +54,19 @@
   font-family: inherit;
 }
 
-.cdp-shell h1,
-.cdp-shell h3,
-.cdp-shell h4,
-.cdp-shell h5 {
+.cdp-home h1,
+.cdp-home h3,
+.cdp-home h4,
+.cdp-home h5,
+.cdp-sidebar h5 {
   font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--navy-900);
   font-weight: 800;
   margin: 0;
 }
 
-.cdp-shell p {
+.cdp-home p,
+.cdp-sidebar p {
   margin: 0;
 }
 
@@ -93,6 +95,8 @@
   display: flex;
   flex-direction: column;
   padding: 24px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 .cdp-sb-brand {
@@ -162,9 +166,11 @@
   cursor: pointer;
   font-size: 13.5px;
   font-weight: 600;
+  line-height: 1.3;
   color: #c9d6ea;
   position: relative;
   text-align: left;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .cdp-sb-link:hover {
@@ -178,12 +184,110 @@
 
 .cdp-sb-badge {
   margin-left: auto;
+  flex-shrink: 0;
   font-size: 10.5px;
   font-weight: 700;
   background: var(--saffron);
   color: #3a1e00;
   padding: 2px 7px;
   border-radius: 999px;
+}
+
+/* Icon + text alignment (keeps every row perfectly inline) */
+.cdp-sb-ic {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cdp-sb-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Collapsible "All Complaints" group ---------- */
+.cdp-sb-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.cdp-sb-group-toggle .cdp-sb-badge {
+  margin-left: 0;
+}
+
+.cdp-sb-chevron {
+  flex-shrink: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: transform 0.25s ease;
+}
+
+.cdp-sb-group.open > .cdp-sb-group-toggle {
+  background: rgba(255, 153, 51, 0.12);
+  color: var(--saffron);
+}
+
+.cdp-sb-group.open > .cdp-sb-group-toggle .cdp-sb-chevron {
+  transform: rotate(180deg);
+}
+
+/* smooth expand / collapse */
+.cdp-sb-sub {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.cdp-sb-group.open > .cdp-sb-sub {
+  grid-template-rows: 1fr;
+}
+
+.cdp-sb-sub-inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 0 21px;
+  padding-left: 10px;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.1);
+  visibility: hidden;
+  transition: visibility 0s linear 0.25s;
+}
+
+.cdp-sb-group.open > .cdp-sb-sub > .cdp-sb-sub-inner {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.cdp-sb-sublink {
+  padding: 9px 10px;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  color: #aebcd4;
+}
+
+.cdp-sb-sublink:hover {
+  color: #fff;
+}
+
+.cdp-sb-sublink .cdp-sb-ic {
+  width: 18px;
+}
+
+.cdp-sb-sublink .cdp-sb-ic svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cdp-sb-sublink .cdp-sb-badge {
+  padding: 1px 7px;
 }
 
 .cdp-sb-footer {
@@ -450,6 +554,9 @@
 }
 
 /* ============ STAT CARDS ============ */
+
+/* ============ STAT CARDS WITH HOVER EFFECT ============ */
+
 .cdp-stats-row {
   display: grid;
   gap: 16px;
@@ -458,42 +565,213 @@
 }
 
 .cdp-stat-card {
-  background: var(--white);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 16px;
   padding: 20px;
+
+  box-shadow: 0 3px 10px rgba(27, 39, 70, 0.03);
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.35s ease;
 }
 
+/* 1. Gradient line at the top */
+.cdp-stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+
+  background: linear-gradient(
+    90deg,
+    #e91e63 0%,
+    #e91e63 45%,
+    #29203f 100%
+  );
+
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+/* 2. Icon box */
 .cdp-stat-ic {
+  position: relative;
   width: 38px;
   height: 38px;
   border-radius: 10px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   margin-bottom: 14px;
   font-size: 18px;
+
   background: var(--surface-2);
+
+  transition:
+    box-shadow 0.35s ease,
+    transform 0.35s ease,
+    border-radius 0.35s ease;
 }
 
-.cdp-stat-card.tone-navy .cdp-stat-ic { background: #eaf0fb; }
-.cdp-stat-card.tone-amber .cdp-stat-ic { background: #fff4e0; }
-.cdp-stat-card.tone-orange .cdp-stat-ic { background: #fff1e2; }
-.cdp-stat-card.tone-green .cdp-stat-ic { background: #e8f6ec; }
+.cdp-stat-card.tone-navy .cdp-stat-ic {
+  background: #eaf0fb;
+}
 
+.cdp-stat-card.tone-amber .cdp-stat-ic {
+  background: #fff4e0;
+}
+
+.cdp-stat-card.tone-orange .cdp-stat-ic {
+  background: #fff1e2;
+}
+
+.cdp-stat-card.tone-green .cdp-stat-ic {
+  background: #e8f6ec;
+}
+
+/* 3. Complaint number */
 .cdp-stat-num {
   font-family: "JetBrains Mono", monospace;
   font-size: 26px;
   font-weight: 700;
   color: var(--navy-900);
+
+  transition: color 0.3s ease;
 }
 
+/* 4. Complaint label */
 .cdp-stat-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 4px;
+
   font-size: 12px;
   color: var(--ink-faint);
-  margin-top: 4px;
   font-weight: 600;
+
+  transition: color 0.3s ease;
 }
+
+/* Arrow hidden until hover */
+.cdp-stat-label::before {
+  content: "→";
+  color: #e91e63;
+  font-size: 17px;
+  line-height: 1;
+
+  opacity: 0;
+  transform: translateX(-6px);
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* Pink underline hidden initially */
+.cdp-stat-label::after {
+  content: "";
+  display: block;
+  flex-basis: 100%;
+
+  width: 0;
+  height: 3px;
+  margin-top: 5px;
+
+  background: #e91e63;
+  border-radius: 5px;
+
+  transition: width 0.35s ease;
+}
+
+/* 5. Main hover effect */
+.cdp-stat-card:hover {
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #fffafd 55%,
+    #fff4f8 100%
+  );
+
+  border-color: #f1c6d6;
+
+  box-shadow:
+    0 12px 28px rgba(38, 25, 58, 0.12),
+    0 4px 12px rgba(233, 30, 99, 0.06);
+
+  transform: translateY(-3px);
+}
+
+/* Animate the top line */
+.cdp-stat-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* Icon glow */
+.cdp-stat-card:hover .cdp-stat-ic {
+  border-radius: 14px;
+
+  box-shadow:
+    0 0 0 10px rgba(233, 30, 99, 0.045),
+    0 5px 15px rgba(233, 30, 99, 0.09);
+
+  transform: translateY(-1px);
+}
+
+/* Number changes to pink */
+.cdp-stat-card:hover .cdp-stat-num {
+  color: #e91e63;
+}
+
+/* Label changes to pink */
+.cdp-stat-card:hover .cdp-stat-label {
+  color: #d81750;
+}
+
+/* Arrow slides in */
+.cdp-stat-card:hover .cdp-stat-label::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Underline expands */
+.cdp-stat-card:hover .cdp-stat-label::after {
+  width: 60px;
+}
+
+/* Smooth behavior for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cdp-stat-card,
+  .cdp-stat-card::before,
+  .cdp-stat-ic,
+  .cdp-stat-num,
+  .cdp-stat-label,
+  .cdp-stat-label::before,
+  .cdp-stat-label::after,
+  .cdp-sb-sub,
+  .cdp-sb-chevron {
+    transition: none;
+  }
+}
+
 
 /* ============ PANELS ============ */
 .cdp-panel {
@@ -570,13 +848,13 @@
   overflow-x: auto;
 }
 
-.cdp-shell table {
+.cdp-home table {
   width: 100%;
   border-collapse: collapse;
   min-width: 620px;
 }
 
-.cdp-shell th {
+.cdp-home th {
   text-align: left;
   font-size: 10.5px;
   text-transform: uppercase;
@@ -588,7 +866,7 @@
   background: var(--surface);
 }
 
-.cdp-shell td {
+.cdp-home td {
   padding: 14px 22px;
   font-size: 13px;
   color: var(--ink);
@@ -596,11 +874,11 @@
   vertical-align: middle;
 }
 
-.cdp-shell tbody tr:not(.cdp-edit-row):not(.cdp-empty-row) {
+.cdp-home tbody tr:not(.cdp-edit-row):not(.cdp-empty-row) {
   cursor: pointer;
 }
 
-.cdp-shell tr.cdp-row-active td {
+.cdp-home tr.cdp-row-active td {
   background: var(--surface);
 }
 
@@ -1136,6 +1414,33 @@
   }
 
   .cdp-sb-footer { display: none; }
+
+  /* Complaints group becomes a wrapping row of pills on mobile */
+  .cdp-sb-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .cdp-sb-chevron { display: none; }
+
+  .cdp-sb-sub { display: block; }
+
+  .cdp-sb-sub-inner,
+  .cdp-sb-group.open > .cdp-sb-sub > .cdp-sb-sub-inner {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 0 0 0 4px;
+    padding-left: 8px;
+    gap: 4px;
+    overflow: visible;
+    visibility: visible;
+    border-left: 1.5px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .cdp-sb-group:not(.open) > .cdp-sb-sub > .cdp-sb-sub-inner {
+    display: none;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1164,4 +1469,29 @@
 @media (max-width: 480px) {
   .cdp-tb-user { display: none; }
   .cdp-search { max-width: none; }
+}
+
+/* Dotted background */
+.cdp-shell {
+  --dot-color: #cadbec;
+  --bg-base: #edf3fa;
+  --bg-from: #e8f1fa;
+  --bg-mid: #f4f8fc;
+  --bg-to: #edf3fa;
+}
+
+.cdp-shell .cdp-content {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+
+/* Sub-pages (My Complaints, Track, Details, Issues Map...) render inside the
+   shell next to the sidebar, so they only need to fill the content column. */
+.cdp-main-subview {
+  min-width: 0;
+  background: var(--surface);
 }

@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./Notifications.css";
 import { fetchDashboard, getStoredUser, getUserId, toMediaUrl } from "../utils/dashboardApi";
 
+// ⚠️ KEEP IN ENGLISH: Used for internal logic/status mapping
 const typeBadgeMap = {
   "Registered": "navy",
   "Complaint Registered": "navy",
@@ -32,6 +34,8 @@ const isResolutionNotification = (notification) =>
     /\b(resolved|closed)\b/i.test(notification.message || ""));
 
 const Notifications = ({ onBack }) => {
+  const { t } = useTranslation(); // ✅ ADDED
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [selectedNotification, setSelectedNotification] = useState(null);
@@ -53,9 +57,9 @@ const Notifications = ({ onBack }) => {
   const filteredNotifications = useMemo(() => {
     return notifications.filter((n) => {
       const matchesSearch =
-        n.complaintNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchTerm.toLowerCase());
+        (n.complaintNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (n.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (n.message || "").toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesType = filterType === "All" || typeFilterMap[filterType]?.includes(n.type);
       return matchesSearch && matchesType;
@@ -83,13 +87,13 @@ const Notifications = ({ onBack }) => {
     <div className="cdp-notif-page">
       {/* Header */}
       <div className="cdp-notif-header">
-        <button className="cdp-back-btn" onClick={onBack}>← Back to Dashboard</button>
-        <h1>Notifications</h1>
+        <button className="cdp-back-btn" onClick={onBack}>← {t('notifications.back_to_dashboard')}</button>
+        <h1>{t('notifications.title')}</h1>
       </div>
 
       <div className="cdp-notif-content">
         <p className="cdp-notif-subtitle">
-          Stay updated on your complaint's progress. You have <strong>{unreadCount} unread</strong> notification(s).
+          {t('notifications.subtitle', { count: unreadCount })}
         </p>
 
         {/* Search and Filter Bar */}
@@ -98,22 +102,22 @@ const Notifications = ({ onBack }) => {
             <span className="cdp-notif-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search by complaint number or message..."
+              placeholder={t('notifications.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="cdp-notif-filter">
-            <label>Stage:</label>
+            <label>{t('notifications.filter_label')}:</label>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="All">All Stages</option>
-              <option value="Registered">Registered</option>
-              <option value="Verified">Verified</option>
-              <option value="Assigned">Assigned</option>
-              <option value="Action Initiated">Action Initiated</option>
-              <option value="Work Completed">Work Completed</option>
-              <option value="Status Updated">Status Updated</option>
-              <option value="Resolved/Closed">Resolved/Closed</option>
+              <option value="All">{t('notifications.filter_all')}</option>
+              <option value="Registered">{t('notifications.filter_registered')}</option>
+              <option value="Verified">{t('notifications.filter_verified')}</option>
+              <option value="Assigned">{t('notifications.filter_assigned')}</option>
+              <option value="Action Initiated">{t('notifications.filter_action_initiated')}</option>
+              <option value="Work Completed">{t('notifications.filter_work_completed')}</option>
+              <option value="Status Updated">{t('notifications.filter_status_updated')}</option>
+              <option value="Resolved/Closed">{t('notifications.filter_resolved_closed')}</option>
             </select>
           </div>
         </div>
@@ -123,18 +127,18 @@ const Notifications = ({ onBack }) => {
           {filteredNotifications.length === 0 ? (
             <div className="cdp-notif-empty-state">
               <div className="cdp-notif-empty-icon">🔔</div>
-              <h4>No Notifications Found</h4>
-              <p>Try adjusting your search or filter criteria.</p>
+              <h4>{t('notifications.empty_title')}</h4>
+              <p>{t('notifications.empty_desc')}</p>
             </div>
           ) : (
             <table className="cdp-notif-table">
               <thead>
                 <tr>
-                  <th>Status</th>
-                  <th>Complaint No.</th>
-                  <th>Notification Message</th>
-                  <th>Date & Time</th>
-                  <th>Action</th>
+                  <th>{t('notifications.col_status')}</th>
+                  <th>{t('notifications.col_complaint_no')}</th>
+                  <th>{t('notifications.col_message')}</th>
+                  <th>{t('notifications.col_datetime')}</th>
+                  <th>{t('notifications.col_action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,7 +160,7 @@ const Notifications = ({ onBack }) => {
                         className="cdp-notif-view-btn"
                         onClick={() => setSelectedNotification(n)}
                       >
-                        View Details
+                        {t('notifications.view_details')}
                       </button>
                     </td>
                   </tr>
@@ -184,28 +188,28 @@ const Notifications = ({ onBack }) => {
             <div className="cdp-notif-modal-body">
               {/* Full Message */}
               <div className="cdp-notif-modal-section">
-                <h4>📢 Notification Message</h4>
+                <h4>📢 {t('notifications.modal_message_title')}</h4>
                 <p className="cdp-notif-modal-full-message">{selectedNotification.message}</p>
               </div>
 
               {/* Complaint Details Context */}
               <div className="cdp-notif-modal-section">
-                <h4>ℹ️ Related Complaint Details</h4>
+                <h4>ℹ️ {t('notifications.modal_related_details')}</h4>
                 <div className="cdp-notif-context-grid">
                   <div className="cdp-notif-context-item">
-                    <span>Complaint Number</span>
+                    <span>{t('notifications.modal_complaint_no')}</span>
                     <b className="cdp-notif-mono">{selectedNotification.complaintNumber}</b>
                   </div>
                   <div className="cdp-notif-context-item">
-                    <span>Category</span>
+                    <span>{t('notifications.modal_category')}</span>
                     <b>{selectedNotification.details.category}</b>
                   </div>
                   <div className="cdp-notif-context-item">
-                    <span>Specific Issue</span>
+                    <span>{t('notifications.modal_specific_issue')}</span>
                     <b>{selectedNotification.details.issue}</b>
                   </div>
                   <div className="cdp-notif-context-item">
-                    <span>Location</span>
+                    <span>{t('notifications.modal_location')}</span>
                     <b>📍 {selectedNotification.details.location}</b>
                   </div>
                 </div>
@@ -215,18 +219,18 @@ const Notifications = ({ onBack }) => {
               {(selectedNotification.photos?.before ||
                 (isResolutionNotification(selectedNotification) && selectedNotification.photos?.after)) && (
                 <div className="cdp-notif-modal-section">
-                  <h4>📷 Photographic Evidence</h4>
+                  <h4>📷 {t('notifications.modal_photo_evidence')}</h4>
                   <div className="cdp-notif-photo-grid">
                     {selectedNotification.photos.before && (
                       <div className="cdp-notif-photo-card">
-                        <span className="cdp-notif-photo-label">Before Repair</span>
-                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.before)} alt="Initial complaint evidence" />
+                        <span className="cdp-notif-photo-label">{t('notifications.photo_before')}</span>
+                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.before)} alt={t('notifications.photo_before')} />
                       </div>
                     )}
                     {isResolutionNotification(selectedNotification) && selectedNotification.photos?.after && (
                       <div className="cdp-notif-photo-card">
-                        <span className="cdp-notif-photo-label">After Repair</span>
-                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.after)} alt="After-work completion evidence" />
+                        <span className="cdp-notif-photo-label">{t('notifications.photo_after')}</span>
+                        <img className="cdp-notif-photo-image" src={toMediaUrl(selectedNotification.photos.after)} alt={t('notifications.photo_after')} />
                       </div>
                     )}
                   </div>
@@ -235,14 +239,14 @@ const Notifications = ({ onBack }) => {
 
               {/* Timestamp */}
               <div className="cdp-notif-modal-section">
-                <h4>🕘 Notification Sent</h4>
+                <h4>🕘 {t('notifications.modal_sent_title')}</h4>
                 <p className="cdp-notif-timestamp">{selectedNotification.date}</p>
               </div>
             </div>
 
             <div className="cdp-notif-modal-footer">
               <button className="cdp-notif-modal-close-btn" onClick={() => setSelectedNotification(null)}>
-                Close
+                {t('notifications.modal_close')}
               </button>
             </div>
           </div>

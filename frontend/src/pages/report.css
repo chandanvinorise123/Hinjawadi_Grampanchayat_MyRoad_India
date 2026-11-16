@@ -914,3 +914,116 @@ body .pac-container {
   }
   
 }
+
+/* Dotted background */
+.report-page {
+  --dot-color: #cadbec;
+  --bg-base: #edf3fa;
+  --bg-from: #e8f1fa;
+  --bg-mid: #f4f8fc;
+  --bg-to: #edf3fa;
+}
+
+.report-page > section:not(.page-hero-section) {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: 20px 20px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
+
+/* ============================================================
+   MYROAD INDIA: SHARED DOTTED BACKGROUND
+   Import once (e.g. in index.js / main.jsx). Change the theme
+   by editing the variables below. No !important needed.
+   ============================================================ */
+
+:root {
+  --dot-color: #cadbec;
+  --bg-base: #edf3fa;
+  --bg-from: #e8f1fa;
+  --bg-mid: #f4f8fc;
+  --bg-to: #edf3fa;
+  --border-color: #d4e3f3;
+  --dot-size: 20px;
+}
+
+/* Dark mode: only for .page-wrapper / .dotted-bg elements.
+   Pages with hardcoded white cards keep the light theme. */
+@media (prefers-color-scheme: dark) {
+  .page-wrapper,
+  .dotted-bg {
+    --dot-color: #24405f;
+    --bg-base: #0e1a2b;
+    --bg-from: #0b1624;
+    --bg-mid: #132339;
+    --bg-to: #0e1a2b;
+    --border-color: #1b3049;
+  }
+}
+
+/* 1. Utility class: className="dotted-bg" on any element */
+.dotted-bg {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at center, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: var(--dot-size) var(--dot-size), 100% 100%;
+  background-repeat: repeat, no-repeat;
+  border-top: 1px solid var(--border-color);
+}
+
+.dotted-bg:last-child {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 2. Public pages: direct child <section> of the page wrapper, except the hero */
+.page-wrapper > section:not(.page-hero-section),
+.report-page > section:not(.page-hero-section) {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at center, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: var(--dot-size) var(--dot-size), 100% 100%;
+  background-repeat: repeat, no-repeat;
+  border-top: 1px solid var(--border-color);
+}
+
+.page-wrapper > section:not(.page-hero-section):last-child,
+.report-page > section:not(.page-hero-section):last-child {
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* 3. App pages (citizen + staff).
+   The "body" prefix raises specificity so this wins over each page's
+   own "background: var(--surface)" regardless of import order. */
+body :is(
+  /* Citizen pages */
+  .cdp-content,
+  .cdp-cd-page,
+  .cdp-im-page,
+  .cdp-notif-page,
+  .cdp-ra-page,
+  .cdp-profile-page,
+  .cdp-mc-page,
+  .cdp-tc-page,
+  /* Staff pages */
+  .sd-content,
+  .mp-shell,
+  .awm-shell,
+  .ac-shell,
+  .cd-shell,
+  .ch-shell,
+  .cs-shell,
+  .lm-shell,
+  .nt-shell,
+  .pi-shell
+) {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at center, var(--dot-color) 0.85px, transparent 1.2px),
+    linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 50%, var(--bg-to) 100%);
+  background-size: var(--dot-size) var(--dot-size), 100% 100%;
+  background-repeat: repeat, no-repeat;
+}
