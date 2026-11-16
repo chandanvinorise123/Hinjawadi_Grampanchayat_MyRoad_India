@@ -91,7 +91,7 @@
   font-weight: 800;
   color: var(--footer-green-dark);
   letter-spacing: -0.01em;
-  margin: 0 0 3px;
+  margin: 0 0 8px;
   line-height: 1.2;
 }
 
@@ -100,7 +100,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--footer-navy);
-  margin: 0 0 5px;
+  margin: 0 0 12px;
   line-height: 1.3;
 }
 
@@ -108,7 +108,7 @@
   font-style: italic;
   font-size: 0.85rem;
   color: var(--footer-green-mid);
-  margin: 0 0 12px;
+  margin: 0 0 18px;
   line-height: 1.3;
 }
 
@@ -144,65 +144,75 @@
 .social-youtube { background: #ff0000; }
 .social-whatsapp { background: #25d366; }
 
-/* ================= CONTACT GRID ================= */
-.footer-contact-grid {
+/* ================= CONTACT ICONS (inside social row) ================= */
+.social-tip-wrap {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
-.footer-contact-col {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.footer-contact-divider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--footer-line);
-}
-
-.footer-contact-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.contact-icon-badge {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+.social-contact {
   background: var(--footer-green);
+}
+
+.social-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translate(-50%, -4px);
+  background: var(--footer-green-dark);
   color: #fff;
-  padding: 4px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.contact-icon-badge svg {
-  width: 100%;
-  height: 100%;
-}
-
-.contact-text {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--footer-ink);
-  text-decoration: none;
-  line-height: 1.4;
+  font-style: normal;
+  line-height: 1.45;
+  text-align: left;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  z-index: 10;
 }
 
-.contact-link {
-  color: var(--footer-navy);
-  text-decoration: underline;
+.social-tip::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--footer-green-dark);
+  transform: translateX(-50%) rotate(45deg);
 }
 
-.contact-link:hover {
-  color: var(--footer-green-dark);
+/* Address tooltip: aligned to the icon's right edge so it never overflows the screen */
+.social-tip-address {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px);
+  white-space: normal;
+  width: 300px;
+  max-width: 80vw;
+}
+
+.social-tip-address::before {
+  left: auto;
+  right: 10px;
+  transform: rotate(45deg);
+}
+
+.social-tip-wrap:hover .social-tip,
+.social-tip-wrap:focus-within .social-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.social-tip-wrap:hover .social-tip-address,
+.social-tip-wrap:focus-within .social-tip-address {
+  transform: translateY(0);
 }
 
 /* ================= NAVIGATION COLUMNS ================= */
@@ -336,10 +346,6 @@
     justify-content: center;
   }
 
-  .footer-contact-grid {
-    justify-content: center;
-  }
-
   .footer-nav {
     flex-direction: column;
     align-items: center;
@@ -388,19 +394,6 @@
     justify-content: center;
   }
 
-  .footer-contact-grid {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .footer-contact-divider {
-    display: none;
-  }
-
-  .footer-contact-row {
-    justify-content: center;
-  }
-
   .footer-nav {
     gap: 20px;
     padding-top: 16px;
@@ -428,4 +421,20 @@
   .footer-tagline {
     font-size: 0.8rem;
   }
+}
+
+
+/* ================= CLICKABLE LOGO + TITLE ================= */
+.footer-home-link {
+  display: block;
+  border-radius: 50%;
+}
+
+.footer-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-title-link:hover {
+  color: var(--footer-green);
 }

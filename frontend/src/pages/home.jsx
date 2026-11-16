@@ -557,13 +557,13 @@ const Home = () => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-        window.clearTimeout(visibilityTimer);
-        visibilityTimer = window.setTimeout(() => {
-          setStatsSectionVisible(true);
-        }, 300);
+          window.clearTimeout(visibilityTimer);
+          visibilityTimer = window.setTimeout(() => {
+            setStatsSectionVisible(true);
+          }, 300);
         } else {
-        window.clearTimeout(visibilityTimer);
-        setStatsSectionVisible(false);
+          window.clearTimeout(visibilityTimer);
+          setStatsSectionVisible(false);
         }
       },
       { threshold: 0.2 }
@@ -633,9 +633,8 @@ const Home = () => {
           {heroImages.map((image, index) => (
             <div
               key={index}
-              className={`hero-slide ${
-                index === currentSlide ? "active" : ""
-              }`}
+              className={`hero-slide ${index === currentSlide ? "active" : ""
+                }`}
               style={{ backgroundImage: `url(${image})` }}
             />
           ))}
@@ -767,9 +766,8 @@ const Home = () => {
               <button
                 key={index}
                 type="button"
-                className={`slider-dot ${
-                  index === currentSlide ? "active" : ""
-                }`}
+                className={`slider-dot ${index === currentSlide ? "active" : ""
+                  }`}
                 onClick={() => goToSlide(index)}
                 aria-label={t("home.goToSlide", {
                   number: index + 1,
@@ -792,7 +790,7 @@ const Home = () => {
 
 
 
-{/* 
+        {/* 
         
         <div className="tv-unit">
           <div className={`tv-frame ${!tvPlaying ? "tv-paused" : ""}`}>
@@ -871,9 +869,8 @@ const Home = () => {
         <div className="steps-track">
           {steps.map((step, i) => (
             <div
-              className={`step ${i < activeProcessStep ? "done" : ""} ${
-                i === activeProcessStep ? "current" : ""
-              }`}
+              className={`step ${i < activeProcessStep ? "done" : ""} ${i === activeProcessStep ? "current" : ""
+                }`}
               key={i}
               aria-current={i === activeProcessStep ? "step" : undefined}
             >
@@ -1116,9 +1113,9 @@ const Home = () => {
               <div className="stat-num">
                 {complaintStats
                   ? (prefersReducedMotion
-                      ? complaintStats[stat.key]
-                      : animatedComplaintStats?.[stat.key] ?? 0
-                    ).toLocaleString()
+                    ? complaintStats[stat.key]
+                    : animatedComplaintStats?.[stat.key] ?? 0
+                  ).toLocaleString()
                   : "—"}
               </div>
 

@@ -1043,7 +1043,18 @@ const CitizenDashboard = () => {
       {/* SIDEBAR */}
       <aside className="cdp-sidebar">
         <div className="cdp-sb-brand">
-          <div className="cdp-sb-logo">
+          <button
+            type="button"
+            className="cdp-sb-logo cdp-sb-logo-button"
+            aria-label={t("citizenDashboard.dashboard")}
+            onClick={() => {
+              if (activeView) {
+                openView(() => {});
+              } else {
+                scrollTo("cdp-top");
+              }
+            }}
+          >
             {logoFailed ? (
               "MI"
             ) : (
@@ -1054,7 +1065,7 @@ const CitizenDashboard = () => {
                 onError={() => setLogoFailed(true)}
               />
             )}
-          </div>
+          </button>
 
           <div>
             <b>{t("citizenDashboard.brand")}</b>

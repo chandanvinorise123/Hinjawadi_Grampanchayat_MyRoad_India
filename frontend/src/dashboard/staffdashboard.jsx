@@ -461,9 +461,9 @@ const StaffDashboard = () => {
   const sidebarMarkup = (
     <aside className="sd-sidebar">
       <div className="sd-sb-brand">
-        <div className="sd-sb-logo">
+        <button type="button" className="sd-sb-logo sd-sb-logo-button" aria-label={t('staff_dashboard.dashboard')} onClick={() => { returnToDashboard(); scrollTo("sd-top"); }}>
           <img src={logo} alt="My Road India Logo" />
-        </div>
+        </button>
         <div>
           <b>{t('staff_dashboard.brand')}</b>
           <span>{t('staff_dashboard.staff_portal')}</span>

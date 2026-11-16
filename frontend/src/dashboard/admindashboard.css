@@ -1101,17 +1101,26 @@
 
 /* Refined, readable admin navigation */
 .ad-shell {
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .ad-sidebar {
-  background: linear-gradient(180deg, #0d2341 0%, #08172d 100%);
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  background:
+    radial-gradient(ellipse at 15% 0%, rgba(39, 88, 140, 0.32), transparent 42%),
+    linear-gradient(180deg, #0d2341 0%, #08172d 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 12px 0 32px rgba(8, 27, 52, 0.12);
+  box-shadow: 12px 0 32px rgba(8, 27, 52, 0.18);
 }
 
 .ad-sb-brand {
-  padding-bottom: 22px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
   border-bottom-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -1135,6 +1144,7 @@
 .ad-sb-label {
   color: #8da3c3;
   letter-spacing: 1.25px;
+  padding-top: 16px;
 }
 
 .ad-sb-nav {
@@ -1142,9 +1152,12 @@
 }
 
 .ad-sb-link {
+  box-sizing: border-box;
   min-height: 44px;
   gap: 9px;
   border-color: transparent;
+  border-radius: 12px;
+  font-size: 12px;
   white-space: nowrap;
   transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
@@ -1156,22 +1169,28 @@
 }
 
 .ad-sb-link.active {
-  background: linear-gradient(100deg, rgba(255, 153, 51, 0.23), rgba(255, 153, 51, 0.09));
-  border-color: rgba(255, 153, 51, 0.2);
-  box-shadow: inset 3px 0 0 var(--saffron);
+  background: linear-gradient(100deg, rgba(255, 153, 51, 0.25), rgba(255, 153, 51, 0.08));
+  border-color: rgba(255, 183, 107, 0.2);
+  box-shadow: inset 3px 0 0 #ffad52, 0 5px 16px rgba(0, 0, 0, 0.1);
 }
 
 .ad-sb-text {
   display: block;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 0 0 auto;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
   line-height: 1.35;
 }
 
+.ad-sb-sublink {
+  font-size: 12px;
+}
+
 .ad-sb-subnav {
+  box-sizing: border-box;
+  width: calc(100% - 14px);
   border-left-color: rgba(255, 153, 51, 0.45);
   margin-top: 4px;
   margin-bottom: 8px;
@@ -1183,6 +1202,7 @@
 }
 
 .ad-sidebar .ad-button-link {
+  box-sizing: border-box;
   width: 100%;
   padding: 11px 12px;
   border-radius: 10px;
@@ -1199,6 +1219,11 @@
   border-top-color: rgba(255, 255, 255, 0.12);
 }
 
+.ad-sb-user {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.045);
+}
+
 @media (max-width: 860px) {
   .ad-shell {
     grid-template-columns: 280px minmax(0, 1fr);
@@ -1211,12 +1236,13 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .ad-shell {
     grid-template-columns: 1fr;
   }
 
   .ad-sidebar {
+    position: relative;
     width: 100%;
     min-width: 0;
     max-width: none;

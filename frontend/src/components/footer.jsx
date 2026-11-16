@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -121,20 +120,37 @@ const Footer = () => {
         <div className="footer-accent"></div>
 
         <div className="footer-main">
-          <div className="footer-logo-wrap">
-            <div className="footer-logo-ring">
-              <img
-                src={logo}
-                alt={t("footer.logoAlt", {
-                  defaultValue: "MyRoad India logo",
-                })}
-                className="footer-logo-img"
-              />
-            </div>
+                    <div className="footer-logo-wrap">
+            <a
+              href="https://myroadindia.com/"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="My Road India website"
+              className="footer-home-link"
+            >
+              <div className="footer-logo-ring">
+                <img
+                  src={logo}
+                  alt={t("footer.logoAlt", {
+                    defaultValue: "MyRoad India logo",
+                  })}
+                  className="footer-logo-img"
+                />
+              </div>
+            </a>
           </div>
 
           <div className="footer-content">
-            <h2 className="footer-title">My Road India</h2>
+                        <h2 className="footer-title">
+              <a
+                href="https://myroadindia.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="footer-title-link"
+              >
+                My Road India
+              </a>
+            </h2>
 
             <p className="footer-subtitle">
               {t("footer.subtitle", {
@@ -150,6 +166,7 @@ const Footer = () => {
               })}
             </p>
 
+            {/* ================= SOCIAL + CONTACT ICONS ================= */}
             <div className="footer-social">
               <a
                 href="https://www.instagram.com/myroadindia/"
@@ -190,59 +207,34 @@ const Footer = () => {
               >
                 <SocialIcon.WhatsApp />
               </a>
-            </div>
 
-            <div className="footer-contact-grid">
-              <div className="footer-contact-col">
-                <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Mail />
-                  </span>
-                  <a
-                    href="mailto:contact@myroadindia.com"
-                    className="contact-text"
-                  >
-                    contact@myroadindia.com
-                  </a>
-                </div>
-
-                <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Globe />
-                  </span>
-                  <a
-                    href="https://www.myroadindia.com"
-                    className="contact-text contact-link"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    www.myroadindia.com
-                  </a>
-                </div>
+              <div className="social-tip-wrap">
+                <a
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=contact@myroadindia.com"
+                className="social-icon social-contact"
+               aria-label="Email"
+               target="_blank"
+               rel="noreferrer"
+                >
+               <ContactIcon.Mail />
+              </a>
+                <span className="social-tip">contact@myroadindia.com</span>
               </div>
 
-              <div className="footer-contact-divider"></div>
-
-              <div className="footer-contact-col">
-                <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Phone />
-                  </span>
-                  <a href="tel:+91-9699318163" className="contact-text">
-                    +91 9699318163
-                  </a>
-                </div>
-
-                <div className="footer-contact-row">
-                  <span className="contact-icon-badge">
-                    <ContactIcon.Pin />
-                  </span>
-                  <span className="contact-text">
-                    Gera's Imperium Rise, 312, Hinjawadi Phase II,
-                    Rajiv Gandhi Infotech Park, Hinjawadi, Pune,
-                    Maharashtra 411057
-                  </span>
-                </div>
+              <div className="social-tip-wrap">
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Gera%27s+Imperium+Rise+Hinjawadi+Phase+II+Pune"
+                  className="social-icon social-contact"
+                  aria-label="Address"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ContactIcon.Pin />
+                </a>
+                <span className="social-tip social-tip-address">
+                  Gera's Imperium Rise, 312, Hinjawadi Phase II, Rajiv Gandhi
+                  Infotech Park, Hinjawadi, Pune, Maharashtra 411057
+                </span>
               </div>
             </div>
           </div>

@@ -587,13 +587,15 @@ const VerifierDashboard = () => {
   const sidebarMarkup = (
   <aside className="vd-sidebar">
     <div className="vd-sb-brand">
-      <div className="vd-sb-logo"><img src={logo} alt={t('verifier_dashboard.brand')} /></div>
+      <button type="button" className="vd-sb-logo vd-sb-logo-button" aria-label={t('verifier_dashboard.dashboard')} onClick={() => { returnToDashboard(); scrollTo("vd-top"); }}>
+        <img src={logo} alt={t('verifier_dashboard.brand')} />
+      </button>
       <div><b>{t('verifier_dashboard.brand')}</b><span>{t('verifier_dashboard.portal')}</span></div>
     </div>
     <div className="vd-sb-label">{t('verifier_dashboard.overview')}</div>
     <nav className="vd-sb-nav">
-      <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { returnToDashboard(); scrollTo("vd-top"); }}>📊 {t('verifier_dashboard.dashboard')}</button>
-      <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}>👤 {t('verifier_dashboard.my_profile')}</button>
+      <button type="button" className={`vd-sb-link ${activeNav === "dashboard" ? "active" : ""}`} onClick={() => { returnToDashboard(); scrollTo("vd-top"); }}><span className="vd-sb-text">📊 {t('verifier_dashboard.dashboard')}</span></button>
+      <button type="button" className={`vd-sb-link ${activeNav === "profile" ? "active" : ""}`} onClick={() => selectView("profile", setShowProfile)}><span className="vd-sb-text">👤 {t('verifier_dashboard.my_profile')}</span></button>
 
       {/* ===== ONE TAB FOR ALL COMPLAINT OPTIONS ===== */}
       <button
@@ -602,7 +604,7 @@ const VerifierDashboard = () => {
         aria-expanded={showComplaintsMenu}
         onClick={() => setShowComplaintsMenu((open) => !open)}
       >
-        📂 {t('verifier_dashboard.complaints', 'Complaints')}
+        <span className="vd-sb-text">📂 {t('verifier_dashboard.complaints', 'Complaints')}</span>
         <span className="vd-sb-caret">▾</span>
       </button>
 
@@ -647,12 +649,12 @@ const VerifierDashboard = () => {
     </nav>
     <div className="vd-sb-label">{t('verifier_dashboard.tools_actions')}</div>
     <nav className="vd-sb-nav">
-      <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}>🔔 {t('verifier_dashboard.notifications')}<span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span></button>
-      <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location", setShowViewLocation)}>🗺️ {t('verifier_dashboard.view_location')}</button>
+      <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}><span className="vd-sb-text">🔔 {t('verifier_dashboard.notifications')}</span><span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span></button>
+      <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location", setShowViewLocation)}><span className="vd-sb-text">🗺️ {t('verifier_dashboard.view_location')}</span></button>
     </nav>
     <div className="vd-sb-label">{t('verifier_dashboard.account')}</div>
     <nav className="vd-sb-nav">
-      <button type="button" className="vd-sb-link" onClick={handleLogout} style={{ color: "#ff6b6b", marginTop: "8px" }}>🚪 {t('verifier_dashboard.logout')}</button>
+      <button type="button" className="vd-sb-link" onClick={handleLogout} style={{ color: "#ff6b6b", marginTop: "8px" }}><span className="vd-sb-text">🚪 {t('verifier_dashboard.logout')}</span></button>
     </nav>
     <div className="vd-sb-footer">
       <div className="vd-sb-user">
