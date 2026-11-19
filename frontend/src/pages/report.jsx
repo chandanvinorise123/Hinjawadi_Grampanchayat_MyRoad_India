@@ -99,6 +99,15 @@ const categories = [
       "Other Bridge Issue",
     ],
   },
+  {
+    title: "Garbage Issues",
+    issues: [
+      "Garbage Accumulation",
+      "Overflowing Dustbins",
+      "Illegal Garbage Dumping",
+      "Uncollected Garbage",
+    ],
+  },
 ];
 
 const defaultCenter = {
@@ -1200,7 +1209,7 @@ const ReportIssue = () => {
                 {/* Direct Upload / Capture Functionality */}
                 <div className="form-field">
                   <label htmlFor="photoUpload">
-                    {t("report.captureUploadPhoto")}
+                    Upload or Capture Photo
                   </label>
                   <input
                     id="photoUpload"

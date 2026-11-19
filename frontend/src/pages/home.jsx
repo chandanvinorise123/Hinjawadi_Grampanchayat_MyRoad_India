@@ -27,7 +27,7 @@ import gallery4 from "../assets/r4.png";
 
 // Gram Panchayat team photos
 import sarpanchPhoto1 from "../assets/committee_photo2.JPG";
-import upsarpanchPhoto2 from "../assets/committee_photo9.jpg";
+import upsarpanchPhoto2 from "../assets/committee_photo9.jpeg";
 
 
 const heroImages = [

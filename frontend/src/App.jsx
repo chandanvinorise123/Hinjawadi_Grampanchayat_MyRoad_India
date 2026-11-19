@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PushNotificationEnrollment from "./components/PushNotificationEnrollment";
 
 // ================================
 // PUBLIC PAGES
@@ -23,6 +24,7 @@ import ReportIssue from "./pages/report";
 import Blog from "./pages/blog";
 import Dashboard from "./pages/dashboard"; // Main gateway dashboard
 import GuestComplaintDetails from "./pages/GuestComplaintDetails";
+import ComplaintPdfView from "./pages/ComplaintPdfView";
 import ComplaintMapPage from "./pages/complaintmap";
 import ComplaintProgress from "./pages/complaintprogress";
 
@@ -41,6 +43,7 @@ function AppRoutes() {
   return (
     <>
       <Navbar />
+      <PushNotificationEnrollment />
 
       <Routes location={backgroundLocation || location}>
         {/* ================================
@@ -57,6 +60,7 @@ function AppRoutes() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/reportissue" element={<ReportIssue />} />
         <Route path="/guest-details" element={<GuestComplaintDetails />} />
+        <Route path="/complaint-pdf/:complaintNumber" element={<ComplaintPdfView />} />
         <Route path="/complaint-map" element={<ComplaintMapPage />} />
         <Route path="/complaint-progress" element={<ComplaintProgress />} />
         

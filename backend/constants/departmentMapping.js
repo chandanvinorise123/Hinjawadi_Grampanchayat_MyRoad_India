@@ -5,6 +5,7 @@ const departmentMapping = {
   "Streetlight Issues": "ELECTRICAL",
   "Road Safety Issues": "ROAD_SAFETY",
   "Bridge & Culvert Issues": "INFRASTRUCTURE",
+  "Garbage Issues": "SANITATION",
 };
 
 module.exports = departmentMapping;
