@@ -5,10 +5,13 @@ import "./NotificationComplaintActions.css";
 const NotificationComplaintActions = ({
   complaint,
   staffOptions = [],
+  staffOptionsLoading = false,
+  staffLoadError = "",
   onAcceptAssign,
   onReject,
   onAssign,
   onComplete,
+  idPrefix = "nca",
 }) => {
   const { t } = useTranslation(); // ✅ ADDED
 
@@ -38,11 +41,12 @@ const NotificationComplaintActions = ({
   const [remarks, setRemarks] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isAssignmentEditing, setIsAssignmentEditing] = useState(false);
   
   const currentStaffId = complaint?.assignedStaffId ||
     staffOptions.find((staff) => staff.name === complaint?.assignedStaff)?._id ||
     "";
-  const selectedStaffId = staffId || currentStaffId;
+  const selectedStaffId = isAssignmentEditing ? staffId : currentStaffId;
 
   if (!complaint) return null;
 
@@ -65,6 +69,10 @@ const NotificationComplaintActions = ({
           ? await onReject(complaint, remarks.trim())
           : await onAssign(complaint, selectedStaffId, remarks.trim());
       onComplete?.(updated);
+      if (action === "accept" || action === "assign") {
+        setIsAssignmentEditing(false);
+        setStaffId("");
+      }
     } catch (saveError) {
       setError(saveError.message || t('notification_complaint_actions.error_update'));
     } finally {
@@ -87,11 +95,11 @@ const NotificationComplaintActions = ({
       {error && <p className="nca-error" role="alert">{error}</p>}
       {canAssign && (
         <>
-          <label htmlFor="nca-staff">{t('notification_complaint_actions.assign_staff_label')}</label>
+          <label htmlFor={`${idPrefix}-staff`}>{t('notification_complaint_actions.assign_staff_label')}</label>
           <select
-            id="nca-staff"
+            id={`${idPrefix}-staff`}
             value={selectedStaffId}
-            disabled={saving || staffOptions.length === 0}
+            disabled={!isAssignmentEditing || saving || staffOptions.length === 0}
             onChange={(event) => setStaffId(event.target.value)}
           >
             <option value="">{t('notification_complaint_actions.select_staff_member')}</option>
@@ -101,13 +109,22 @@ const NotificationComplaintActions = ({
               </option>
             ))}
           </select>
+          {staffOptions.length === 0 && !staffOptionsLoading && (
+            <p
+              className="nca-staff-options-feedback"
+              role={staffLoadError ? "alert" : "status"}
+            >
+              {staffLoadError ||
+                t('notification_complaint_actions.no_staff_available')}
+            </p>
+          )}
         </>
       )}
       {canAccept || canAssign ? (
         <>
-          <label htmlFor="nca-remarks">{t('notification_complaint_actions.verifier_remarks_label')}</label>
+          <label htmlFor={`${idPrefix}-remarks`}>{t('notification_complaint_actions.verifier_remarks_label')}</label>
           <textarea
-            id="nca-remarks"
+            id={`${idPrefix}-remarks`}
             rows="3"
             value={remarks}
             disabled={saving}
@@ -126,19 +143,47 @@ const NotificationComplaintActions = ({
       )}
       <div className="nca-actions">
         {canAccept && (
-          <button type="button" className="nca-reject" disabled={saving} onClick={() => submit("reject")}>
+          <button type="button" className="nca-reject" disabled={saving || isAssignmentEditing} onClick={() => submit("reject")}>
             {t('notification_complaint_actions.reject_complaint')}
           </button>
         )}
-        {canAccept && (
-          <button type="button" disabled={saving || !staffOptions.length} onClick={() => submit("accept")}>
-            {t('notification_complaint_actions.accept_assign')}
+        {canAssign && !isAssignmentEditing && (
+          <button
+            type="button"
+            disabled={saving || staffOptions.length === 0}
+            onClick={() => {
+              setStaffId(currentStaffId);
+              setError("");
+              setIsAssignmentEditing(true);
+            }}
+          >
+            {t('notification_complaint_actions.edit_assignment')}
           </button>
         )}
-        {!canAccept && canAssign && (
-          <button type="button" disabled={saving || !staffOptions.length} onClick={() => submit("assign")}>
-            {saving ? t('notification_complaint_actions.saving') : t('notification_complaint_actions.assign_reassign')}
-          </button>
+        {canAssign && isAssignmentEditing && (
+          <>
+            <button
+              type="button"
+              disabled={saving || !staffOptions.length}
+              onClick={() => submit(canAccept ? "accept" : "assign")}
+            >
+              {saving
+                ? t('notification_complaint_actions.saving')
+                : t('notification_complaint_actions.save_assignment')}
+            </button>
+            <button
+              type="button"
+              className="nca-secondary"
+              disabled={saving}
+              onClick={() => {
+                setIsAssignmentEditing(false);
+                setStaffId("");
+                setError("");
+              }}
+            >
+              {t('notification_complaint_actions.cancel_assignment')}
+            </button>
+          </>
         )}
       </div>
     </section>

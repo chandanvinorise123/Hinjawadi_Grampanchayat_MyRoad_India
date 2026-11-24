@@ -349,86 +349,6 @@
   color: var(--ink-faint);
 }
 
-/* Verification Form */
-.cw-verification-form {
-  background: #f0fdf4; /* Light green tint for action area */
-  border: 1px solid #bbf7d0;
-  border-radius: var(--radius-md);
-  padding: 20px;
-}
-
-.cw-form-group {
-  margin-bottom: 16px;
-}
-
-.cw-form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 8px;
-}
-
-.cw-form-group textarea,
-.cw-form-group input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-family: inherit;
-  background: var(--white);
-  transition: border-color 0.2s;
-  box-sizing: border-box;
-}
-
-.cw-form-group textarea:focus,
-.cw-form-group input:focus {
-  outline: none;
-  border-color: var(--navy-700);
-}
-
-.cw-action-buttons {
-  display: flex;
-  gap: 16px;
-  margin-top: 20px;
-}
-
-.cw-btn {
-  flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.cw-btn-approve {
-  background: var(--green);
-  color: var(--white);
-}
-
-.cw-btn-approve:hover {
-  background: #0f6b05;
-  transform: translateY(-1px);
-}
-
-.cw-btn-reject {
-  background: var(--white);
-  color: var(--red);
-  border: 1.5px solid var(--red);
-}
-
-.cw-btn-reject:hover {
-  background: #fbe4e4;
-}
-
 /* Empty States */
 .cw-empty, .cw-empty-selection {
   text-align: center;
@@ -465,9 +385,6 @@
 }
 
 @media (max-width: 600px) {
-  .cw-action-buttons {
-    flex-direction: column;
-  }
   .cw-detail-row {
     flex-direction: column;
     gap: 4px;
@@ -693,8 +610,7 @@
 }
 
 .cw-modal-comparison h4,
-.cw-modal-log h4,
-.cw-verification-form h4 {
+.cw-modal-log h4 {
   margin: 0;
   color: var(--navy-900);
   font-size: 14px;
@@ -713,10 +629,6 @@
 .cw-modal .cw-photo-placeholder {
   height: clamp(150px, 20vw, 240px);
   overflow: hidden;
-}
-
-.cw-modal .cw-action-buttons {
-  gap: 10px;
 }
 
 .cw-modal-footer {

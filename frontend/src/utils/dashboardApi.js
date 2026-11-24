@@ -39,12 +39,39 @@ export const fetchStaffNewComplaints = (userId) => {
 export const fetchDashboardUsers = (role) =>
   request(`/users?role=${encodeURIComponent(role)}`);
 
+export const normalizeStaffOptions = (users) =>
+  (Array.isArray(users) ? users : [])
+    .filter((user) => String(user?.role || "").trim().toLowerCase() === "staff")
+    .map((user) => {
+      const id = String(user?._id || user?.id || "");
+      return {
+        ...user,
+        id,
+        _id: id,
+        name: String(user?.name || "").trim(),
+      };
+    })
+    .filter((user) => user.name)
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+    );
+
 export const updateDashboardComplaint = (id, updates) => {
-  const role = String(getStoredUser()?.role || "").toLowerCase();
+  const user = getStoredUser();
+  const role = String(user?.role || "").toLowerCase();
   const actorRole = ["admin", "staff", "verifier"].includes(role) ? role : undefined;
+  const actorName = typeof updates.actorName === "string" && updates.actorName.trim()
+    ? updates.actorName.trim()
+    : typeof user.name === "string"
+      ? user.name.trim()
+      : "";
   return request(`/dashboard/complaints/${encodeURIComponent(id)}`, {
     method: "PATCH",
-    body: JSON.stringify({ ...updates, ...(actorRole ? { actorRole } : {}) }),
+    body: JSON.stringify({
+      ...updates,
+      ...(actorRole ? { actorRole } : {}),
+      ...(actorRole && actorName ? { actorName } : {}),
+    }),
   });
 };
 

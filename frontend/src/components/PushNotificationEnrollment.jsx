@@ -8,6 +8,16 @@ import "./PushNotificationEnrollment.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3200/api";
 const PUSH_API_URL = `${API_BASE_URL}/push/devices`;
+const PUSH_STATUS_URL = `${API_BASE_URL}/push/status`;
+
+const getPushServiceStatus = async () => {
+  const response = await fetch(PUSH_STATUS_URL);
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result?.success) {
+    throw new Error(result?.message || "Unable to check push notification availability.");
+  }
+  return result.configured === true;
+};
 
 const readStoredUser = () => {
   try {
@@ -46,6 +56,7 @@ const PushNotificationEnrollment = () => {
   const [message, setMessage] = useState("");
   const [enrollmentFailed, setEnrollmentFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [serverConfigured, setServerConfigured] = useState(null);
   const registering = useRef(false);
 
   const enrollDevice = useCallback(async (activeSession, requestPermission = false) => {
@@ -86,6 +97,7 @@ const PushNotificationEnrollment = () => {
       setSession(readStoredUser());
       setMessage("");
       setEnrollmentFailed(false);
+      setServerConfigured(null);
     };
     window.addEventListener("authChange", updateSession);
     window.addEventListener("storage", updateSession);
@@ -96,7 +108,38 @@ const PushNotificationEnrollment = () => {
   }, []);
 
   useEffect(() => {
-    if (!session || !("Notification" in window) || !isPushConfigured()) return;
+    if (!session || !isPushConfigured()) return undefined;
+    let isActive = true;
+    getPushServiceStatus()
+      .then((configured) => {
+        if (!isActive) return;
+        setServerConfigured(configured);
+        if (!configured) {
+          setMessage("Push notifications are not configured on the server.");
+          setEnrollmentFailed(false);
+        }
+      })
+      .catch((error) => {
+        console.error("Unable to check push notification availability:", error);
+        if (isActive) {
+          setServerConfigured(false);
+          setMessage("Push notification availability could not be checked.");
+          setEnrollmentFailed(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (
+      !session ||
+      serverConfigured !== true ||
+      !("Notification" in window) ||
+      !isPushConfigured()
+    ) return;
     if (window.Notification.permission !== "granted") return;
     let isActive = true;
     registerDevice(session).catch((error) => {
@@ -109,7 +152,7 @@ const PushNotificationEnrollment = () => {
     return () => {
       isActive = false;
     };
-  }, [session]);
+  }, [session, serverConfigured]);
 
   useEffect(() => {
     if (!session || permission !== "granted") return undefined;
@@ -138,6 +181,7 @@ const PushNotificationEnrollment = () => {
   }, [session, permission]);
 
   if (!session || !isPushConfigured() || !("Notification" in window)) return null;
+  if (serverConfigured !== true && !message) return null;
   if (permission === "granted" && !message) return null;
   const displayMessage = message || (
     permission === "denied"
@@ -148,7 +192,7 @@ const PushNotificationEnrollment = () => {
   return (
     <aside className="push-enrollment" aria-live="polite">
       {displayMessage && <span>{displayMessage}</span>}
-      {permission !== "granted" && permission !== "denied" && (
+      {serverConfigured === true && permission !== "granted" && permission !== "denied" && (
         <button
           type="button"
           onClick={() => void enrollDevice(session, true)}
@@ -157,8 +201,8 @@ const PushNotificationEnrollment = () => {
           {busy ? "Enabling..." : "Enable notifications"}
         </button>
       )}
-      {permission === "granted" && message && (
-        enrollmentFailed
+      {message && (serverConfigured !== true || permission === "granted") && (
+        enrollmentFailed && serverConfigured === true
           ? <button type="button" onClick={() => void enrollDevice(session, true)} disabled={busy}>Retry</button>
           : <button type="button" onClick={() => setMessage("")} aria-label="Dismiss notification message">Dismiss</button>
       )}

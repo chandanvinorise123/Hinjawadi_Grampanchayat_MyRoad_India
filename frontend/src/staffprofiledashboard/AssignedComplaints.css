@@ -468,6 +468,70 @@
   gap: 34px;
 }
 
+.ac-rework-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+.ac-rework-form h4 {
+  margin: 0 0 4px;
+  color: var(--navy-900);
+  font-size: 16px;
+}
+.ac-rework-form label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ac-rework-form textarea,
+.ac-rework-form input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 13px;
+}
+.ac-rework-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ac-rework-photo-preview {
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.ac-rework-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+.ac-rework-submit {
+  border: 0;
+  border-radius: 8px;
+  background: #1d8a5c;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ac-rework-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .ac-modal-footer {
   padding: 12px 30px;
   border-top: 1px solid var(--line);

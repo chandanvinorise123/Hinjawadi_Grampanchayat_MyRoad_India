@@ -831,6 +831,14 @@
   display: grid;
   gap: 22px;
   align-items: start;
+}
+
+.cdp-dash-grid:has(> .cdp-panel:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+.cdp-dash-grid > .cdp-panel:only-child {
+  width: 100%;
   grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
   margin-bottom: 24px;
 }
@@ -847,6 +855,29 @@
   width: 100%;
   overflow-x: auto;
 }
+.cdp-home {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 700px;
+}
+.cdp-home th,
+.cdp-home td {
+  padding: 9px 12px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.cdp-home th:nth-child(1),
+.cdp-home td:nth-child(1) { width: 16%; }
+.cdp-home th:nth-child(2),
+.cdp-home td:nth-child(2) { width: 16%; }
+.cdp-home th:nth-child(3),
+.cdp-home td:nth-child(3) { width: 20%; }
+.cdp-home th:nth-child(4),
+.cdp-home td:nth-child(4) { width: 18%; }
+.cdp-home th:nth-child(5),
+.cdp-home td:nth-child(5) { width: 14%; }
+.cdp-home th:nth-child(6),
+.cdp-home td:nth-child(6) { width: 16%; text-align: center; }
 
 .cdp-home table {
   width: 100%;
@@ -946,6 +977,71 @@
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+.cdp-edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 27, 52, 0.48);
+}
+.cdp-edit-modal {
+  width: min(620px, calc(100vw - 48px));
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(8, 27, 52, 0.28);
+}
+.cdp-edit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.cdp-edit-modal-header h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+}
+.cdp-edit-modal-header button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 24px;
+  cursor: pointer;
+}
+.cdp-edit-modal-body {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+.cdp-edit-modal-body label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.cdp-edit-modal-body input,
+.cdp-edit-modal-body textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+.cdp-edit-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px 18px;
 }
 
 .cdp-delete-confirm {
@@ -1167,6 +1263,37 @@
 }
 
 /* ============ QUICK ACTIONS ============ */
+.cdp-citizen-map-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cdp-citizen-map-panel .cdp-panel-head {
+  min-height: 58px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cdp-citizen-map {
+  width: 100%;
+  height: clamp(380px, 52vh, 620px);
+  min-height: 380px;
+}
+
+.cdp-citizen-map .dashboard-complaints-map {
+  border: 0;
+  border-radius: 0;
+}
+
+.cdp-citizen-map-empty {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--ink-faint);
+  background: var(--surface);
+  text-align: center;
+}
+
 .cdp-quick-row {
   display: grid;
   gap: 16px;
@@ -1522,6 +1649,8 @@
 }
 
 .cdp-sb-logo-button {
+  display: block;
+  text-decoration: none;
   padding: 0;
   border: 0;
   cursor: pointer;

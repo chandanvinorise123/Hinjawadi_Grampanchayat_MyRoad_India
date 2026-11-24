@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./citizendashboard.css";
@@ -8,13 +8,12 @@ import MyProfile from "../Citizenprofiledashboard/MyProfile";
 import MyComplaints from "../Citizenprofiledashboard/MyComplaints";
 import TrackComplaint from "../Citizenprofiledashboard/TrackComplaint";
 import ComplaintsDetails from "../Citizenprofiledashboard/ComplaintsDetails";
-import IssueMap from "../Citizenprofiledashboard/IssueMap";
 import Notifications from "../Citizenprofiledashboard/Notifications";
 import RecentActivity from "../Citizenprofiledashboard/RecentActivity";
 import UpdatedComplaints from "../adminprofiledashboard/UpdatedComplaints";
+import DashboardComplaintsMap from "../components/maps/DashboardComplaintsMap";
 import {
   API_BASE_URL,
-  markDashboardNotificationRead,
 } from "../utils/dashboardApi";
 
 const API_URL = `${API_BASE_URL}/complaints`;
@@ -257,6 +256,7 @@ const CitizenDashboard = () => {
   const [profile, setProfile] = useState({
     name: stored.name || "",
     mobile: stored.mobile ? `+91 ${stored.mobile}` : "",
+    email: stored.email || "",
     memberSince: stored.createdAt
       ? new Date(stored.createdAt).toLocaleDateString()
       : "",
@@ -267,12 +267,11 @@ const CitizenDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [editingId, setEditingId] = useState(null);
+  const [editingComplaint, setEditingComplaint] = useState(null);
   const [editText, setEditText] = useState("");
   const [editLocation, setEditLocation] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [showMapView, setShowMapView] = useState(false);
   const [gpsBusy, setGpsBusy] = useState(false);
   const [complaintsLoading, setComplaintsLoading] = useState(false);
   const [complaintsError, setComplaintsError] = useState("");
@@ -299,7 +298,6 @@ const CitizenDashboard = () => {
   const [initialTrackComplaintNumber, setInitialTrackComplaintNumber] =
     useState("");
   const [showComplaintDetails, setShowComplaintDetails] = useState(false);
-  const [showIssueMap, setShowIssueMap] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRecentActivity, setShowRecentActivity] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
@@ -324,7 +322,6 @@ const CitizenDashboard = () => {
     setShowUpdatedComplaints(false);
     setShowTrackComplaint(false);
     setShowComplaintDetails(false);
-    setShowIssueMap(false);
     setShowNotifications(false);
     setShowRecentActivity(false);
 
@@ -630,7 +627,7 @@ const CitizenDashboard = () => {
   };
 
   const startEdit = (complaint) => {
-    setEditingId(complaint.id);
+    setEditingComplaint(complaint);
     setEditText(complaint.description || "");
     setEditLocation(complaint.location || "");
   };
@@ -675,7 +672,7 @@ const CitizenDashboard = () => {
       }
 
       await fetchMyComplaints();
-      setEditingId(null);
+      setEditingComplaint(null);
 
       alert(t("citizenDashboard.updatedSuccessfully"));
     } catch (error) {
@@ -727,33 +724,6 @@ const CitizenDashboard = () => {
       alert(error.message || t("citizenDashboard.failedDelete"));
 
       return false;
-    }
-  };
-
-  const markAllNotificationsRead = async () => {
-    const unreadNotifications = notifications.filter(
-      (notification) => !notification.isRead && notification.id
-    );
-
-    if (!unreadNotifications.length) return;
-
-    try {
-      await Promise.all(
-        unreadNotifications.map((notification) =>
-          markDashboardNotificationRead(notification.id)
-        )
-      );
-
-      setNotifications((current) =>
-        current.map((notification) => ({
-          ...notification,
-          isRead: true,
-        }))
-      );
-    } catch (error) {
-      console.error("Mark notifications read error:", error);
-
-      alert(error.message || t("citizenDashboard.unableMarkRead"));
     }
   };
 
@@ -856,8 +826,6 @@ const CitizenDashboard = () => {
       setShowTrackComplaint(true);
     }
 
-    if (s.openMap) setShowMapView(true);
-
     if (s.scrollTo) {
       setTimeout(() => scrollTo(s.scrollTo), 50);
     }
@@ -874,6 +842,55 @@ const CitizenDashboard = () => {
 
   const selectedComplaint =
     complaints.find((c) => c.id === selectedId) || complaints[0];
+
+  const dashboardMapComplaints = useMemo(() => {
+    const visibleStatuses = new Set([
+      "new",
+      "registered",
+      "pending",
+      "submitted",
+      "complaint registered",
+      "under review",
+      "verified",
+      "complaint verified",
+      "under verification",
+      "assigned",
+      "assigned to staff",
+      "assigned to officer",
+      "assigned to staff/officer",
+      "action initiated",
+      "under action",
+      "in progress",
+      "work completed",
+      "completed",
+      "resolved",
+      "closed",
+      "complaint closed",
+      "verification",
+      "awaiting verification",
+    ]);
+
+    return complaints.filter((complaint) => {
+      const status = String(complaint.status || "")
+        .trim()
+        .toLowerCase();
+      const latitude =
+        complaint.lat ??
+        complaint.coordinates?.latitude ??
+        complaint.coordinates?.lat;
+      const longitude =
+        complaint.lng ??
+        complaint.coordinates?.longitude ??
+        complaint.coordinates?.lng;
+      return visibleStatuses.has(status) &&
+        latitude !== null &&
+        latitude !== undefined &&
+        latitude !== "" &&
+        longitude !== null &&
+        longitude !== undefined &&
+        longitude !== "";
+    });
+  }, [complaints]);
 
   const initials = profile.name
     .split(" ")
@@ -937,7 +954,7 @@ const CitizenDashboard = () => {
     {
       key: "updated",
       Icon: Icons.Details,
-      label: t("citizenDashboard.updatedComplaints"),
+      label: t("citizenDashboard.workCompleted"),
       onClick: () => openView(setShowUpdatedComplaints),
     },
     {
@@ -955,23 +972,7 @@ const CitizenDashboard = () => {
       label: t("citizenDashboard.complaintDetails"),
       onClick: () => openView(setShowComplaintDetails),
     },
-    {
-      key: "map",
-      Icon: Icons.Map,
-      label: t("citizenDashboard.issuesMap"),
-      onClick: () => openView(setShowIssueMap),
-    },
   ];
-
-  const mapGroups = complaints.reduce((groups, c) => {
-    const key = c.location || "Location pending";
-
-    if (!groups[key]) groups[key] = [];
-
-    groups[key].push(c);
-
-    return groups;
-  }, {});
 
   // ---------------- CONDITIONAL RENDERING ----------------
 
@@ -998,9 +999,13 @@ const CitizenDashboard = () => {
       <UpdatedComplaints
         complaints={complaints}
         actorRoles={["staff", "admin", "verifier"]}
-        audienceLabel={t("citizenDashboard.staffAdminVerifierActivity")}
-        listTitle={t("citizenDashboard.staffAdminVerifierUpdates")}
+        audienceLabel={t("citizenDashboard.workCompleted")}
+        listTitle={t("citizenDashboard.resolvedComplaints")}
         showUpdateHistory={false}
+        resolvedOnly
+        pageTitle={t("citizenDashboard.workCompleted")}
+        backToListLabel={t("citizenDashboard.backToWorkCompleted")}
+        backToDashboardLabel={t("citizenDashboard.backToDashboard")}
         onBack={() => setShowUpdatedComplaints(false)}
       />
     );
@@ -1020,14 +1025,6 @@ const CitizenDashboard = () => {
         onBack={() => setShowComplaintDetails(false)}
       />
     );
-  } else if (showIssueMap) {
-    activeKey = "issueMap";
-    activeView = (
-      <IssueMap
-        complaints={complaints}
-        onBack={() => setShowIssueMap(false)}
-      />
-    );
   } else if (showNotifications) {
     activeKey = "notifications";
     activeView = <Notifications onBack={() => setShowNotifications(false)} />;
@@ -1043,17 +1040,12 @@ const CitizenDashboard = () => {
       {/* SIDEBAR */}
       <aside className="cdp-sidebar">
         <div className="cdp-sb-brand">
-          <button
-            type="button"
+          <a
+            href="https://myroadindia.com/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="cdp-sb-logo cdp-sb-logo-button"
-            aria-label={t("citizenDashboard.dashboard")}
-            onClick={() => {
-              if (activeView) {
-                openView(() => {});
-              } else {
-                scrollTo("cdp-top");
-              }
-            }}
+            aria-label="MyRoad India website"
           >
             {logoFailed ? (
               "MI"
@@ -1065,7 +1057,7 @@ const CitizenDashboard = () => {
                 onError={() => setLogoFailed(true)}
               />
             )}
-          </button>
+          </a>
 
           <div>
             <b>{t("citizenDashboard.brand")}</b>
@@ -1141,7 +1133,6 @@ const CitizenDashboard = () => {
                         updated: "updatedComplaints",
                         track: "trackComplaint",
                         details: "complaintDetails",
-                        map: "issueMap",
                       }[tab.key] === activeKey
                         ? "active"
                         : ""
@@ -1219,7 +1210,7 @@ const CitizenDashboard = () => {
 
             <div className="cdp-sb-user-info">
               <b>{profile.name}</b>
-              <span>{profile.mobile}</span>
+              <span>{profile.email || profile.mobile}</span>
             </div>
           </div>
 
@@ -1587,50 +1578,6 @@ const CitizenDashboard = () => {
                           </td>
                         </tr>
 
-                        {editingId === c.id && (
-                          <tr className="cdp-edit-row">
-                            <td colSpan={6}>
-                              <div className="cdp-edit-block">
-                                <input
-                                  type="text"
-                                  value={editLocation}
-                                  onChange={(e) =>
-                                    setEditLocation(e.target.value)
-                                  }
-                                  placeholder={t(
-                                    "citizenDashboard.location"
-                                  )}
-                                />
-
-                                <textarea
-                                  rows="2"
-                                  value={editText}
-                                  onChange={(e) =>
-                                    setEditText(e.target.value)
-                                  }
-                                />
-
-                                <div className="cdp-edit-actions">
-                                  <button
-                                    className="cdp-btn-outline"
-                                    type="button"
-                                    onClick={() => setEditingId(null)}
-                                  >
-                                    {t("citizenDashboard.cancel")}
-                                  </button>
-
-                                  <button
-                                    className="cdp-btn-primary small"
-                                    type="button"
-                                    onClick={() => saveEdit(c.id)}
-                                  >
-                                    {t("citizenDashboard.save")}
-                                  </button>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
 
                         {confirmDeleteId === c.id && (
                           <tr className="cdp-edit-row">
@@ -1672,77 +1619,68 @@ const CitizenDashboard = () => {
               </div>
             </div>
 
-            {/* LIFECYCLE AND NOTIFICATIONS */}
-            <div className="cdp-side-col">
-              <div className="cdp-panel">
-                <div className="cdp-panel-head">
-                  <h3>{t("citizenDashboard.complaintLifecycle")}</h3>
+          </div>
 
-                  <span className="cdp-mono cdp-faint">
-                    {selectedComplaint?.complaintNumber ||
-                      t("citizenDashboard.noComplaintSelected")}
-                  </span>
-                </div>
-
-                {selectedComplaint && (
-                  <>
-                    <p className="cdp-lifecycle-location">
-                      📍{" "}
-                      {selectedComplaint.location ||
-                        t("citizenDashboard.locationPending")}
-                    </p>
-
-                    <div className="cdp-lifecycle">
-                      {lifecycleStageKeys.map((stageKey, i) => (
-                        <div className="cdp-lc-item" key={i}>
-                          <div
-                            className={`cdp-lc-dot ${
-                              i < selectedComplaint.stage
-                                ? "done"
-                                : i === selectedComplaint.stage
-                                  ? "now"
-                                  : "pend"
-                            }`}
-                          ></div>
-
-                          <div className="cdp-lc-body">
-                            <b>{t(stageKey)}</b>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="cdp-panel" id="notif-panel">
-                <div className="cdp-panel-head">
-                  <h3>{t("citizenDashboard.notifications")}</h3>
-
+          {editingComplaint && (
+            <div
+              className="cdp-edit-modal-overlay"
+              role="presentation"
+              onClick={() => setEditingComplaint(null)}
+            >
+              <section
+                className="cdp-edit-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t("citizenDashboard.updateComplaint")}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <header className="cdp-edit-modal-header">
+                  <h3>{t("citizenDashboard.updateComplaint")}</h3>
                   <button
                     type="button"
-                    className="cdp-panel-link"
-                    onClick={markAllNotificationsRead}
+                    aria-label={t("citizenDashboard.cancel")}
+                    onClick={() => setEditingComplaint(null)}
                   >
-                    {t("citizenDashboard.markAllRead")}
+                    ×
                   </button>
+                </header>
+                <div className="cdp-edit-modal-body">
+                  <label>
+                    {t("citizenDashboard.location")}
+                    <input
+                      type="text"
+                      value={editLocation}
+                      onChange={(event) => setEditLocation(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {t("citizenDashboard.description")}
+                    <textarea
+                      rows="4"
+                      value={editText}
+                      onChange={(event) => setEditText(event.target.value)}
+                    />
+                  </label>
                 </div>
-
-                <div className="cdp-notif-list">
-                  {notifications.map((note, i) => (
-                    <div className="cdp-notif-item" key={i}>
-                      <span className="cdp-notif-dot"></span>
-
-                      <div>
-                        <b>{note.text}</b>
-                        <span>{note.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                <footer className="cdp-edit-modal-actions">
+                  <button
+                    type="button"
+                    className="cdp-btn-outline"
+                    onClick={() => setEditingComplaint(null)}
+                  >
+                    {t("citizenDashboard.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    className="cdp-btn-primary small"
+                    onClick={() => saveEdit(editingComplaint.id)}
+                  >
+                    {t("citizenDashboard.save")}
+                  </button>
+                </footer>
+              </section>
             </div>
-          </div>
+          )}
 
           {/* QUICK REGISTER FORM */}
           {showNewForm && (
@@ -1940,103 +1878,24 @@ const CitizenDashboard = () => {
             </div>
           )}
 
-          {/* ISSUES MAP */}
-          {showMapView && (
-            <div
-              className="cdp-panel cdp-form-panel"
-              id="map-section"
-            >
-              <div className="cdp-panel-head">
-                <h3>
-                  {t("citizenDashboard.reportedIssuesNear", {
-                    ward: profile.ward,
-                  })}
-                </h3>
-
-                <span
-                  className="cdp-panel-link cdp-clickable"
-                  onClick={() => setShowMapView(false)}
-                >
-                  {t("citizenDashboard.hideMap")}
-                </span>
-              </div>
-
-              <div className="cdp-map-grid">
-                {Object.entries(mapGroups).map(([loc, items]) => (
-                  <div className="cdp-map-ward-card" key={loc}>
-                    <p className="cdp-map-ward-name">{loc}</p>
-
-                    <div className="cdp-map-pins">
-                      {items.map((c) => (
-                        <span
-                          className="cdp-map-pin"
-                          key={c.id}
-                          style={{
-                            background: colorForCategory(c.category),
-                          }}
-                          title={`${c.complaintNumber} — ${c.category}`}
-                        >
-                          📍
-                        </span>
-                      ))}
-                    </div>
-
-                    <span className="cdp-map-ward-count">
-                      {t("citizenDashboard.issuesReported", {
-                        count: items.length,
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
+          {/* COMPLAINT STATUS MAP */}
+          <div className="cdp-panel cdp-citizen-map-panel" id="map-section">
+            <div className="cdp-panel-head">
+              <h3>{t("citizenDashboard.complaintStatusMap")}</h3>
             </div>
-          )}
 
-          {/* QUICK ACTIONS */}
-          <div className="cdp-quick-row">
-            <button
-              className="cdp-quick-card"
-              type="button"
-              onClick={goToReportIssue}
-            >
-              <div className="cdp-quick-ic navy">📍</div>
-
-              <div>
-                <h5>{t("citizenDashboard.reportNewIssue")}</h5>
-                <p>
-                  {t("citizenDashboard.photoLocationDescription")}
-                </p>
+            {dashboardMapComplaints.length ? (
+              <div className="cdp-citizen-map">
+                <DashboardComplaintsMap
+                  complaints={dashboardMapComplaints}
+                  translate={t}
+                />
               </div>
-            </button>
-
-            <button
-              className="cdp-quick-card"
-              type="button"
-              onClick={() => scrollTo("track-complaint")}
-            >
-              <div className="cdp-quick-ic saffron">🔍</div>
-
-              <div>
-                <h5>{t("citizenDashboard.trackComplaintQuick")}</h5>
-                <p>{t("citizenDashboard.checkStatusById")}</p>
+            ) : (
+              <div className="cdp-citizen-map-empty">
+                {t("citizenDashboard.noMapComplaints")}
               </div>
-            </button>
-
-            <button
-              className="cdp-quick-card"
-              type="button"
-              onClick={() => {
-                setShowMapView(true);
-                setTimeout(() => scrollTo("map-section"), 50);
-              }}
-            >
-              <div className="cdp-quick-ic green">🗺️</div>
-
-              <div>
-                <h5>{t("citizenDashboard.viewIssuesMap")}</h5>
-                <p>{t("citizenDashboard.seeReportsNearWard")}</p>
-              </div>
-            </button>
+            )}
           </div>
         </div>
       </div>

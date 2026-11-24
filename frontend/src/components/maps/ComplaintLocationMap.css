@@ -47,6 +47,20 @@
   text-decoration: none;
 }
 
+.scm-popup-photos .admin-map-image-preview-trigger {
+  display: flex;
+  flex: 0 0 88px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1b4586;
+  font-size: 10px;
+  text-align: left;
+  cursor: zoom-in;
+}
+
 .scm-popup-photos img {
   width: 88px;
   height: 64px;
@@ -61,6 +75,43 @@
   white-space: nowrap;
 }
 
+.admin-map-image-lightbox {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px 24px;
+  background: rgba(10, 18, 32, 0.86);
+}
+
+.admin-map-image-lightbox > img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.admin-map-image-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #161b26;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .leaflet-popup.home-map-popup .leaflet-popup-content {
   width: min(360px, calc(100vw - 64px));
   max-height: min(48dvh, 360px);
@@ -72,9 +123,100 @@
   max-height: min(86dvh, 900px);
 }
 
+.leaflet-popup.admin-map-complaint-popup.home-map-popup-expanded .leaflet-popup-content {
+  width: min(820px, calc(100vw - 120px));
+  max-height: min(86dvh, 900px);
+  overflow-y: auto;
+}
+
 .home-live-complaints-map:fullscreen .leaflet-popup.home-map-popup .leaflet-popup-content {
   width: min(820px, calc(100vw - 120px));
   max-height: min(86dvh, 900px);
+}
+
+.admin-map-right-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.admin-map-right-controls .leaflet-control {
+  float: none;
+  clear: none;
+  margin: 0;
+}
+
+.admin-map-pin-indicators {
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  max-width: min(220px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid #c5d3e2;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 3px 10px rgba(24, 48, 73, 0.2);
+}
+
+.admin-map-pin-indicator {
+  appearance: none;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid #d5e0ec;
+  border-radius: 8px;
+  background: #fff;
+  color: #243c57;
+  font: 600 12px/1.3 Arial, sans-serif;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-map-pin-indicator-icon.all {
+  background: #1b4586;
+}
+.admin-map-pin-indicator:hover {
+  border-color: #9eb7d1;
+  background: #eef5fc;
+}
+.admin-map-pin-indicator.is-active {
+  border-color: #1b4586;
+  background: #eaf0fb;
+  box-shadow: inset 3px 0 0 #1b4586;
+}
+
+.admin-map-pin-indicator-icon {
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 0 0 1px rgba(20, 33, 50, 0.45);
+  transform: rotate(-45deg);
+}
+
+.admin-map-pin-indicator-icon.open {
+  background: #e11d2e;
+}
+
+.admin-map-pin-indicator-icon.assigned {
+  background: #e0a800;
+}
+
+.admin-map-pin-indicator-icon.verification {
+  background: #7c3aed;
+}
+
+.admin-map-pin-indicator-icon.rework {
+  background: #111827;
+}
+
+.admin-map-pin-indicator-icon.resolved {
+  background: #16803c;
 }
 
 .home-map-popup-heading {
@@ -93,6 +235,11 @@
 }
 
 .home-map-popup .scm-popup-photos a {
+  flex-basis: 120px;
+  font-size: 11px;
+}
+
+.home-map-popup .scm-popup-photos .admin-map-image-preview-trigger {
   flex-basis: 120px;
   font-size: 11px;
 }
@@ -146,6 +293,27 @@
 .home-map-google-popup-close:focus-visible {
   outline: 2px solid #1b65a8;
   outline-offset: 1px;
+}
+
+.dashboard-complaints-map.home-live-complaints-map {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  border-radius: 8px;
+  background: #e9eef5;
+}
+
+.dashboard-complaints-map.home-live-complaints-map:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.dashboard-complaints-map .home-leaflet-filter-menu-options {
+  max-height: 190px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .home-map-saw-this {
@@ -233,6 +401,15 @@
   height: 104px;
   border-radius: 6px;
   object-fit: cover;
+}
+
+.home-map-resolution-photos .admin-map-image-preview-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
 }
 
 .home-map-resolution-photos p {

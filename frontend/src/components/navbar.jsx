@@ -523,14 +523,15 @@ const Navbar = () => {
         <div className="header-inner">
           {/* Brand */}
           <div className="brand">
-            <NavLink
-              to="/"
+            <a
+              href="https://myroadindia.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="brand-logo"
               aria-label="MyRoad India Home"
-              onClick={closeMobileMenu}
             >
               <img src={logo} alt="MyRoad India Logo" />
-            </NavLink>
+            </a>
 
             <NavLink
               to="/"

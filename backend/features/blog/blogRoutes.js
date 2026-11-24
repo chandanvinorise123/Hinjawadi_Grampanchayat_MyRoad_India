@@ -31,7 +31,13 @@ router.get("/feed", async (req, res) => {
     }
 
     const [complaintData] = await Complaint.aggregate([
-      { $match: { status: { $ne: "Rejected" } } },
+      {
+        $match: {
+          status: {
+            $in: ["Resolved", "resolved", "Closed", "closed"],
+          },
+        },
+      },
       {
         $facet: {
           imageComplaints: [

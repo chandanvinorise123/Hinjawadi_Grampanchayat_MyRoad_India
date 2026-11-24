@@ -8,7 +8,9 @@ import {
 } from "@react-google-maps/api";
 import { API_BASE_URL, toMediaUrl } from "../../utils/dashboardApi";
 import {
+  getComplaintMapMarkerScale,
   getComplaintMapMarkerIcon,
+  getComplaintRejectionActor,
 } from "./complaintMapMarker";
 import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
 import {
@@ -18,9 +20,6 @@ import {
 
 const libraries = ["places"];
 const defaultCenter = { lat: 18.5913, lng: 73.7389 };
-const MARKER_BASE_ZOOM = 15;
-const getMarkerScale = (zoom) =>
-  Math.min(1.5, Math.max(0.22, 1.25 ** (zoom - MARKER_BASE_ZOOM)));
 const mapOptions = {
   streetViewControl: false,
   mapTypeControl: false,
@@ -50,12 +49,15 @@ export const HomeComplaintPopup = ({
   onClose,
   translate,
   isMapFullscreen,
+  largePopup = false,
+  renderPopupActions,
+  pinTypeOverride,
 }) => {
   const [sawThisCount, setSawThisCount] = useState(complaint.sawThisCount || 0);
   const [hasSeenThis, setHasSeenThis] = useState(Boolean(complaint.hasSeenThis));
   const [submittingSawThis, setSubmittingSawThis] = useState(false);
   const [sawThisError, setSawThisError] = useState(false);
-  const pinType = getHomeComplaintMapPinType(complaint);
+  const pinType = pinTypeOverride || getHomeComplaintMapPinType(complaint);
   const isResolved = pinType === "resolved";
   const images = [
     ...(Array.isArray(complaint.images) ? complaint.images : []),
@@ -137,7 +139,7 @@ export const HomeComplaintPopup = ({
     <div
       className={`scm-popup home-map-google-popup${
         isMapFullscreen ? " home-map-google-popup-fullscreen" : ""
-      }`}
+      }${largePopup ? " home-map-google-popup-large" : ""}`}
     >
       <div className="home-map-google-popup-toolbar">
         <button
@@ -149,6 +151,14 @@ export const HomeComplaintPopup = ({
           ×
         </button>
       </div>
+      {pinType === "rework" && (
+        <div className="map-rework-notice" role="status">
+          {translate("admin_dashboard.map_rejected_reassign_notice", {
+            actor: getComplaintRejectionActor(complaint) ||
+              translate("admin_dashboard.map_rejected_by_unknown"),
+          })}
+        </div>
+      )}
       {isResolved && (
         <div className="home-map-resolution-photos">
           {[
@@ -218,6 +228,7 @@ export const HomeComplaintPopup = ({
         </p>
         {complaint.description && <p>{complaint.description}</p>}
       </div>
+      {renderPopupActions?.(complaint)}
       <div className="home-map-saw-this">
         <button
           type="button"
@@ -531,7 +542,7 @@ const HomeGoogleComplaintsMap = ({
             }
           : position;
         const pinType = getHomeComplaintMapPinType(complaint);
-        const markerScale = getMarkerScale(zoom);
+        const markerScale = getComplaintMapMarkerScale(zoom);
         const scaledMarkerIcon = getComplaintMapMarkerIcon(
           complaint,
           undefined,

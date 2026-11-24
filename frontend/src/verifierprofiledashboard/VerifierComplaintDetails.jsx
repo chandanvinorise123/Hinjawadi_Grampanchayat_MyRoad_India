@@ -9,13 +9,23 @@ const formatDate = (value, notRecordedText = "Not recorded") => {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
 
-const VerifierComplaintDetails = ({ complaint }) => {
+const VerifierComplaintDetails = ({
+  complaint,
+  summaryDetails = [],
+  complaintPhotos = null,
+  photosTitle = "",
+  photosCountLabel = "",
+  photosEmptyText = "",
+  showVerificationPhoto = true,
+  children,
+}) => {
   const { t } = useTranslation(); // ✅ ADDED
   const notRecorded = t('verifier_complaint_details.not_recorded');
 
   if (!complaint) return null;
 
   const citizenDetails = [
+    ...summaryDetails,
     [t('verifier_complaint_details.citizen'), complaint.citizenName || t('verifier_complaint_details.not_available')],
     [t('verifier_complaint_details.citizen_contact'), complaint.citizenContact || t('verifier_complaint_details.not_available')],
     [t('verifier_complaint_details.citizen_email'), complaint.citizenProfile?.email || t('verifier_complaint_details.not_available')],
@@ -32,6 +42,9 @@ const VerifierComplaintDetails = ({ complaint }) => {
     [t('verifier_complaint_details.inspection_date'), formatDate(complaint.inspection?.inspectionDate, notRecorded)],
     [t('verifier_complaint_details.work_completion_date'), formatDate(complaint.inspection?.completionDate, notRecorded)],
   ];
+  const availableComplaintPhotos = Array.isArray(complaintPhotos)
+    ? complaintPhotos.filter(([, url]) => url)
+    : [];
 
   return (
     <div className="vcd-layout" aria-label={t('verifier_complaint_details.aria_complaint_work_details')}>
@@ -65,6 +78,24 @@ const VerifierComplaintDetails = ({ complaint }) => {
             </div>
           )}
         </div>
+        {complaintPhotos && (
+          <div className="vcd-photos">
+            <div className="vcd-photos-heading">
+              <strong>{photosTitle}</strong>
+              <span>{availableComplaintPhotos.length} {photosCountLabel}</span>
+            </div>
+            {availableComplaintPhotos.length ? (
+              <div className="vcd-photos-grid">
+                {availableComplaintPhotos.map(([label, url]) => (
+                  <figure key={label}>
+                    <ComplaintImage src={url} alt={label} />
+                    <figcaption>{label}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : <p className="vcd-photos-empty">{photosEmptyText}</p>}
+          </div>
+        )}
       </section>
 
       <section className="vcd-panel" aria-labelledby="vcd-work-heading">
@@ -91,7 +122,7 @@ const VerifierComplaintDetails = ({ complaint }) => {
             </div>
           )}
         </div>
-        {complaint.photos?.verification && (
+        {showVerificationPhoto && complaint.photos?.verification && (
           <div className="vcd-verification-photo">
             <span>{t('verifier_complaint_details.physical_verification_evidence')}</span>
             <ComplaintImage
@@ -101,6 +132,7 @@ const VerifierComplaintDetails = ({ complaint }) => {
             />
           </div>
         )}
+        {children}
       </section>
     </div>
   );

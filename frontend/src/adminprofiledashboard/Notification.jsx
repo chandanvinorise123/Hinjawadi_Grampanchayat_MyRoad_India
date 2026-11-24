@@ -88,6 +88,30 @@ const NotificationMonitoring = ({
     return tones[type] || "navy";
   };
 
+  const getShortMessage = (notif) => {
+    const shortMessages = {
+      "Complaint Registered": "Complaint registered",
+      "Complaint Verified": "Complaint verified",
+      "Staff Assigned": "Staff assigned",
+      "Action Initiated": "Action started",
+      "Work Completed": "Work submitted",
+      "Complaint Resolved": "Complaint resolved",
+      "Complaint Closed": "Complaint closed",
+      "Rework Required": "Correction required",
+    };
+
+    return shortMessages[notif.type] ||
+      (notif.text || notif.message || "").replace(
+        /^(.{0,42}).*$/,
+        "$1"
+      ).trim();
+  };
+
+  const getShortComplaintNumber = (complaintNumber) => {
+    const value = String(complaintNumber || "").trim();
+    return value;
+  };
+
   // ✅ Updated to use browser's active locale for better i18n support
   const formatDate = (dateString) => {
     if (!dateString) return t('notification_monitoring.na');
@@ -97,6 +121,23 @@ const NotificationMonitoring = ({
       dateStyle: "medium",
       timeStyle: "short",
     });
+  };
+
+  const formatRelativeDate = (dateString) => {
+    if (!dateString) return t('notification_monitoring.na');
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return t('notification_monitoring.na');
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const notificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayDifference = Math.round((today - notificationDay) / 86400000);
+    const time = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+
+    if (dayDifference <= 0) return `Today · ${time}`;
+    if (dayDifference === 1) return `Yesterday · ${time}`;
+    if (dayDifference < 7) return `${dayDifference} days ago · ${time}`;
+    return date.toLocaleDateString(undefined, { day: "2-digit", month: "short" });
   };
 
   if (loading) {
@@ -114,7 +155,6 @@ const NotificationMonitoring = ({
             </button>
             <div>
               <h2>{t('notification_monitoring.title')}</h2>
-              <p>{t('notification_monitoring.subtitle')}</p>
             </div>
           </div>
           <div className="nm-header-actions">
@@ -154,7 +194,9 @@ const NotificationMonitoring = ({
               <tbody>
                 {filteredNotifications.map((notif) => (
                   <tr key={notif.id} className={!notif.isRead ? "nm-unread" : ""}>
-                    <td className="nm-mono">{formatDate(notif.createdAt || notif.time)}</td>
+                    <td className="nm-mono" title={formatDate(notif.createdAt || notif.time)}>
+                      {formatRelativeDate(notif.createdAt || notif.time)}
+                    </td>
                     <td>
                       <span className={`nm-badge nm-badge-${getToneClass(notif.type)}`}>
                         {getTypeLabel(notif.type)}
@@ -162,7 +204,9 @@ const NotificationMonitoring = ({
                     </td>
                     <td className="nm-message-text">
                       {!notif.isRead && <span className="nm-unread-dot"></span>}
-                      {notif.text || notif.message}
+                      {notif.contactMessage?.subject
+                        ? notif.contactMessage.subject
+                        : getShortMessage(notif)}
                     </td>
                     <td className="nm-mono">
                       {notif.contactMessage ? (
@@ -174,7 +218,7 @@ const NotificationMonitoring = ({
                           onClick={() => onOpenComplaint?.(notif)}
                           title={t('notification_monitoring.open_complaint_details')}
                         >
-                          {notif.complaintNumber}
+                          {getShortComplaintNumber(notif.complaintNumber)}
                         </button>
                       ) : notif.complaintId || t('notification_monitoring.na')}
                     </td>
@@ -254,14 +298,6 @@ const NotificationMonitoring = ({
                     <div className="nm-detail-item">
                       <span>{t('notification_monitoring.complaint_number')}</span>
                       <b className="nm-mono">{selectedNotif.complaintNumber || t('notification_monitoring.na')}</b>
-                    </div>
-                    <div className="nm-detail-item">
-                      <span>{t('notification_monitoring.complaint_id_internal')}</span>
-                      <b className="nm-mono">{selectedNotif.complaintId || t('notification_monitoring.na')}</b>
-                    </div>
-                    <div className="nm-detail-item">
-                      <span>{t('notification_monitoring.recipient_id')}</span>
-                      <b className="nm-mono">{selectedNotif.recipientId || t('notification_monitoring.na')}</b>
                     </div>
                   </>
                 )}

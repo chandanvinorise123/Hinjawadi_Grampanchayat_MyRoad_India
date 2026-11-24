@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { API_BASE_URL, toMediaUrl } from "../utils/dashboardApi";
-import { generateComplaintPdf } from "../dashboard/admindashboard";
+import { API_BASE_URL } from "../utils/dashboardApi";
+import { generateComplaintPdf } from "../utils/complaintPdf";
+import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
 import "./ComplaintPdfView.css";
 
 const ComplaintPdfView = () => {
@@ -75,7 +76,9 @@ const ComplaintPdfView = () => {
         location: "ठिकाण",
         coordinates: "GPS निर्देशांक",
         description: "तक्रारीचा तपशील",
-        image: "तक्रारीचे छायाचित्र",
+        image: "तक्रारीची छायाचित्रे",
+        beforeImage: "कामापूर्वी / स्थळ",
+        afterImage: "कामानंतर",
         openMap: "Google Maps वर ठिकाण उघडा",
         noMap: "ठिकाणाची माहिती उपलब्ध नाही",
         noDescription: "तपशील उपलब्ध नाही",
@@ -87,7 +90,9 @@ const ComplaintPdfView = () => {
         location: "Location",
         coordinates: "GPS coordinates",
         description: "Complaint details",
-        image: "Complaint image",
+        image: "Complaint photos",
+        beforeImage: "Before / site",
+        afterImage: "After work",
         openMap: "Open location in Google Maps",
         noMap: "Location details are not available",
         noDescription: "No description provided",
@@ -120,12 +125,40 @@ const ComplaintPdfView = () => {
   const mapUrl = mapQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
     : "";
-  const imageEntry = Array.isArray(complaint?.images) ? complaint.images[0] : "";
-  const imagePath =
-    typeof imageEntry === "string"
-      ? imageEntry
-      : imageEntry?.url || imageEntry?.path || imageEntry?.imageUrl || "";
-  const complaintImageUrl = imagePath ? toMediaUrl(imagePath) : "";
+  const photoRecord =
+    complaint?.photos && typeof complaint.photos === "object" && !Array.isArray(complaint.photos)
+      ? complaint.photos
+      : {};
+  const imageSources = [
+    ...(Array.isArray(complaint?.images) ? complaint.images : []),
+    ...(Array.isArray(complaint?.citizenPhotos) ? complaint.citizenPhotos : []),
+  ];
+  const getImagePath = (image) =>
+    typeof image === "string"
+      ? image
+      : image?.url || image?.path || image?.imageUrl || "";
+  const complaintPhotos = [
+    {
+      label: labels.beforeImage,
+      path:
+        complaint?.inspection?.sitePhoto ||
+        complaint?.sitePhoto ||
+        complaint?.beforePhoto ||
+        photoRecord.before ||
+        photoRecord.site ||
+        getImagePath(imageSources[0]),
+    },
+    {
+      label: labels.afterImage,
+      path:
+        complaint?.inspection?.completionPhoto ||
+        complaint?.completionPhoto ||
+        complaint?.afterPhoto ||
+        photoRecord.after ||
+        "",
+    },
+  ]
+    .filter((photo) => photo.path);
   const priorityLabels = isMarathi
     ? { Critical: "उच्च", Urgent: "तातडीचे", Normal: "सामान्य" }
     : { Critical: "HIGH", Urgent: "URGENT", Normal: "NORMAL" };
@@ -185,10 +218,21 @@ const ComplaintPdfView = () => {
             <h2>{labels.description}</h2>
             <p>{complaint.description || labels.noDescription}</p>
           </div>
-          {complaintImageUrl && (
+          {complaintPhotos.length > 0 && (
             <div className="complaint-pdf-view__photo">
               <h2>{labels.image}</h2>
-              <img src={complaintImageUrl} alt={labels.image} />
+              <div className="complaint-pdf-view__photos">
+                {complaintPhotos.map((photo) => (
+                  <figure key={photo.label}>
+                    <figcaption>{photo.label}</figcaption>
+                    <ComplaintImage
+                      src={photo.path}
+                      alt={photo.label}
+                      fallbackClassName="complaint-pdf-view__photo-fallback"
+                    />
+                  </figure>
+                ))}
+              </div>
             </div>
           )}
           <div className="complaint-pdf-view__map">

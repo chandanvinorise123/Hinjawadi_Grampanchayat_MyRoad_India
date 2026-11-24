@@ -2022,10 +2022,179 @@
 
 }
 
+.vd-all-complaints-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 22px 4px;
+}
 
+.vd-all-complaints-filter-row input,
+.vd-all-complaints-filter-row select {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.vd-all-complaints-filter-row input { width: 225px; }
+.vd-all-complaints-filter-row select { min-width: 144px; cursor: pointer; }
+
+.vd-shell .vd-all-complaints-table {
+  width: 100%;
+  min-width: 980px;
+  table-layout: auto;
+}
+
+.vd-all-complaints-table .vd-col-complaint { width: 150px; }
+.vd-all-complaints-table .vd-col-category { width: 140px; }
+.vd-all-complaints-table .vd-col-location { width: 170px; }
+.vd-all-complaints-table .vd-col-status { width: 130px; }
+.vd-all-complaints-table .vd-col-staff-assignee { width: 165px; }
+.vd-all-complaints-table .vd-col-verifier-assignee { width: 145px; }
+.vd-all-complaints-table .vd-col-action { width: 145px; }
+.vd-all-complaints-table .vd-col-pdf { width: 110px; }
+
+.vd-shell .vd-all-complaints-table th,
+.vd-shell .vd-all-complaints-table td {
+  padding: 6px 5px;
+}
+
+.vd-shell .vd-all-complaints-table th {
+  background: #eaf0fb;
+  border-bottom: 2px solid #f28c28;
+  color: var(--navy-900);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.vd-shell .vd-all-complaints-table td {
+  font-size: 11px;
+  overflow-wrap: normal;
+}
+
+.vd-all-complaints-table td:first-child,
+.vd-all-complaints-table td:nth-child(n+4) {
+  white-space: nowrap;
+}
+
+.vd-all-complaints-table .vd-cat { min-width: 0; gap: 4px; }
+.vd-all-complaints-table .vd-assignment-select {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 20px 7px 8px;
+  font-size: 11px;
+}
+
+.vd-assigned-verifier {
+  display: block;
+  overflow: hidden;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  text-overflow: ellipsis;
+}
+
+.vd-all-complaints-actions,
+.vd-pdf-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vd-all-complaints-actions .vd-btn-primary {
+  padding: 6px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.vd-pdf-btn {
+  min-width: 48px;
+  padding: 8px 6px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: #fff;
+  color: #dc2626;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vd-pdf-btn:disabled { opacity: .6; cursor: wait; }
+.vd-all-complaints-empty { text-align: center; padding: 24px !important; color: var(--ink-soft) !important; }
+
+.vd-all-complaints-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+.vd-all-complaints-footer button {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vd-all-complaints-footer button:hover { background: var(--surface); }
+
+.vd-map-panel { margin-bottom: 24px; }
+
+.vd-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.vd-map-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vd-map-legend .vd-map-legend-hint { margin-left: auto; color: var(--ink-soft); }
+
+.vd-complaints-map {
+  width: 100%;
+  height: 500px;
+  background: #e9eef5;
+}
+
+.vd-complaints-map:fullscreen { width: 100vw; height: 100vh; }
+
+.vd-map-missing-coordinates {
+  margin: 16px;
+  padding: 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.vd-map-missing-coordinates p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
 
 /* Responsive adjustments for new columns */
-
 @media (max-width: 1024px) {
 
   .vd-verify-btn,
@@ -3454,6 +3623,8 @@
 }
 
 .vd-sb-logo-button {
+  display: block;
+  text-decoration: none;
   padding: 0;
   border: 0;
   cursor: pointer;

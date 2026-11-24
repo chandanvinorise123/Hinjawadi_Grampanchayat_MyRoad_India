@@ -1,9 +1,9 @@
 /* ================= FULL PAGE LAYOUT ================= */
 .nm-full-page {
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - 32px);
   background-color: #f8fafc;
-  padding: 32px 24px;
+  padding: 18px 20px;
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -14,7 +14,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 32px;
+  padding: 18px 20px;
 }
 
 .nm-full-page-loading {
@@ -31,9 +31,9 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-bottom: 20px;
+  padding-bottom: 12px;
   border-bottom: 2px solid #f1f5f9;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .nm-header-info {
@@ -61,7 +61,7 @@
 
 .nm-header-info h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   color: #0f172a;
 }
 
@@ -98,6 +98,8 @@
 /* ================= TABLE ================= */
 .nm-table-container {
   overflow-x: auto;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
@@ -105,7 +107,8 @@
 .nm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  table-layout: fixed;
+  font-size: 0.78rem;
 }
 
 .nm-table th {
@@ -113,16 +116,29 @@
   color: #475569;
   font-weight: 600;
   text-align: left;
-  padding: 14px 16px;
+  padding: 8px 8px;
   border-bottom: 2px solid #e2e8f0;
 }
 
 .nm-table td {
-  padding: 14px 16px;
+  padding: 6px 8px;
   border-bottom: 1px solid #f1f5f9;
   color: #1e293b;
   vertical-align: middle;
 }
+
+.nm-table th:nth-child(1),
+.nm-table td:nth-child(1) { width: 118px; }
+.nm-table th:nth-child(2),
+.nm-table td:nth-child(2) { width: 175px; }
+.nm-table th:nth-child(3),
+.nm-table td:nth-child(3) { width: 300px; }
+.nm-table th:nth-child(4),
+.nm-table td:nth-child(4) { width: 210px; }
+.nm-table th:nth-child(5),
+.nm-table td:nth-child(5) { width: 70px; }
+.nm-table th:nth-child(6),
+.nm-table td:nth-child(6) { width: 98px; text-align: center; }
 
 .nm-table tbody tr {
   transition: background 0.2s;
@@ -148,36 +164,45 @@
 
 .nm-mono {
   font-family: "Courier New", monospace;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
   color: #475569;
 }
 
 .nm-complaint-link {
-  max-width: 190px;
-  padding: 0;
+  max-width: none;
+  width: 100%;
+  padding: 4px 6px;
   border: 0;
-  background: none;
+  background: #eef5ff;
+  border-radius: 5px;
+  padding: 4px 6px;
   color: #1e5c9a;
   cursor: pointer;
   font: inherit;
   text-align: left;
-  text-decoration: underline;
-  overflow-wrap: anywhere;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .nm-message-text {
-  max-width: 300px;
+  max-width: none;
+  line-height: 1.35;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* ================= BADGES ================= */
 .nm-badge {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -189,7 +214,7 @@
 .nm-badge-red { background: #fee2e2; color: #b91c1c; }
 
 .nm-status {
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
 }
 .nm-status.read { color: #16a34a; }
@@ -242,8 +267,8 @@
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
+  max-width: 720px;
+  max-height: 82vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   animation: nmSlideUp 0.3s ease-out;
@@ -258,13 +283,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 24px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .nm-modal-header h3 {
-  margin: 8px 0 0 0;
-  font-size: 1.25rem;
+  margin: 6px 0 0 0;
+  font-size: 1.15rem;
   color: #0f172a;
 }
 
@@ -281,11 +306,11 @@
 }
 
 .nm-modal-body {
-  padding: 24px;
+  padding: 18px 20px;
 }
 
 .nm-detail-section {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .nm-detail-section h4 {
@@ -297,18 +322,19 @@
 
 .nm-full-message {
   background: #f8fafc;
-  padding: 16px;
+  padding: 12px 14px;
   border-radius: 8px;
   border-left: 4px solid #2e6cb0;
   color: #1e293b;
-  line-height: 1.6;
+  line-height: 1.45;
+  font-size: 0.92rem;
   margin: 0;
 }
 
 .nm-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 10px 18px;
 }
 
 .nm-detail-item {
@@ -333,10 +359,11 @@
 .nm-text-warning { color: #d97706 !important; }
 
 .nm-modal-footer {
-  padding: 16px 24px;
+  padding: 12px 20px;
   border-top: 1px solid #f1f5f9;
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
 }
 
 .nm-modal-close-btn {

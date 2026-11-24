@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next"; // ✅ ADDED
-import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
+import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { toMediaUrl } from "../utils/dashboardApi";
-import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
+import DashboardComplaintsMap from "../components/maps/DashboardComplaintsMap";
 import "./IssueMap.css";
-
-const GOOGLE_MAPS_LIBRARIES = ["places"];
 
 // ⚠️ KEEP IN ENGLISH: Used for internal logic/status mapping
 const statusToneMap = {
@@ -30,18 +27,13 @@ const statusToneMap = {
 };
 
 const IssueMap = ({ onBack, complaints = [] }) => {
-  const { t } = useTranslation(); // ✅ ADDED
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
+  const { t } = useTranslation();
   
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   
-  const mapComplaints = complaints
-    .filter((complaint) => {
+  const mapComplaints = useMemo(
+    () => complaints
+      .filter((complaint) => {
       const latitude = complaint.coordinates?.latitude;
       const longitude = complaint.coordinates?.longitude;
       return latitude !== null &&
@@ -74,11 +66,14 @@ const IssueMap = ({ onBack, complaints = [] }) => {
           complaint.inspection?.completionPhoto ||
           "",
       },
-    }));
+    })),
+    [complaints]
+  );
+  const [visibleMapComplaints, setVisibleMapComplaints] = useState(mapComplaints);
     
   const mapCenter = mapComplaints.length
-    ? [mapComplaints[0].lat, mapComplaints[0].lng]
-    : [20, 0];
+    ? { lat: mapComplaints[0].lat, lng: mapComplaints[0].lng }
+    : undefined;
 
   // Close modal on Escape key
   useEffect(() => {
@@ -113,9 +108,9 @@ const IssueMap = ({ onBack, complaints = [] }) => {
         <div className="cdp-im-grid">
           {/* ✅ 1. Complaint List Sidebar (NOW ON THE LEFT) */}
           <div className="cdp-im-list-container">
-            <h3>{t('issue_map.reported_issues_count', { count: mapComplaints.length })}</h3>
+            <h3>{t('issue_map.reported_issues_count', { count: visibleMapComplaints.length })}</h3>
             <div className="cdp-im-list">
-              {mapComplaints.map((c) => (
+              {visibleMapComplaints.map((c) => (
                 <div
                   key={c.id} 
                   className={`cdp-im-list-item ${selectedComplaint?.id === c.id ? "active" : ""}`}
@@ -147,41 +142,19 @@ const IssueMap = ({ onBack, complaints = [] }) => {
 
           {/* ✅ 2. Interactive Map (NOW ON THE RIGHT) */}
           <div className="cdp-im-map-container">
-            {loadError ? (
-              <div>{t('issue_map.map_load_error')}</div>
-            ) : !isLoaded ? (
-              <div>{t('issue_map.map_loading')}</div>
-            ) : mapComplaints.length === 0 ? (
+            {mapComplaints.length === 0 ? (
               <div>{t('issue_map.no_coordinates')}</div>
             ) : (
-              <GoogleMap
-                mapContainerStyle={{ width: "100%", height: "100%" }}
-                center={selectedComplaint
-                  ? { lat: selectedComplaint.lat, lng: selectedComplaint.lng }
-                  : { lat: mapCenter[0], lng: mapCenter[1] }}
-                zoom={13}
-                onClick={() => setSelectedComplaint(null)}
-              >
-                {mapComplaints.map((c) => (
-                  <Marker
-                    key={c.id}
-                    position={{ lat: c.lat, lng: c.lng }}
-                    icon={getComplaintMapMarkerIcon(c)}
-                    title={`${c.complaintNumber || "Complaint"} — ${c.issue || c.issueType || ""}`}
-                    onClick={() => handleMarkerClick(c)}
-                  />
-                ))}
-                {selectedComplaint && (
-                  <InfoWindow position={{ lat: selectedComplaint.lat, lng: selectedComplaint.lng }} onCloseClick={() => setSelectedComplaint(null)}>
-                    <div className="cdp-im-popup-content">
-                      <span className={`cdp-im-badge cdp-im-badge-${statusToneMap[selectedComplaint.status]}`}>{selectedComplaint.status}</span>
-                      <h4>{selectedComplaint.complaintNumber}</h4>
-                      <p><strong>{selectedComplaint.category}:</strong> {selectedComplaint.issue}</p>
-                      <p>📍 {selectedComplaint.location}</p>
-                    </div>
-                  </InfoWindow>
-                )}
-              </GoogleMap>
+              <DashboardComplaintsMap
+                complaints={mapComplaints}
+                center={mapCenter}
+                translate={t}
+                selectedComplaintId={selectedComplaint?.id || null}
+                onMapClick={() => setSelectedComplaint(null)}
+                onComplaintSelect={handleMarkerClick}
+                onComplaintClose={() => setSelectedComplaint(null)}
+                onVisibleComplaintsChange={setVisibleMapComplaints}
+              />
             )}
           </div>
         </div>

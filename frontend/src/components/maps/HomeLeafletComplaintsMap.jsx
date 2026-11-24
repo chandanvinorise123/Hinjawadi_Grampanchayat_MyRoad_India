@@ -9,7 +9,11 @@ import {
   ZoomControl,
   useMap,
 } from "react-leaflet";
-import { getComplaintMapMarkerSvg } from "./complaintMapMarker";
+import {
+  getComplaintMapMarkerSvg,
+  isComplaintAwaitingVerification,
+  isComplaintReworkRequested,
+} from "./complaintMapMarker";
 import { getHomeComplaintMapPinType } from "./homeComplaintMapPinType";
 import { HomeComplaintPopup } from "./HomeGoogleComplaintsMap";
 import "leaflet/dist/leaflet.css";
@@ -77,7 +81,7 @@ const MapBounds = ({
   return null;
 };
 
-const HeatMapLayer = ({ complaints }) => {
+export const HeatMapLayer = ({ complaints }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -163,6 +167,14 @@ const LeafletMapControls = ({
   onReportedRangeChange,
   statusFilter,
   onStatusFilterChange,
+  statusOptions,
+  categoryFilter,
+  onCategoryFilterChange,
+  categories,
+  priorityFilter,
+  onPriorityFilterChange,
+  priorityOptions,
+  onResetFilters,
   isFullscreen,
   onFullscreenChange,
 }) => {
@@ -171,6 +183,10 @@ const LeafletMapControls = ({
   const viewMenuRef = useRef(null);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef(null);
+  const hasActiveFilters = reportedRange !== "all" ||
+    statusFilter !== "all" ||
+    categoryFilter !== "all" ||
+    priorityFilter !== "all";
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -277,7 +293,7 @@ const LeafletMapControls = ({
         <div className="leaflet-control">
           <div className="home-leaflet-view-menu" ref={filterMenuRef}>
             <button
-              className={`home-leaflet-map-type-button home-leaflet-view-menu-toggle${reportedRange !== "all" || statusFilter !== "all" ? " is-active" : ""}`}
+              className={`home-leaflet-map-type-button home-leaflet-view-menu-toggle${hasActiveFilters ? " is-active" : ""}`}
               type="button"
               aria-expanded={isFilterMenuOpen}
               aria-controls="home-leaflet-filter-menu-options"
@@ -320,20 +336,66 @@ const LeafletMapControls = ({
                       onStatusFilterChange(event.target.value)
                     }
                   >
-                    <option value="all">
-                      {translate("home.mapAllStatuses")}
-                    </option>
-                    <option value="open">
-                      {translate("home.mapStatusNew")}
-                    </option>
-                    <option value="assigned">
-                      {translate("home.mapStatusAssigned")}
-                    </option>
-                    <option value="resolved">
-                      {translate("home.mapStatusResolved")}
-                    </option>
+                    {statusOptions ? (
+                      statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="all">{translate("home.mapAllStatuses")}</option>
+                        <option value="open">{translate("home.mapStatusNew")}</option>
+                        <option value="assigned">{translate("home.mapStatusAssigned")}</option>
+                        <option value="resolved">{translate("home.mapStatusResolved")}</option>
+                      </>
+                    )}
                   </select>
                 </label>
+                {categories && (
+                  <label>
+                    Category
+                    <select
+                      value={categoryFilter}
+                      onChange={(event) =>
+                        onCategoryFilterChange(event.target.value)
+                      }
+                    >
+                      <option value="all">All categories</option>
+                      {categories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {priorityOptions && (
+                  <label>
+                    Priority
+                    <select
+                      value={priorityFilter}
+                      onChange={(event) =>
+                        onPriorityFilterChange(event.target.value)
+                      }
+                    >
+                      <option value="all">All priorities</option>
+                      {priorityOptions.map((priority) => (
+                        <option key={priority} value={priority}>{priority}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {onResetFilters && (
+                  <button
+                    className="home-leaflet-map-type-button"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onResetFilters();
+                    }}
+                  >
+                    Reset filters
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -379,6 +441,9 @@ const HomeComplaintMarker = ({
   selectedComplaintId,
   onSelectComplaint,
   onCloseComplaint,
+  pinType,
+  largePopup,
+  renderPopupActions,
 }) => {
   const markerRef = useRef(null);
   const complaintId = String(complaint.id || complaint._id || "");
@@ -410,7 +475,7 @@ const HomeComplaintMarker = ({
       <Popup
         maxWidth={900}
         minWidth={320}
-        className={`home-map-popup${
+        className={`home-map-popup${largePopup ? " dashboard-map-popup" : ""}${
           popupExpanded || isFullscreen ? " home-map-popup-expanded" : ""
         }`}
       >
@@ -423,10 +488,25 @@ const HomeComplaintMarker = ({
           }}
           translate={translate}
           isMapFullscreen={popupExpanded || isFullscreen}
+          pinTypeOverride={pinType}
+          largePopup={largePopup}
+          renderPopupActions={renderPopupActions}
         />
       </Popup>
     </Marker>
   );
+};
+
+const MapClickHandler = ({ onMapClick }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!onMapClick) return undefined;
+    map.on("click", onMapClick);
+    return () => map.off("click", onMapClick);
+  }, [map, onMapClick]);
+
+  return null;
 };
 
 const HomeLeafletComplaintsMap = ({
@@ -440,32 +520,66 @@ const HomeLeafletComplaintsMap = ({
   fitBoundaryOnly = false,
   fullscreenFitBoundaryOnly = false,
   popupExpanded = false,
+  showZoomControl = true,
+  persistSelectedComplaint = true,
   selectedComplaintId = null,
+  onMapClick,
+  onComplaintSelect,
+  onComplaintClose,
   reportedRange,
   onReportedRangeChange,
   statusFilter,
   onStatusFilterChange,
+  statusOptions,
+  categoryFilter = "all",
+  onCategoryFilterChange,
+  categories,
+  priorityFilter = "all",
+  onPriorityFilterChange,
+  priorityOptions,
+  onResetFilters,
+  largePopup = false,
+  renderPopupActions,
+  highlightVerificationRequests = false,
+  highlightReworkRequests = false,
 }) => {
   const [isSatellite, setIsSatellite] = useState(false);
   const [isHeatmap, setIsHeatmap] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [activeComplaintId, setActiveComplaintId] = useState(selectedComplaintId);
+  const [internalActiveComplaintId, setInternalActiveComplaintId] =
+    useState(selectedComplaintId);
+  const activeComplaintId = onComplaintSelect
+    ? selectedComplaintId
+    : internalActiveComplaintId;
+
   const handleSelectComplaint = (complaintId) => {
-    setActiveComplaintId(complaintId);
-    try {
-      window.sessionStorage.setItem("homeMapSelectedComplaintId", complaintId);
-    } catch (error) {
-      console.error("Unable to save selected map complaint:", error);
+    if (!onComplaintSelect) setInternalActiveComplaintId(complaintId);
+    onComplaintSelect?.(
+      visibleComplaints.find((complaint) =>
+        String(complaint.id || complaint._id) === String(complaintId)
+      )
+    );
+    if (persistSelectedComplaint) {
+      try {
+        window.sessionStorage.setItem("homeMapSelectedComplaintId", complaintId);
+      } catch (error) {
+        console.error("Unable to save selected map complaint:", error);
+      }
     }
   };
   const handleCloseComplaint = (complaintId) => {
-    setActiveComplaintId((activeId) =>
-      activeId === complaintId ? null : activeId
-    );
-    try {
-      window.sessionStorage.removeItem("homeMapSelectedComplaintId");
-    } catch (error) {
-      console.error("Unable to clear selected map complaint:", error);
+    if (!onComplaintSelect) {
+      setInternalActiveComplaintId((activeId) =>
+        activeId === complaintId ? null : activeId
+      );
+    }
+    onComplaintClose?.(complaintId);
+    if (persistSelectedComplaint) {
+      try {
+        window.sessionStorage.removeItem("homeMapSelectedComplaintId");
+      } catch (error) {
+        console.error("Unable to clear selected map complaint:", error);
+      }
     }
   };
   const markersByLocation = useMemo(
@@ -486,7 +600,7 @@ const HomeLeafletComplaintsMap = ({
       zoomControl={false}
       scrollWheelZoom
     >
-      <ZoomControl position="bottomright" />
+      {showZoomControl && <ZoomControl position="bottomright" />}
       {isSatellite ? (
         <>
           <TileLayer
@@ -513,6 +627,7 @@ const HomeLeafletComplaintsMap = ({
         isFullscreen={isFullscreen}
       />
       {isHeatmap && <HeatMapLayer complaints={visibleComplaints} />}
+      <MapClickHandler onMapClick={onMapClick} />
       {boundaryGeoJson && (
         <GeoJSON
           data={boundaryGeoJson}
@@ -543,11 +658,18 @@ const HomeLeafletComplaintsMap = ({
               lng: position.lng,
             }
           : position;
+        const pinType = highlightReworkRequests &&
+          isComplaintReworkRequested(complaint)
+          ? "rework"
+          : highlightVerificationRequests &&
+              isComplaintAwaitingVerification(complaint)
+            ? "verification"
+            : getHomeComplaintMapPinType(complaint);
         const markerIcon = divIcon({
           className: "scm-marker",
           html: getComplaintMapMarkerSvg(
             complaint,
-            getHomeComplaintMapPinType(complaint),
+            pinType,
             true,
             0.72
           ),
@@ -569,11 +691,15 @@ const HomeLeafletComplaintsMap = ({
             selectedComplaintId={activeComplaintId}
             onSelectComplaint={handleSelectComplaint}
             onCloseComplaint={handleCloseComplaint}
+            pinType={pinType}
+            largePopup={largePopup}
+            renderPopupActions={renderPopupActions}
           />
         );
       })}
       {visibleComplaints.length === 0 &&
-        (reportedRange !== "all" || statusFilter !== "all") && (
+        (reportedRange !== "all" || statusFilter !== "all" ||
+          categoryFilter !== "all" || priorityFilter !== "all") && (
           <div className="home-leaflet-empty-filter-results" role="status">
             {translate("home.mapNoFilteredComplaints")}
           </div>
@@ -588,6 +714,14 @@ const HomeLeafletComplaintsMap = ({
         onReportedRangeChange={onReportedRangeChange}
         statusFilter={statusFilter}
         onStatusFilterChange={onStatusFilterChange}
+        statusOptions={statusOptions}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={onCategoryFilterChange}
+        categories={categories}
+        priorityFilter={priorityFilter}
+        onPriorityFilterChange={onPriorityFilterChange}
+        priorityOptions={priorityOptions}
+        onResetFilters={onResetFilters}
         isFullscreen={isFullscreen}
         onFullscreenChange={setIsFullscreen}
       />

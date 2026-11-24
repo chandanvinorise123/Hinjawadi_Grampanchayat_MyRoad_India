@@ -21,7 +21,7 @@ const createWorkForm = (complaint) => ({
   remarks: complaint?.inspection?.remarks || "",
   completionDateTime: complaint?.inspection?.completionDate || "",
   beforePhoto: complaint?.inspection?.sitePhoto || "",
-  afterPhoto: complaint?.inspection?.completionPhoto || "",
+  afterPhoto: "",
 });
 
 const getLatestStaffUpdate = (complaint) => (complaint.log || [])

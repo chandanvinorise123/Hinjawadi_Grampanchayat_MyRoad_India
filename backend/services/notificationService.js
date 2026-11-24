@@ -1,6 +1,16 @@
 const PushDevice = require("../models/PushDevice");
 const Notification = require("../models/Notification");
-const { getMessaging } = require("./firebaseMessaging");
+const { getMessaging, isMessagingConfigured } = require("./firebaseMessaging");
+
+let missingCredentialsWarningLogged = false;
+
+const warnPushDisabled = () => {
+  if (missingCredentialsWarningLogged) return;
+  console.warn(
+    "Firebase push notifications are disabled. Set FIREBASE_SERVICE_ACCOUNT_PATH to a valid service-account JSON file to enable them."
+  );
+  missingCredentialsWarningLogged = true;
+};
 
 const dashboardUrls = {
   admin: (notificationId, complaintId) =>
@@ -22,6 +32,10 @@ const dashboardHomeUrls = {
 
 const sendPushNotifications = async (notifications, { broadcast = false } = {}) => {
   if (!notifications.length) return;
+  if (!isMessagingConfigured()) {
+    warnPushDisabled();
+    return;
+  }
 
   const events = broadcast
     ? [...new Map(notifications.map((notification) => [

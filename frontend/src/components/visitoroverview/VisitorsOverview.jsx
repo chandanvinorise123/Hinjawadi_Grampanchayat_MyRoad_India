@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "./VisitorsOverview.css";
 import { API_BASE_URL } from "../../utils/dashboardApi";
 
 const VisitorsOverview = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalCitizenVisits: 0,
     totalCitizenLogins: 0,
@@ -41,23 +43,23 @@ const VisitorsOverview = () => {
   const statistics = [
     {
       icon: "👥",
-      title: "Total Citizen Visits",
+      title: t("admin_dashboard.visitors_total_citizen_visits"),
       value: stats.totalCitizenVisits,
-      description: "Total visits to the MyRoad India portal",
+      description: t("admin_dashboard.visitors_portal_visits_description"),
       color: "#1e40af", // Blue
     },
     {
       icon: "🔐",
-      title: "Citizen Logins",
+      title: t("admin_dashboard.visitors_citizen_logins"),
       value: stats.totalCitizenLogins,
-      description: "Total successful citizen login events",
+      description: t("admin_dashboard.visitors_successful_logins_description"),
       color: "#047857", // Green
     },
     {
       icon: "📝",
-      title: "Reported Issues",
+      title: t("admin_dashboard.visitors_reported_issues"),
       value: stats.totalReportedIssues,
-      description: "Total complaints reported by citizens",
+      description: t("admin_dashboard.visitors_reported_issues_description"),
       color: "#b45309", // Saffron / Orange
     },
   ];
@@ -65,12 +67,12 @@ const VisitorsOverview = () => {
   return (
     <section className="visitors-overview">
       <div className="visitors-overview-header">
-        <h2>Visitors Overview</h2>
-        <p>Citizen activity and reporting statistics</p>
+        <h2>{t("admin_dashboard.visitors_overview_title")}</h2>
+        <p>{t("admin_dashboard.visitors_overview_subtitle")}</p>
       </div>
 
       {loading ? (
-        <div className="visitors-loading">Loading statistics...</div>
+        <div className="visitors-loading">{t("admin_dashboard.visitors_loading_statistics")}</div>
       ) : (
         <div className="visitor-stats-grid">
           {statistics.map((item, index) => (

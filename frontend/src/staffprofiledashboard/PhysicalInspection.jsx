@@ -5,22 +5,13 @@ import StaffComplaintDetails from "./StaffComplaintDetails";
 import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 // ⚠️ KEEP IN ENGLISH: Used for internal logic/index mapping
-const stageLabels = [
-  "Action Initiated",
-  "Work In Progress",
-  "Work Completed",
-  "After-Repair Upload",
-  "Verification",
-  "Work Resolved / Closed",
-];
-
 const createInspectionForm = (complaint) => ({
   inspectionDate: complaint?.inspection?.inspectionDate || new Date().toISOString().slice(0, 16),
   completionDate: complaint?.inspection?.completionDate || "",
   remarks: complaint?.inspection?.remarks || "",
   actionTaken: complaint?.inspection?.actionTaken || "",
   sitePhoto: complaint?.inspection?.sitePhoto || "",
-  completionPhoto: complaint?.inspection?.completionPhoto || "",
+  completionPhoto: "",
   newStage: complaint?.stage ?? 0,
 });
 

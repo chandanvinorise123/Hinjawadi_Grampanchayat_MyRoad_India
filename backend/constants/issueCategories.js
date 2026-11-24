@@ -76,6 +76,17 @@ const issueCategories = {
     "Obstruction Around Bridge/Culvert",
     "Other Bridge Issue",
   ],
+
+  "Footpath Issues": [
+    "Damaged Footpath",
+    "Broken Footpath Tiles",
+    "Footpath Encroachment",
+    "Blocked Footpath",
+    "Uneven Footpath",
+    "Illegal Parking on Footpath",
+    "Footpath Obstruction",
+    "Other Footpath Issue",
+  ],
 };
 
 module.exports = issueCategories;

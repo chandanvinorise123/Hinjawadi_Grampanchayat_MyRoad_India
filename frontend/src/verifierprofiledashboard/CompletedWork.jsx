@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./CompletedWork.css";
 import ComplaintImage from "./ComplaintImage";
+import { isApprovedCompletedWork } from "../utils/completedWork";
 
 const formatDate = (value, notRecordedText = "Not recorded") => {
   if (!value) return notRecordedText;
@@ -9,74 +10,29 @@ const formatDate = (value, notRecordedText = "Not recorded") => {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
 
-const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
+const CompletedWork = ({ complaints, loadError, onBack }) => {
   const { t } = useTranslation(); // ✅ ADDED
   const notRecorded = t('completed_work.not_recorded');
 
   const [selectedItem, setSelectedItem] = useState(null);
-  const [verifierRemarks, setVerifierRemarks] = useState("");
-  const [verificationDateTime, setVerificationDateTime] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
-  // 1. Filter only "Completed Work" items
   const completedItems = useMemo(() => {
     return complaints
-      .filter((c) => c.queue === "Completed Work")
+      .filter(isApprovedCompletedWork)
       .sort((left, right) =>
         new Date(right.updatedAt || right.inspection?.completionDate || 0).getTime() -
         new Date(left.updatedAt || left.inspection?.completionDate || 0).getTime()
       );
   }, [complaints]);
 
-  // Reset form when selecting a new item
-  const handleSelectItem = (item) => {
-    setSelectedItem(item);
-    setVerifierRemarks(item.verifierRemarks || "");
-    setError("");
-    // Set default date/time to now if not already set
-    if (!item.verificationDateTime) {
-      const now = new Date();
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-      setVerificationDateTime(now.toISOString().slice(0, 16));
-    } else {
-      setVerificationDateTime(item.verificationDateTime);
-    }
-  };
+  const handleSelectItem = (item) => setSelectedItem(item);
+  const closeDetails = () => setSelectedItem(null);
 
-  // 2. Handle Approval / Rejection
-  const handleAction = async (action) => {
-    if (!verifierRemarks.trim()) {
-      setError(t('completed_work.error_remarks_required'));
-      return;
-    }
-    if (!verificationDateTime) {
-      setError(t('completed_work.error_datetime_required'));
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-    try {
-      await onVerify(selectedItem.id, action, verifierRemarks, verificationDateTime);
-      setSelectedItem(null);
-      setVerifierRemarks("");
-    } catch (saveError) {
-      setError(saveError.message || t('completed_work.error_save_decision'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const closeDetails = () => {
-    if (saving) return;
-    setSelectedItem(null);
-    setError("");
-  };
-
-  const getStatusTone = (status) => {
-    const tones = { pending: "amber", in_review: "orange", verified: "green", rejected: "red" };
-    return tones[status] || "navy";
+  const getStatusLabel = (status) => {
+    const normalizedStatus = String(status || "").trim().toLowerCase();
+    if (["verified", "approved"].includes(normalizedStatus)) return t("completed_work.approved");
+    if (normalizedStatus === "resolved") return t("completed_work.resolved");
+    return t("completed_work.closed");
   };
 
   return (
@@ -91,10 +47,10 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
         {loadError && <div className="cw-save-error" role="alert">{loadError}</div>}
         {/* Summary */}
         <div className="cw-summary">
-          <span>{t('completed_work.total_awaiting', { count: completedItems.length })}</span>
+          <span>{t('completed_work.total_approved', { count: completedItems.length })}</span>
         </div>
 
-        <section className="cw-table-panel" aria-label={t('completed_work.aria_completed_work')}>
+        <section className="cw-table-panel" aria-label={t('completed_work.aria_approved_work')}>
           <div className="cw-table-wrap">
             <table className="cw-table">
               <thead>
@@ -121,9 +77,7 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                     <td>{item.assignedStaff || t('completed_work.not_assigned')}</td>
                     <td>{formatDate(item.inspection?.completionDate || item.updatedAt, notRecorded)}</td>
                     <td>
-                      <span className={`cw-status-badge cw-status-${getStatusTone(item.status)}`}>
-                        {item.status === "pending" ? t('completed_work.awaiting_review') : (item.status || t('completed_work.awaiting_review'))}
-                      </span>
+                      <span className="cw-status-badge cw-status-green">{getStatusLabel(item.status)}</span>
                     </td>
                     <td>
                       <button className="cw-view-button" type="button" onClick={() => handleSelectItem(item)}>
@@ -158,7 +112,7 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                 <span className="cw-modal-eyebrow">{t('completed_work.modal_eyebrow')}</span>
                 <h2 id="cw-modal-title">{selectedItem.complaintNumber || t('completed_work.complaint_details')}</h2>
               </div>
-              <button type="button" className="cw-modal-close" aria-label={t('completed_work.close_details_aria')} onClick={closeDetails} disabled={saving}>×</button>
+              <button type="button" className="cw-modal-close" aria-label={t('completed_work.close_details_aria')} onClick={closeDetails}>×</button>
             </header>
 
             <div className="cw-modal-body">
@@ -237,44 +191,11 @@ const CompletedWork = ({ complaints, loadError, onBack, onVerify }) => {
                   </div>
                 )}
 
-                <div className="cw-verification-form">
-                  <h4>{t('completed_work.verifier_action')}</h4>
-                  {error && <p className="cw-save-error" role="alert">{error}</p>}
-                  <div className="cw-form-group">
-                    <label htmlFor="cw-remarks">{t('completed_work.verification_remarks_required')}</label>
-                    <textarea
-                      id="cw-remarks"
-                      rows="3"
-                      placeholder={t('completed_work.verification_remarks_placeholder')}
-                      value={verifierRemarks}
-                      onChange={(event) => setVerifierRemarks(event.target.value)}
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="cw-form-group">
-                    <label htmlFor="cw-datetime">{t('completed_work.verification_datetime_required')}</label>
-                    <input
-                      id="cw-datetime"
-                      type="datetime-local"
-                      value={verificationDateTime}
-                      onChange={(event) => setVerificationDateTime(event.target.value)}
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="cw-action-buttons">
-                    <button className="cw-btn cw-btn-reject" disabled={saving} onClick={() => handleAction("reject")}>
-                      {saving ? t('completed_work.saving') : t('completed_work.work_not_satisfied_reject')}
-                    </button>
-                    <button className="cw-btn cw-btn-approve" disabled={saving} onClick={() => handleAction("approve")}>
-                      {saving ? t('completed_work.saving') : t('completed_work.work_satisfied_approve')}
-                    </button>
-                  </div>
-                </div>
               </section>
             </div>
 
             <footer className="cw-modal-footer">
-              <button className="cw-back-btn" type="button" onClick={closeDetails} disabled={saving}>{t('completed_work.close')}</button>
+              <button className="cw-back-btn" type="button" onClick={closeDetails}>{t('completed_work.close')}</button>
             </footer>
           </section>
         </div>

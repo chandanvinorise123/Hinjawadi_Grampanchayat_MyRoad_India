@@ -30,29 +30,116 @@ export const getComplaintMapPinType = (complaint = {}) => {
   return "open";
 };
 
+export const isComplaintAwaitingVerification = (complaint = {}) => {
+  const status = String(complaint.status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  const explicitVerificationStatuses = [
+    "under verification",
+    "under review",
+    "submitted",
+    "in review",
+    "work completed",
+    "completed work",
+    "work submitted",
+    "awaiting verification",
+    "ready for verification",
+    "reverification",
+    "re verification",
+    "verification needed",
+  ];
+  if (explicitVerificationStatuses.includes(status)) return true;
+
+  const hasPreviousRejection = (Array.isArray(complaint.statusHistory)
+    ? complaint.statusHistory
+    : []
+  ).some((entry) => String(entry.status || "").trim().toLowerCase() === "rejected");
+  if (hasPreviousRejection) return false;
+
+  const activeWorkStatuses = [
+    "new",
+    "registered",
+    "complaint registered",
+    "pending",
+    "pending verification",
+    "assigned",
+    "assigned to staff/officer",
+    "under action",
+    "in action",
+    "in progress",
+    "staff work in progress",
+  ];
+  const inspection = complaint.inspection || {};
+  const hasSubmittedWork = Boolean(
+    String(inspection.completionPhoto || complaint.completionPhoto || "").trim() &&
+    String(inspection.actionTaken || complaint.actionTaken || "").trim()
+  );
+
+  return activeWorkStatuses.includes(status) && hasSubmittedWork;
+};
+
+export const isComplaintReworkRequested = (complaint = {}) => {
+  const status = String(complaint.status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  return [
+    "rejected",
+    "sent back for action",
+    "awaiting staff correction",
+    "rework requested",
+    "returned for rework",
+  ].includes(status);
+};
+
+export const getComplaintRejectionActor = (complaint = {}) => {
+  const history = Array.isArray(complaint.statusHistory)
+    ? complaint.statusHistory
+    : [];
+  const rejection = [...history].reverse().find((entry) =>
+    String(entry.status || "").trim().toLowerCase() === "rejected"
+  );
+  const actor = String(rejection?.actor || "").trim();
+  return actor && actor.toLowerCase() !== "dashboard" ? actor : "";
+};
+
+export const getComplaintMapMarkerScale = (zoom) =>
+  Math.min(1.5, Math.max(0.22, 1.25 ** (zoom - 15)));
+
 export const getComplaintMapMarkerSvg = (
   complaint,
   pinTypeOverride,
   dimensional = false,
   scale = 1
 ) => {
-  const glyph = markerGlyphForComplaint(complaint);
   const pinType = pinTypeOverride || getComplaintMapPinType(complaint);
+  const glyph = markerGlyphForComplaint(complaint);
   const pinColor = {
     open: "#e11d2e",
     assigned: "#e0a800",
     resolved: "#16803c",
+    verification: "#7c3aed",
+    rework: "#111827",
   }[pinType];
   if (dimensional) {
     const lightColor = {
       open: "#ff7580",
       assigned: "#ffe16b",
       resolved: "#62d78b",
+      verification: "#c4b5fd",
+      rework: "#6b7280",
     }[pinType];
     const darkColor = {
       open: "#a90d1c",
       assigned: "#a86e00",
       resolved: "#07552b",
+      verification: "#4c1d95",
+      rework: "#030712",
     }[pinType];
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(52 * scale)}" height="${Math.round(66 * scale)}" viewBox="0 0 52 66">

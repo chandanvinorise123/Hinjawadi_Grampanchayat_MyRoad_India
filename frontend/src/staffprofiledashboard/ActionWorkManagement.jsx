@@ -7,14 +7,19 @@ import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 const createFormData = (complaint) => ({
   actionTaken: complaint?.inspection?.actionTaken || "",
   remarks: complaint?.inspection?.remarks || "",
-  newStage: complaint?.stage ?? 0,
-  afterPhoto: complaint?.inspection?.completionPhoto || "",
+  newStage: [0, 1, 4].includes(Number(complaint?.stage)) ? String(complaint.stage) : "0",
+  afterPhoto: "",
   completionDateTime: complaint?.inspection?.completionDate || "",
 });
 
 const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
   const { t } = useTranslation(); // ✅ ADDED
-  const stageLabels = t('action_work.stage_labels', { returnObjects: true }); // ✅ ADDED for UI rendering
+  const stageLabels = t('action_work.stage_labels', { returnObjects: true });
+  const allowedStageOptions = [
+    { value: "0", label: stageLabels[0] },
+    { value: "1", label: stageLabels[1] },
+    { value: "4", label: stageLabels[4] },
+  ];
 
   const [currentComplaintId, setCurrentComplaintId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,11 +27,12 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
   const currentComplaint = complaints.find((complaint) =>
     String(complaint.id) === String(currentComplaintId)
   ) || null;
-  
   const beforeWorkPhotos = Array.isArray(currentComplaint?.citizenPhotos) && currentComplaint.citizenPhotos.length
     ? currentComplaint.citizenPhotos
-    : Array.isArray(currentComplaint?.images) ? currentComplaint.images : [];
-    
+    : Array.isArray(currentComplaint?.images)
+      ? currentComplaint.images
+      : [];
+
   const sortedComplaints = useMemo(
     () => [...complaints].sort((first, second) => {
       const firstTime = new Date(first.updatedAt || first.createdAt || 0).getTime();
@@ -149,7 +155,11 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                       <b>{complaint.issue || complaint.category || t('action_work.issue_not_specified')}</b>
                       <span className="awm-cell-note">{complaint.location || t('action_work.location_pending')}</span>
                     </td>
-                    <td><span className="awm-status-badge">{complaint.status || t('action_work.status_unavailable')}</span></td>
+                    <td><span className="awm-status-badge">
+                      {String(complaint.status || "").trim().toLowerCase() === "under action"
+                        ? t('staff_dashboard.assigned_status', 'Assigned')
+                        : complaint.status || t('action_work.status_unavailable')}
+                    </span></td>
                     <td>{complaint.updatedAt ? new Date(complaint.updatedAt).toLocaleString() : t('action_work.not_updated')}</td>
                     <td>
                       <button
@@ -198,9 +208,13 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                     <span className="awm-eyebrow">{t('action_work.complaint_information')}</span>
                     <h3>{currentComplaint.complaintNumber}</h3>
                   </div>
-                  <span className="awm-status-badge">{currentComplaint.status || t('action_work.status_unavailable')}</span>
+                  <span className="awm-status-badge">
+                    {String(currentComplaint.status || "").trim().toLowerCase() === "under action"
+                      ? t('staff_dashboard.assigned_status', 'Assigned')
+                      : currentComplaint.status || t('action_work.status_unavailable')}
+                  </span>
                 </div>
-                <StaffComplaintDetails complaint={currentComplaint} showActivity={false} />
+                <StaffComplaintDetails complaint={currentComplaint} showActivity={false} hideEvidence />
               </section>
 
               <form className="awm-form-card" onSubmit={handleSubmit}>
@@ -232,8 +246,8 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                       onChange={handleChange}
                       className="awm-status-select"
                     >
-                      {stageLabels.map((label, index) => (
-                        <option key={index} value={index}>{label}</option>
+                      {allowedStageOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
                       ))}
                     </select>
                   </div>
@@ -264,23 +278,22 @@ const ActionWorkManagement = ({ complaints, onBack, onUpdateWork }) => {
                   />
                 </div>
 
-                <div className="awm-photo-grid">
+                <div className="awm-photo-grid awm-work-photo-grid">
                   <div className="awm-field">
                     <label>{t('action_work.before_work_photo')}</label>
-                    <div className="awm-citizen-photo-list">
-                      {beforeWorkPhotos.length ? (
-                        beforeWorkPhotos.map((photo, index) => (
+                    {beforeWorkPhotos.length ? (
+                      <div className="awm-before-photo-list">
+                        {beforeWorkPhotos.map((photo, index) => (
                           <a key={`${photo}-${index}`} href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer">
                             <img className="awm-photo-preview" src={toMediaUrl(photo)} alt={`${t('action_work.complaint_photo', { index: index + 1 })}`} />
                             <span>{t('action_work.complaint_photo', { index: index + 1 })}</span>
                           </a>
-                        ))
-                      ) : (
-                        <p className="awm-no-photo">{t('action_work.no_before_work_photo')}</p>
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="awm-no-photo">{t('action_work.no_before_work_photo')}</p>
+                    )}
                   </div>
-
                   <div className="awm-field">
                     <label>{t('action_work.after_work_photo')}</label>
                     <div className="awm-photo-upload">

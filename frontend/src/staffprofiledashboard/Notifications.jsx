@@ -10,17 +10,13 @@ const Notifications = ({
   onInitialSelectionHandled,
   onBack,
   onMarkAsRead,
-  onMarkAllRead,
 }) => {
   const { t, i18n } = useTranslation();
 
-  const [filterType, setFilterType] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
   const [selectedNotif, setSelectedNotif] = useState(
     initialSelectedNotification
   );
   const [actionError, setActionError] = useState("");
-  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
   const [markingReadId, setMarkingReadId] = useState(null);
 
   const modalRef = useRef(null);
@@ -137,10 +133,6 @@ const Notifications = ({
     );
   };
 
-  const translateNotificationType = (type) => {
-    return getTypeConfig(type).label;
-  };
-
   // Close modal using Escape and prevent background scrolling.
   useEffect(() => {
     const handleEscape = (event) => {
@@ -197,17 +189,6 @@ const Notifications = ({
   // 2. Filter and sort notifications by date.
   const filteredNotifications = useMemo(() => {
     return notifications
-      .filter((notification) => {
-        const matchesType =
-          filterType === "All" || notification.type === filterType;
-
-        const matchesStatus =
-          filterStatus === "All" ||
-          (filterStatus === "Unread" && !notification.isRead) ||
-          (filterStatus === "Read" && notification.isRead);
-
-        return matchesType && matchesStatus;
-      })
       .sort((first, second) => {
         const firstTime = new Date(first.time || 0).getTime();
         const secondTime = new Date(second.time || 0).getTime();
@@ -217,19 +198,7 @@ const Notifications = ({
           (Number.isFinite(firstTime) ? firstTime : 0)
         );
       });
-  }, [notifications, filterType, filterStatus]);
-
-  const notificationTypes = useMemo(
-    () => [
-      "All",
-      ...new Set(
-        notifications
-          .map((notification) => notification.type)
-          .filter(Boolean)
-      ),
-    ],
-    [notifications]
-  );
+  }, [notifications]);
 
   const handleMarkRead = async (id) => {
     setActionError("");
@@ -244,21 +213,6 @@ const Notifications = ({
       );
     } finally {
       setMarkingReadId(null);
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    setActionError("");
-    setIsMarkingAllRead(true);
-
-    try {
-      await onMarkAllRead?.();
-    } catch (error) {
-      setActionError(
-        error?.message || t("notifications.markAllReadError")
-      );
-    } finally {
-      setIsMarkingAllRead(false);
     }
   };
 
@@ -325,62 +279,6 @@ const Notifications = ({
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Filters and actions */}
-        <div className="nt-controls">
-          <div className="nt-filter-group">
-            <span className="nt-filter-label">
-              {t("notifications.typeLabel")}
-            </span>
-
-            <div className="nt-filter-buttons">
-              {notificationTypes.map((type) => (
-                <button
-                  key={type}
-                  className={`nt-filter-btn ${
-                    filterType === type ? "active" : ""
-                  }`}
-                  onClick={() => setFilterType(type)}
-                >
-                  {type === "All"
-                    ? t("notifications.allTypes")
-                    : translateNotificationType(type)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="nt-filter-group">
-            <span className="nt-filter-label">
-              {t("notifications.statusLabel")}
-            </span>
-
-            <div className="nt-filter-buttons">
-              {["All", "Unread", "Read"].map((status) => (
-                <button
-                  key={status}
-                  className={`nt-filter-btn nt-status-btn ${
-                    filterStatus === status ? "active" : ""
-                  }`}
-                  onClick={() => setFilterStatus(status)}
-                >
-                  {t(`notifications.filter${status}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            className="nt-mark-all-btn"
-            onClick={handleMarkAllRead}
-            disabled={isMarkingAllRead || stats.unread === 0}
-          >
-            ✓{" "}
-            {isMarkingAllRead
-              ? t("notifications.markingAllRead")
-              : t("notifications.markAllAsRead")}
-          </button>
         </div>
 
         {/* Notifications table */}

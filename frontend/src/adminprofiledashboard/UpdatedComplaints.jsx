@@ -36,6 +36,22 @@ const getWorkPhotos = (complaint, t) => {
   ];
 };
 
+const isResolvedComplaint = (complaint) => {
+  const normalizedStatus = String(
+    complaint.status || complaint.complaintStatus || ""
+  ).trim().toLowerCase();
+  const resolvedStatuses = [
+    "resolved",
+    "completed",
+    "work completed",
+    "closed",
+    "complaint closed",
+  ];
+
+  return resolvedStatuses.includes(normalizedStatus) ||
+    Number(complaint.stage) >= 4;
+};
+
 const UpdatedComplaints = ({
   complaints = [],
   onBack,
@@ -43,6 +59,10 @@ const UpdatedComplaints = ({
   audienceLabel = "Staff & verifier activity",
   listTitle = "Staff & Verifier Updates",
   showUpdateHistory = true,
+  resolvedOnly = false,
+  pageTitle,
+  backToListLabel,
+  backToDashboardLabel,
 }) => {
   const { t } = useTranslation(); // ✅ ADDED
   const notRecorded = t('updated_complaints.not_recorded');
@@ -51,9 +71,15 @@ const UpdatedComplaints = ({
   const [selectedComplaintId, setSelectedComplaintId] = useState("");
 
   const updatedComplaints = useMemo(() => complaints
+    .filter((complaint) => !resolvedOnly || isResolvedComplaint(complaint))
     .map((complaint) => {
       const history = getUpdateHistory(complaint, actorRoles);
-      const latestUpdate = history[0] || null;
+      const latestUpdate = history[0] || (resolvedOnly ? {
+        id: "resolved-status",
+        actor: complaint.assignedVerifier || complaint.assignedStaff || complaint.status || "Resolved",
+        details: complaint.status || "Resolved",
+        time: complaint.inspection?.completionDate || complaint.updatedAt || complaint.createdAt || "",
+      } : null);
       return {
         complaint,
         history,
@@ -66,7 +92,7 @@ const UpdatedComplaints = ({
       };
     })
     .filter(({ latestUpdate }) => latestUpdate)
-    .sort((left, right) => right.latestTimestamp - left.latestTimestamp), [complaints, actorRoles]);
+    .sort((left, right) => right.latestTimestamp - left.latestTimestamp), [complaints, actorRoles, resolvedOnly]);
 
   const filteredComplaints = updatedComplaints.filter(({ complaint, latestUpdate }) => {
     const query = searchTerm.trim().toLowerCase();
@@ -89,11 +115,13 @@ const UpdatedComplaints = ({
     <main className="uc-shell">
       <header className="uc-header">
         <button className="uc-back-btn" type="button" onClick={selectedRecord ? () => setSelectedComplaintId("") : onBack}>
-          ← {selectedRecord ? t('updated_complaints.back_to_updated') : t('updated_complaints.back_to_dashboard')}
+          ← {selectedRecord
+            ? (backToListLabel || t('updated_complaints.back_to_updated'))
+            : (backToDashboardLabel || t('updated_complaints.back_to_dashboard'))}
         </button>
         <div>
           <span className="uc-eyebrow">{audienceLabel}</span>
-          <h1>{selectedRecord ? t('updated_complaints.updated_complaint_details') : t('updated_complaints.updated_complaints')}</h1>
+          <h1>{selectedRecord ? (pageTitle || t('updated_complaints.updated_complaint_details')) : (pageTitle || t('updated_complaints.updated_complaints'))}</h1>
           <p>
             {selectedRecord
               ? selectedRecord.complaint.complaintNumber

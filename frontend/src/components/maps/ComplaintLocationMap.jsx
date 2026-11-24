@@ -6,22 +6,43 @@ import { getComplaintMapMarkerSvg } from "./complaintMapMarker";
 import "./ComplaintLocationMap.css";
 import "leaflet/dist/leaflet.css";
 
+const getPhotoPath = (photo) =>
+  typeof photo === "string"
+    ? photo
+    : photo?.url || photo?.path || photo?.imageUrl || "";
+
+const firstPhotoPath = (...photos) =>
+  photos.map(getPhotoPath).find(Boolean) || "";
+
 const ComplaintLocationMap = ({ complaint, position }) => {
-  const images = Array.isArray(complaint.images)
-    ? complaint.images
-    : Array.isArray(complaint.citizenPhotos)
-      ? complaint.citizenPhotos
-      : [];
-  const beforePhoto =
-    complaint.inspection?.sitePhoto ||
-    complaint.photos?.site ||
-    complaint.photos?.before ||
-    images[0] ||
-    "";
-  const afterPhoto =
-    complaint.inspection?.completionPhoto ||
-    complaint.photos?.after ||
-    "";
+  const photoRecord =
+    complaint.photos && typeof complaint.photos === "object" && !Array.isArray(complaint.photos)
+      ? complaint.photos
+      : {};
+  const photoSources = [
+    ...(Array.isArray(complaint.images) ? complaint.images : []),
+    ...(Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : []),
+    ...(Array.isArray(complaint.photos)
+      ? complaint.photos
+      : Object.values(photoRecord)),
+  ];
+  const images = [...new Set(photoSources
+    .map(getPhotoPath)
+    .filter(Boolean))];
+  const beforePhoto = firstPhotoPath(
+    complaint.inspection?.sitePhoto,
+    complaint.sitePhoto,
+    complaint.beforePhoto,
+    photoRecord.site,
+    photoRecord.before,
+    images[0]
+  );
+  const afterPhoto = firstPhotoPath(
+    complaint.inspection?.completionPhoto,
+    complaint.completionPhoto,
+    complaint.afterPhoto,
+    photoRecord.after
+  );
   const evidencePhotos = [...new Set(images)].filter(
     (photo) => photo && photo !== beforePhoto && photo !== afterPhoto
   );

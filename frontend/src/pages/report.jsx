@@ -100,6 +100,19 @@ const categories = [
     ],
   },
   {
+    title: "Footpath Issues",
+    issues: [
+      "Damaged Footpath",
+      "Broken Footpath Tiles",
+      "Footpath Encroachment",
+      "Blocked Footpath",
+      "Uneven Footpath",
+      "Illegal Parking on Footpath",
+      "Footpath Obstruction",
+      "Other Footpath Issue",
+    ],
+  },
+  {
     title: "Garbage Issues",
     issues: [
       "Garbage Accumulation",

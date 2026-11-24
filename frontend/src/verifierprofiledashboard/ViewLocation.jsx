@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import "./ViewLocation.css";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import ComplaintImage from "./ComplaintImage";
-import ComplaintMapInfoWindow from "../components/maps/ComplaintMapInfoWindow";
-import { getComplaintMapMarkerIcon } from "../components/maps/complaintMapMarker";
+import DashboardComplaintsMap from "../components/maps/DashboardComplaintsMap";
+import { isComplaintAwaitingVerification } from "../components/maps/complaintMapMarker";
 import VerifierDecisionForm from "./VerifierDecisionForm";
 import NotificationComplaintActions from "./NotificationComplaintActions";
+import ComplaintMapPdfActions from "../components/maps/ComplaintMapPdfActions";
 
 const getMapPosition = (complaint) => {
   const latitudeValue = complaint?.coordinates?.latitude ?? complaint?.coordinates?.lat;
@@ -23,21 +24,20 @@ const getMapPosition = (complaint) => {
 const ViewLocation = ({
   complaints,
   staffOptions,
+  staffOptionsLoading = false,
+  staffLoadError = "",
   onBack,
   onVerify,
   onAcceptAssign,
   onReject,
   onAssign,
+  onGeneratePdf,
+  onShareMarathiPdf,
+  pdfGeneratingId = "",
 }) => {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState(complaints[0]?.id || null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showMapInfo, setShowMapInfo] = useState(false);
-  const [mapInstance, setMapInstance] = useState(null);
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries: ["places"],
-  });
 
   // Filter complaints based on search
   const filteredComplaints = useMemo(() => {
@@ -54,24 +54,49 @@ const ViewLocation = ({
       .filter((item) => item.position),
     [filteredComplaints]
   );
+  const dashboardMapComplaints = useMemo(
+    () => mappedComplaints.map(({ complaint, position }) => ({
+      ...complaint,
+      lat: position.lat,
+      lng: position.lng,
+    })),
+    [mappedComplaints]
+  );
   const coords = getMapPosition(selectedItem);
   const mapCenter = coords || mappedComplaints[0]?.position;
-
-  useEffect(() => {
-    if (!mapInstance || !mappedComplaints.length || !window.google?.maps) return;
-    const bounds = new window.google.maps.LatLngBounds();
-    mappedComplaints.forEach(({ position }) => bounds.extend(position));
-    if (mappedComplaints.length === 1) {
-      mapInstance.setCenter(mappedComplaints[0].position);
-      mapInstance.setZoom(16);
-    } else {
-      mapInstance.fitBounds(bounds, 40);
-    }
-  }, [mapInstance, mappedComplaints]);
   
   const externalMapUrl = coords
     ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
     : "";
+  const renderMapPopupActions = (complaint) => (
+    <div className="verifier-map-popup-actions">
+      {!isComplaintAwaitingVerification(complaint) && (
+        <NotificationComplaintActions
+          key={`${complaint.id}-map-assignment`}
+          idPrefix={`map-${complaint.id}`}
+          complaint={complaint}
+          staffOptions={staffOptions}
+          staffOptionsLoading={staffOptionsLoading}
+          staffLoadError={staffLoadError}
+          onAcceptAssign={onAcceptAssign}
+          onReject={onReject}
+          onAssign={onAssign}
+        />
+      )}
+      <VerifierDecisionForm
+        key={`${complaint.id}-map-verification`}
+        complaint={complaint}
+        onVerify={onVerify}
+      />
+      <ComplaintMapPdfActions
+        complaint={complaint}
+        onGeneratePdf={onGeneratePdf}
+        onShareMarathiPdf={onShareMarathiPdf}
+        generatingId={pdfGeneratingId}
+        translate={t}
+      />
+    </div>
+  );
   return (
     <div className="vl-shell">
       {/* Header */}
@@ -102,7 +127,6 @@ const ViewLocation = ({
                   className={`vl-list-item ${selectedItem?.id === c.id ? "active" : ""}`}
                   onClick={() => {
                     setSelectedId(c.id);
-                    setShowMapInfo(false);
                   }}
                 >
                   <div className="vl-item-number">{c.complaintNumber}</div>
@@ -134,46 +158,25 @@ const ViewLocation = ({
                     <span className="vl-external-map-btn vl-map-unavailable">No map coordinates</span>
                   )}
                 </div>
+                <div className="vl-map-verification-legend">
+                  <i className="verification-map-legend-pin" aria-hidden="true" />
+                  <span>{t("admin_dashboard.map_verification_pins_legend")}</span>
+                  <i className="rework-map-legend-pin" aria-hidden="true" />
+                  <span>{t("admin_dashboard.map_rework_pins_legend")}</span>
+                </div>
                 <div className="vl-map-container">
-                  {mappedComplaints.length > 0 ? (
-                    loadError ? (
-                      <div>No map could be loaded. Check the Google Maps API key and network connection.</div>
-                    ) : !isLoaded ? (
-                      <div>Loading map...</div>
-                    ) : (
-                      <GoogleMap
-                        mapContainerStyle={{ width: "100%", height: "100%" }}
-                        center={mapCenter}
-                        zoom={mappedComplaints.length === 1 ? 16 : 12}
-                        onLoad={setMapInstance}
-                        onUnmount={() => setMapInstance(null)}
-                        options={{
-                          streetViewControl: false,
-                          mapTypeControl: false,
-                          fullscreenControl: true,
-                        }}
-                      >
-                        {mappedComplaints.map(({ complaint, position }) => (
-                          <Marker
-                            key={complaint.id}
-                            position={position}
-                            icon={getComplaintMapMarkerIcon(complaint)}
-                            title={`${complaint.complaintNumber} — ${complaint.location || "Complaint location"}`}
-                            onClick={() => {
-                              setSelectedId(complaint.id);
-                              setShowMapInfo(true);
-                            }}
-                          />
-                        ))}
-                        {showMapInfo && selectedItem && coords && (
-                          <ComplaintMapInfoWindow
-                            complaint={selectedItem}
-                            position={coords}
-                            onClose={() => setShowMapInfo(false)}
-                          />
-                        )}
-                      </GoogleMap>
-                    )
+                  {dashboardMapComplaints.length > 0 ? (
+                    <DashboardComplaintsMap
+                      complaints={dashboardMapComplaints}
+                      center={mapCenter}
+                      translate={t}
+                      selectedComplaintId={selectedId}
+                      onComplaintSelect={(complaint) => setSelectedId(complaint.id)}
+                      largePopup
+                      highlightVerificationRequests
+                      highlightReworkRequests
+                      renderPopupActions={renderMapPopupActions}
+                    />
                   ) : (
                     <div>No complaints with valid coordinates match this search.</div>
                   )}

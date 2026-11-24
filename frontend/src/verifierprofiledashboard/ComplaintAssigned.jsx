@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next"; // ✅ ADDED
-import ComplaintImage from "./ComplaintImage";
 import VerifierComplaintDetails from "./VerifierComplaintDetails";
 import { uploadDashboardPhoto } from "../utils/dashboardApi";
 import logo from "../assets/logo.jpeg";
@@ -177,7 +176,9 @@ const ComplaintAssigned = ({
     <div className="vd-shell">
       <aside className="vd-sidebar">
         <div className="vd-sb-brand">
-          <div className="vd-sb-logo"><img src={logo} alt={t('complaint_assigned.brand')} /></div>
+          <a href="https://myroadindia.com/" target="_blank" rel="noopener noreferrer" className="vd-sb-logo" aria-label="MyRoad India website">
+            <img src={logo} alt={t('complaint_assigned.brand')} />
+          </a>
           <div>
             <b>{t('complaint_assigned.brand')}</b>
             <span>{t('complaint_assigned.portal')}</span>
@@ -298,48 +299,33 @@ const ComplaintAssigned = ({
               </div>
               <button type="button" aria-label={t('complaint_assigned.close_details_aria')} onClick={closeDetails}>×</button>
             </header>
-            <div className="cm-modal-body">
-              <div className="cm-detail-column cm-detail-primary">
-                <div className="cm-summary-grid">
-                  <div><span>{t('complaint_assigned.issue')}</span><b>{selectedComplaint.issue || selectedComplaint.category || t('complaint_assigned.not_specified')}</b></div>
-                  <div><span>{t('complaint_assigned.priority')}</span><b>{selectedComplaint.priority || t('complaint_assigned.normal')}</b></div>
-                  <div><span>{t('complaint_assigned.status')}</span><b>{formatStatus(selectedComplaint.status, t)}</b></div>
-                  <div><span>{t('complaint_assigned.queue')}</span><b>{selectedComplaint.queue || t('complaint_assigned.not_assigned')}</b></div>
-                  <div className="cm-wide"><span>{t('complaint_assigned.description')}</span><b>{selectedComplaint.description || t('complaint_assigned.no_description_provided')}</b></div>
-                </div>
-
-                <section className="cm-evidence">
-                  <div className="cm-section-heading">
-                    <div>
-                      <span className="cm-section-kicker">{t('complaint_assigned.visual_evidence')}</span>
-                      <h3>{t('complaint_assigned.complaint_verification_images')}</h3>
-                    </div>
-                    <span className="cm-image-count">
-                      {[
-                        selectedComplaint.photos?.before,
-                        selectedComplaint.photos?.site,
-                        selectedComplaint.photos?.after,
-                        evidencePhoto,
-                      ].filter(Boolean).length} {t('complaint_assigned.photos')}
-                    </span>
-                  </div>
-                  <div className="cm-images">
-                    {[
-                      [t('complaint_assigned.before_repair'), selectedComplaint.photos?.before],
-                      [t('complaint_assigned.site_photo'), selectedComplaint.photos?.site],
-                      [t('complaint_assigned.after_repair'), selectedComplaint.photos?.after],
-                      [t('complaint_assigned.verifier_image'), evidencePhoto],
-                    ].filter(([, url]) => url).map(([label, url]) => (
-                      <figure key={label}>
-                        <ComplaintImage src={url} alt={label} />
-                        <figcaption>{label}</figcaption>
-                      </figure>
-                    ))}
-                    {!selectedComplaint.photos?.before &&
-                      !selectedComplaint.photos?.site &&
-                      !selectedComplaint.photos?.after &&
-                      !evidencePhoto && <p className="cm-no-images">{t('complaint_assigned.no_images_uploaded')}</p>}
-                  </div>
+            <div className="cm-modal-body cm-two-section-body">
+              <VerifierComplaintDetails
+                complaint={selectedComplaint}
+                summaryDetails={[
+                  [
+                    t('complaint_assigned.issue'),
+                    selectedComplaint.issue || selectedComplaint.category || t('complaint_assigned.not_specified'),
+                  ],
+                  [t('complaint_assigned.status'), formatStatus(selectedComplaint.status, t)],
+                ]}
+                complaintPhotos={[
+                  [t('complaint_assigned.before_repair'), selectedComplaint.photos?.before],
+                  [t('complaint_assigned.site_photo'), selectedComplaint.photos?.site],
+                  [t('complaint_assigned.after_repair'), selectedComplaint.photos?.after],
+                  [t('complaint_assigned.verifier_image'), evidencePhoto],
+                  [
+                    t('verifier_complaint_details.physical_verification_evidence'),
+                    selectedComplaint.photos?.verification,
+                  ],
+                ]}
+                photosTitle={t('complaint_assigned.complaint_verification_images')}
+                photosCountLabel={t('complaint_assigned.photos')}
+                photosEmptyText={t('complaint_assigned.no_images_uploaded')}
+                showVerificationPhoto={false}
+              >
+                <div className="cm-inline-actions">
+                  {error && <p className="cm-error" role="alert">{error}</p>}
                   <label className="cm-upload">
                     {uploadingPhoto ? t('complaint_assigned.uploading_verifier_image') : t('complaint_assigned.add_optional_verifier_image')}
                     <input
@@ -349,63 +335,52 @@ const ComplaintAssigned = ({
                       onChange={handlePhotoUpload}
                     />
                   </label>
-                </section>
-              </div>
-              <div className="cm-detail-column cm-detail-secondary">
-                <VerifierComplaintDetails complaint={selectedComplaint} />
-
-                {["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
-                  <section className="cm-actions">
-                    <div className="cm-section-heading">
-                      <div>
-                        <span className="cm-section-kicker">{t('complaint_assigned.next_step')}</span>
-                        <h3>{t('complaint_assigned.review_assignment')}</h3>
-                      </div>
-                    </div>
-                    {error && <p className="cm-error" role="alert">{error}</p>}
-                    <label htmlFor="cm-staff">{t('complaint_assigned.assign_staff')}</label>
-                    <select
-                      id="cm-staff"
-                      value={staffId}
-                      disabled={saving || uploadingPhoto}
-                      onChange={(event) => setStaffId(event.target.value)}
-                    >
-                      <option value="">{t('complaint_assigned.select_staff_member')}</option>
-                      {staffOptions.map((staff) => (
-                        <option key={staff._id} value={staff._id}>
-                          {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedComplaint.status === "pending" && (
-                      <>
-                        <label htmlFor="cm-remarks">{t('complaint_assigned.rejection_remarks')}</label>
-                        <textarea
-                          id="cm-remarks"
-                          rows="3"
-                          value={remarks}
-                          disabled={saving || uploadingPhoto}
-                          onChange={(event) => setRemarks(event.target.value)}
-                          placeholder={t('complaint_assigned.explain_rejection')}
-                        />
-                      </>
-                    )}
-                    <div className="cm-action-buttons">
-                      {selectedComplaint.status === "pending" ? (
+                  {["pending", "in_action"].includes(selectedComplaint.status) ||
+                    (selectedComplaint.status === "rejected" &&
+                      !selectedComplaint.assignedStaff &&
+                      !selectedComplaint.assignedStaffId) ? (
+                    <>
+                      <label htmlFor="cm-staff">{t('complaint_assigned.assign_staff')}</label>
+                      <select
+                        id="cm-staff"
+                        value={staffId}
+                        disabled={saving || uploadingPhoto}
+                        onChange={(event) => setStaffId(event.target.value)}
+                      >
+                        <option value="">{t('complaint_assigned.select_staff_member')}</option>
+                        {staffOptions.map((staff) => (
+                          <option key={staff._id} value={staff._id}>
+                            {staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedComplaint.status === "pending" && (
                         <>
-                          <button type="button" className="vd-btn-danger" disabled={saving || uploadingPhoto} onClick={() => handleDecision("reject")}>{t('complaint_assigned.reject_complaint')}</button>
-                          <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={() => handleDecision("accept")}>{saving ? t('complaint_assigned.saving') : t('complaint_assigned.accept_assign')}</button>
+                          <label htmlFor="cm-remarks">{t('complaint_assigned.rejection_remarks')}</label>
+                          <textarea
+                            id="cm-remarks"
+                            rows="3"
+                            value={remarks}
+                            disabled={saving || uploadingPhoto}
+                            onChange={(event) => setRemarks(event.target.value)}
+                            placeholder={t('complaint_assigned.explain_rejection')}
+                          />
                         </>
-                      ) : (
-                        <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={handleStaffAssignment}>{saving ? t('complaint_assigned.saving') : t('complaint_assigned.assign_reassign_staff')}</button>
                       )}
-                    </div>
-                  </section>
-                )}
-                {error && !["pending", "in_action", "rejected"].includes(selectedComplaint.status) && (
-                  <p className="cm-error" role="alert">{error}</p>
-                )}
-              </div>
+                      <div className="cm-action-buttons">
+                        {selectedComplaint.status === "pending" ? (
+                          <>
+                            <button type="button" className="vd-btn-danger" disabled={saving || uploadingPhoto} onClick={() => handleDecision("reject")}>{t('complaint_assigned.reject_complaint')}</button>
+                            <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={() => handleDecision("accept")}>{saving ? t('complaint_assigned.saving') : t('complaint_assigned.accept_assign')}</button>
+                          </>
+                        ) : (
+                          <button type="button" className="vd-btn-primary" disabled={saving || uploadingPhoto} onClick={handleStaffAssignment}>{saving ? t('complaint_assigned.saving') : selectedComplaint.status === "rejected" ? t('complaint_assigned.assign_staff') : t('complaint_assigned.assign_reassign_staff')}</button>
+                        )}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </VerifierComplaintDetails>
             </div>
             <footer className="cm-modal-footer">
               <button type="button" className="vd-btn-outline" onClick={closeDetails}>{t('complaint_assigned.close')}</button>

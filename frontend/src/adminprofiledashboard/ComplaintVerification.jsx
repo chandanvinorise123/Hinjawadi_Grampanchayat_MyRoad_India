@@ -4,7 +4,23 @@ import "./ComplaintVerification.css";
 import { fetchDashboard, getStoredUser, getUserId, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
 
 // ✅ Keep as translation keys to safely translate UI while preserving internal logic
-const WORKFLOW_STEP_KEYS = ["work_started", "under_working", "under_verification", "verified", "work_completed"];
+const WORKFLOW_STEP_KEYS = ["work_started", "under_working", "under_verification", "work_completed"];
+const isAwaitingVerification = (complaint) => {
+  const status = String(complaint?.status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+  return [
+    "under verification",
+    "under review",
+    "submitted",
+    "work completed",
+    "completed work",
+    "awaiting verification",
+    "ready for verification",
+  ].includes(status);
+};
 
 const ComplaintVerification = ({ onBack }) => {
   const { t } = useTranslation(); // ✅ ADDED
@@ -19,7 +35,7 @@ const ComplaintVerification = ({ onBack }) => {
   useEffect(() => {
     fetchDashboard("admin", getUserId(getStoredUser()))
       .then(({ complaints: loaded = [] }) => setComplaints(loaded
-        .filter((complaint) => ["Under Verification", "Verified", "Resolved", "Closed", "Rejected"].includes(complaint.status))
+        .filter(isAwaitingVerification)
         .map((complaint) => {
           const inspection = complaint.inspection || {};
           const images = (complaint.images || []).map((image) =>
@@ -38,7 +54,7 @@ const ComplaintVerification = ({ onBack }) => {
           );
           return {
             ...complaint,
-            currentStep: { "Under Action": 1, "Under Verification": 3, Verified: 4, Resolved: 5, Closed: 5, Rejected: 2 }[complaint.status] || 0,
+            currentStep: 3,
             issue: complaint.issue || complaint.issueType,
             staffName: complaint.assignedStaff || t('complaint_verification.unassigned'),
             workDetails: complaint.inspection?.actionTaken || complaint.description,
@@ -57,7 +73,7 @@ const ComplaintVerification = ({ onBack }) => {
   const stats = useMemo(() => ({
     pending: complaints.filter(c => c.currentStep === 3).length,
     verified: complaints.filter(c => c.currentStep === 4).length,
-    completed: complaints.filter(c => c.currentStep === 5).length,
+    completed: 0,
     returned: complaints.filter(c => c.status === "Rejected" || c.status === "Under Action").length
   }), [complaints]);
 
@@ -76,21 +92,11 @@ const ComplaintVerification = ({ onBack }) => {
     }
     setSavingAction(true);
     try {
-      const result = await updateDashboardComplaint(selectedComplaint.id, {
+      await updateDashboardComplaint(selectedComplaint.id, {
         status: "Closed",
         remarks: verifierRemarks.trim(),
       });
-      const updatedComplaint = result.complaint;
-      setComplaints((current) => current.map((complaint) =>
-        complaint.id === selectedComplaint.id
-          ? {
-              ...complaint,
-              ...updatedComplaint,
-              currentStep: 5,
-              remarks: verifierRemarks.trim(),
-            }
-          : complaint
-      ));
+      setComplaints((current) => current.filter((complaint) => complaint.id !== selectedComplaint.id));
     } catch (error) {
       console.error("Failed to close complaint:", error);
       showMessage("error", error.message || t('complaint_verification.msg_unable_verify_close'));
@@ -122,16 +128,7 @@ const ComplaintVerification = ({ onBack }) => {
     } finally {
       setSavingAction(false);
     }
-    setComplaints((current) => current.map((complaint) =>
-      complaint.id === selectedComplaint.id
-        ? {
-            ...complaint,
-            currentStep: 2,
-            remarks: `${t('complaint_verification.returned_prefix')}: ${verifierRemarks.trim()}`,
-            status: "Under Action",
-          }
-        : complaint
-    ));
+    setComplaints((current) => current.filter((complaint) => complaint.id !== selectedComplaint.id));
     setIsModalOpen(false);
     showMessage("success", t('complaint_verification.msg_returned_success'));
   };
@@ -252,7 +249,7 @@ const ComplaintVerification = ({ onBack }) => {
             </div>
 
             <div className="cv-modal-footer">
-              {["Under Verification", "Verified"].includes(selectedComplaint.status) ? (
+              {isAwaitingVerification(selectedComplaint) ? (
                 <>
                   <button
                     className="cv-btn-return"

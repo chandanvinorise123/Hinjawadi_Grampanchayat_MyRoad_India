@@ -114,7 +114,6 @@ const ReportedImagesSection = ({ onOpenImage }) => {
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState("");
   const [openCommentCardKey, setOpenCommentCardKey] = useState(null);
-  const [photoViews, setPhotoViews] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [pendingActions, setPendingActions] = useState(() => new Set());
   const [tickerIndex, setTickerIndex] = useState(0);
@@ -190,7 +189,13 @@ const ReportedImagesSection = ({ onOpenImage }) => {
             throw new Error(data.message || `Feed request failed (${response.status})`);
           }
           if (active) {
-            setImages(data.images || []);
+            setImages(
+              (data.images || []).filter((image) =>
+                ["resolved", "closed"].includes(
+                  String(image.status || "").trim().toLowerCase()
+                )
+              )
+            );
             setStatusCounts(data.statusCounts || {
               registered: 0,
               assigned: 0,
@@ -439,72 +444,66 @@ const ReportedImagesSection = ({ onOpenImage }) => {
                   ["verified", "resolved", "closed"].includes(
                     String(image.status || "").toLowerCase()
                   );
-                const showAfterPhoto =
-                  showBeforeAfter && photoViews[image.id] === "after";
-                const photoUrl = showAfterPhoto
-                  ? image.afterImageUrl
-                  : image.imageUrl;
-                const photoAlt = showAfterPhoto
-                  ? t("blog.liveUpdates.afterImageAlt", {
-                      issue: image.issueType || image.category || t("blog.liveUpdates.reportedIssue"),
-                      location: image.location || "Hinjawadi",
-                    })
-                  : t("blog.liveUpdates.imageAlt", {
-                      issue: image.issueType || image.category || t("blog.liveUpdates.reportedIssue"),
-                      location: image.location || "Hinjawadi",
-                    });
+                const issueLabel = image.issueType || image.category || t("blog.liveUpdates.reportedIssue");
+                const locationLabel = image.location || "Hinjawadi";
+                const beforePhotoAlt = t("blog.liveUpdates.imageAlt", {
+                  issue: issueLabel,
+                  location: locationLabel,
+                });
+                const afterPhotoAlt = t("blog.liveUpdates.afterImageAlt", {
+                  issue: issueLabel,
+                  location: locationLabel,
+                });
                 return (
                 <article
                   className="reported-image-card"
                   key={`${image.id}-${isDuplicate ? "copy" : "original"}`}
                   aria-hidden={isDuplicate}
                 >
-                <div className="reported-image-wrap">
-                  <div className="reported-photo-panel">
-                    <img
-                      src={toMediaUrl(photoUrl)}
-                      alt={photoAlt}
-                      loading="lazy"
-                      role="button"
+                <div className={`reported-image-wrap${showBeforeAfter ? " reported-image-wrap-split" : ""}`}>
+                  {showBeforeAfter ? (
+                    <>
+                      <button
+                        type="button"
+                        className="reported-photo-panel reported-photo-half"
+                        aria-label={`${t("blog.liveUpdates.previewImage")}: ${t("blog.liveUpdates.beforePhoto")}`}
+                        tabIndex={isDuplicate ? -1 : 0}
+                        onClick={() => onOpenImage({
+                          src: toMediaUrl(image.imageUrl),
+                          alt: beforePhotoAlt,
+                        })}
+                      >
+                        <img src={toMediaUrl(image.imageUrl)} alt={beforePhotoAlt} loading="lazy" />
+                        <span className="reported-photo-label">{t("blog.liveUpdates.beforePhoto")}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="reported-photo-panel reported-photo-half"
+                        aria-label={`${t("blog.liveUpdates.previewImage")}: ${t("blog.liveUpdates.afterPhoto")}`}
+                        tabIndex={isDuplicate ? -1 : 0}
+                        onClick={() => onOpenImage({
+                          src: toMediaUrl(image.afterImageUrl),
+                          alt: afterPhotoAlt,
+                        })}
+                      >
+                        <img src={toMediaUrl(image.afterImageUrl)} alt={afterPhotoAlt} loading="lazy" />
+                        <span className="reported-photo-label">{t("blog.liveUpdates.afterPhoto")}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="reported-photo-panel"
                       aria-label={t("blog.liveUpdates.previewImage")}
                       tabIndex={isDuplicate ? -1 : 0}
                       onClick={() => onOpenImage({
-                        src: toMediaUrl(photoUrl),
-                        alt: photoAlt,
+                        src: toMediaUrl(image.imageUrl),
+                        alt: beforePhotoAlt,
                       })}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          onOpenImage({
-                            src: toMediaUrl(photoUrl),
-                            alt: photoAlt,
-                          });
-                        }
-                      }}
-                    />
-                    {showBeforeAfter && (
-                      <div className="reported-photo-switch" role="group" aria-label={t("blog.liveUpdates.photoViewLabel")}>
-                        <button
-                          type="button"
-                          className={!showAfterPhoto ? "active" : ""}
-                          aria-pressed={!showAfterPhoto}
-                          tabIndex={isDuplicate ? -1 : undefined}
-                          onClick={() => setPhotoViews((current) => ({ ...current, [image.id]: "before" }))}
-                        >
-                          {t("blog.liveUpdates.beforePhoto")}
-                        </button>
-                        <button
-                          type="button"
-                          className={showAfterPhoto ? "active" : ""}
-                          aria-pressed={showAfterPhoto}
-                          tabIndex={isDuplicate ? -1 : undefined}
-                          onClick={() => setPhotoViews((current) => ({ ...current, [image.id]: "after" }))}
-                        >
-                          {t("blog.liveUpdates.afterPhoto")}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    >
+                      <img src={toMediaUrl(image.imageUrl)} alt={beforePhotoAlt} loading="lazy" />
+                    </button>
+                  )}
                   <span className={`reported-status status-${String(image.status || "new").toLowerCase().replace(/[^a-z]+/g, "-")}`}>
                     {image.status || "New"}
                   </span>

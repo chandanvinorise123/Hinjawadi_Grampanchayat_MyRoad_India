@@ -284,9 +284,27 @@
 
 .awm-update-layout {
   display: grid;
-  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   align-items: start;
-  gap: 22px;
+  gap: 14px;
+}
+.awm-after-photo-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+.awm-work-photo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.awm-before-photo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.awm-before-photo-list a {
+  min-width: 0;
+  color: #3d4d62;
+  font-size: 11px;
+  text-decoration: none;
 }
 
 .awm-list-back-btn {
@@ -315,18 +333,18 @@
 
 .awm-details-card {
   overflow: hidden;
-  padding-bottom: 22px;
+  padding-bottom: 12px;
 }
 
 .awm-section-heading {
-  min-height: 86px;
-  padding: 20px 24px;
+  min-height: 58px;
+  padding: 12px 16px;
   border-bottom: 1px solid #edf1f5;
 }
 
 .awm-details-card .scd-panel {
-  gap: 20px;
-  padding: 20px 24px 0;
+  gap: 10px;
+  padding: 12px 16px 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -339,12 +357,12 @@
 
 .awm-details-card .scd-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 20px;
+  column-gap: 12px;
   row-gap: 0;
 }
 
 .awm-details-card .scd-item {
-  padding: 11px 0;
+  padding: 6px 0;
   border: 0;
   border-bottom: 1px solid #edf1f5;
   border-radius: 0;
@@ -352,7 +370,7 @@
 }
 
 .awm-details-card .scd-item > span {
-  margin-bottom: 5px;
+  margin-bottom: 2px;
   color: #718096;
   font-size: 10px;
   letter-spacing: .075em;
@@ -361,8 +379,8 @@
 .awm-details-card .scd-item b,
 .awm-details-card .scd-item p {
   color: #26364a;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 11.5px;
+  line-height: 1.35;
 }
 
 .awm-details-card .scd-wide {
@@ -370,7 +388,7 @@
 }
 
 .awm-details-card .scd-evidence-section {
-  padding: 17px 0 0;
+  padding: 8px 0 0;
   border: 0;
   border-top: 1px solid #edf1f5;
   border-radius: 0;
@@ -378,9 +396,9 @@
 }
 
 .awm-details-card .scd-evidence-section > h4 {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   color: var(--awm-navy);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -406,23 +424,23 @@
 
 .awm-form-card {
   min-width: 0;
-  padding: clamp(20px, 3vw, 32px);
+  padding: 18px 20px;
 }
 
 .awm-form-header {
-  margin-bottom: 24px;
-  padding-bottom: 18px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--awm-line);
 }
 
 .awm-form-header h3 {
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .awm-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 12px;
 }
 
 .awm-photo-grid {
@@ -435,24 +453,25 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 
 .awm-field label {
   color: #3d4d62;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
 }
 
 .awm-field input,
 .awm-field textarea,
 .awm-status-select {
-  padding: 12px 14px;
+  padding: 8px 10px;
+  font-size: 12px;
 }
 
 .awm-field textarea {
-  min-height: 100px;
+  min-height: 72px;
   resize: vertical;
   line-height: 1.55;
 }
@@ -497,8 +516,8 @@
 
 .awm-photo-preview {
   width: 100%;
-  max-height: 230px;
-  margin-top: 10px;
+  max-height: 150px;
+  margin-top: 6px;
   border: 1px solid var(--awm-line);
   border-radius: 11px;
   background: #f5f7fa;

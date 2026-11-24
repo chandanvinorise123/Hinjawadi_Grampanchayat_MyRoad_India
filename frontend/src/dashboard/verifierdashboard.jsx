@@ -15,7 +15,8 @@ import {
 import { Bar, Doughnut, Line, Pie } from "react-chartjs-2";
 import "./verifierdashboard.css";
 import logo from "../assets/logo.jpeg";
-import { fetchDashboard, fetchDashboardUsers, getStoredUser, getUserId, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
+import { fetchDashboard, fetchDashboardUsers, getStoredUser, getUserId, normalizeStaffOptions, updateDashboardComplaint, updateDashboardProfile, markDashboardNotificationRead, toMediaUrl } from "../utils/dashboardApi";
+import { isApprovedCompletedWork } from "../utils/completedWork";
 
 import MyProfile from "../verifierprofiledashboard/MyProfile";
 import NewComplaints from "../verifierprofiledashboard/NewComplaints";
@@ -29,6 +30,18 @@ import UpdatedComplaints from "../adminprofiledashboard/UpdatedComplaints";
 import Notifications from "../verifierprofiledashboard/Notifications";
 import ViewLocation from "../verifierprofiledashboard/ViewLocation";
 import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
+import {
+  generateComplaintPdf as generateAdminComplaintPdf,
+  getComplaintPdfType,
+} from "./admindashboard.jsx";
+import AdminComplaintsMap from "../components/maps/AdminComplaintsMap";
+import {
+  getComplaintMapPinType,
+  isComplaintAwaitingVerification,
+  isComplaintReworkRequested,
+} from "../components/maps/complaintMapMarker";
+import { isWithinReportedRange } from "../components/maps/homeComplaintMapFilters";
+import { getComplaintTableStatus, getComplaintTableStatusTone } from "../utils/complaintTableStatus";
 
 ChartJS.register(
   ArcElement, BarElement, CategoryScale, Legend, LinearScale, LineElement, PointElement, Tooltip
@@ -59,10 +72,10 @@ const statusTone = {
   verified: "green", resolved: "green", notified: "green", rejected: "red",
 };
 
-const queueTone = {
-  "New Complaints": "navy", "Staff Work in Progress": "orange", "Completed Work": "orange",
-  "Awaiting Staff Correction": "red", "Re-verification": "red", "Resolution Requests": "amber", "Resolved / Closed": "green"
-};
+const INITIAL_COMPLAINT_TABLE_ROWS = 5;
+const priorityOptions = ["Critical", "Urgent", "Normal"];
+const mapStatusOptions = ["New", "Assigned", "Under Verification", "Resolved", "Rejected"];
+const defaultMapCenter = { lat: 18.5913, lng: 73.7389 };
 
 // ✅ NEW: sidebar keys that live inside the single "Complaints" dropdown
 const complaintNavKeys = [
@@ -104,7 +117,10 @@ const mapVerifierComplaint = (complaint) => {
   const latestStatusEntry = history[history.length - 1];
   const staffSubmittedResolvedWork = Boolean(latestStatusEntry && /\bstaff\b/i.test(String(latestStatusEntry.actor || "")) && ["resolved", "closed"].includes(historyStatus(latestStatusEntry)) && hasSubmittedWork);
   
-  if (staffSubmittedResolvedWork || (["in_action", "pending"].includes(status) && hasSubmittedWork)) status = "in_review";
+  if (
+    staffSubmittedResolvedWork ||
+    (["in_action", "pending"].includes(status) && hasSubmittedWork && !wasRejected)
+  ) status = "in_review";
   
   const storedPhotos = Array.isArray(complaint.images) ? complaint.images : Array.isArray(complaint.citizenPhotos) ? complaint.citizenPhotos : Array.isArray(complaint.photos) ? complaint.photos : [];
   const photos = complaint.photos && typeof complaint.photos === "object" && !Array.isArray(complaint.photos) ? complaint.photos : {};
@@ -154,6 +170,15 @@ const hasComplaintAssignee = (value) => {
   return normalized !== "" && !["unassigned", "not assigned", "none", "null"].includes(normalized);
 };
 
+const hasValidMapCoordinates = (complaint) => {
+  const latitude = complaint.lat ?? complaint.coordinates?.latitude ?? complaint.coordinates?.lat;
+  const longitude = complaint.lng ?? complaint.coordinates?.longitude ?? complaint.coordinates?.lng;
+  return latitude !== null && latitude !== undefined && latitude !== "" &&
+    longitude !== null && longitude !== undefined && longitude !== "" &&
+    Number.isFinite(Number(latitude)) && Number(latitude) >= -90 && Number(latitude) <= 90 &&
+    Number.isFinite(Number(longitude)) && Number(longitude) >= -180 && Number(longitude) <= 180;
+};
+
 const isNewVerifierComplaint = (complaint) =>
   complaint.queue === "New Complaints" &&
   ![...(complaint.statusHistory || []), ...(complaint.activityLog || [])].some((entry) => /\b(staff|verifier)\b/i.test(String(entry.actor || "")));
@@ -180,16 +205,21 @@ const VerifierDashboard = () => {
   const [verifier, setVerifier] = useState({
     name: storedUser.name || "", role: storedUser.designation || storedUser.role || "",
     contact: storedUser.contact || storedUser.mobile || "", ward: storedUser.assignedArea || "",
+    email: storedUser.email || "",
     staffId: storedUser.verifierId || storedUser.staffId || "", department: storedUser.department || "",
     profilePhoto: storedUser.profilePhoto || "",
   });
 
   const [items, setItems] = useState([]);
+  const [boundaryGeoJson, setBoundaryGeoJson] = useState(null);
+  const [boundaryError, setBoundaryError] = useState(false);
   const [staffOptions, setStaffOptions] = useState([]);
+  const [staffOptionsLoading, setStaffOptionsLoading] = useState(true);
+  const [staffLoadError, setStaffLoadError] = useState("");
   const [assignmentSavingId, setAssignmentSavingId] = useState("");
+  const [pdfGeneratingId, setPdfGeneratingId] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [detailStaffId, setDetailStaffId] = useState("");
-  const [showMapView, setShowMapView] = useState(false);
   const [remarksDraft, setRemarksDraft] = useState("");
   const [showProfile, setShowProfile] = useState(false);
   const [showNewComplaints, setShowNewComplaints] = useState(false);
@@ -207,10 +237,13 @@ const VerifierDashboard = () => {
   const [actionSaving, setActionSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [showAllComplaints, setShowAllComplaints] = useState(false);
+  const [mapStatusFilter, setMapStatusFilter] = useState("All");
+  const [mapReportedRange, setMapReportedRange] = useState("all");
   const [trendRange, setTrendRange] = useState(7);
   const [showDetailView, setShowDetailView] = useState(false);
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [activityComplaint, setActivityComplaint] = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
 
   // ✅ NEW: open/close state for the single "Complaints" sidebar dropdown (UI only)
@@ -251,13 +284,13 @@ const VerifierDashboard = () => {
   };
 
   const openView = (setter) => {
-    [setShowProfile, setShowNewComplaints, setShowComplaintAssigned, setShowCompletedWork, setShowWorkVerification, setShowUpdatedComplaints, setShowReverification, setShowPhysicalVerification, setShowComplaintHistory, setShowNotifications, setShowViewLocation, setShowDetailView, setShowActivityModal].forEach(fn => fn(false));
+    [setShowProfile, setShowNewComplaints, setShowComplaintAssigned, setShowCompletedWork, setShowWorkVerification, setShowUpdatedComplaints, setShowReverification, setShowPhysicalVerification, setShowComplaintHistory, setShowNotifications, setShowViewLocation, setShowDetailView].forEach(fn => fn(false));
     setter(true);
   };
 
   const selectView = (view, setter) => { setActiveNav(view); openView(setter); setMobileSidebarOpen(false); };
   const returnToDashboard = () => {
-    [setShowProfile, setShowNewComplaints, setShowComplaintAssigned, setShowCompletedWork, setShowWorkVerification, setShowUpdatedComplaints, setShowReverification, setShowPhysicalVerification, setShowComplaintHistory, setShowNotifications, setShowViewLocation, setShowDetailView, setShowActivityModal].forEach(fn => fn(false));
+    [setShowProfile, setShowNewComplaints, setShowComplaintAssigned, setShowCompletedWork, setShowWorkVerification, setShowUpdatedComplaints, setShowReverification, setShowPhysicalVerification, setShowComplaintHistory, setShowNotifications, setShowViewLocation, setShowDetailView].forEach(fn => fn(false));
     setActiveNav("dashboard");
     setMobileSidebarOpen(false);
   };
@@ -316,10 +349,54 @@ const VerifierDashboard = () => {
   useEffect(() => {
     let active = true;
     fetchDashboardUsers("staff")
-      .then((data) => { if (active) setStaffOptions(data.users || []); })
-      .catch((error) => { if (!active) return; console.error("Failed to load staff options:", error); setLoadError(t('verifier_dashboard.error_load_staff')); });
+      .then((data) => {
+        if (active) {
+          setStaffOptions(normalizeStaffOptions(data.users));
+          setStaffLoadError("");
+          setStaffOptionsLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load staff options:", error);
+        setStaffOptionsLoading(false);
+        setStaffLoadError(t('verifier_dashboard.error_load_staff'));
+        setLoadError(t('verifier_dashboard.error_load_staff'));
+      });
     return () => { active = false; };
   }, [t]);
+
+  useEffect(() => {
+      let active = true;
+      const fetchBoundary = async () => {
+        try {
+          const response = await fetch("/boundaries/hinjavadi.geojson");
+          const boundary = await response.json();
+          if (
+            !response.ok ||
+            boundary?.type !== "FeatureCollection" ||
+            !Array.isArray(boundary.features) ||
+            !boundary.features.some((feature) =>
+              ["Polygon", "MultiPolygon"].includes(feature?.geometry?.type)
+            )
+          ) {
+            throw new Error("Unable to load the Hinjawadi boundary GeoJSON");
+          }
+          if (active) {
+            setBoundaryGeoJson(boundary);
+            setBoundaryError(false);
+          }
+        } catch (error) {
+          console.error("Failed to fetch verifier map boundary:", error);
+          if (active) {
+            setBoundaryGeoJson(null);
+            setBoundaryError(true);
+          }
+        }
+      };
+      fetchBoundary();
+      return () => { active = false; };
+  }, []);
 
   const previousStats = [
     { label: t('verifier_dashboard.total_complaints'), value: items.length, icon: "📊", tone: "navy" },
@@ -414,20 +491,71 @@ const VerifierDashboard = () => {
     };
   }, [items, trendRange, t]);
 
+  const categories = [...new Set(items.map((complaint) => complaint.category).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right));
   const filteredItems = items.filter((complaint) => {
     const query = searchTerm.trim().toLowerCase();
-    return !query || [complaint.complaintNumber, complaint.category, complaint.issue, complaint.location, complaint.status, complaint.queue].some((value) => String(value || "").toLowerCase().includes(query));
+    const location = complaint.location && typeof complaint.location === "object"
+      ? complaint.location.address || ""
+      : complaint.location || "";
+    const matchesSearch = !query || [
+      complaint.complaintNumber, complaint.category, complaint.issue, location,
+      complaint.status, complaint.queue, complaint.priority,
+    ].some((value) => String(value || "").toLowerCase().includes(query));
+    const matchesCategory = categoryFilter === "All" || complaint.category === categoryFilter;
+    const matchesPriority = priorityFilter === "All" || complaint.priority === priorityFilter;
+    return matchesSearch && matchesCategory && matchesPriority;
   });
+  const visibleItems = showAllComplaints
+    ? filteredItems
+    : filteredItems.slice(0, INITIAL_COMPLAINT_TABLE_ROWS);
+  const filteredMapComplaints = useMemo(() => items
+    .filter(hasValidMapCoordinates)
+    .filter((complaint) => {
+      if (mapStatusFilter === "All") return true;
+      if (mapStatusFilter === "Under Verification") return isComplaintAwaitingVerification(complaint);
+      if (mapStatusFilter === "Assigned") {
+        return getComplaintMapPinType(complaint) === "assigned" &&
+          !isComplaintAwaitingVerification(complaint) &&
+          !isComplaintReworkRequested(complaint);
+      }
+      if (mapStatusFilter === "New") {
+        return complaint.status === "pending" && getComplaintMapPinType(complaint) === "open";
+      }
+      if (mapStatusFilter === "Resolved") return ["resolved", "notified"].includes(complaint.status);
+      if (mapStatusFilter === "Rejected") return isComplaintReworkRequested(complaint);
+      return false;
+    })
+    .filter((complaint) => isWithinReportedRange(complaint, mapReportedRange))
+    .map((complaint) => ({
+      ...complaint,
+      lat: Number(complaint.lat ?? complaint.coordinates?.latitude ?? complaint.coordinates?.lat),
+      lng: Number(complaint.lng ?? complaint.coordinates?.longitude ?? complaint.coordinates?.lng),
+      ...(complaint.status === "notified" ? { status: "closed" } : {}),
+    })), [items, mapReportedRange, mapStatusFilter]);
+  const missingCoordinateCount = items.filter((complaint) => !hasValidMapCoordinates(complaint)).length;
+  const resetMapFilters = () => {
+    setMapStatusFilter("All");
+    setMapReportedRange("all");
+  };
   
   const getAssignedStaffId = (complaint) => complaint.assignedStaffId || staffOptions.find((staff) => staff.name === complaint.assignedStaff)?._id || "";
+  const getLocationDisplay = (location) => {
+    if (!location) return t("admin_dashboard.location_pending", "Location pending");
+    if (typeof location === "object") return location.address || t("admin_dashboard.location_pending", "Location pending");
+    return String(location);
+  };
+  const getAssignedVerifier = (complaint) => {
+    const assignedVerifier = complaint.assignedVerifier;
+    return typeof assignedVerifier === "object"
+      ? assignedVerifier.name || assignedVerifier._id || t("admin_dashboard.complaints_unassigned", "Unassigned")
+      : assignedVerifier || t("admin_dashboard.complaints_unassigned", "Unassigned");
+  };
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
-  const openVerification = (c) => { setSelectedId(c.id); setRemarksDraft(c.remarks || ""); scrollTo("verification-panel"); };
   const handleViewDetails = (complaint) => { setSelectedId(complaint.id); setDetailStaffId(getAssignedStaffId(complaint)); setShowDetailView(true); setRemarksDraft(complaint.remarks || ""); };
   const handleBackToList = () => { setShowDetailView(false); };
   const handleQuickVerify = (complaint) => { setSelectedId(complaint.id); setDetailStaffId(getAssignedStaffId(complaint)); setRemarksDraft(complaint.remarks || ""); setShowDetailView(true); };
-  const handleShowActivity = (complaint) => { setActivityComplaint(complaint); setShowActivityModal(true); };
-  const handleCloseActivityModal = () => { setShowActivityModal(false); setActivityComplaint(null); };
 
   const handleUpdateProfile = async (updatedVerifier) => {
     const data = await updateDashboardProfile(getUserId(storedUser), { name: updatedVerifier.name, designation: updatedVerifier.role, assignedArea: updatedVerifier.ward, contact: updatedVerifier.contact, email: updatedVerifier.email, profilePhoto: updatedVerifier.profilePhoto });
@@ -439,7 +567,7 @@ const VerifierDashboard = () => {
 
   const persistComplaintStatus = async (id, status, remarks = "", dateTime = "", additionalUpdates = {}) => {
     const complaint = items.find((item) => item.id === id);
-    const result = await updateDashboardComplaint(id, { ...verifierAssignmentUpdates(complaint), ...additionalUpdates, status, remarks, ...(dateTime ? { verificationDateTime: dateTime } : {}) });
+    const result = await updateDashboardComplaint(id, { ...verifierAssignmentUpdates(complaint), ...additionalUpdates, status, remarks, actorName: verifier.name || storedUser.name || "", ...(dateTime ? { verificationDateTime: dateTime } : {}) });
     const updatedComplaint = mapVerifierComplaint(result.complaint);
     setItems((current) => current.map((complaint) => (complaint.id === id ? updatedComplaint : complaint)));
     return updatedComplaint;
@@ -465,6 +593,17 @@ const VerifierDashboard = () => {
     const updatedComplaint = mapVerifierComplaint(result.complaint);
     setItems((current) => current.map((item) => (item.id === complaint.id ? updatedComplaint : item)));
     return updatedComplaint;
+  };
+
+  const handleMapAssignStaff = async (mapComplaint, staffId) => {
+    const complaint = items.find((item) => String(item.id) === String(mapComplaint.id || mapComplaint._id));
+    if (!complaint) throw new Error(t("verifier_dashboard.error_complaint_not_found"));
+    setAssignmentSavingId(complaint.id);
+    try {
+      return await handleManagementAssignStaff(complaint, staffId);
+    } finally {
+      setAssignmentSavingId("");
+    }
   };
 
   const handleCompletedWorkVerify = (id, action, remarks, dateTime) => persistComplaintStatus(id, action === "approve" ? "Verified" : "Rejected", remarks, dateTime);
@@ -551,6 +690,37 @@ const VerifierDashboard = () => {
   const markResolved = (id) => persistComplaintStatus(id, "Resolved");
   const closeComplaint = (id) => persistComplaintStatus(id, "Closed");
 
+  const handleGenerateMapComplaintPdf = async (complaint, language) => {
+    const complaintId = String(complaint.id || complaint._id || "");
+    const type = getComplaintPdfType(complaint);
+
+    setPdfGeneratingId(complaintId);
+    try {
+      await generateAdminComplaintPdf(complaint, language, { type });
+    } finally {
+      setPdfGeneratingId("");
+    }
+  };
+
+  const handleShareMapComplaintPdf = async (complaint) => {
+    const complaintId = String(complaint.id || complaint._id || "");
+    const type = getComplaintPdfType(complaint);
+
+    setPdfGeneratingId(complaintId);
+    try {
+      const result = await generateAdminComplaintPdf(complaint, "mr", { type });
+      if (!result?.pdfBlob) {
+        throw new Error(t("admin_dashboard.map_whatsapp_pdf_error"));
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to prepare Marathi complaint PDF for WhatsApp:", error);
+      throw error;
+    } finally {
+      setPdfGeneratingId("");
+    }
+  };
+
   const handleDashboardAction = async (action) => {
     setActionMessage(""); setActionSaving(true);
     try { await action(); } catch (error) { console.error("Verifier action failed:", error); setActionMessage(t('verifier_dashboard.error_save_action')); } finally { setActionSaving(false); }
@@ -587,9 +757,9 @@ const VerifierDashboard = () => {
   const sidebarMarkup = (
   <aside className="vd-sidebar">
     <div className="vd-sb-brand">
-      <button type="button" className="vd-sb-logo vd-sb-logo-button" aria-label={t('verifier_dashboard.dashboard')} onClick={() => { returnToDashboard(); scrollTo("vd-top"); }}>
+      <a href="https://myroadindia.com/" target="_blank" rel="noopener noreferrer" className="vd-sb-logo vd-sb-logo-button" aria-label="MyRoad India website">
         <img src={logo} alt={t('verifier_dashboard.brand')} />
-      </button>
+      </a>
       <div><b>{t('verifier_dashboard.brand')}</b><span>{t('verifier_dashboard.portal')}</span></div>
     </div>
     <div className="vd-sb-label">{t('verifier_dashboard.overview')}</div>
@@ -619,10 +789,6 @@ const VerifierDashboard = () => {
           <span className="vd-sb-badge">{assignedComplaints.length}</span>
         </button>
 
-        <button type="button" className={`vd-sb-sublink ${activeNav === "updated-complaints" ? "active" : ""}`} onClick={() => selectView("updated-complaints", setShowUpdatedComplaints)}>
-          <span className="vd-sb-sublabel"><span className="vd-sb-ic">🔄</span><span className="vd-sb-txt">{t('verifier_dashboard.updated_complaints')}</span></span>
-        </button>
-
         <button type="button" className={`vd-sb-sublink ${activeNav === "work-verification" ? "active" : ""}`} onClick={() => selectView("work-verification", setShowWorkVerification)}>
           <span className="vd-sb-sublabel"><span className="vd-sb-ic">✅</span><span className="vd-sb-txt">{t('verifier_dashboard.work_verification')}</span></span>
           <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
@@ -630,16 +796,7 @@ const VerifierDashboard = () => {
 
         <button type="button" className={`vd-sb-sublink ${activeNav === "completed" ? "active" : ""}`} onClick={() => selectView("completed", setShowCompletedWork)}>
           <span className="vd-sb-sublabel"><span className="vd-sb-ic">🛠️</span><span className="vd-sb-txt">{t('verifier_dashboard.completed_work')}</span></span>
-          <span className="vd-sb-badge">{items.filter((c) => c.queue === "Completed Work").length}</span>
-        </button>
-
-        <button type="button" className={`vd-sb-sublink ${activeNav === "reverification" ? "active" : ""}`} onClick={() => selectView("reverification", setShowReverification)}>
-          <span className="vd-sb-sublabel"><span className="vd-sb-ic">🔁</span><span className="vd-sb-txt">{t('verifier_dashboard.reverification')}</span></span>
-          <span className="vd-sb-badge">{items.filter((c) => c.queue === "Re-verification").length}</span>
-        </button>
-
-        <button type="button" className={`vd-sb-sublink ${activeNav === "physical" ? "active" : ""}`} onClick={() => selectView("physical", setShowPhysicalVerification)}>
-          <span className="vd-sb-sublabel"><span className="vd-sb-ic">🔍</span><span className="vd-sb-txt">{t('verifier_dashboard.physical_verification')}</span></span>
+          <span className="vd-sb-badge">{items.filter(isApprovedCompletedWork).length}</span>
         </button>
 
         <button type="button" className={`vd-sb-sublink ${activeNav === "history" ? "active" : ""}`} onClick={() => selectView("history", setShowComplaintHistory)}>
@@ -650,7 +807,6 @@ const VerifierDashboard = () => {
     <div className="vd-sb-label">{t('verifier_dashboard.tools_actions')}</div>
     <nav className="vd-sb-nav">
       <button type="button" className={`vd-sb-link ${activeNav === "notifications" ? "active" : ""}`} onClick={() => selectView("notifications", setShowNotifications)}><span className="vd-sb-text">🔔 {t('verifier_dashboard.notifications')}</span><span className="vd-sb-badge">{notifications.filter((n) => !n.isRead).length}</span></button>
-      <button type="button" className={`vd-sb-link ${activeNav === "location" ? "active" : ""}`} onClick={() => selectView("location", setShowViewLocation)}><span className="vd-sb-text">🗺️ {t('verifier_dashboard.view_location')}</span></button>
     </nav>
     <div className="vd-sb-label">{t('verifier_dashboard.account')}</div>
     <nav className="vd-sb-nav">
@@ -659,7 +815,7 @@ const VerifierDashboard = () => {
     <div className="vd-sb-footer">
       <div className="vd-sb-user">
         <div className="vd-sb-avatar">{verifier.profilePhoto ? <img src={toMediaUrl(verifier.profilePhoto)} alt="Profile" /> : initials}</div>
-        <div className="vd-sb-user-info"><b>{verifier.name}</b><span>{verifier.staffId}</span></div>
+        <div className="vd-sb-user-info"><b>{verifier.name}</b><span>{verifier.email}</span></div>
       </div>
       <div className="vd-sb-ward">{verifier.role} · {verifier.ward}</div>
     </div>
@@ -677,12 +833,12 @@ const VerifierDashboard = () => {
   if (showComplaintAssigned) return renderWithSidebar(<ComplaintAssigned complaints={assignedComplaints} staffOptions={staffOptions} verifier={verifier} loadError={loadError} onBack={returnToDashboard} onAction={handleNewComplaintAction} onAssignStaff={handleManagementAssignStaff} onSaveEvidence={handleSaveVerifierEvidence} />);
   if (showComplaintHistory) return renderWithSidebar(<ComplaintHistory complaints={items} onVerify={handleVerificationDecision} onBack={returnToDashboard} />);
   if (showPhysicalVerification) return renderWithSidebar(<PhysicalVerification complaints={items} loadError={loadError} onBack={returnToDashboard} onSubmitVerification={handlePhysicalVerificationSubmit} />);
-  if (showCompletedWork) return renderWithSidebar(<CompletedWork complaints={items} loadError={loadError} onBack={returnToDashboard} onVerify={handleCompletedWorkVerify} />);
+  if (showCompletedWork) return renderWithSidebar(<CompletedWork complaints={items} loadError={loadError} onBack={returnToDashboard} />);
   if (showWorkVerification) return renderWithSidebar(<WorkVerification complaints={items} loadError={loadError} onBack={returnToDashboard} onVerify={handleCompletedWorkVerify} />);
   if (showUpdatedComplaints) return renderWithSidebar(<UpdatedComplaints complaints={items} actorRoles={["staff", "admin", "verifier"]} audienceLabel="Staff, admin & verifier activity" listTitle="Staff, Admin & Verifier Updates" showUpdateHistory={false} onBack={returnToDashboard} />);
   if (showReverification) return renderWithSidebar(<Reverification complaints={items} loadError={loadError} onBack={returnToDashboard} onReverify={handleReverifyAction} />);
   if (showNotifications) return renderWithSidebar(<Notifications notifications={notifications} complaints={items} staffOptions={staffOptions} onVerify={handleVerificationDecision} onAcceptAssign={updateNotificationComplaintStaff} onAssign={updateNotificationComplaintStaff} onReject={handleNotificationReject} onComplaintUpdated={handleNotificationComplaintUpdated} onBack={returnToDashboard} onMarkAsRead={handleMarkNotifAsRead} onMarkAllRead={handleMarkAllNotifsRead} />);
-  if (showViewLocation) return renderWithSidebar(<ViewLocation complaints={items} staffOptions={staffOptions} onVerify={handleVerificationDecision} onAcceptAssign={updateNotificationComplaintStaff} onAssign={updateNotificationComplaintStaff} onReject={handleNotificationReject} onBack={returnToDashboard} />);
+  if (showViewLocation) return renderWithSidebar(<ViewLocation complaints={items} staffOptions={staffOptions} staffOptionsLoading={staffOptionsLoading} staffLoadError={staffLoadError} onVerify={handleVerificationDecision} onAcceptAssign={updateNotificationComplaintStaff} onAssign={updateNotificationComplaintStaff} onReject={handleNotificationReject} onGeneratePdf={handleGenerateMapComplaintPdf} onShareMarathiPdf={handleShareMapComplaintPdf} pdfGeneratingId={pdfGeneratingId} onBack={returnToDashboard} />);
 
   // ✅ DETAILED COMPLAINT VIEW
   if (showDetailView && selected) {
@@ -808,7 +964,8 @@ const VerifierDashboard = () => {
                   </div>
                 )}
                 <div className="vd-verification-actions">
-                  {["pending", "in_action", "rejected"].includes(selected.status) && (
+                  {["pending", "in_action"].includes(selected.status) ||
+                    (selected.status === "rejected" && !selected.assignedStaff && !selected.assignedStaffId) ? (
                     <div className="vd-assignment-detail">
                       <label htmlFor="vd-detail-staff">{t('verifier_dashboard.assign_staff_for_complaint')}</label>
                       <select id="vd-detail-staff" className="vd-assignment-select" value={detailStaffId} disabled={assignmentSavingId === selected.id || staffOptions.length === 0} onChange={(event) => setDetailStaffId(event.target.value)}>
@@ -816,10 +973,10 @@ const VerifierDashboard = () => {
                         {staffOptions.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}</option>)}
                       </select>
                       <button className="vd-btn-primary" type="button" disabled={assignmentSavingId === selected.id || !detailStaffId} onClick={assignStaffFromDetails}>
-                        {assignmentSavingId === selected.id ? t('verifier_dashboard.saving_assignment') : selected.status === "pending" ? t('verifier_dashboard.accept_assign_staff') : t('verifier_dashboard.assign_reassign_staff')}
+                        {assignmentSavingId === selected.id ? t('verifier_dashboard.saving_assignment') : ["pending", "rejected"].includes(selected.status) ? t('verifier_dashboard.accept_assign_staff') : t('verifier_dashboard.assign_reassign_staff')}
                       </button>
                     </div>
-                  )}
+                  ) : null}
                   {selected.status === "pending" && <button className="vd-btn-danger" type="button" disabled={actionSaving} onClick={() => handleDashboardAction(() => rejectWork(selected.id))}>{t('verifier_dashboard.reject_complaint_remarks_required')}</button>}
                   {selected.status === "in_review" && (
                     <>
@@ -930,100 +1087,162 @@ const VerifierDashboard = () => {
 
           <div className="vd-panel" id="queue-panel">
             <div className="vd-panel-head">
-              <h3>{t('verifier_dashboard.all_complaints')}</h3>
-              <span className="vd-panel-link">{t('verifier_dashboard.shown_total', { shown: filteredItems.length, total: items.length })}</span>
+              <h3>{t("admin_dashboard.all_complaints_title", "All Complaints")}</h3>
+              <span className="vd-panel-link">{t("admin_dashboard.total_complaints_count", { count: filteredItems.length })}</span>
+            </div>
+            <div className="vd-all-complaints-filter-row">
+              <input
+                type="search"
+                placeholder={t("admin_dashboard.complaints_search_placeholder", "Search...")}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                <option value="All">{t("admin_dashboard.filter_all_categories", "All Categories")}</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{t(category, { defaultValue: category })}</option>
+                ))}
+              </select>
+              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
+                <option value="All">{t("admin_dashboard.filter_all_priorities", "All Priorities")}</option>
+                {priorityOptions.map((priority) => (
+                  <option key={priority} value={priority}>
+                    {t(`admin_dashboard.priority_${priority.toLowerCase()}`, { defaultValue: priority })}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="vd-table-wrap">
-              <table>
+              <table className="vd-all-complaints-table" id="verifier-all-complaints-table">
+                <colgroup>
+                  <col className="vd-col-complaint" />
+                  <col className="vd-col-category" />
+                  <col className="vd-col-location" />
+                  <col className="vd-col-status" />
+                  <col className="vd-col-staff-assignee" />
+                  <col className="vd-col-verifier-assignee" />
+                  <col className="vd-col-action" />
+                  <col className="vd-col-pdf" />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th>{t('verifier_dashboard.complaint')}</th>
-                    <th>{t('verifier_dashboard.source')}</th>
-                    <th>{t('verifier_dashboard.category')}</th>
-                    <th>{t('verifier_dashboard.location_gps')}</th>
-                    <th>{t('verifier_dashboard.queue')}</th>
-                    <th>{t('verifier_dashboard.status')}</th>
-                    <th>{t('verifier_dashboard.assigned_staff')}</th>
-                    <th>{t('verifier_dashboard.details_verify')}</th>
-                    <th>{t('verifier_dashboard.activity')}</th>
+                    <th>{t("admin_dashboard.complaints_col_number", "Complaint No.")}</th>
+                    <th>{t("admin_dashboard.complaints_col_category", "Category")}</th>
+                    <th>{t("admin_dashboard.complaints_col_location", "Location")}</th>
+                    <th>{t("admin_dashboard.complaints_col_status", "Status")}</th>
+                    <th>{t("admin_dashboard.complaints_col_assign_staff", "Assign Staff")}</th>
+                    <th>{t("admin_dashboard.complaints_col_assign_verifier", "Assign Verifier")}</th>
+                    <th>{t("admin_dashboard.complaints_col_action", "Action")}</th>
+                    <th>{t("admin_dashboard.complaints_col_pdf", "PDF")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
-                    <tr><td colSpan="9" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>{t('verifier_dashboard.no_complaints_found')}</td></tr>
-                  ) : filteredItems.map((c) => (
+                    <tr><td colSpan={8} className="vd-all-complaints-empty">{t("admin_dashboard.no_complaints_found", "No complaints found.")}</td></tr>
+                  ) : visibleItems.map((c) => {
+                    const tableStatus = getComplaintTableStatus(c);
+                    const tableStatusKey = tableStatus.toLowerCase().replace(/\s+/g, "_");
+                    return (
                     <tr key={c.id} className={selectedId === c.id ? "vd-row-active" : ""} onClick={() => setSelectedId(c.id)}>
                       <td className="vd-mono">{c.complaintNumber}</td>
-                      <td>{c.citizenId ? t('verifier_dashboard.registered_citizen') : t('verifier_dashboard.guest')}</td>
-                      <td><div className="vd-cat"><span className="vd-cat-dot" style={{ background: colorForCategory(c.category) }}></span>{c.issue}</div></td>
-                      <td>
-                        <div>{c.location || t('verifier_dashboard.location_pending')}</div>
-                        {c.coordinates?.latitude != null && c.coordinates?.longitude != null && (
-                          <a className="vd-table-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.coordinates.latitude},${c.coordinates.longitude}`)}`} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()}>
-                            {c.coordinates.latitude}, {c.coordinates.longitude} · {t('verifier_dashboard.map')}
-                          </a>
+                      <td><div className="vd-cat"><span className="vd-cat-dot" style={{ background: colorForCategory(c.category) }}></span>{t(c.category, { defaultValue: c.category })}</div></td>
+                      <td>{getLocationDisplay(c.location)}</td>
+                      <td><span className={`vd-badge vd-badge-${getComplaintTableStatusTone(tableStatus)}`}>{t(`admin_dashboard.complaint_table_status_${tableStatusKey}`, { defaultValue: tableStatus })}</span></td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        {tableStatus === "Rejected" && (c.assignedStaff || c.assignedStaffId) ? (
+                          <span className="vd-assigned-verifier">
+                            {c.assignedStaff || staffOptions.find((staff) => String(staff._id) === String(c.assignedStaffId))?.name || c.assignedStaffId}
+                          </span>
+                        ) : (
+                          <select className="vd-assignment-select" aria-label={`${t("verifier_dashboard.assign_staff_for_complaint")} ${c.complaintNumber}`} value={getAssignedStaffId(c)} disabled={assignmentSavingId === c.id || staffOptionsLoading || staffOptions.length === 0} onChange={(event) => handleAssignStaff(c, event.target.value)}>
+                            <option value="">{t("admin_dashboard.complaints_unassigned", "Unassigned")}</option>
+                            {staffOptions.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}</option>)}
+                          </select>
                         )}
                       </td>
-                      <td><span className={`vd-badge vd-badge-${queueTone[c.queue]}`}>{getQueueLabel(c.queue)}</span></td>
-                      <td><span className={`vd-badge vd-badge-${statusTone[c.status]}`}>{getStatusLabel(c.status)}</span></td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <select className="vd-assignment-select" aria-label={`${t('verifier_dashboard.assign_staff_for_complaint')} ${c.complaintNumber}`} value={getAssignedStaffId(c)} disabled={assignmentSavingId === c.id || staffOptions.length === 0} onChange={(event) => handleAssignStaff(c, event.target.value)}>
-                          <option value="">{t('verifier_dashboard.unassigned')}</option>
-                          {staffOptions.map((staff) => <option key={staff._id} value={staff._id}>{staff.name}{staff.staffId ? ` · ${staff.staffId}` : ""}</option>)}
-                        </select>
-                        {assignmentSavingId === c.id && <small> {t('verifier_dashboard.saving')}</small>}
+                      <td><span className="vd-assigned-verifier">{getAssignedVerifier(c)}</span></td>
+                      <td onClick={(event) => event.stopPropagation()}>
+                        <div className="vd-all-complaints-actions">
+                          <button className="vd-btn-primary small" type="button" onClick={() => handleQuickVerify(c)}>{t("admin_dashboard.complaints_view_details", "View Details")}</button>
+                        </div>
                       </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <button className="vd-verify-btn" type="button" onClick={() => handleQuickVerify(c)} title={t('verifier_dashboard.open_verification_title')}>📄 {t('verifier_dashboard.details_verify')}</button>
-                      </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <button className="vd-activity-btn" type="button" onClick={() => handleShowActivity(c)} title={t('verifier_dashboard.view_activity_log_title')}>📜 {c.log?.length || 0}</button>
+                      <td onClick={(event) => event.stopPropagation()}>
+                        <div className="vd-pdf-actions">
+                          <button className="vd-pdf-btn" type="button" onClick={() => handleGenerateMapComplaintPdf(c, "en")} disabled={Boolean(pdfGeneratingId)}>
+                            {pdfGeneratingId === String(c.id) ? "..." : "EN"}
+                          </button>
+                          <button className="vd-pdf-btn" type="button" onClick={() => handleGenerateMapComplaintPdf(c, "mr")} disabled={Boolean(pdfGeneratingId)}>
+                            {pdfGeneratingId === String(c.id) ? "..." : "मराठी"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {showActivityModal && activityComplaint && (
-            <div className="vd-activity-modal-overlay" onClick={handleCloseActivityModal}>
-              <div className="vd-activity-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="vd-activity-modal-header">
-                  <div><h3>{t('verifier_dashboard.activity_log')}</h3><span className="vd-mono vd-faint">{activityComplaint.complaintNumber}</span></div>
-                  <button className="vd-activity-modal-close" onClick={handleCloseActivityModal}>✕</button>
-                </div>
-                <div className="vd-activity-modal-body">
-                  {activityComplaint.log && activityComplaint.log.length > 0 ? (
-                    <div className="vd-activity-list">
-                      {activityComplaint.log.map((note, i) => (
-                        <div className="vd-activity-item" key={i}>
-                          <span className="vd-activity-dot"></span>
-                          <div className="vd-activity-content"><b>{note.text}</b><span>{note.time}</span></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <div className="vd-activity-empty"><p>{t('verifier_dashboard.no_activity_recorded')}</p></div>}
-                </div>
-                <div className="vd-activity-modal-footer"><button className="vd-btn-outline" onClick={handleCloseActivityModal}>{t('verifier_dashboard.close')}</button></div>
+            {filteredItems.length > INITIAL_COMPLAINT_TABLE_ROWS && (
+              <div className="vd-all-complaints-footer">
+                <button
+                  type="button"
+                  aria-controls="verifier-all-complaints-table"
+                  aria-expanded={showAllComplaints}
+                  onClick={() => setShowAllComplaints((isShowingAll) => !isShowingAll)}
+                >
+                  {showAllComplaints
+                    ? t("admin_dashboard.complaints_view_less", "View Less")
+                    : t("admin_dashboard.complaints_view_more", "View More")}
+                </button>
               </div>
-            </div>
-          )}
-
-          <div className="vd-quick-row">
-            <button className="vd-quick-card" type="button" onClick={() => scrollTo("queue-panel")}>
-              <div className="vd-quick-ic navy">🗂️</div>
-              <div><h5>{t('verifier_dashboard.view_pending_verifications')}</h5><p>{t('verifier_dashboard.view_pending_desc')}</p></div>
-            </button>
-            <button className="vd-quick-card" type="button" onClick={() => openVerification(selected)}>
-              <div className="vd-quick-ic saffron">🔍</div>
-              <div><h5>{t('verifier_dashboard.run_physical_verification')}</h5><p>{t('verifier_dashboard.run_physical_desc')}</p></div>
-            </button>
-            <button className="vd-quick-card" type="button" onClick={() => { setShowMapView(true); scrollTo("map-section"); }}>
-              <div className="vd-quick-ic green">🗺️</div>
-              <div><h5>{t('verifier_dashboard.view_location_map')}</h5><p>{t('verifier_dashboard.view_location_desc')}</p></div>
-            </button>
+            )}
           </div>
+
+          <div className="vd-panel vd-map-panel" id="map-dashboard">
+            <div className="vd-panel-head">
+              <h3>🗺️ {t("admin_dashboard.map_dashboard_complaint_locations")}</h3>
+              <span className="vd-panel-link">{t("admin_dashboard.complaints_on_map", { count: filteredMapComplaints.length })}</span>
+            </div>
+            <div className="vd-map-legend">
+              <span>📍 {t("admin_dashboard.map_red_pins_legend")}</span>
+              <span><i className="verification-map-legend-pin" aria-hidden="true" />{t("admin_dashboard.map_verification_pins_legend")}</span>
+              <span><i className="rework-map-legend-pin" aria-hidden="true" />{t("admin_dashboard.map_rework_pins_legend")}</span>
+              <span className="vd-map-legend-hint">💡 {t("admin_dashboard.map_click_pin_legend")}</span>
+            </div>
+            {boundaryError && (
+              <div className="vd-error-message" role="alert">
+                {t("admin_dashboard.map_boundary_load_error")}
+              </div>
+            )}
+            <AdminComplaintsMap
+              complaints={filteredMapComplaints}
+              center={defaultMapCenter}
+              boundaryGeoJson={boundaryGeoJson}
+              mapClassName="vd-complaints-map"
+              translate={t}
+              staffOptions={staffOptions}
+              staffLoadError={staffLoadError}
+              onAssignStaff={handleMapAssignStaff}
+              assignmentSavingKey={assignmentSavingId}
+              staffLoading={staffOptionsLoading}
+              onGeneratePdf={handleGenerateMapComplaintPdf}
+              onShareMarathiPdf={handleShareMapComplaintPdf}
+              pdfGeneratingId={pdfGeneratingId}
+              onVerifyComplaint={handleVerificationDecision}
+              reportedRange={mapReportedRange}
+              onReportedRangeChange={setMapReportedRange}
+              mapStatusFilter={mapStatusFilter}
+              onMapStatusFilterChange={setMapStatusFilter}
+              statusOptions={mapStatusOptions}
+              onResetFilters={resetMapFilters}
+            />
+            {missingCoordinateCount > 0 && (
+              <div className="vd-map-missing-coordinates">
+                <strong>⚠️ {t("admin_dashboard.map_missing_coordinates", { count: missingCoordinateCount })}</strong>
+                <p>{t("admin_dashboard.map_missing_coordinates_note")}</p>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

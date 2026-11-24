@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./AssignedComplaints.css";
 import StaffComplaintDetails from "./StaffComplaintDetails";
+import { toMediaUrl, uploadDashboardPhoto } from "../utils/dashboardApi";
 
 const AssignedComplaints = ({
   complaints = [],
@@ -12,6 +13,10 @@ const AssignedComplaints = ({
   onBack,
   allAssigned = false,
   newAssignments = false,
+  rejectedMode = false,
+  onResubmitRejected,
+  submissionMode = false,
+  onSubmitWork,
   loadError = "",
 }) => {
   const { t } = useTranslation();
@@ -21,10 +26,19 @@ const AssignedComplaints = ({
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [viewingComplaint, setViewingComplaint] = useState(null);
+  const [reworkAfterPhoto, setReworkAfterPhoto] = useState("");
+  const [reworkActionTaken, setReworkActionTaken] = useState("");
+  const [reworkUploading, setReworkUploading] = useState(false);
+  const [reworkSaving, setReworkSaving] = useState(false);
+  const [reworkError, setReworkError] = useState("");
 
   const normalizedStaffName = String(staffName || "").trim().toLowerCase();
   const normalizedStaffId = String(staffId || "").trim().toLowerCase();
   const normalizedUserId = String(staffUserId || "").trim().toLowerCase();
+
+  const canSubmitForVerification = (complaint) =>
+    !["under verification", "under review", "submitted", "verified", "approved", "resolved", "closed"]
+      .includes(String(complaint.status || "").trim().toLowerCase());
 
   const isAssignedToStaff = (complaint) => {
     const assignedStaffId = String(
@@ -76,6 +90,10 @@ const AssignedComplaints = ({
 
     if (["new", "pending"].includes(status)) {
       return !hasStaffAssignment(complaint);
+    }
+
+    if (status === "rejected") {
+      return isAssignedToStaff(complaint);
     }
 
     return status === "under action" && isAssignedToStaff(complaint);
@@ -247,10 +265,62 @@ const AssignedComplaints = ({
     };
   }, [viewingComplaint]);
 
+  const openComplaintDetails = (complaint) => {
+    setViewingComplaint(complaint);
+    setReworkAfterPhoto("");
+    setReworkActionTaken(complaint.inspection?.actionTaken || "");
+    setReworkError("");
+  };
+
+  const handleReworkPhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setReworkUploading(true);
+    setReworkError("");
+    try {
+      const uploaded = await uploadDashboardPhoto(file);
+      setReworkAfterPhoto(uploaded.publicUrl);
+    } catch (error) {
+      setReworkError(error.message || "Could not upload the after-work photo.");
+    } finally {
+      setReworkUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const submitRework = async () => {
+    if (!viewingComplaint) return;
+    if (!reworkAfterPhoto) {
+      setReworkError("Upload an after-work photo before resubmitting.");
+      return;
+    }
+    setReworkSaving(true);
+    setReworkError("");
+    try {
+      const workData = {
+        afterPhoto: reworkAfterPhoto,
+        actionTaken: reworkActionTaken,
+      };
+      if (rejectedMode) {
+        await onResubmitRejected?.(viewingComplaint.id, workData);
+      } else if (submissionMode) {
+        await onSubmitWork?.(viewingComplaint.id, workData);
+      }
+      setViewingComplaint(null);
+      setReworkAfterPhoto("");
+    } catch (error) {
+      setReworkError(error.message || "Could not resubmit the complaint for verification.");
+    } finally {
+      setReworkSaving(false);
+    }
+  };
+
   const pageTitle = allAssigned
     ? t("assignedComplaints.complaintAssigned")
     : newAssignments
       ? t("assignedComplaints.newComplaints")
+      : rejectedMode
+        ? t("staff_dashboard.rejected_complaints", "Rejected Complaints")
       : t("assignedComplaints.myAssignedComplaints");
 
   const pageDescription = newAssignments
@@ -457,10 +527,12 @@ const AssignedComplaints = ({
                         className="ac-view-btn"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setViewingComplaint(complaint);
+                          openComplaintDetails(complaint);
                         }}
                       >
-                        {t("assignedComplaints.viewDetails")}
+                        {rejectedMode
+                          ? t("staff_dashboard.rejected_complaint", "Rejected Complaint")
+                          : t("assignedComplaints.viewDetails")}
                       </button>
                     </td>
                   </tr>
@@ -505,6 +577,55 @@ const AssignedComplaints = ({
                 layout="split"
                 showActivity={false}
               />
+              {(rejectedMode || (submissionMode && canSubmitForVerification(viewingComplaint))) && (
+                <section className="ac-rework-form" aria-label="Resubmit rejected complaint">
+                  <h4>{rejectedMode
+                    ? "Send Completed Work for Verification"
+                    : "Send Completed Work for Verification"}</h4>
+                  {reworkError && <p className="ac-rework-error" role="alert">{reworkError}</p>}
+                  <label htmlFor="ac-rework-action">Work Performed</label>
+                  <textarea
+                    id="ac-rework-action"
+                    rows="3"
+                    value={reworkActionTaken}
+                    onChange={(event) => setReworkActionTaken(event.target.value)}
+                    disabled={reworkSaving}
+                  />
+                  <label htmlFor="ac-rework-photo">After-Work Photo</label>
+                  <input
+                    id="ac-rework-photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReworkPhotoUpload}
+                    disabled={reworkUploading || reworkSaving}
+                  />
+                  {reworkAfterPhoto && (
+                    <img
+                      className="ac-rework-photo-preview"
+                      src={toMediaUrl(reworkAfterPhoto)}
+                      alt="After-work rework evidence"
+                    />
+                  )}
+                  <div className="ac-rework-actions">
+                    <button
+                      type="button"
+                      className="ac-modal-close-btn"
+                      onClick={() => setViewingComplaint(null)}
+                      disabled={reworkSaving}
+                    >
+                      {t("assignedComplaints.close")}
+                    </button>
+                    <button
+                      type="button"
+                      className="ac-rework-submit"
+                      onClick={submitRework}
+                      disabled={reworkUploading || reworkSaving}
+                    >
+                      {reworkSaving ? "Submitting..." : "Send for Verification"}
+                    </button>
+                  </div>
+                </section>
+              )}
             </div>
 
             <div className="ac-modal-footer">

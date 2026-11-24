@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next"; // ✅ ADDED
 import "./ComplaintDetails.css";
-import { API_BASE_URL, toMediaUrl, updateDashboardComplaint } from "../utils/dashboardApi";
+import { API_BASE_URL, updateDashboardComplaint } from "../utils/dashboardApi";
 import ComplaintLocationMap from "../components/maps/ComplaintLocationMap";
+import ComplaintImage from "../verifierprofiledashboard/ComplaintImage";
 
 const toCoordinate = (...values) => {
   for (const value of values) {
@@ -25,8 +26,21 @@ const getAssignmentTimestamp = (complaint) => {
   return Number.isFinite(fallbackTimestamp) ? fallbackTimestamp : 0;
 };
 
+const getPhotoPath = (photo) =>
+  typeof photo === "string"
+    ? photo
+    : photo?.url || photo?.path || photo?.imageUrl || "";
+
+const firstPhotoPath = (...photos) =>
+  photos.map(getPhotoPath).find(Boolean) || "";
+
 const toDetailData = (complaint, t) => {
   const coordinates = complaint.coordinates || {};
+  const inspection = complaint.inspection || {};
+  const photoRecord =
+    complaint.photos && typeof complaint.photos === "object" && !Array.isArray(complaint.photos)
+      ? complaint.photos
+      : {};
   const location =
     typeof complaint.location === "object" && complaint.location !== null
       ? complaint.location
@@ -39,8 +53,13 @@ const toDetailData = (complaint, t) => {
       : complaint.photos && typeof complaint.photos === "object"
         ? Object.values(complaint.photos)
         : []),
-  ].filter((image) => typeof image === "string" && image.trim())));
-  const inspection = complaint.inspection || {};
+    complaint.sitePhoto,
+    complaint.beforePhoto,
+    inspection.sitePhoto,
+    complaint.completionPhoto,
+    complaint.afterPhoto,
+    inspection.completionPhoto,
+  ].map(getPhotoPath).filter((image) => image.trim())));
 
   return {
     ...complaint,
@@ -69,8 +88,20 @@ const toDetailData = (complaint, t) => {
       expectedCompletion: inspection.completionDate || "",
     },
     beforeAfter: {
-      before: complaint.beforePhoto || images[0] || "",
-      after: inspection.completionPhoto || complaint.afterPhoto || "",
+      before: firstPhotoPath(
+        inspection.sitePhoto,
+        complaint.sitePhoto,
+        photoRecord.before,
+        photoRecord.site,
+        complaint.beforePhoto,
+        images[0]
+      ),
+      after: firstPhotoPath(
+        inspection.completionPhoto,
+        complaint.completionPhoto,
+        photoRecord.after,
+        complaint.afterPhoto
+      ),
     },
     history: complaint.statusHistory || complaint.log || [],
   };
@@ -427,7 +458,11 @@ const ComplaintDetails = ({
           <div className="cd-photo-grid">
             {data.photos.length > 0 ? data.photos.map((url, index) => (
               <div key={index} className="cd-photo-item">
-                <img src={toMediaUrl(url)} alt={`${t('complaint_details_admin.complaint_photo')} ${index + 1}`} loading="lazy" />
+                <ComplaintImage
+                  src={url}
+                  alt={`${t('complaint_details_admin.complaint_photo')} ${index + 1}`}
+                  fallbackClassName="cd-gallery-photo-fallback"
+                />
               </div>
             )) : <p style={{ color: "#64748b", padding: "10px" }}>{t('complaint_details_admin.no_photos_available')}</p>}
           </div>
@@ -561,7 +596,11 @@ const ComplaintDetails = ({
             <div className="cd-comparison-item">
               <span className="cd-comparison-label">{t('complaint_details_admin.before')}</span>
               {data.beforeAfter.before ? (
-                <img src={toMediaUrl(data.beforeAfter.before)} alt={t('complaint_details_admin.before')} loading="lazy" />
+                <ComplaintImage
+                  src={data.beforeAfter.before}
+                  alt={t('complaint_details_admin.before')}
+                  fallbackClassName="cd-photo-placeholder"
+                />
               ) : (
                 <div className="cd-photo-placeholder">{t('complaint_details_admin.no_before_photo')}</div>
               )}
@@ -569,7 +608,11 @@ const ComplaintDetails = ({
             <div className="cd-comparison-item">
               <span className="cd-comparison-label">{t('complaint_details_admin.after')}</span>
               {data.beforeAfter.after ? (
-                <img src={toMediaUrl(data.beforeAfter.after)} alt={t('complaint_details_admin.after')} loading="lazy" />
+                <ComplaintImage
+                  src={data.beforeAfter.after}
+                  alt={t('complaint_details_admin.after')}
+                  fallbackClassName="cd-photo-placeholder"
+                />
               ) : (
                 <div className="cd-photo-placeholder">{t('complaint_details_admin.no_after_photo')}</div>
               )}

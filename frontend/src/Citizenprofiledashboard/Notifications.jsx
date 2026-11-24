@@ -33,6 +33,16 @@ const isResolutionNotification = (notification) =>
   (notification.type === "Complaint Status Updated" &&
     /\b(resolved|closed)\b/i.test(notification.message || ""));
 
+const formatNotificationDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
+
 const Notifications = ({ onBack }) => {
   const { t } = useTranslation(); // ✅ ADDED
 
@@ -47,7 +57,7 @@ const Notifications = ({ onBack }) => {
         ...notification,
         complaintNumber: notification.complaintNumber || "",
         title: notification.title || notification.type,
-        date: notification.createdAt ? new Date(notification.createdAt).toLocaleString() : notification.time,
+        date: formatNotificationDate(notification.createdAt || notification.time),
         details: notification.details || { category: "", issue: "", location: "" },
         photos: notification.photos || {},
       }))))
@@ -152,7 +162,7 @@ const Notifications = ({ onBack }) => {
                     <td className="cdp-notif-mono">{n.complaintNumber}</td>
                     <td className="cdp-notif-message">
                       {!n.isRead && <span className="cdp-notif-unread-dot"></span>}
-                      {n.title}: {n.message}
+                      <span>{n.message || n.title || t("notifications.noMessage")}</span>
                     </td>
                     <td className="cdp-notif-mono">{n.date}</td>
                     <td>

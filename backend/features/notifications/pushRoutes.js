@@ -1,15 +1,25 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const PushDevice = require("../../models/PushDevice");
-const { getMessaging } = require("../../services/firebaseMessaging");
+const { getMessaging, isMessagingConfigured } = require("../../services/firebaseMessaging");
 const requirePushAuth = require("../../middleware/requirePushAuth");
 
 const router = express.Router();
+
+router.get("/status", (_req, res) => {
+  return res.json({ success: true, configured: isMessagingConfigured() });
+});
 
 router.post("/devices", requirePushAuth, async (req, res) => {
   const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
   if (token.length < 20 || token.length > 4096) {
     return res.status(400).json({ success: false, message: "A valid Firebase device token is required." });
+  }
+  if (!isMessagingConfigured()) {
+    return res.status(503).json({
+      success: false,
+      message: "Push notifications are not configured on the server.",
+    });
   }
 
   try {

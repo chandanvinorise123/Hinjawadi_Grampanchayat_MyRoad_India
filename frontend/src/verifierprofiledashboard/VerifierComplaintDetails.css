@@ -55,6 +55,70 @@
   grid-column: 1 / -1;
 }
 
+.vcd-photos {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e8edf3;
+}
+
+.vcd-photos-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.vcd-photos-heading strong { color: #173455; }
+
+.vcd-photos-heading span {
+  flex: 0 0 auto;
+  color: #738198;
+}
+
+.vcd-photos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.vcd-photos-grid figure {
+  width: min(100%, 190px);
+  margin: 0;
+  padding: 7px;
+  border: 1px solid #e6ebf2;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.vcd-photos-grid img,
+.vcd-photos-grid .vcd-photo-fallback {
+  display: block;
+  width: 100%;
+  height: 128px;
+  border-radius: 7px;
+  background: #edf2f8;
+  object-fit: contain;
+}
+
+.vcd-photos-grid figcaption {
+  margin: 7px 3px 2px;
+  color: #65758b;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.vcd-photos-empty {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed #d8e1ec;
+  border-radius: 9px;
+  color: #738198;
+  font-size: 12px;
+}
+
 .vcd-verification-photo {
   display: flex;
   flex-direction: column;

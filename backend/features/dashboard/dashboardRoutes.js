@@ -205,7 +205,7 @@ router.get("/staff-new-complaints", async (req, res) => {
     }
 
     const complaints = await Complaint.find({
-      status: { $in: ["New", "Pending", "Under Action"] },
+      status: { $in: ["New", "Pending", "Under Action", "Rejected"] },
     })
       .populate("citizenId", "name email mobile contact")
       .sort({ createdAt: -1 })
@@ -220,9 +220,20 @@ router.get("/staff-new-complaints", async (req, res) => {
     const staffIdentifiers = [userId, staffProfile.staffId, staffProfile.name]
       .filter(Boolean)
       .map((identifier) => String(identifier).trim().toLowerCase());
-    const availableComplaints = complaints.filter((complaint) =>
-      !wasActedOnByStaffOrVerifier(complaint) &&
-      (
+    const isAssignedToStaff = (complaint) => {
+      if (hasAssignment(complaint.assignedStaffId)) {
+        return String(complaint.assignedStaffId).trim().toLowerCase() ===
+          String(userId).trim().toLowerCase();
+      }
+      return staffIdentifiers.includes(
+        String(complaint.assignedStaff || "").trim().toLowerCase()
+      );
+    };
+    const availableComplaints = complaints.filter((complaint) => {
+      if (complaint.status === "Rejected" && isAssignedToStaff(complaint)) {
+        return true;
+      }
+      return !wasActedOnByStaffOrVerifier(complaint) && (
         (
           ["New", "Pending"].includes(complaint.status) &&
           !hasAssignment(complaint.assignedStaffId) &&
@@ -230,15 +241,10 @@ router.get("/staff-new-complaints", async (req, res) => {
         ) ||
         (
           complaint.status === "Under Action" &&
-          (
-            (hasAssignment(complaint.assignedStaffId) &&
-              String(complaint.assignedStaffId).trim().toLowerCase() === String(userId).toLowerCase()) ||
-            (!hasAssignment(complaint.assignedStaffId) &&
-              staffIdentifiers.includes(String(complaint.assignedStaff || "").trim().toLowerCase()))
-          )
+          isAssignedToStaff(complaint)
         )
-      )
-    );
+      );
+    });
 
     return res.json({
       success: true,
@@ -470,6 +476,12 @@ router.patch("/complaints/:id", async (req, res) => {
     const actorName = actorRole
       ? actorRole.charAt(0).toUpperCase() + actorRole.slice(1)
       : null;
+    const providedActorName = typeof req.body.actorName === "string"
+      ? req.body.actorName.trim()
+      : "";
+    const actorLabel = actorName
+      ? `${actorName}${providedActorName ? ` (${providedActorName})` : ""}`
+      : null;
     const verificationDateTime = req.body.verificationDateTime;
     if (verificationDateTime !== undefined && typeof verificationDateTime !== "string") {
       return res.status(400).json({ success: false, message: "Verification date and time must be a string" });
@@ -491,7 +503,7 @@ router.patch("/complaints/:id", async (req, res) => {
 
     if (staffAssignmentChanged) {
       activityEntries.push({
-        actor: actorName || "Admin",
+        actor: actorLabel || "Admin",
         message: (updates.assignedStaff ?? previousAssignedStaff)
           ? `Assigned staff member ${updates.assignedStaff ?? previousAssignedStaff}`
           : "Removed staff assignment",
@@ -503,7 +515,7 @@ router.patch("/complaints/:id", async (req, res) => {
       (updates.assignedVerifierId !== undefined && updates.assignedVerifierId !== previousAssignedVerifierId);
     if (verifierAssignmentChanged) {
       activityEntries.push({
-        actor: actorName || "Admin",
+        actor: actorLabel || "Admin",
         message: updates.assignedVerifier
           ? `Assigned verifier ${updates.assignedVerifier}`
           : "Removed verifier assignment",
@@ -512,7 +524,7 @@ router.patch("/complaints/:id", async (req, res) => {
     }
     if (updates.priority !== undefined && updates.priority !== previousComplaint.priority) {
       activityEntries.push({
-        actor: actorName || "Admin",
+        actor: actorLabel || "Admin",
         message: `Priority changed from ${previousComplaint.priority || "Normal"} to ${updates.priority}`,
         createdAt: new Date(),
       });
@@ -520,7 +532,7 @@ router.patch("/complaints/:id", async (req, res) => {
     if (inspectionUpdated) {
       const workDescription = updates.inspection.actionTaken || updates.inspection.remarks;
       activityEntries.push({
-        actor: actorName || "Staff",
+        actor: actorLabel || "Staff",
         message: workDescription
           ? `Updated inspection/work record: ${workDescription}`
           : "Updated inspection/work evidence",
@@ -534,7 +546,7 @@ router.patch("/complaints/:id", async (req, res) => {
       updateOperation.$push = {
         statusHistory: {
           status: updates.status,
-          actor: actorName || "Dashboard",
+          actor: actorLabel || "Dashboard",
           remarks: typeof req.body.remarks === "string" ? req.body.remarks : "",
           updatedAt: statusUpdatedAt,
         },

@@ -516,3 +516,165 @@
   background-repeat: repeat, no-repeat;
 }
 
+/* Compact, self-contained notification centre */
+.cdp-notif-page {
+  height: calc(100vh - 1px);
+  min-height: 0;
+  padding: 18px clamp(14px, 2.2vw, 28px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cdp-notif-header {
+  gap: 14px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.cdp-back-btn {
+  padding: 8px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.cdp-notif-header h1 {
+  font-size: clamp(20px, 2vw, 26px);
+}
+
+.cdp-notif-content {
+  width: 100%;
+  max-width: none;
+  flex: 1;
+  min-height: 0;
+  gap: 10px;
+}
+
+.cdp-notif-subtitle {
+  margin: 0;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.cdp-notif-controls {
+  min-height: 52px;
+  padding: 8px 10px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cdp-notif-search {
+  min-width: 220px;
+  padding: 7px 10px;
+}
+
+.cdp-notif-filter select {
+  min-width: 150px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.cdp-notif-filter label {
+  font-size: 12px;
+}
+
+.cdp-notif-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.cdp-notif-table {
+  table-layout: fixed;
+  min-width: 900px;
+}
+
+.cdp-notif-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 8px;
+  font-size: 10px;
+}
+
+.cdp-notif-table td {
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 1.28;
+  vertical-align: middle;
+}
+
+.cdp-notif-table th:nth-child(1),
+.cdp-notif-table td:nth-child(1) { width: 18%; }
+.cdp-notif-table th:nth-child(2),
+.cdp-notif-table td:nth-child(2) { width: 16%; }
+.cdp-notif-table th:nth-child(3),
+.cdp-notif-table td:nth-child(3) { width: 38%; }
+.cdp-notif-table th:nth-child(4),
+.cdp-notif-table td:nth-child(4) { width: 15%; }
+.cdp-notif-table th:nth-child(5),
+.cdp-notif-table td:nth-child(5) { width: 13%; text-align: center; }
+
+.cdp-notif-badge {
+  max-width: 100%;
+  padding: 3px 7px;
+  font-size: 9px;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.cdp-notif-mono {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.cdp-notif-message {
+  max-height: none;
+  overflow: visible;
+  line-height: 1.35;
+  display: table-cell;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+}
+
+.cdp-notif-message > span {
+  display: inline;
+}
+
+.cdp-notif-unread-dot {
+  width: 6px;
+  height: 6px;
+  margin: 5px 6px 0 0;
+  vertical-align: top;
+}
+
+.cdp-notif-view-btn {
+  min-width: 72px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 860px) {
+  .cdp-notif-page {
+    height: auto;
+    min-height: calc(100vh - 1px);
+    overflow: visible;
+  }
+
+  .cdp-notif-content {
+    min-height: 0;
+  }
+
+  .cdp-notif-table-container {
+    overflow: auto;
+  }
+
+  .cdp-notif-table {
+    min-width: 760px;
+  }
+}
+

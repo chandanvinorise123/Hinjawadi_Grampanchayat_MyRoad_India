@@ -10,7 +10,7 @@ const formatDate = (value, notRecordedText = "Not recorded") => {
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
 };
 
-const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true, layout = "default" }) => {
+const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true, layout = "default", hideEvidence = false }) => {
   const { t } = useTranslation(); // ✅ ADDED
   const notRecorded = t('staff_complaint_details.not_recorded');
 
@@ -275,18 +275,6 @@ const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true,
           </div>
         ))}
         <div className="scd-item scd-wide">
-          <span>{t('staff_complaint_details.complaint_description')}</span>
-          <p>{complaint.description || t('staff_complaint_details.no_description_provided')}</p>
-        </div>
-        <div className="scd-item scd-wide">
-          <span>{t('staff_complaint_details.staff_inspection_remarks')}</span>
-          <p>{complaint.inspection?.remarks || t('staff_complaint_details.no_inspection_remarks_recorded')}</p>
-        </div>
-        <div className="scd-item scd-wide">
-          <span>{t('staff_complaint_details.work_performed')}</span>
-          <p>{complaint.inspection?.actionTaken || t('staff_complaint_details.no_work_details_recorded')}</p>
-        </div>
-        <div className="scd-item scd-wide">
           <span>{t('staff_complaint_details.verifier_feedback')}</span>
           <p>{complaint.verifierRemarks || complaint.previousRemarks || t('staff_complaint_details.no_verifier_feedback_recorded')}</p>
         </div>
@@ -304,33 +292,37 @@ const StaffComplaintDetails = ({ complaint, showMap = true, showActivity = true,
         </div>
       </div>
 
-      <div className="scd-evidence-section">
-        <h4>{t('staff_complaint_details.citizen_photographs')}</h4>
-        {citizenPhotos.length ? (
-          <div className="scd-photo-grid">
-            {citizenPhotos.map((photo, index) => (
-              <a className="scd-photo" href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={`${photo}-${index}`}>
-                <img src={toMediaUrl(photo)} alt={`${t('staff_complaint_details.initial_evidence', { index: index + 1 })}`} loading="lazy" />
-                <span>{t('staff_complaint_details.initial_evidence', { index: index + 1 })}</span>
-              </a>
-            ))}
+      {!hideEvidence && (
+        <>
+          <div className="scd-evidence-section">
+            <h4>{t('staff_complaint_details.citizen_photographs')}</h4>
+            {citizenPhotos.length ? (
+              <div className="scd-photo-grid">
+                {citizenPhotos.map((photo, index) => (
+                  <a className="scd-photo" href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={`${photo}-${index}`}>
+                    <img src={toMediaUrl(photo)} alt={`${t('staff_complaint_details.initial_evidence', { index: index + 1 })}`} loading="lazy" />
+                    <span>{t('staff_complaint_details.initial_evidence', { index: index + 1 })}</span>
+                  </a>
+                ))}
+              </div>
+            ) : <p className="scd-empty">{t('staff_complaint_details.no_citizen_photographs_attached')}</p>}
           </div>
-        ) : <p className="scd-empty">{t('staff_complaint_details.no_citizen_photographs_attached')}</p>}
-      </div>
 
-      <div className="scd-evidence-section">
-        <h4>{t('staff_complaint_details.before_after_work_evidence')}</h4>
-        {workPhotos.length ? (
-          <div className="scd-photo-grid">
-            {workPhotos.map(([label, photo]) => (
-              <a className="scd-photo" href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={label}>
-                <img src={toMediaUrl(photo)} alt={`${label} work evidence`} loading="lazy" />
-                <span>{label}</span>
-              </a>
-            ))}
+          <div className="scd-evidence-section">
+            <h4>{t('staff_complaint_details.before_after_work_evidence')}</h4>
+            {workPhotos.length ? (
+              <div className="scd-photo-grid">
+                {workPhotos.map(([label, photo]) => (
+                  <a className="scd-photo" href={toMediaUrl(photo)} target="_blank" rel="noopener noreferrer" key={label}>
+                    <img src={toMediaUrl(photo)} alt={`${label} work evidence`} loading="lazy" />
+                    <span>{label}</span>
+                  </a>
+                ))}
+              </div>
+            ) : <p className="scd-empty">{t('staff_complaint_details.no_staff_work_photographs_attached')}</p>}
           </div>
-        ) : <p className="scd-empty">{t('staff_complaint_details.no_staff_work_photographs_attached')}</p>}
-      </div>
+        </>
+      )}
 
       {showActivity && (
         <div className="scd-evidence-section">

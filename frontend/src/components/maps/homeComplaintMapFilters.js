@@ -65,6 +65,16 @@ const getReportedRange = (range, today = new Date()) => {
   const cutoff6Months = subtractCalendarMonths(startOfToday, 6);
 
   switch (range) {
+    case "1day":
+      return {
+        from: new Date(today.getTime() - 86_400_000),
+        through: today,
+      };
+    case "7days":
+      return {
+        from: new Date(today.getTime() - 7 * 86_400_000),
+        through: today,
+      };
     case "15days":
       return { from: cutoff15Days, through: endOfToday };
     case "1month":
