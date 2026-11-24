@@ -23,7 +23,7 @@
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --field-height: 48px;
+  --field-height: 44px;
   
   width: 100%;
   max-width: 100%;
@@ -32,17 +32,6 @@
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
   overflow-x: hidden;
-}
-
-@media (max-width: 420px) {
-  .report-page .map-search-row {
-    gap: 6px;
-  }
-
-  .report-page .map-search-button {
-    min-width: 68px;
-    padding: 0 10px;
-  }
 }
 
 .report-page *,
@@ -181,7 +170,7 @@
 
 .report-page .report-shell-header {
   text-align: center;
-  margin-bottom: clamp(1.75rem, 2.5vw, 2.5rem);
+  margin-bottom: 14px;
 }
 
 .report-page .report-shell-header h2 {
@@ -198,22 +187,27 @@
 /* ================= 6. GRID LAYOUT ================= */
 .report-page .report-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: clamp(1.75rem, 2.5vw, 3rem);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .report-page .report-col {
   display: flex;
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .report-page .report-submit-row {
   grid-column: 1 / -1;
   display: flex;
   justify-content: center;
-  margin-top: 12px;
-  padding-top: 20px;
+  margin-top: 0;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 
@@ -221,27 +215,8 @@
 .report-page .form-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-}
-
-.report-page .map-search-button {
-  flex: 0 0 auto;
-  min-width: 82px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  padding: 0 14px;
-  background: var(--navy-900);
-  color: #fff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.report-page .map-search-button:disabled {
-  cursor: wait;
-  opacity: 0.65;
 }
 
 .report-page .form-field label {
@@ -362,6 +337,63 @@ body .pac-container {
   color: #ffffff;
 }
 
+.report-page .live-location-summary {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d6ebdd;
+  border-radius: var(--radius-sm);
+  background: #edf7f0;
+}
+
+.report-page .use-live-location-button {
+  width: 200px;
+  max-width: 100%;
+  align-self: center;
+  min-height: 40px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px solid #173d68;
+  border-radius: 10px;
+  background: #173d68;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(23, 61, 104, 0.18);
+  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.report-page .use-live-location-button span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.report-page .use-live-location-button:hover {
+  border-color: #16803c;
+  background: #16803c;
+  box-shadow: 0 8px 18px rgba(22, 128, 60, 0.28);
+  transform: translateY(-2px);
+}
+
+.report-page .use-live-location-button:active {
+  border-color: #116b32;
+  background: #116b32;
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(22, 128, 60, 0.18);
+}
+
+.report-page .use-live-location-button:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 2px;
+}
+
 .report-page .location-status {
   font-size: 13px;
   color: var(--ink-soft);
@@ -373,8 +405,24 @@ body .pac-container {
 
 .report-page .location-status.success {
   color: var(--resolved);
-  font-weight: 700;
-  background: rgba(31, 138, 61, 0.08);
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.report-page .location-status.success p {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 0;
+  text-align: center;
+}
+
+.report-page .location-status.success p strong {
+  font-weight: 400;
 }
 
 .report-page .location-status.error {
@@ -383,63 +431,10 @@ body .pac-container {
   background: rgba(209, 52, 56, 0.08);
 }
 
-.report-page .map-search-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  width: 100%;
-}
-
-.report-page .map-search-input {
-  flex: 1;
-  min-width: 0;
-  height: var(--field-height);
-  padding: 0 16px;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  width: 100%;
-}
-
-.report-page .map-search-input:focus,
 .report-page .manual-address-field input:focus {
   outline: none;
   border-color: var(--navy-700);
   box-shadow: 0 0 0 3px rgba(27, 69, 134, 0.12);
-}
-
-.report-page .report-location-search-results {
-  position: relative;
-  z-index: 20;
-  display: grid;
-  max-height: 220px;
-  margin-top: 6px;
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  box-shadow: 0 6px 16px rgba(22, 27, 38, 0.14);
-}
-
-.report-page .report-location-search-results button {
-  padding: 10px 14px;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.report-page .report-location-search-results button + button {
-  border-top: 1px solid var(--line);
-}
-
-.report-page .report-location-search-results button:hover,
-.report-page .report-location-search-results button[aria-selected="true"] {
-  background: #edf4fb;
 }
 
 .report-page .report-map-container {
@@ -449,10 +444,28 @@ body .pac-container {
   border-radius: var(--radius-sm);
 }
 
+.report-page .report-location-section {
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  box-shadow: 0 4px 14px rgba(11, 36, 71, 0.06);
+}
+
 .report-page .report-leaflet-map {
   width: 100%;
-  height: 350px;
+  height: 300px;
   background: #e9eef5;
+}
+
+.report-page .photo-detection-container {
+  margin-bottom: 0;
+  padding: 16px;
+}
+
+.report-page .pd-header h3 {
+  margin-bottom: 12px;
 }
 
 .report-page .report-leaflet-map:fullscreen {
@@ -516,6 +529,53 @@ body .pac-container {
   outline-offset: 2px;
 }
 
+.report-page .report-map-top-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.report-page .report-map-live-location-button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1.5px solid #173d68;
+  border-radius: 10px;
+  background: #173d68;
+  color: #fff;
+  font: 800 14px/1 Arial, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(23, 61, 104, 0.24);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.report-page .report-map-live-location-button[hidden] {
+  display: none;
+}
+
+.report-page .report-map-live-location-button span {
+  font-size: 18px;
+}
+
+.report-page .report-map-live-location-button:hover {
+  border-color: #16803c;
+  background: #16803c;
+  box-shadow: 0 8px 18px rgba(22, 128, 60, 0.28);
+}
+
+.report-page .report-map-live-location-button:focus-visible {
+  outline: 3px solid rgba(22, 128, 60, 0.35);
+  outline-offset: 2px;
+}
+
 .report-page .report-gps-marker {
   border: 0;
   background: transparent;
@@ -572,21 +632,6 @@ body .pac-container {
   cursor: not-allowed;
 }
 
-.report-page .location-help {
-  margin: 2px 0 0;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.report-page .location-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
 .report-page .live-location-info {
   min-width: 190px;
   max-width: 280px;
@@ -616,30 +661,6 @@ body .pac-container {
 .report-page .live-location-info small {
   color: #4b5567;
   font-size: 11px;
-}
-
-.report-page .location-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.report-page .gps-legend-dot,
-.report-page .issue-legend-pin {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(22, 27, 38, 0.35);
-}
-
-.report-page .gps-legend-dot {
-  background: #4285f4;
-}
-
-.report-page .issue-legend-pin {
-  background: var(--saffron-dark);
 }
 
 .report-page .location-status p {
@@ -959,6 +980,83 @@ body .pac-container {
 
 /* ---------- SMALL MOBILE ---------- */
 @media (max-width: 480px) {
+  .report-page > section:not(.page-hero-section) {
+    padding: 18px 12px;
+  }
+  .report-page .report-shell {
+    padding: 18px 14px;
+  }
+  .report-page {
+    --field-height: 40px;
+  }
+  .report-page .report-grid {
+    row-gap: 8px;
+  }
+  .report-page .photo-detection-container {
+    padding: 12px;
+  }
+  .report-page .report-submit-row {
+    padding-top: 8px;
+  }
+  .report-page .report-col {
+    gap: 10px;
+  }
+  .report-page .form-field {
+    gap: 4px;
+  }
+  .report-page .report-location-section {
+    gap: 8px;
+    padding: 8px;
+  }
+  .report-page .live-location-summary {
+    gap: 6px;
+    padding: 8px;
+  }
+  .report-page .form-field label {
+    font-size: 12px;
+  }
+  .report-page .use-live-location-button {
+    width: 180px;
+    min-height: 36px;
+    font-size: 11px;
+  }
+  .report-page .use-live-location-button span {
+    font-size: 14px;
+  }
+  .report-page .location-status.success {
+    font-size: 11px;
+  }
+  .report-page .location-status.success p strong {
+    font-size: 11px;
+  }
+  .report-page .report-map-type-button {
+    min-height: 34px;
+    padding: 6px 10px;
+    border-width: 1px;
+    border-radius: 7px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .report-page #fullName,
+  .report-page #mobile {
+    height: 40px;
+    padding-left: 12px;
+    font-size: 13px;
+  }
+  .report-page .input-with-icon #mobile {
+    padding-right: 40px;
+  }
+  .report-page .report-map-container {
+    max-width: 300px;
+    margin-inline: auto;
+  }
+  .report-page .report-leaflet-map {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+  .report-page .pd-camera-zone {
+    padding: 18px 12px;
+  }
   .report-page .page-hero {
     height: 360px;
     min-height: 360px;

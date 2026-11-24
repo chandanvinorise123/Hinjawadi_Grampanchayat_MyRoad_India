@@ -22,6 +22,7 @@ const ReportMapContents = ({
   liveLocationPhoto,
   liveLocationDetailsLoading,
   selectedLocation,
+  issueMarkerEnabled = true,
   issueType,
   mapTypeId,
   isFullscreen,
@@ -32,6 +33,7 @@ const ReportMapContents = ({
   onLiveLocationPopupClose,
   onMapTypeToggle,
   onFullscreenChange,
+  onUseLiveLocation,
 }) => {
   const map = useMap();
   const liveMarkerRef = useRef(null);
@@ -153,7 +155,7 @@ const ReportMapContents = ({
             position={livePosition}
             icon={liveIcon}
             title="Your current location"
-            zIndexOffset={1000}
+            zIndexOffset={selectedLocation.lat === null ? 1000 : 0}
             eventHandlers={{
               click: onLiveLocationMarkerClick,
             }}
@@ -186,11 +188,12 @@ const ReportMapContents = ({
           </Marker>
         </>
       )}
-      {selectedLocation.lat !== null && selectedLocation.lng !== null && (
+      {issueMarkerEnabled && selectedLocation.lat !== null && selectedLocation.lng !== null && (
         <Marker
           position={[Number(selectedLocation.lat), Number(selectedLocation.lng)]}
           icon={issueIcon}
           draggable
+          zIndexOffset={1000}
           eventHandlers={{
             dragend: onMarkerDragEnd,
           }}
@@ -219,7 +222,19 @@ const ReportMapContents = ({
         </div>
       </div>
       <div className="leaflet-top leaflet-right report-leaflet-controls">
-        <div className="leaflet-control">
+        <div className="leaflet-control report-map-top-actions">
+          <button
+            className="report-map-live-location-button"
+            type="button"
+            hidden={!isFullscreen}
+            onClick={(event) => {
+              event.stopPropagation();
+              onUseLiveLocation();
+            }}
+          >
+            <span aria-hidden="true">⌖</span>
+            Use Live Location
+          </button>
           <button
             className="report-map-fullscreen-button"
             type="button"
@@ -265,6 +280,7 @@ const ReportLeafletMap = ({
   onLiveLocationPopupClose,
   onMapTypeToggle,
   onFullscreenChange,
+  onUseLiveLocation,
 }) => (
   <MapContainer
     className="report-leaflet-map"
@@ -292,6 +308,7 @@ const ReportLeafletMap = ({
       onLiveLocationPopupClose={onLiveLocationPopupClose}
       onMapTypeToggle={onMapTypeToggle}
       onFullscreenChange={onFullscreenChange}
+      onUseLiveLocation={onUseLiveLocation}
     />
   </MapContainer>
 );

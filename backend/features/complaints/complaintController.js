@@ -45,6 +45,8 @@ const createComplaint = async (req, res) => {
       coordinates,
     } = req.body || {};
 
+    const normalizedDescription = String(description || "").trim();
+
     // ------------------------------------------
     // Validate required fields
     // ------------------------------------------
@@ -52,13 +54,12 @@ const createComplaint = async (req, res) => {
       !citizenName ||
       !mobile ||
       !category ||
-      !issueType ||
-      !description
+      !issueType
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Citizen name, mobile number, category, issue type, and description are required",
+          "Citizen name, mobile number, category, and issue type are required",
       });
     }
 
@@ -177,38 +178,12 @@ const createComplaint = async (req, res) => {
       });
     }
 
-    const hasUploadedImages = Array.isArray(req.files) && req.files.length > 0;
-    if (!hasUploadedImages && photoVerifications.length === 0) {
+    const hasUploadedImage = Array.isArray(req.files) && req.files.length > 0;
+    if (!hasUploadedImage && photoVerifications.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "At least one verified complaint photo is required",
+        message: "At least one complaint photo is required",
       });
-    }
-
-    for (const photo of photoVerifications) {
-      const photoLatitude = Number(photo?.location?.latitude);
-      const photoLongitude = Number(photo?.location?.longitude);
-      if (!Number.isFinite(photoLatitude) || !Number.isFinite(photoLongitude)) {
-        return res.status(400).json({
-          success: false,
-          message: "Each complaint photo must include GPS coordinates",
-        });
-      }
-      if (!isInsideHinjawadiBoundary(photoLatitude, photoLongitude)) {
-        return res.status(400).json({
-          success: false,
-          message: "The complaint photo location must be inside Hinjawadi Gram Panchayat.",
-        });
-      }
-      if (
-        Math.abs(photoLatitude - latitude) > PHOTO_LOCATION_TOLERANCE ||
-        Math.abs(photoLongitude - longitude) > PHOTO_LOCATION_TOLERANCE
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "The complaint photo must be captured at the selected complaint location.",
-        });
-      }
     }
 
     const uploadedImages = (req.files || []).map(
@@ -228,7 +203,7 @@ const createComplaint = async (req, res) => {
       citizenMobile: String(mobile).trim(),
       category,
       issueType,
-      description,
+      description: normalizedDescription,
       location: location || "",
       landmark: landmark || "",
       department,

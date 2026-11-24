@@ -181,14 +181,10 @@ const ReportIssue = () => {
   const [liveLocationDetailsLoading, setLiveLocationDetailsLoading] = useState(false);
 
   const [locationStatus, setLocationStatus] = useState("idle");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchStatus, setSearchStatus] = useState("idle");
-  const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [mapTypeId, setMapTypeId] = useState("roadmap");
   const [map, setMap] = useState(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const geocodeRequestId = useRef(0);
-  const searchRequestId = useRef(0);
   const locationRequestId = useRef(0);
   const gpsAutoCentered = useRef(false);
   const livePlaceRequestId = useRef(0);
@@ -198,8 +194,6 @@ const ReportIssue = () => {
   const [issueType, setIssueType] = useState(
     location.state?.issueType || ""
   );
-
-  const [description, setDescription] = useState("");
 
   // Photo verification state
   const [verifiedPhotosData, setVerifiedPhotosData] = useState([]);
@@ -256,7 +250,7 @@ const ReportIssue = () => {
             setErrorMessage("Your current location is unavailable. Check your device location settings.");
             break;
           case 3:
-            setErrorMessage("Getting your location timed out. Please retry.");
+            setErrorMessage("");
             break;
           default:
             setErrorMessage("Could not fetch your live location. Please retry.");
@@ -395,8 +389,6 @@ const ReportIssue = () => {
   };
 
   const selectIssueLocation = (lat, lng, address = "") => {
-    searchRequestId.current += 1;
-    setSearchSuggestions([]);
     setLocationMode("map");
     setSelectedLocation({ lat, lng });
     setSelectedAddress(address);
@@ -517,106 +509,19 @@ const ReportIssue = () => {
     selectIssueLocation(position.lat, position.lng);
   };
 
-  const selectSearchSuggestion = (feature) => {
-    const coordinates = feature.geometry?.coordinates;
-    if (
-      !Array.isArray(coordinates) ||
-      coordinates.length < 2 ||
-      !coordinates.every(Number.isFinite)
-    ) {
-      setSearchStatus("error");
-      setErrorMessage("The selected search result has invalid coordinates. Try another location.");
-      return;
-    }
-
-    const [lng, lat] = coordinates;
-    const address = getPhotonFeatureLabel(feature.properties) || searchQuery.trim();
-    selectIssueLocation(lat, lng, address);
-    setSearchQuery(address);
-    setSearchStatus("idle");
-    setSearchSuggestions([]);
-    map?.setView([lat, lng], 18);
-  };
-
-  const handleSearchLocation = async () => {
-    const query = searchQuery.trim();
-    if (!query) {
-      setSearchStatus("error");
-      setErrorMessage("Enter a landmark, road, or nearby place to search.");
-      return;
-    }
-
-    if (!map) {
-      setSearchStatus("error");
-      setErrorMessage("The map is not ready yet. Please try the search again.");
-      return;
-    }
-
-    const requestId = ++searchRequestId.current;
-    setSearchStatus("loading");
-    setSearchSuggestions([]);
-    setErrorMessage("");
-
-    try {
-      const mapCenter = map.getCenter();
-      const params = new URLSearchParams({
-        q: query,
-        lat: String(mapCenter.lat),
-        lon: String(mapCenter.lng),
-        limit: "5",
-        lang: "en",
-      });
-      const response = await fetch(`${PHOTON_API_URL}/api/?${params}`);
-      if (!response.ok) {
-        throw new Error(`Location search failed (${response.status})`);
-      }
-      const result = await response.json();
-      if (requestId !== searchRequestId.current) return;
-
-      const features = (Array.isArray(result.features) ? result.features : [])
-        .filter((feature) => {
-          const countryCode = String(feature.properties?.countrycode || "").toLowerCase();
-          return !countryCode || countryCode === "in";
-        })
-        .filter((feature) => {
-          const coordinates = feature.geometry?.coordinates;
-          return Array.isArray(coordinates) &&
-            coordinates.length >= 2 &&
-            coordinates.every(Number.isFinite);
-        });
-
-      if (features.length === 0) {
-        setSearchStatus("error");
-        setErrorMessage("No matching location found. Try a nearby landmark or road name.");
-        return;
-      }
-
-      setSearchSuggestions(features);
-      setSearchStatus("idle");
-      selectSearchSuggestion(features[0]);
-      setSearchSuggestions(features);
-    } catch (error) {
-      if (requestId !== searchRequestId.current) return;
-      console.error("Landmark search failed:", error);
-      setSearchStatus("error");
-      setErrorMessage("Landmark search failed. Check your internet connection and try again.");
-    }
-  };
-
-  // Switch back to map selection mode.
-  const handleMapMode = () => {
-    setLocationMode("map");
-    setErrorMessage("");
-  };
-
   // Request the device's live location.
   const handleUseLiveLocation = () => {
     const requestId = ++locationRequestId.current;
     setLocationMode("live");
     setLocationStatus("loading");
     setErrorMessage("");
-    setLiveLocation({ lat: "", lng: "" });
-    setLiveLocationAccuracy(null);
+
+    if (liveLocationRef.current.lat !== "" && liveLocationRef.current.lng !== "") {
+      setSelectedLocation({
+        lat: Number(liveLocationRef.current.lat),
+        lng: Number(liveLocationRef.current.lng),
+      });
+    }
 
     if (!navigator.geolocation) {
       setLocationStatus("error");
@@ -647,6 +552,10 @@ const ReportIssue = () => {
         };
         liveLocationRef.current = nextLocation;
         setLiveLocation(nextLocation);
+        setSelectedLocation({
+          lat: latitude,
+          lng: longitude,
+        });
         setLiveLocationAccuracy(position.coords.accuracy);
 
         setLocationStatus("captured");
@@ -669,9 +578,7 @@ const ReportIssue = () => {
             );
             break;
           case 3:
-            setErrorMessage(
-              "Getting your location timed out. Please try again."
-            );
+            setErrorMessage("");
             break;
           default:
             setErrorMessage(
@@ -738,8 +645,8 @@ const ReportIssue = () => {
     event.preventDefault();
     setErrorMessage("");
 
-    if (verifiedPhotosData.length === 0) {
-      alert(t("report.uploadVerifyPhoto"));
+    if (selectedPhotos.length === 0) {
+      setErrorMessage("Please upload or capture at least one complaint photo.");
       return;
     }
 
@@ -758,15 +665,8 @@ const ReportIssue = () => {
       return;
     }
 
-    if (!description.trim()) {
-      setErrorMessage("Please enter a description.");
-      return;
-    }
-
     if (selectedLocation.lat === null || selectedLocation.lng === null) {
-      setErrorMessage(
-        "Please select the issue location on the map. Your live location is only a reference."
-      );
+      alert("Please select the issue location on the map or click Use Live Location.");
       return;
     }
 
@@ -781,7 +681,7 @@ const ReportIssue = () => {
       longitude < -180 ||
       longitude > 180
     ) {
-      setErrorMessage("Please select valid geographic coordinates.");
+      alert("Please select valid geographic coordinates.");
       return;
     }
 
@@ -805,7 +705,7 @@ const ReportIssue = () => {
     complaintData.append("citizenName", fullName.trim());
     complaintData.append("mobile", mobile);
     complaintData.append("issueType", issueType);
-    complaintData.append("description", description.trim());
+    complaintData.append("description", "");
     complaintData.append("location", `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
     complaintData.append("locationUrl", "Map selected location");
     complaintData.append("landmark", selectedAddress.trim());
@@ -884,7 +784,6 @@ const ReportIssue = () => {
   // Reset form after successful submission.
   const resetForm = () => {
     geocodeRequestId.current += 1;
-    searchRequestId.current += 1;
     locationRequestId.current += 1;
     setComplaintNumber(null);
     setFullName("");
@@ -900,7 +799,6 @@ const ReportIssue = () => {
     setLiveLocationPhoto("");
     gpsAutoCentered.current = false;
     setIssueType("");
-    setDescription("");
     setVerifiedPhotosData([]);
     setSelectedPhotos([]);
     setCapturedLocation(null);
@@ -936,14 +834,12 @@ const ReportIssue = () => {
           <div className="report-shell">
             <div className="report-shell-header">
               <h2>{t("report.title")}</h2>
-              <p className="step-note">
-                {t("report.subtitle")}
-              </p>
             </div>
 
             <form
               className="report-grid"
               onSubmit={handleSubmitReport}
+              noValidate
             >
               {/* Left column: citizen details and report information */}
               <div className="report-col">
@@ -989,182 +885,6 @@ const ReportIssue = () => {
                   </div>
                 </div>
 
-                <div className="segmented-toggle">
-                  <button
-                    type="button"
-                    className={
-                      locationMode === "map" ? "active" : ""
-                    }
-                    onClick={handleMapMode}
-                  >
-                    Select on Map
-                  </button>
-
-                  <button
-                    type="button"
-                    className={
-                      locationMode === "live" ? "active" : ""
-                    }
-                    onClick={handleUseLiveLocation}
-                  >
-                    Use Live Location
-                  </button>
-                </div>
-
-                <div className="form-field">
-                  <label>Select Issue Location</label>
-
-                  <>
-                    <div className="map-search-row">
-                      <input
-                        type="text"
-                        placeholder="Search for a landmark or road..."
-                        className="map-search-input"
-                        aria-label="Search for an issue location"
-                        aria-controls="report-location-search-results"
-                        aria-expanded={searchSuggestions.length > 0}
-                        value={searchQuery}
-                        onChange={(event) => {
-                          setSearchQuery(event.target.value);
-                          setSearchSuggestions([]);
-                          setSearchStatus("idle");
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            if (searchSuggestions.length > 0) {
-                              selectSearchSuggestion(searchSuggestions[0]);
-                            } else {
-                              handleSearchLocation();
-                            }
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="map-search-button"
-                        onClick={handleSearchLocation}
-                        disabled={searchStatus === "loading"}
-                      >
-                        {searchStatus === "loading" ? "Searching..." : "Search"}
-                      </button>
-                    </div>
-                    {searchSuggestions.length > 0 && (
-                      <div
-                        className="report-location-search-results"
-                        id="report-location-search-results"
-                        role="listbox"
-                        aria-label="Location search results"
-                      >
-                        {searchSuggestions.map((feature, index) => {
-                          const label = getPhotonFeatureLabel(feature.properties);
-                          const featureKey = `${feature.properties?.osm_type || "place"}-${feature.properties?.osm_id || index}`;
-                          return (
-                            <button
-                              key={featureKey}
-                              type="button"
-                              role="option"
-                              aria-selected={label === selectedAddress}
-                              onClick={() => selectSearchSuggestion(feature)}
-                            >
-                              {label || "Unnamed location"}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div className="report-map-container">
-                      <ReportLeafletMap
-                        boundary={hinjawadiBoundary}
-                        liveLocation={liveLocation}
-                        liveLocationAccuracy={liveLocationAccuracy}
-                        showLiveLocationInfo={showLiveLocationInfo}
-                        liveLocationAddress={liveLocationAddress}
-                        liveLocationPhoto={liveLocationPhoto}
-                        liveLocationDetailsLoading={liveLocationDetailsLoading}
-                        selectedLocation={selectedLocation}
-                        issueType={issueType}
-                        mapTypeId={mapTypeId}
-                        isFullscreen={isMapFullscreen}
-                        onMapReady={handleMapLoad}
-                        onMapClick={handleMapClick}
-                        onMarkerDragEnd={handleMarkerDragEnd}
-                        onLiveLocationMarkerClick={handleLiveLocationMarkerClick}
-                        onLiveLocationPopupClose={() => setShowLiveLocationInfo(false)}
-                        onMapTypeToggle={() => setMapTypeId((currentType) =>
-                          currentType === "satellite" ? "roadmap" : "satellite"
-                        )}
-                        onFullscreenChange={setIsMapFullscreen}
-                      />
-                        <div className="map-zoom-controls" aria-label="Map zoom controls">
-                          <button
-                            type="button"
-                            aria-label="Zoom in"
-                            title="Zoom in"
-                            onClick={() => changeMapZoom(1)}
-                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) >= 21}
-                          >
-                            +
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Zoom out"
-                            title="Zoom out"
-                            onClick={() => changeMapZoom(-1)}
-                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) <= 3}
-                          >
-                            −
-                          </button>
-                    </div>
-                      </div>
-
-                      <div className="location-legend" aria-label="Map marker legend">
-                        <span><i className="gps-legend-dot" /> Your GPS location</span>
-                        <span><i className="issue-legend-pin" /> Issue location (draggable)</span>
-                      </div>
-
-                      <p className="location-help">
-                        Search for a landmark or click the map to place the issue marker. GPS shows your location only; it is not selected as the issue location.
-                      </p>
-
-                      {locationStatus === "loading" && (
-                        <p className="location-status">
-                          {t("report.fetchingLocation")}
-                        </p>
-                      )}
-
-                      {locationStatus === "captured" && (
-                        <div className="location-status success">
-                          <p>Current location: {liveLocation.lat}, {liveLocation.lng}</p>
-                        </div>
-                      )}
-
-                      {locationStatus === "error" && (
-                        <div className="location-status error">
-                          <button
-                            type="button"
-                            className="location-retry-button"
-                            onClick={handleUseLiveLocation}
-                          >
-                            Try again
-                          </button>
-                        </div>
-                      )}
-
-                      {boundaryLoading && (
-                        <p className="location-status">Loading Hinjawadi boundary...</p>
-                      )}
-
-                  </>
-                </div>
-
-                {errorMessage && (
-                  <p className="location-status error" role="alert">
-                    {errorMessage}
-                  </p>
-                )}
-
                 <div className="form-field">
                   <label htmlFor="issueType">
                     {t("report.issueType")}
@@ -1199,96 +919,131 @@ const ReportIssue = () => {
                   </select>
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor="description">
-                    {t("report.description")}
-                  </label>
-
-                  <textarea
-                    id="description"
-                    rows="4"
-                    placeholder={t("report.descriptionPlaceholder")}
-                    value={description}
-                    onChange={(event) =>
-                      setDescription(event.target.value)
-                    }
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Right column: Photo Upload & Verification */}
-              <div className="report-col">
-                {/* Direct Upload / Capture Functionality */}
-                <div className="form-field">
-                  <label htmlFor="photoUpload">
-                    Upload or Capture Photo
-                  </label>
-                  <input
-                    id="photoUpload"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    multiple
-                    onChange={handlePhotoCapture}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px dashed #cbd5e1',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      marginBottom: '10px',
-                      backgroundColor: '#f8fafc'
-                    }}
-                  />
-                  
-                  {/* Photo Previews */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
-                    {selectedPhotos.map((photo, index) => (
-                      <div key={index} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                        <img 
-                          src={photo.preview} 
-                          alt={`Preview ${index}`} 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => removePhoto(index)}
-                          style={{ 
-                            position: 'absolute', 
-                            top: '4px', 
-                            right: '4px', 
-                            background: 'rgba(220, 38, 38, 0.9)', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: '50%', 
-                            width: '24px', 
-                            height: '24px', 
-                            cursor: 'pointer', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            fontSize: '14px',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          ✕
-                        </button>
+                <div className="form-field report-location-section">
+                  <>
+                    <div className="report-map-container">
+                      <ReportLeafletMap
+                        boundary={hinjawadiBoundary}
+                        liveLocation={liveLocation}
+                        liveLocationAccuracy={liveLocationAccuracy}
+                        showLiveLocationInfo={showLiveLocationInfo}
+                        liveLocationAddress={liveLocationAddress}
+                        liveLocationPhoto={liveLocationPhoto}
+                        liveLocationDetailsLoading={liveLocationDetailsLoading}
+                        selectedLocation={selectedLocation}
+                        issueType={issueType}
+                        mapTypeId={mapTypeId}
+                        isFullscreen={isMapFullscreen}
+                        onMapReady={handleMapLoad}
+                        onMapClick={handleMapClick}
+                        onMarkerDragEnd={handleMarkerDragEnd}
+                        onLiveLocationMarkerClick={handleLiveLocationMarkerClick}
+                        onLiveLocationPopupClose={() => setShowLiveLocationInfo(false)}
+                        onMapTypeToggle={() => setMapTypeId((currentType) =>
+                          currentType === "satellite" ? "roadmap" : "satellite"
+                        )}
+                        onFullscreenChange={setIsMapFullscreen}
+                        onUseLiveLocation={handleUseLiveLocation}
+                      />
+                        <div className="map-zoom-controls" aria-label="Map zoom controls">
+                          <button
+                            type="button"
+                            aria-label="Zoom in"
+                            title="Zoom in"
+                            onClick={() => changeMapZoom(1)}
+                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) >= 21}
+                          >
+                            +
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Zoom out"
+                            title="Zoom out"
+                            onClick={() => changeMapZoom(-1)}
+                            disabled={!map || (map.getZoom() ?? INITIAL_LIVE_LOCATION_ZOOM) <= 3}
+                          >
+                            −
+                          </button>
+                    </div>
                       </div>
-                    ))}
-                  </div>
+
+                      <div className="live-location-summary">
+                        <button
+                          type="button"
+                          className="use-live-location-button"
+                          onClick={handleUseLiveLocation}
+                        >
+                          <span aria-hidden="true">⌖</span>
+                          Use Live Location
+                        </button>
+
+                        {locationStatus === "loading" && (
+                          <p className="location-status">
+                            {t("report.fetchingLocation")}
+                          </p>
+                        )}
+
+                        {locationStatus === "captured" && (
+                          <div className="location-status success">
+                            <p>
+                              <span>Current location:</span>
+                              <strong>{liveLocation.lat}, {liveLocation.lng}</strong>
+                            </p>
+                          </div>
+                        )}
+
+                        {locationStatus === "error" && (
+                          <div className="location-status error">
+                            <button
+                              type="button"
+                              className="location-retry-button"
+                              onClick={handleUseLiveLocation}
+                            >
+                              Try again
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {boundaryLoading && (
+                        <p className="location-status">Loading Hinjawadi boundary...</p>
+                      )}
+
+                  </>
                 </div>
 
-                {/* Existing Photo Detection Component */}
+                {errorMessage && (
+                  <p className="location-status error" role="alert">
+                    {errorMessage}
+                  </p>
+                )}
+
                 <PhotoDetection
                   onPhotoVerified={handlePhotoVerified}
                   onPhotoRejected={handlePhotoRejected}
                   existingPhotos={[]}
-                  maxPhotos={5}
-                  required={true}
+                  maxPhotos={2}
+                  required={false}
                   category={issueType}
-                  onPhotosUpdate={setVerifiedPhotosData}
+                  fallbackLocation={
+                    selectedLocation.lat != null && selectedLocation.lng != null
+                      ? { lat: selectedLocation.lat, lng: selectedLocation.lng }
+                      : liveLocation.lat !== "" && liveLocation.lng !== ""
+                        ? { lat: liveLocation.lat, lng: liveLocation.lng }
+                        : null
+                  }
+                  onPhotosUpdate={(photos) => {
+                    setVerifiedPhotosData(photos);
+                    setSelectedPhotos(
+                      photos
+                        .filter((photo) => photo.file)
+                        .map((photo) => ({
+                          file: photo.file,
+                          preview: photo.preview,
+                          name: photo.name,
+                        }))
+                    );
+                  }}
                   onLocationUpdate={setCapturedLocation}
                 />
               </div>
@@ -1298,7 +1053,12 @@ const ReportIssue = () => {
                 <button
                   className="primary-btn"
                   type="submit"
-                  disabled={loading}
+                  disabled={
+                    loading ||
+                    verifiedPhotosData.some(
+                      (photo) => photo.aiResult?.status === "verifying"
+                    )
+                  }
                 >
                   {loading
                     ? "Submitting..."

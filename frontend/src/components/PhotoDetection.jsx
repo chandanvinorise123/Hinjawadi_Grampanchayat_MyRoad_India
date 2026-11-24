@@ -11,18 +11,28 @@ const PhotoDetection = ({
   maxPhotos = 5,
   required = true,
   category,
+  fallbackLocation = null,
 }) => {
   const [photos, setPhotos] = useState([]);
+  const photoCountRef = useRef(existingPhotos.length);
   const [verificationStatus, setVerificationStatus] = useState({});
+  const [photoLimitMessage, setPhotoLimitMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [location, setLocation] = useState(null);
-  const [locationError, setLocationError] = useState("");
   const [cameraError, setCameraError] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(() =>
+    typeof window !== "undefined" &&
+    (
+      /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent) ||
+      (window.navigator.maxTouchPoints > 0 && window.innerWidth < 1024)
+    )
+  );
   const fileInputRef = useRef(null);
   const cameraVideoRef = useRef(null);
   const cameraCanvasRef = useRef(null);
   const cameraStreamRef = useRef(null);
+  const cameraHistoryPushedRef = useRef(false);
 
   const VALID_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   const MAX_SIZE_MB = 10;
@@ -36,6 +46,7 @@ const PhotoDetection = ({
 
   useEffect(() => {
     if (existingPhotos.length > 0) {
+      photoCountRef.current = existingPhotos.length;
       setPhotos(existingPhotos.map((photo, index) => ({
         id: `existing-${index}`, file: null, preview: photo.url || photo,
         name: photo.name || "Existing Photo", isExisting: true, verified: true,
@@ -43,45 +54,38 @@ const PhotoDetection = ({
     }
   }, [existingPhotos]);
 
-  // Capture GPS location
+  // Use the report map location for photo metadata without a second GPS request.
   const captureLocation = () => {
-    setLocationError("");
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
-      return null;
+    if (fallbackLocation?.lat == null || fallbackLocation?.lng == null) {
+      return Promise.resolve(null);
     }
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const loc = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: new Date(position.timestamp).toISOString(),
-          };
-          setLocation(loc);
-          resolve(loc);
-        },
-        (error) => {
-          let errorMsg = "Unable to retrieve your location";
-          switch (error.code) {
-            case error.PERMISSION_DENIED: errorMsg = "Location permission denied. Please enable location services."; break;
-            case error.POSITION_UNAVAILABLE: errorMsg = "Location information is unavailable."; break;
-            case error.TIMEOUT: errorMsg = "Location request timed out."; break;
-            default: break;
-          }
-          setLocationError(errorMsg);
-          reject(error);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    });
+
+    const latitude = Number(fallbackLocation.lat);
+    const longitude = Number(fallbackLocation.lng);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return Promise.resolve(null);
+    }
+
+    const fallback = {
+      latitude,
+      longitude,
+      accuracy: fallbackLocation.accuracy || 100,
+      timestamp: new Date().toISOString(),
+    };
+    setLocation(fallback);
+    return Promise.resolve(fallback);
   };
 
   // ✅ ADDED: Reverse Geocoding to get readable address from coordinates
   const getAddressFromCoords = async (lat, lng) => {
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 1800);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { signal: controller.signal }
+      );
+      window.clearTimeout(timeoutId);
       const data = await response.json();
       return data.display_name || "Address not found";
     } catch (error) {
@@ -166,14 +170,34 @@ const PhotoDetection = ({
     }
   };
 
-  const stopRearCamera = () => {
+  const stopRearCamera = (goBackInHistory = true) => {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
     if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
     setCameraOpen(false);
+
+    if (goBackInHistory && cameraHistoryPushedRef.current) {
+      cameraHistoryPushedRef.current = false;
+      window.history.back();
+    } else {
+      cameraHistoryPushedRef.current = false;
+    }
   };
 
-  useEffect(() => stopRearCamera, []);
+  useEffect(() => () => stopRearCamera(false), []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const updateDeviceType = () => {
+      const mobileDevice =
+        /Android|iPhone|iPad|iPod|Mobile/i.test(window.navigator.userAgent) ||
+        (window.navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+      setIsMobileDevice(mobileDevice);
+      if (!mobileDevice) stopRearCamera(false);
+    };
+    window.addEventListener("resize", updateDeviceType);
+    return () => window.removeEventListener("resize", updateDeviceType);
+  }, []);
 
   useEffect(() => {
     if (!cameraOpen || !cameraVideoRef.current || !cameraStreamRef.current) return;
@@ -182,6 +206,24 @@ const PhotoDetection = ({
       console.error("Rear camera preview error:", error);
       setCameraError("Unable to start the rear camera preview.");
     });
+  }, [cameraOpen]);
+
+  useEffect(() => {
+    if (!cameraOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") stopRearCamera();
+    };
+    const closeOnSystemBack = () => {
+      stopRearCamera(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("popstate", closeOnSystemBack);
+    document.body.classList.add("pd-camera-open");
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("popstate", closeOnSystemBack);
+      document.body.classList.remove("pd-camera-open");
+    };
   }, [cameraOpen]);
 
   const openRearCamera = async () => {
@@ -193,10 +235,18 @@ const PhotoDetection = ({
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } },
-        audio: false,
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
+      }
       const [track] = stream.getVideoTracks();
       const facingMode = track?.getSettings?.().facingMode;
       if (facingMode && facingMode !== "environment") {
@@ -204,6 +254,14 @@ const PhotoDetection = ({
         throw new Error("The active camera is not the rear camera.");
       }
       cameraStreamRef.current = stream;
+      if (!cameraHistoryPushedRef.current) {
+        window.history.pushState(
+          { ...window.history.state, pdCameraOverlay: true },
+          "",
+          window.location.href
+        );
+        cameraHistoryPushedRef.current = true;
+      }
       setCameraOpen(true);
     } catch (error) {
       console.error("Rear camera access error:", error);
@@ -262,8 +320,8 @@ const PhotoDetection = ({
   const processPhotoFile = async (file) => {
     if (!file) return;
 
-    if (photos.length >= maxPhotos) {
-      alert(`Maximum ${maxPhotos} photos allowed`);
+    if (photoCountRef.current >= maxPhotos) {
+      setPhotoLimitMessage(`Maximum ${maxPhotos} photos allowed.`);
       return;
     }
 
@@ -273,19 +331,15 @@ const PhotoDetection = ({
       return;
     }
 
+    photoCountRef.current += 1;
+
     // 1. Capture location for the first new photo
     let currentLocation = location;
     if (!currentLocation) {
       try { currentLocation = await captureLocation(); } catch (err) { console.error("Location capture failed:", err); }
     }
 
-    // 2. ✅ Fetch readable address for the Geo-Tag Stamp
-    let address = "Location Pending...";
-    if (currentLocation) {
-      address = await getAddressFromCoords(currentLocation.latitude, currentLocation.longitude);
-    }
-
-    // 3. Create photo object with Geo-Tag Data
+    // 2. Create the photo immediately; reverse geocoding runs separately.
     const photoId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const photo = {
       id: photoId,
@@ -301,22 +355,37 @@ const PhotoDetection = ({
       geoData: {
         companyName: "MyRoad India",
         coordinates: currentLocation ? `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}` : "N/A",
-        address: address,
+        address: currentLocation ? "Resolving address..." : "Location Pending...",
         timestamp: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
         accuracy: currentLocation ? `±${Math.round(currentLocation.accuracy)}m` : "N/A"
       }
     };
 
-    // Add to state and verify
+    // Add to state immediately and mark it ready for submission.
     setPhotos((prev) => [...prev, photo]);
-    try {
-      await uploadNormalPhoto(photoId, file, currentLocation);
-    } catch (error) {
-      console.error("Normal photo upload error:", error);
-      setVerificationStatus((prev) => ({
-        ...prev,
-        [photoId]: { status: "error", message: error.message || "Photo upload failed." },
-      }));
+    setVerificationStatus((prev) => ({
+      ...prev,
+      [photoId]: {
+        status: "verified",
+        roadRelated: true,
+        confidence: 100,
+        message: "Photo ready.",
+        verificationId: `local-${photoId}`,
+        publicUrl: photo.preview,
+        location: currentLocation,
+      },
+    }));
+
+    if (currentLocation) {
+      getAddressFromCoords(currentLocation.latitude, currentLocation.longitude)
+        .then((address) => {
+          setPhotos((prev) => prev.map((item) =>
+            item.id === photoId
+              ? { ...item, geoData: { ...item.geoData, address } }
+              : item
+          ));
+        })
+        .catch(() => {});
     }
   };
 
@@ -329,6 +398,8 @@ const PhotoDetection = ({
   const removePhoto = (index) => {
     const photo = photos[index];
     if (!photo.isExisting && photo.preview) URL.revokeObjectURL(photo.preview);
+    photoCountRef.current = Math.max(0, photoCountRef.current - 1);
+    setPhotoLimitMessage("");
     setPhotos((prev) => prev.filter((_, i) => i !== index));
     setVerificationStatus((prev) => {
       const newStatus = { ...prev };
@@ -364,7 +435,7 @@ const PhotoDetection = ({
     return photos.map((photo) => {
       const status = verificationStatus[photo.id];
       return {
-        id: photo.id, name: photo.name, preview: photo.preview,
+        id: photo.id, name: photo.name, preview: photo.preview, file: photo.file,
         verificationId: status?.verificationId || null,
         publicUrl: status?.publicUrl || photo.preview,
         verified: photo.isExisting || (status?.status === "verified" && status.roadRelated),
@@ -381,15 +452,7 @@ const PhotoDetection = ({
   return (
     <div className="photo-detection-container">
       <div className="pd-header">
-        <h3>📸 Capture Road Issue Photo</h3>
-        <p className="pd-subtitle">Use your rear camera to capture the issue. A normal photo is required.</p>
-      </div>
-
-      <div className="pd-requirements">
-        <div className="pd-req-item">✓ JPG, PNG, WEBP</div>
-        <div className="pd-req-item">✓ Max {MAX_SIZE_MB}MB</div>
-        <div className="pd-req-item">✓ Max {maxPhotos} photos</div>
-        <div className="pd-req-item">✓ Rear camera required</div>
+        <h3>Capture Issue Photo</h3>
       </div>
 
       {location && (
@@ -402,42 +465,86 @@ const PhotoDetection = ({
         </div>
       )}
 
-      {locationError && (
-        <div className="pd-error pd-location-error">
-          ️ {locationError}
-          <button type="button" className="pd-retry-btn" onClick={captureLocation}>Retry Location</button>
-        </div>
-      )}
-
       {photos.length < maxPhotos && (
-        <div className={`pd-camera-zone ${isProcessing ? "pd-processing" : ""}`}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment" 
-            onChange={handleCameraCapture}
-            disabled={isProcessing || photos.length >= maxPhotos}
-            className="pd-file-input"
-          />
-          <div className="pd-camera-content">
-            <div className="pd-camera-icon"></div>
-            <button type="button" className="pd-camera-text" onClick={openRearCamera} disabled={isProcessing}>
-              Tap to open rear camera
-            </button>
-            <p className="pd-camera-hint">Point camera at the road issue and take a clear photo</p>
+        isMobileDevice ? (
+          <div className={`pd-camera-zone ${isProcessing ? "pd-processing" : ""}`}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCameraCapture}
+              disabled={isProcessing || photoCountRef.current >= maxPhotos}
+              className="pd-file-input"
+            />
+            <div className="pd-camera-content">
+              <div className="pd-camera-icon" aria-hidden="true">📷</div>
+              <button type="button" className="pd-camera-text" onClick={openRearCamera} disabled={isProcessing}>
+                Open Camera
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <label className={`pd-upload-zone ${isProcessing ? "pd-processing" : ""}`}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={async (event) => {
+                const selectedFiles = Array.from(event.target.files || []);
+                const remainingPhotos = Math.max(0, maxPhotos - photoCountRef.current);
+                setPhotoLimitMessage(
+                  selectedFiles.length > remainingPhotos
+                    ? `Maximum ${maxPhotos} photos allowed. Extra files were ignored.`
+                    : ""
+                );
+                const files = selectedFiles.slice(0, remainingPhotos);
+                for (const file of files) await processPhotoFile(file);
+                event.target.value = "";
+              }}
+              disabled={isProcessing || photoCountRef.current >= maxPhotos}
+              className="pd-file-input"
+            />
+            <span className="pd-upload-icon" aria-hidden="true">☁</span>
+            <strong>Upload Photo</strong>
+            <span>Choose JPG, PNG or WEBP from your computer</span>
+          </label>
+        )
       )}
 
       {cameraError && <div className="pd-error pd-camera-error">{cameraError}</div>}
       {cameraOpen && (
-        <div className="pd-camera-preview">
-          <video ref={cameraVideoRef} autoPlay playsInline muted aria-label="Rear camera preview" />
+        <div className="pd-camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
+          <div className="pd-camera-topbar">
+            <button type="button" className="pd-camera-back" onClick={stopRearCamera} aria-label="Close camera">
+              ←
+            </button>
+            <span className="pd-camera-title">Camera</span>
+            <button type="button" className="pd-camera-menu" aria-label="Camera options">⋮</button>
+          </div>
+          <video
+            ref={cameraVideoRef}
+            className="pd-camera-live-video"
+            autoPlay
+            playsInline
+            muted
+            aria-label="Rear camera preview"
+          />
+          {cameraError && (
+            <div className="pd-camera-overlay-error" role="alert">{cameraError}</div>
+          )}
           <canvas ref={cameraCanvasRef} hidden />
-          <div className="pd-camera-actions">
-            <button type="button" className="pd-capture-btn" onClick={captureRearPhoto}>Capture Photo</button>
-            <button type="button" className="pd-cancel-btn" onClick={stopRearCamera}>Cancel</button>
+          <div className="pd-camera-bottom">
+            <button type="button" className="pd-camera-side" onClick={stopRearCamera} aria-label="Go back">‹</button>
+            <button
+              type="button"
+              className="pd-camera-shutter"
+              onClick={captureRearPhoto}
+              aria-label="Capture photo"
+            >
+              <span />
+            </button>
+            <button type="button" className="pd-camera-side pd-camera-options" aria-label="Camera options">⋮</button>
           </div>
         </div>
       )}
@@ -479,6 +586,15 @@ const PhotoDetection = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {photoLimitMessage && (
+        <div className="pd-limit-message" role="status">{photoLimitMessage}</div>
+      )}
+      {!photoLimitMessage && photos.length >= maxPhotos && (
+        <div className="pd-limit-message" role="status">
+          Maximum {maxPhotos} photos reached.
         </div>
       )}
 
